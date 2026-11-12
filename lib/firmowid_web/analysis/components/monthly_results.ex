@@ -87,8 +87,8 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
               <td class="py-3 pe-3 text-end text-grey-500">{no_money()}</td>
               <td class="py-3">
                 <span class="flex items-center gap-3">
-                  <span class="h-2 w-full max-w-40 rounded-xs bg-grey-200" aria-hidden="true" />
-                  <span class="shrink-0 whitespace-nowrap text-grey-600">
+                  <span class="h-2 w-full rounded-xs bg-grey-200" aria-hidden="true" />
+                  <span class="w-28 shrink-0 text-end whitespace-nowrap text-grey-600">
                     {String.downcase(pgettext("month", "Not closed"))}
                   </span>
                 </span>
@@ -138,14 +138,14 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
     ~H"""
     <span :if={@per_100 == nil} class="text-grey-600">{gettext("No income")}</span>
     <span :if={@per_100 != nil} class="flex items-center gap-3">
-      <span class="h-2 w-full max-w-40 overflow-hidden rounded-xs bg-grey-200" aria-hidden="true">
+      <span class="h-2 w-full overflow-hidden rounded-xs bg-grey-200" aria-hidden="true">
         <span
           class={["block h-full", if(@per_100 < 0, do: "bg-brick-700", else: "bg-teal-600")]}
           style={"width: #{min(abs(@per_100), 100)}%"}
         />
       </span>
       <span class={[
-        "shrink-0 whitespace-nowrap",
+        "w-28 shrink-0 text-end whitespace-nowrap",
         if(@per_100 < 0, do: "text-brick-700", else: "text-grey-900")
       ]}>
         {if @per_100 < 0,

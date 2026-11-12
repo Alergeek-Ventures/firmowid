@@ -154,7 +154,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     >
       <section
         id="assistant-panel"
-        class="@container/assistant relative flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none"
+        class={
+          [
+            "@container/assistant relative flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg inline-md max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] motion-safe:transition-[block-size] motion-safe:duration-300 motion-safe:ease-out max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none",
+            # The panel grows taller once the conversation has messages to read.
+            if(@turns == [], do: "block-160", else: "block-224")
+          ]
+        }
         role="dialog"
         aria-label={gettext("Firmowid assistant")}
         hidden={!@open}
@@ -282,11 +288,21 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     start_subject_conversation(socket, %{subject_type: type, subject_id: id})
   end
 
+  # A suggested question from the view is sent right away in the new conversation.
   def handle_event("ask_analysis", params, socket) do
-    params
-    |> Map.take(~w(view from to month project_id title))
-    |> Assistant.start_analysis_conversation(scope: socket.assigns.ash_scope)
-    |> subject_conversation_started(socket)
+    result =
+      params
+      |> Map.take(~w(view from to month project_id title))
+      |> Assistant.start_analysis_conversation(scope: socket.assigns.ash_scope)
+
+    case {subject_conversation_started(result, socket), result, params} do
+      {{:noreply, socket}, {:ok, _conversation}, %{"question" => question}}
+      when is_binary(question) ->
+        send_message(String.trim(question), socket)
+
+      {reply, _result, _params} ->
+        reply
+    end
   end
 
   def handle_event("history", _params, socket) do

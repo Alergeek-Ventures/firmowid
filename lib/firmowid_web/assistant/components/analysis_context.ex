@@ -249,7 +249,9 @@ defmodule FirmowidWeb.Assistant.Components.AnalysisContext do
   defp path("trends", period, _month, project),
     do: Navigation.view_path(%{view: :trends, period: period}, if(project, do: [{:project, project["id"]}], else: []))
 
-  defp path("projects", period, _month, _project), do: Navigation.view_path(%{view: :segments, period: period}, [])
+  # The projects view is gone; its earlier conversations lead to the period's summary.
+  defp path("projects", period, _month, _project),
+    do: Navigation.view_path(%{view: :dashboard, period: period, month: nil}, [])
 
   defp view_label("summary"), do: gettext("Analysis · Summary")
   defp view_label("trends"), do: gettext("Analysis · Trends")

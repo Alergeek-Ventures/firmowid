@@ -13,7 +13,6 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   @type view ::
           %{view: :dashboard, period: period(), month: Date.t() | nil}
           | %{view: :trends, period: period()}
-          | %{view: :segments, period: period()}
 
   # The chart shows one bar per month, so a longer period keeps its latest months.
   @max_months 36
@@ -40,7 +39,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   end
 
   @doc """
-  Builds the canonical path of the summary, trends or projects view.
+  Builds the canonical path of the summary or trends view.
   """
   @spec view_path(view(), [tag_filter()]) :: String.t()
   def view_path(view, tag_filters) when is_list(tag_filters) do
@@ -61,8 +60,6 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   dashboard `miesiac` within the period selects that month's details.
   """
   @spec parse_view(map()) :: view()
-  def parse_view(%{"tryb" => "projekty"} = params), do: %{view: :segments, period: parse_period(params)}
-
   def parse_view(%{"tryb" => "trendy"} = params), do: %{view: :trends, period: parse_period(params)}
 
   def parse_view(params) do
@@ -132,8 +129,6 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
     do: period_query(period) ++ if(month, do: [miesiac: Date.to_iso8601(month)], else: [])
 
   defp view_query(%{view: :trends, period: period}), do: [tryb: "trendy"] ++ period_query(period)
-
-  defp view_query(%{view: :segments, period: period}), do: [tryb: "projekty"] ++ period_query(period)
 
   defp period_query({from, to}), do: [od: Date.to_iso8601(from), do: Date.to_iso8601(to)]
 

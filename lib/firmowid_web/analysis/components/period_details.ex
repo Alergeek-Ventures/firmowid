@@ -3,11 +3,11 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   The selected period of the analysis (a month, several months or the year):
   what is left of every 100 zł of income as a strip of the largest
   costs (and the same for the last three months of a longer period), then
-  costs and income by template category with their counterparties, monthly
-  trend and amount out of every 100 zł of income. A single month compares each category
-  with its usual monthly amount. Unpaid invoices are mentioned beside the
-  totals they are missing from. A category's counterparties expand from the
-  category. With `can_edit`, a counterparty row opens the
+  questions for the assistant about these figures, then costs and income by template
+  category with their monthly trend and amount out of every 100 zł of income. A single
+  month compares each category with its usual monthly amount. Unpaid invoices are
+  mentioned beside the totals they are missing from. A category's counterparties are
+  hidden until the category is expanded. With `can_edit`, a counterparty row opens the
   categories of the organization's industry to confirm or move it to.
   Sends `confirm-category` (with the group's `side`, `key`, `suggestion` and
   `source`, and the chosen `category`).
@@ -18,9 +18,9 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
 
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Cldr.Number
+  alias FirmowidWeb.Analysis.Components.AskAssistant
 
   @categories_at_once 4
-  @examples 3
   @notable_change Decimal.new("0.1")
   @material_share Decimal.new("0.02")
 
@@ -54,6 +54,8 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     default: false,
     doc: "whether the member may confirm counterparty categories"
 
+  attr :assistant, :map, required: true, doc: "the assistant context of `AskAssistant.button/1`"
+
   @doc "Renders what is left of the period's income and its costs and income by category."
   @spec details(map()) :: Phoenix.LiveView.Rendered.t()
   def details(assigns) do
@@ -80,11 +82,26 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     {costs, kept} = per_100_of(assigns.expenses.categories, income, result)
     {incomes, _kept} = per_100_of(assigns.income.categories, income, Decimal.new(0))
 
+    story = story(costs, kept, income)
+
     assigns =
       assign(assigns,
         expenses: %{assigns.expenses | categories: costs},
         income: %{assigns.income | categories: incomes},
-        story: story(costs, kept, income),
+        story: story,
+        questions:
+          if(months == [],
+            do: [],
+            else:
+              AskAssistant.summary(%{
+                costs: Enum.map(costs, &Map.put(&1, :label, label(&1.key, false))),
+                kept: story && story.kept,
+                spent: story && story.spent,
+                income: income,
+                unpaid_income: assigns.income.unpaid,
+                months: months
+              })
+          ),
         comparisons:
           Enum.reject(
             [
@@ -120,6 +137,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         {gettext("No month of this period is closed yet.")}
       </p>
       <.story :if={@story} story={@story} comparisons={@comparisons} />
+      <AskAssistant.tiles id="analysis-period-questions" context={@assistant} questions={@questions} />
       <div
         :if={@months != []}
         class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2"
@@ -379,12 +397,12 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   attr :industry, :atom, required: true
   attr :can_edit, :boolean, required: true
 
-  # A few examples show what the category holds; the header lists all its counterparties.
+  # The category alone; its counterparties expand from its header.
   defp category(assigns) do
-    {examples, more} = Enum.split(assigns.category.groups, @examples)
+    more = assigns.category.groups
     # As with zooming, other counterparties to expand get a fresh, collapsed list.
     more_id = "#{assigns.id}-more-#{:erlang.phash2(Enum.map(more, & &1.key))}"
-    assigns = assign(assigns, examples: examples, more: more, more_id: more_id)
+    assigns = assign(assigns, more: more, more_id: more_id)
 
     ~H"""
     <div id={@id} class="flex flex-col gap-1">
@@ -432,14 +450,6 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
           @column.total
         )}</span>
       </p>
-      <ul class="-mx-2 flex flex-col ps-5.5">
-        <.counterparty
-          :for={group <- @examples}
-          group={group}
-          industry={@industry}
-          can_edit={@can_edit}
-        />
-      </ul>
       <ul :if={@more != []} id={@more_id} class="-mx-2 flex flex-col ps-5.5" hidden>
         <.counterparty :for={group <- @more} group={group} industry={@industry} can_edit={@can_edit} />
       </ul>
