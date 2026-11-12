@@ -20,10 +20,7 @@ defmodule Firmowid.Delegations.Delegation do
 
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core.Member
-  alias Firmowid.Delegations.Actions.NotifyAdminsAboutDelegation
-  alias Firmowid.Delegations.Actions.NotifyAdminsAboutSubmittedSettlement
-  alias Firmowid.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
-  alias Firmowid.Delegations.Actions.NotifyEmployeeAboutReviewedSettlement
+  alias Firmowid.Delegations.Actions.SendDelegationEmail
   alias Firmowid.Delegations.Changes.AssignReference
   alias Firmowid.Delegations.Changes.CreateSignedCommandBlob
   alias Firmowid.Delegations.Changes.CreateSignedSettlementBlob
@@ -255,25 +252,25 @@ defmodule Firmowid.Delegations.Delegation do
     action :notify_admins do
       description "Emails organization admins about a newly submitted delegation."
       argument :signal, Signals.DelegationSubmitted, allow_nil?: false
-      run NotifyAdminsAboutDelegation
+      run {SendDelegationEmail, email: :new_delegation}
     end
 
     action :notify_employee do
       description "Emails the employee that their delegation was approved."
       argument :signal, Signals.DelegationApproved, allow_nil?: false
-      run NotifyEmployeeAboutApprovedDelegation
+      run {SendDelegationEmail, email: :approved_delegation}
     end
 
     action :notify_admins_about_settlement do
       description "Emails organization admins that a signed settlement awaits review."
       argument :signal, Signals.SettlementSubmitted, allow_nil?: false
-      run NotifyAdminsAboutSubmittedSettlement
+      run {SendDelegationEmail, email: :submitted_settlement}
     end
 
     action :notify_employee_about_settlement do
       description "Emails the employee that their settlement was accepted or returned."
       argument :signal, Signals.SettlementReviewed, allow_nil?: false
-      run NotifyEmployeeAboutReviewedSettlement
+      run {SendDelegationEmail, email: :reviewed_settlement}
     end
   end
 
