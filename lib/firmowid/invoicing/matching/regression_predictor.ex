@@ -2,21 +2,13 @@ defmodule Firmowid.Invoicing.Matching.RegressionPredictor do
   @moduledoc """
   Frozen logistic-regression model for invoice↔transaction matching.
 
-  ## Feature order (index ↔ param)
-
-    0  difference_in_days
-    1  amount_difference
-    2  transaction_side_similarity_jaro_winkler
-    3  bank_account_similarity_jaro_winkler
-    4  bank_account_similarity_levenshtein
-    5  bank_account_similarity_overlap_coefficient
-    6  bank_account_similarity_tversky
-    7  is_same_currency                      (1.0 / 0.0)
-    8  amount_present_in_remittance_info     (1.0 / 0.0)
+  The coefficients follow the feature order of `score/1`; to re-train, use the
+  Livebook notebook in `training/`.
   """
 
+  alias Firmowid.Invoicing.Matching.ParametrizedResult
+
   # ───── frozen weights for class 1 ("match") ──────────────
-  # (to re-train, use the Livebook notebook from this folder)
 
   @coefficients Nx.tensor(
                   [
@@ -42,9 +34,26 @@ defmodule Firmowid.Invoicing.Matching.RegressionPredictor do
   # ──────────────────────────────────────────────────────────
 
   @doc """
-  Returns **log-odds** (can be negative / positive) for a single feature vector.
+  Returns the match probability (0.0 to 1.0) of a pair's features, or of a
+  feature vector in coefficient order.
   """
-  @spec score(list(number()) | Nx.Tensor.t()) :: float()
+  @spec score(%ParametrizedResult{} | list(number()) | Nx.Tensor.t()) :: float()
+  def score(%ParametrizedResult{} = features) do
+    score([
+      features.days_lag_le_3,
+      features.days_lag_le_7,
+      features.days_lag_le_30,
+      features.days_lag_gt_30,
+      features.signed_amount_match,
+      features.relative_amount_difference,
+      features.transaction_side_similarity,
+      features.bank_account_similarity,
+      features.is_same_currency,
+      features.amount_present_in_remittance_information_unstructured,
+      features.invoice_identifier_present_in_remittance_information_unstructured
+    ])
+  end
+
   def score(vec) when is_list(vec) do
     vec
     |> Nx.tensor(type: {:f, 32})

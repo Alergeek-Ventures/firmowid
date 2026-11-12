@@ -189,22 +189,10 @@ defmodule Firmowid.Invoicing.InvoiceMatching do
     invoice
     |> Matching.Windowing.pre_filter_invoice_transactions(transactions)
     |> Enum.map(fn transaction ->
-      features = Matching.ParametrizedResult.generate_parametrized_result(invoice, transaction)
-
       prediction_score =
-        Matching.RegressionPredictor.score([
-          features.days_lag_le_3,
-          features.days_lag_le_7,
-          features.days_lag_le_30,
-          features.days_lag_gt_30,
-          features.signed_amount_match,
-          features.relative_amount_difference,
-          features.transaction_side_similarity,
-          features.bank_account_similarity,
-          features.is_same_currency,
-          features.amount_present_in_remittance_information_unstructured,
-          features.invoice_identifier_present_in_remittance_information_unstructured
-        ])
+        invoice
+        |> Matching.ParametrizedResult.generate_parametrized_result(transaction)
+        |> Matching.RegressionPredictor.score()
 
       {transaction, prediction_score}
     end)
