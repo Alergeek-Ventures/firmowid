@@ -251,7 +251,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           ),
         person: request.member.display_name,
         action: gettext("Review"),
-        href: Navigation.employee_leaves_path(request.member_id),
+        href: Navigation.employee_leaves_path(request.member.user_id),
         decisions: leave_decisions(request)
       }
     end)
