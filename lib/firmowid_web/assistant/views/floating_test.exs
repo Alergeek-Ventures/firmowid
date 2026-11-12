@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
+  alias Firmowid.Timetracker.Project
 
   @moduletag capture_log: true
 
@@ -339,6 +340,50 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(assistant, "#{plan} ins", "1234563218")
     assert has_element?(assistant, "#{plan} del", "ul. Przykładowa 1, Warszawa")
     assert has_element?(assistant, "#{plan} ins", "ul. Inna 2, Kraków")
+  end
+
+  test "an add sessions card shows which sessions are remote work", %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+    project = Ash.Seed.seed!(Project, %{organization_id: scope.tenant, name: "Projekt testowy"})
+
+    arguments =
+      Jason.encode!(%{
+        input: %{
+          sessions: [
+            %{
+              title: "Przegląd",
+              project_id: project.id,
+              start_datetime: "2026-11-04T08:00:00+01:00",
+              end_datetime: "2026-11-04T10:00:00+01:00",
+              is_remote: true
+            }
+          ]
+        }
+      })
+
+    conversation =
+      seed_conversation(scope, owner, :awaiting_approval, [
+        {:user, [%{"type" => "text", "text" => "Dodaj rano."}]},
+        {:assistant,
+         [
+           %{
+             "type" => "tool_call",
+             "id" => "add",
+             "name" => "add_sessions",
+             "arguments" => arguments
+           }
+         ]}
+      ])
+
+    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
+    assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    assistant |> element("#assistant-launcher") |> render_click()
+
+    plan = "#assistant-plan-#{conversation.version}"
+
+    assert has_element?(assistant, "#{plan} ins", "04.11.2026, 08:00–10:00 · Przegląd")
+    assert has_element?(assistant, "#{plan} dt", "Praca zdalna")
   end
 
   defp seed_conversation(scope, owner, status, messages, version \\ 1) do
