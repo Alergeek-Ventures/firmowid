@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   """
   use FirmowidWeb, :html
 
+  alias Firmowid.Analysis
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
@@ -24,10 +25,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
     assigns =
       assigns
       |> assign(:tags, tags)
-      |> assign(:type, entity_type(assigns.entry))
+      |> assign(:type, Analysis.entity_type(assigns.entry))
       |> assign(:editable, editable?(assigns.entry))
       |> assign(:selected_kind, if(tags == [], do: :unassigned, else: hd(tags).kind))
-      |> assign(:popover_id, "category-select-#{entity_type(assigns.entry)}-#{assigns.entry.id}")
+      |> assign(
+        :popover_id,
+        "category-select-#{Analysis.entity_type(assigns.entry)}-#{assigns.entry.id}"
+      )
       |> assign(
         :project_ids,
         Enum.map(Enum.filter(tags, &(&1.kind == :project)), & &1.tag_definition_id)
@@ -320,10 +324,6 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp tag_color(%{kind: :project, tag_definition_id: id}, colors), do: Map.fetch!(colors, {:project, id})
 
   defp tag_color(_tag, colors), do: Map.fetch!(colors, :unassigned)
-
-  defp entity_type(%SalesInvoice{}), do: :sales_invoice
-  defp entity_type(%CostInvoice{}), do: :cost_invoice
-  defp entity_type(%Transaction{}), do: :transaction
 
   @doc """
   Whether the entry's categories may change: a skipped transaction other than a
