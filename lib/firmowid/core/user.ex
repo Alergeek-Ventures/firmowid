@@ -540,6 +540,7 @@ defmodule Firmowid.Core.User do
 
     # Runs after the member is archived, so the account is matched by its membership.
     policy action(:leave_organization) do
+      forbid_unless expr(^arg(:organization_id) == ^actor([:member, :organization_id]))
       authorize_if OrganizationMemberAdmin
     end
 
