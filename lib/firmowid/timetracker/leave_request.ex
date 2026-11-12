@@ -13,6 +13,7 @@ defmodule Firmowid.Timetracker.LeaveRequest do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs
+  alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Member
   alias Firmowid.Resource
@@ -248,8 +249,8 @@ defmodule Firmowid.Timetracker.LeaveRequest do
       authorize_if expr(^actor(:role) == :leave_notifier or blob_id == ^actor(:blob_id))
     end
 
-    policy action(:create) do
-      authorize_if actor_present()
+    policy action([:create, :create_with_upload]) do
+      authorize_if {AtLeastRole, role: :employee}
     end
 
     policy action(:notify_admins) do
