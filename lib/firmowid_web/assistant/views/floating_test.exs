@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
@@ -448,6 +449,49 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
   end
 
+  test "a draft card shows the counterparty a revision unlinks", %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    counterparty =
+      Ash.Seed.seed!(Counterparty, %{
+        organization_id: scope.tenant,
+        type: :company,
+        full_name: "Acme Sp. z o.o.",
+        country: "PL",
+        tax_id: "1234563218",
+        normalized_tax_id: "1234563218"
+      })
+
+    draft = seed_draft(scope, %{counterparty_id: counterparty.id})
+
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{counterparty_id: nil}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} dt", "Kontrahent")
+    assert has_element?(plan.view, "#{plan.id} del", "Acme Sp. z o.o.")
+  end
+
+  test "a draft card that changes only a field it has no row for cannot be approved", %{
+    conn: conn
+  } do
+    owner = admin_fixture()
+    draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
+
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{is_cash_account: true}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
+    refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+  end
+
   # Opens the assistant on a conversation that waits for approval of one tool call.
   defp open_plan(conn, owner, name, arguments) do
     scope = Scope.new!(owner, owner.member.organization_id)
@@ -474,13 +518,16 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   # A draft of an organization whose seller data is complete enough to preview it.
-  defp seed_draft(scope) do
-    scope.tenant
-    |> Firmowid.Core.get_organization!(scope: scope)
-    |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
+  defp seed_draft(scope, attributes \\ %{}) do
+    organization =
+      scope.tenant
+      |> Firmowid.Core.get_organization!(scope: scope)
+      |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
 
-    Ash.Seed.seed!(SalesInvoice, %{
+    SalesInvoice
+    |> Ash.Seed.seed!(%{
       organization_id: scope.tenant,
+      seller_display_name: organization.name,
       issue_date: Date.utc_today(),
       sale_date: Date.utc_today(),
       due_date: Date.add(Date.utc_today(), 7),
@@ -503,6 +550,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
         }
       ]
     })
+    |> Ash.Seed.update!(attributes)
   end
 
   defp seed_conversation(scope, owner, status, messages, version \\ 1) do

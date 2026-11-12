@@ -3673,6 +3673,7 @@ msgstr ""
 msgid "Counterparties to review"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex

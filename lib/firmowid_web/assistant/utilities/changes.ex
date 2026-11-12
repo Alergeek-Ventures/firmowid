@@ -224,13 +224,25 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp preview("update_sales_invoice_draft", %{"id" => id, "input" => input}, scope) when is_map(input) do
     with {:ok, invoice} <- invoice_input(input),
          {:ok, saved} <-
-           result(Invoicing.get_sales_invoice(id, scope: scope, load: [sales_invoice_items: []])),
+           result(
+             Invoicing.get_sales_invoice(id,
+               scope: scope,
+               load: [sales_invoice_items: [], counterparty: [:display_label]]
+             )
+           ),
          {:ok, revised} <-
-           result(Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice}, scope: scope)) do
-      # Compared on every reviewed field, not only those the card shows.
-      if snapshot(saved) == snapshot(revised),
-        do: :unchanged,
-        else: {:ok, [{:sales, id} | counterparty_reference(saved, revised)], invoice_changes(saved, revised)}
+           result(Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice}, scope: scope)),
+         {:ok, unlinked} <- unlinked_counterparty(saved, revised) do
+      references = counterparty_reference(saved, revised)
+      changes = unlinked ++ invoice_changes(saved, revised)
+
+      cond do
+        # Compared on every reviewed field, not only those the card shows.
+        snapshot(saved) == snapshot(revised) -> :unchanged
+        # A revision whose only effect has no row on the card would be approved unseen.
+        changes == [] and references == [] -> :error
+        true -> {:ok, [{:sales, id} | references], changes}
+      end
     end
   end
 
@@ -458,6 +470,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp counterparty_reference(_saved, _revised), do: []
+
+  # Unlinking leaves no record to show, so the unlinked counterparty is a row; one the user cannot
+  # read makes the card unavailable.
+  defp unlinked_counterparty(%{counterparty_id: id} = saved, %{counterparty_id: nil}) when is_binary(id) do
+    case saved.counterparty do
+      %{display_label: label} -> {:ok, [change(gettext("Counterparty"), label, nil)]}
+      nil -> :error
+    end
+  end
+
+  defp unlinked_counterparty(_saved, _revised), do: {:ok, []}
 
   defp payment_method(nil), do: nil
   defp payment_method(:transfer), do: gettext("Transfer")
