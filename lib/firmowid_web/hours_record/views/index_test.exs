@@ -7,7 +7,6 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Blobs.Blob
-  alias Firmowid.Core
   alias Firmowid.Payroll
   alias Firmowid.Scope
   alias Firmowid.SystemActor
