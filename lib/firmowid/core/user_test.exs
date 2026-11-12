@@ -3,6 +3,7 @@ defmodule Firmowid.Core.UserTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
@@ -261,6 +262,12 @@ defmodule Firmowid.Core.UserTest do
            )
 
     refute Ash.can?({user, :destroy}, actor)
+
+    assert {:error, %Forbidden{}} =
+             Member.create(%{user_id: other_user.id, role: :admin},
+               actor: actor,
+               tenant: organization_id
+             )
   end
 
   test "notifier system actors read only users of their organization" do
@@ -288,7 +295,7 @@ defmodule Firmowid.Core.UserTest do
     Core.add_to_organization!(employee.id, other_organization_id, :employee, nil)
     scope = Scope.new!(admin, admin.member.organization_id)
 
-    assert {:error, %Ash.Error.Forbidden{}} =
+    assert {:error, %Forbidden{}} =
              Core.leave_organization(employee, other_organization_id, scope: scope)
 
     assert {:ok, _} =

@@ -242,8 +242,8 @@ defmodule Firmowid.Core.Member do
       authorize_if expr(avatar_blob_id == ^actor(:blob_id))
     end
 
-    bypass {SystemActorRole, roles: [:organization_owner_setup]} do
-      authorize_if action(:create)
+    bypass [{SystemActorRole, roles: [:organization_owner_setup]}, action(:create)] do
+      authorize_if changing_attributes(user_id: [to: actor(:user_id)])
     end
 
     bypass [{SystemActorRole, roles: [:actor_member_loader]}, action(:active)] do
