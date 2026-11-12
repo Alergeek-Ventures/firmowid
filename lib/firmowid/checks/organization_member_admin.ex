@@ -19,9 +19,9 @@ defmodule Firmowid.Checks.OrganizationMemberAdmin do
   end
 
   @impl true
-  def filter(actor, _context, opts) do
+  def filter(actor, context, opts) do
     cond do
-      ActorRole.role(actor) != :admin ->
+      ActorRole.role(actor, context) != :admin ->
         false
 
       opts[:active] ->
