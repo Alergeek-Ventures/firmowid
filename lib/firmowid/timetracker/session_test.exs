@@ -652,6 +652,33 @@ defmodule Firmowid.Timetracker.SessionTest do
       reloaded = Ash.reload!(stopped, scope: scope)
       assert reloaded.end_datetime == stopped.end_datetime
     end
+
+    test "leaves a session whose start moved after the trigger read it", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      {:ok, read_by_trigger} =
+        Session.create(
+          %{
+            title: "Running",
+            project_id: project.id,
+            member_id: user.member.id,
+            start_datetime: ~U[2026-03-10 08:00:00Z]
+          },
+          scope: scope
+        )
+
+      {:ok, _moved} =
+        Session.update(read_by_trigger, %{start_datetime: ~U[2026-03-10 07:00:00Z]}, scope: scope)
+
+      auto_stopper = %Firmowid.SystemActor{org_id: nil, role: :session_auto_stopper}
+
+      assert {:error, %Invalid{errors: [%Ash.Error.Changes.StaleRecord{}]}} =
+               Session.auto_stop(read_by_trigger, actor: auto_stopper, tenant: scope.tenant)
+
+      assert is_nil(Ash.reload!(read_by_trigger, scope: scope).end_datetime)
+    end
   end
 
   describe "same-month boundary" do
