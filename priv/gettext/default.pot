@@ -7237,6 +7237,17 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/account_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Log in again"
+msgstr ""
+
+#: lib/firmowid_web/auth/controllers/auth_controller.ex
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Log in again to close your account."
+msgstr ""
+
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
 msgid "Log in to confirm your email address."
@@ -12555,6 +12566,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "To pay after the correction"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/account_tab.ex
+#, elixir-autogen, elixir-format
+msgid "To protect your account, log in again before closing it. After logging in you will come back here."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparties.html.heex

@@ -139,6 +139,7 @@ defmodule FirmowidWeb.Core.Router do
 
     auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
     delete "/wyloguj", AuthController, :sign_out
+    post "/zaloguj-ponownie", AuthController, :sign_in_again
     delete "/admin/impersonacja", Admin.Controllers.Impersonation, :delete
     post "/jezyk", Infrastructure.Controllers.Locale, :update
   end

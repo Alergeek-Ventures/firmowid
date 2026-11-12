@@ -465,7 +465,11 @@ defmodule Firmowid.Timetracker.SessionTest do
         Sandbox.unboxed_run(Repo, fn ->
           assert {:ok, :ok} =
                    Repo.transaction(fn ->
-                     :ok = Firmowid.Core.destroy_user_in_transaction(owner, actor: owner)
+                     :ok =
+                       Firmowid.Core.destroy_user_in_transaction(owner,
+                         actor: with_session_claims(owner)
+                       )
+
                      Firmowid.Core.User.destroy!(user, authorize?: false)
                    end)
         end)

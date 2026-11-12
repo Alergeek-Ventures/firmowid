@@ -56,7 +56,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             Core.destroy_organization(organization, scope: owner_scope)
 
           :account ->
-            Core.destroy_user(accountant, scope: scope)
+            Core.destroy_user(accountant, scope: scope_for(with_session_claims(accountant)))
         end
 
       assert :ok = result

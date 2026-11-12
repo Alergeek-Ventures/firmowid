@@ -164,8 +164,8 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransactionTest do
       Sandbox.unboxed_run(Repo, fn ->
         assert {:ok, :ok} =
                  Repo.transaction(fn ->
-                   :ok = Core.destroy_user_in_transaction(user)
-                   Core.destroy_user_in_transaction(owner)
+                   :ok = Core.destroy_user_in_transaction(with_session_claims(user))
+                   Core.destroy_user_in_transaction(with_session_claims(owner))
                  end)
 
         Ash.destroy!(client, context: @auth_context)

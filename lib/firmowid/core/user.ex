@@ -218,6 +218,9 @@ defmodule Firmowid.Core.User do
 
       prepare AshAuthentication.Strategy.RememberMe.SignInPreparation
 
+      # The session it mints is not a fresh sign-in (see `Firmowid.Checks.RecentSignIn`).
+      prepare set_context(%{extra_token_claims: %{"remembered" => true}})
+
       metadata :token, :string, allow_nil?: false
     end
 
@@ -604,9 +607,11 @@ defmodule Firmowid.Core.User do
     end
 
     # A superuser working as the user (see `Firmowid.Core.impersonator_id/1`) cannot
-    # delete the account.
+    # delete the account, and its holder only right after signing in, so a stolen
+    # session cannot.
     bypass action_type(:destroy) do
       forbid_if expr(not is_nil(^actor([:__metadata__, :token_claims, "impersonator_id"])))
+      forbid_unless Firmowid.Checks.RecentSignIn
       authorize_if expr(id == ^actor(:id))
     end
   end

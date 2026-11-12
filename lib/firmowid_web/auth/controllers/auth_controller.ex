@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Firmowid.Core.Member
   alias FirmowidWeb.Infrastructure.Plugs.Locale
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   require Logger
 
@@ -294,6 +295,21 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> Helpers.delete_all_remember_me_cookies(:firmowid)
     |> LiveToast.put_toast(:notice, gettext("Signed out."))
     |> redirect(to: ~p"/")
+  end
+
+  @doc """
+  Signs out and sends to the sign-in page, which returns to the account settings,
+  so the account can be closed right after signing in (see
+  `Firmowid.Checks.RecentSignIn`). The remember-me cookie goes too: it would sign
+  the browser in again without a credential.
+  """
+  def sign_in_again(conn, _params) do
+    conn
+    |> revoke_impersonated_session()
+    |> clear_session(:firmowid)
+    |> put_session(:return_to, SettingsNavigation.canonical_path(:account))
+    |> put_flash(:info, gettext("Log in again to close your account."))
+    |> redirect(to: ~p"/zaloguj")
   end
 
   defp revoke_impersonated_session(conn) do

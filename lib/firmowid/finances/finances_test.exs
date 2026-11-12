@@ -122,7 +122,11 @@ defmodule Firmowid.Finances.FinancesTest do
           Sandbox.unboxed_run(Repo, fn ->
             assert {:ok, :ok} =
                      Repo.transaction(fn ->
-                       :ok = Firmowid.Core.destroy_user_in_transaction(admin, actor: admin)
+                       :ok =
+                         Firmowid.Core.destroy_user_in_transaction(admin,
+                           actor: with_session_claims(admin)
+                         )
+
                        Firmowid.Core.User.destroy!(accountant, authorize?: false)
                      end)
           end)
