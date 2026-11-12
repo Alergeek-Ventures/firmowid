@@ -21,40 +21,16 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
       scope = %Scope{actor: actor, tenant: blob.organization_id}
       opts = [scope: scope]
 
-      blob
-      |> run_processing(opts)
-      |> handle_processing_result(blob, opts)
+      case run_processing(blob, opts) do
+        :ok ->
+          {:ok, blob}
+
+        {:error, reason} ->
+          with {:ok, _failed_blob} <- update_failed_blob(blob, failure(reason, blob), opts) do
+            {:ok, blob}
+          end
+      end
     end)
-  end
-
-  defp handle_processing_result(:ok, blob, _opts), do: {:ok, blob}
-
-  defp handle_processing_result({:error, :invalid_document}, blob, opts) do
-    case handle_invalid_document(blob, opts) do
-      {:ok, _updated_blob} -> {:ok, blob}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp handle_processing_result({:error, {:duplicate_ksef_invoice, cost_invoice_id}}, blob, opts) do
-    case handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
-      {:ok, _updated_blob} -> {:ok, blob}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp handle_processing_result({:error, :missing_salary_metadata}, blob, opts) do
-    case handle_missing_salary_metadata(blob, opts) do
-      {:ok, _updated_blob} -> {:ok, blob}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp handle_processing_result({:error, reason}, blob, opts) do
-    case handle_unexpected_failure(blob, reason, opts) do
-      {:ok, _updated_blob} -> {:ok, blob}
-      {:error, reason} -> {:error, reason}
-    end
   end
 
   defp run_processing(blob, opts) do
@@ -101,45 +77,37 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
     |> Ash.update(opts)
   end
 
-  defp handle_invalid_document(blob, opts) do
-    failure = %{
+  defp failure(:invalid_document, blob) do
+    %{
       error: ":invalid_document",
       error_code: "invalid_document",
       error_message: invalid_document_error_message(blob.processing_target)
     }
-
-    update_failed_blob(blob, failure, opts)
   end
 
-  defp handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
-    failure = %{
+  defp failure({:duplicate_ksef_invoice, cost_invoice_id}, _blob) do
+    %{
       error: ":duplicate_ksef_invoice",
       error_code: "duplicate_ksef_invoice",
       error_message: gettext_noop("This KSeF invoice is already in the system."),
       cost_invoice_id: cost_invoice_id
     }
-
-    update_failed_blob(blob, failure, opts)
   end
 
-  defp handle_missing_salary_metadata(blob, opts) do
-    failure = %{
+  defp failure(:missing_salary_metadata, _blob) do
+    %{
       error: ":missing_salary_metadata",
       error_code: "missing_salary_metadata",
       error_message: gettext_noop("Could not extract the salary data from the contract.")
     }
-
-    update_failed_blob(blob, failure, opts)
   end
 
-  defp handle_unexpected_failure(blob, reason, opts) do
-    failure = %{
+  defp failure(reason, _blob) do
+    %{
       error: inspect(reason),
       error_code: "processing_failed",
       error_message: gettext_noop("Could not process the file.")
     }
-
-    update_failed_blob(blob, failure, opts)
   end
 
   defp update_failed_blob(blob, failure, opts) do
