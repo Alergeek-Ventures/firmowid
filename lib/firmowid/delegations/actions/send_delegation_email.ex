@@ -20,7 +20,7 @@ defmodule Firmowid.Delegations.Actions.SendDelegationEmail do
     email = Keyword.fetch!(opts, :email)
 
     scope = %Scope{
-      actor: %SystemActor{org_id: signal.organization_id, role: :leave_notifier},
+      actor: %SystemActor{org_id: signal.organization_id, role: :delegation_notifier},
       tenant: signal.organization_id
     }
 

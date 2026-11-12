@@ -13,6 +13,7 @@ defmodule Firmowid.Delegations.DelegationTest do
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   # The per diem is calculated from these, so a settlement cannot be prepared without them.
   @trip_times %{trip_started_at: ~N[2026-09-10 07:00:00], trip_ended_at: ~N[2026-09-11 20:00:00]}
@@ -234,6 +235,29 @@ defmodule Firmowid.Delegations.DelegationTest do
       |> Enum.map(fn {:ok, reference} -> reference end)
 
     assert Enum.sort(references) == Enum.map(1..8, &"KV-2026-09-#{&1}")
+  end
+
+  test "only the delegation notifier among system actors reads delegations and expenses", %{
+    employee_scope: scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+    expense = seed_expense(delegation, scope.actor, %{})
+
+    notifier_scope = fn role ->
+      %Scope{actor: %SystemActor{org_id: scope.tenant, role: role}, tenant: scope.tenant}
+    end
+
+    assert {:ok, %{expenses: [_expense]}} =
+             Delegations.get_delegation(delegation.id,
+               load: [:expenses],
+               scope: notifier_scope.(:delegation_notifier)
+             )
+
+    assert {:error, _not_found} =
+             Delegations.get_delegation(delegation.id, scope: notifier_scope.(:leave_notifier))
+
+    assert {:error, _not_found} =
+             Delegations.get_expense(expense.id, scope: notifier_scope.(:leave_notifier))
   end
 
   test "only an administrator can approve a delegation", %{

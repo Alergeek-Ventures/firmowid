@@ -277,6 +277,7 @@ defmodule Firmowid.Core.UserTest do
 
     for role <- [
           :leave_notifier,
+          :delegation_notifier,
           :hours_record_change_notifier,
           :document_blob_processor,
           :employment_contract_notifier
