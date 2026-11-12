@@ -9,9 +9,7 @@ defmodule Firmowid.Invoicing.Services.Timeline do
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Ksef.SubmissionInfo
 
-  defguardp is_loaded(value)
-            when not is_struct(value, Ecto.Association.NotLoaded) and
-                   not is_struct(value, Ash.NotLoaded)
+  defguardp is_loaded(value) when not is_struct(value, Ash.NotLoaded)
 
   @type event :: %{
           occurred_at: DateTime.t() | NaiveDateTime.t() | nil,
