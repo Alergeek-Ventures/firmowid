@@ -74,7 +74,8 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
   defp lock_user(user_id) do
     # Lock by the stored token's owner, even if blocked or concurrently deleted.
     # Authentication filtering here would bypass the native protocol response,
-    # so the owner reads their own row instead of authenticating.
+    # so the owner reads their own row instead of authenticating. The actor
+    # carries `member: nil` because the role checks raise on an unloaded member.
     Core.get_user!(user_id,
       actor: %User{id: user_id, member: nil},
       query: User |> Ash.Query.select([:id]) |> Ash.Query.lock(:for_update),
