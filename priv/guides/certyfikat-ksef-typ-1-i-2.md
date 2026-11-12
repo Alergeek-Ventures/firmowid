@@ -12,7 +12,7 @@ Certyfikaty KSeF są dwa. Typ 1 służy do logowania, typ 2 do drugiego kodu QR 
 |---|---|---|---|
 | Do czego | logowanie do KSeF, także przez program | drugi kod QR na fakturze offline wręczanej przed wysłaniem do KSeF | logowanie programu do KSeF |
 | Gdzie powstaje | aplikacja MF (moduł certyfikatów) | aplikacja MF (moduł certyfikatów) | Aplikacja Podatnika KSeF |
-| Ważność | do daty wygaśnięcia | do daty wygaśnięcia | do unieważnienia przez użytkownika |
+| Ważność | do daty wygaśnięcia | do daty wygaśnięcia | do unieważnienia, ale rozporządzenie pozwala logować się tokenem do 31.12.2026 r., a MF zapowiada przedłużenie |
 | Można przekazać księgowej | nie, księgowej nadaje się uprawnienia | nie | brak informacji w odpowiedziach MF |
 
 ## Na co uważać
@@ -28,7 +28,7 @@ Według MF certyfikat jest osobistym poświadczeniem tożsamości. Nie pożycza 
 
 [Firmowid](/cennik), nasz program, przyjmuje token albo certyfikat. Przy certyfikacie zapisuje datę wygaśnięcia.
 
-![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu i jest ważny do unieważnienia. Certyfikatu nie przekazuje się księgowej, tylko nadaje jej uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
+![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu; rozporządzenie pozwala logować się nim do 31 grudnia 2026 r. Certyfikatu nie przekazuje się księgowej, tylko nadaje jej uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
 
 ## Źródła
 
