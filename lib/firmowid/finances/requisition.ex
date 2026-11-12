@@ -1,3 +1,5 @@
+# Every update is a lifecycle step with side effects, so none is a safe primary.
+# credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
 defmodule Firmowid.Finances.Requisition do
   @moduledoc """
   GoCardless bank connection requisition.
@@ -147,7 +149,6 @@ defmodule Firmowid.Finances.Requisition do
     update :check_status do
       require_atomic? false
       description "AshOban trigger action — polls GoCardless API and transitions state."
-      primary? true
       change Firmowid.Finances.Changes.CheckRequisitionStatus
     end
 
