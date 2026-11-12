@@ -6,6 +6,10 @@ defmodule Firmowid.Analytics do
   permits the current account email for person profiles and flag management.
   Browser consent controls browser telemetry separately; server-side events do not
   use cookies.
+
+  Business events carry only allowlisted properties. The one exception is the feedback
+  survey response (`capture_feedback/4`): it carries the free text the user chose to
+  send through the feedback form.
   """
 
   alias Firmowid.Core
@@ -91,6 +95,46 @@ defmodule Firmowid.Analytics do
   end
 
   def capture_business_event(_event, _actor, _organization_id, _properties), do: :ok
+
+  # The PostHog survey (type "api", shown to nobody) that collects in-app feedback.
+  @feedback_survey_id "01a1d00b-c733-0000-a5bd-01cd8267cb42"
+  @feedback_question_id "0860110e-5940-4660-9cad-6dd33cf7a11a"
+  @feedback_question "Jak możemy usprawnić Firmowida?"
+
+  @doc """
+  Captures the text a user sent through the feedback form as a response to the PostHog
+  feedback survey.
+
+  Unlike business events, this one carries free text the user chose to send. Every call
+  is a new response (the form can be used any number of times). Nothing is captured in a
+  superuser's session as the user (see `Firmowid.Core.impersonator_id/1`).
+  """
+  @spec capture_feedback(term(), term(), String.t(), String.t()) :: :ok
+  def capture_feedback(%User{id: user_id} = actor, organization_id, page_path, content)
+      when not is_nil(organization_id) and is_binary(page_path) and is_binary(content) do
+    with false <- impersonated?(actor),
+         true <- enabled?() do
+      properties = %{
+        "$survey_id" => @feedback_survey_id,
+        "$survey_submission_id" => Ash.UUID.generate(),
+        "$survey_completed" => true,
+        "$survey_questions" => [%{id: @feedback_question_id, question: @feedback_question}],
+        "$survey_response_#{@feedback_question_id}" => content,
+        "page_path" => page_path,
+        "surface" => "app",
+        "auth_state" => "identified",
+        "$groups" => %{"organization" => to_string(organization_id)}
+      }
+
+      PostHog.bare_capture("survey sent", to_string(user_id), properties)
+    end
+
+    :ok
+  rescue
+    _ -> :ok
+  end
+
+  def capture_feedback(_actor, _organization_id, _page_path, _content), do: :ok
 
   @doc "Captures a successful password or Google account registration, without requiring an organization."
   @spec capture_account_created(map(), :password | :google) :: :ok
