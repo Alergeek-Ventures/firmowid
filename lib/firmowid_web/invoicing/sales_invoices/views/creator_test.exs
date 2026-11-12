@@ -775,6 +775,56 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert Invoicing.list_wizard_states!(scope: scope) == []
   end
 
+  test "choosing the advance kind saves an advance invoice dated by its payment", %{conn: conn} do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+
+    admin.member.organization_id
+    |> Core.get_organization!(scope: scope)
+    |> Ash.Seed.update!(%{address: "ul. Organizacyjna 1, Warszawa"})
+
+    draft = items_step_draft!(admin)
+    sale_date = Firmowid.LocalDate.today()
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+
+    view
+    |> form("#invoice-form", %{
+      "form" => %{
+        "ksef_invoice_kind" => "advance",
+        "currency" => "PLN",
+        "items" => %{
+          "0" => %{
+            "index" => "0",
+            "name" => "Zaliczka",
+            "quantity" => "1",
+            "unit" => "szt.",
+            "unit_price" => "100.00",
+            "vat_rate" => "23"
+          }
+        }
+      }
+    })
+    |> render_submit()
+
+    assert has_element?(view, "input[name='form[sale_date]']")
+    refute has_element?(view, "input[name='form[due_date]']")
+
+    view
+    |> form("#invoice-payment-form", %{
+      "form" => %{"sale_date" => Date.to_iso8601(sale_date), "payment_method" => "cash"}
+    })
+    |> render_submit()
+
+    assert has_element?(view, "#invoice-review")
+
+    view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
+    assert_redirect(view)
+
+    assert [%{ksef_invoice_kind: :advance, sale_date: ^sale_date, due_date: ^sale_date}] =
+             Invoicing.list_sales_invoices!(scope: scope)
+  end
+
   defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp copied_draft!(admin) do

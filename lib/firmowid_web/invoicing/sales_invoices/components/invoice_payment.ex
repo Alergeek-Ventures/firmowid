@@ -57,6 +57,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   end
 
   attr :invoice, :map, required: true
+  attr :advance?, :boolean, default: false
   attr :bank_accounts, :list, required: true
   attr :selected_bank_account, :map, required: false
   attr :payment_form, Phoenix.HTML.Form, required: true
@@ -65,7 +66,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
     ~H"""
     <div class="grid grid-cols-[min-content_min-content_1fr] items-center gap-x-5 gap-y-4">
       <label class="whitespace-nowrap text-grey-700" for={@payment_form[:sale_date].id}>
-        {gettext("Sale date")}
+        {if @advance?, do: gettext("Date payment received"), else: gettext("Sale date")}
       </label>
       <.input
         field={@payment_form[:sale_date]}
@@ -88,29 +89,32 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         </.button>
       </div>
 
-      <label class="whitespace-nowrap text-grey-700" for={@payment_form[:due_date].id}>
-        {gettext("Payment due date")}
-      </label>
-      <.input
-        field={@payment_form[:due_date]}
-        type="date"
-        phx-debounce
-        class="h-8 w-43"
-      />
-      <div class="flex flex-wrap items-center gap-2">
-        <.button
-          :for={{suggestion, label} <- PaymentDateSuggestions.due_date_suggestions()}
-          type="button"
-          size="small"
-          variant="secondary"
-          class="h-8"
-          phx-click="suggest_payment_date"
-          phx-value-field="due_date"
-          phx-value-suggestion={suggestion}
-        >
-          {label}
-        </.button>
-      </div>
+      <%!-- An advance invoice is due on its payment date, so it has no due date to enter. --%>
+      <%= if not @advance? do %>
+        <label class="whitespace-nowrap text-grey-700" for={@payment_form[:due_date].id}>
+          {gettext("Payment due date")}
+        </label>
+        <.input
+          field={@payment_form[:due_date]}
+          type="date"
+          phx-debounce
+          class="h-8 w-43"
+        />
+        <div class="flex flex-wrap items-center gap-2">
+          <.button
+            :for={{suggestion, label} <- PaymentDateSuggestions.due_date_suggestions()}
+            type="button"
+            size="small"
+            variant="secondary"
+            class="h-8"
+            phx-click="suggest_payment_date"
+            phx-value-field="due_date"
+            phx-value-suggestion={suggestion}
+          >
+            {label}
+          </.button>
+        </div>
+      <% end %>
 
       <label class="whitespace-nowrap text-grey-700" for={@payment_form[:payment_method].id}>
         {gettext("Payment method")}

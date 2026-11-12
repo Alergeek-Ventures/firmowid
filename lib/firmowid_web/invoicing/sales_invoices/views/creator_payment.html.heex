@@ -25,6 +25,7 @@
     <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
       payment_form={@payment_form}
       invoice={@invoice}
+      advance?={@invoice.ksef_invoice_kind == :advance}
       bank_accounts={@bank_accounts}
       selected_bank_account={@selected_bank_account}
     />

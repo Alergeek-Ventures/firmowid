@@ -159,7 +159,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     item_calcs = [:net_value, :vat_value, :gross_value]
 
-    case SalesInvoice.by_id(invoice_id, load: [sales_invoice_items: item_calcs], scope: scope) do
+    case SalesInvoice.by_id(invoice_id,
+           load: [:is_paid_on_issue, sales_invoice_items: item_calcs],
+           scope: scope
+         ) do
       {:error, _} ->
         {:noreply,
          socket
@@ -231,6 +234,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       buyer_phone: base_invoice.buyer_phone,
       buyer_description: base_invoice.buyer_description,
       invoice_type: base_invoice.invoice_type,
+      # A copy keeps an advance invoice an advance; any other kind, a correction too, becomes a VAT invoice.
+      ksef_invoice_kind: if(base_invoice.is_paid_on_issue, do: :advance, else: :vat),
       is_reverse_charge: base_invoice.is_reverse_charge,
       currency: base_invoice.currency,
       payment_method: base_invoice.payment_method,
@@ -311,7 +316,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     requested_step = parse_step_param(params["krok"])
 
     # Load items for calculate_max_step and for @invoice assign
-    draft = Ash.load!(draft, [:items], scope: scope)
+    draft = Ash.load!(draft, [:items, :is_payment_complete], scope: scope)
     max_allowed_step = calculate_max_step(draft)
 
     # Clamp requested step to what's allowed based on data
@@ -373,7 +378,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp calculate_max_step(draft) do
     cond do
-      draft.sale_date && draft.due_date && draft.payment_method -> :preview
+      draft.is_payment_complete -> :preview
       draft.items != [] -> :payment
       draft.buyer_country -> :items
       true -> :counterparty
@@ -424,6 +429,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       end
 
     initial_params = %{
+      "ksef_invoice_kind" => draft.ksef_invoice_kind,
       "currency" => draft.currency,
       "is_reverse_charge" => draft.is_reverse_charge,
       "vat_exemption_type" => draft.vat_exemption_type || organization.vat_exemption_type,
@@ -782,7 +788,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("select_base_invoice", %{"invoice_id" => invoice_id}, socket) do
     scope = socket.assigns.ash_scope
-    base_invoice = SalesInvoice.by_id!(invoice_id, load: [:sales_invoice_items], scope: scope)
+
+    base_invoice =
+      SalesInvoice.by_id!(invoice_id,
+        load: [:is_paid_on_issue, :sales_invoice_items],
+        scope: scope
+      )
+
     draft = socket.assigns.draft
 
     case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
@@ -1193,6 +1205,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   attr :step, :any, required: true
   attr :title, :string, required: true
 
+  attr :title_in_breadcrumb, :boolean,
+    default: false,
+    doc: "puts the title, the page's `h1`, into the breadcrumb row after the step's number"
+
   def render_header(assigns) do
     buyer_name = assigns[:invoice] && assigns.invoice.buyer_display_name_label
     assigns = assign(assigns, :buyer_name, buyer_name)
@@ -1200,17 +1216,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     ~H"""
     <div class="flex flex-col gap-4">
       <div class="flex flex-row gap-4 text-sm/snug text-grey-600">
-        <h2>
-          {gettext("Invoice wizard")} |
-          <span class="text-grey-700">
-            <%= case @step do %>
-              <% _step when is_integer(@step) -> %>
-                {gettext("Step %{step}.", step: @step)}
-              <% _step when is_binary(@step) -> %>
-                {@step}
-            <% end %>
-          </span>
-        </h2>
+        <div class="flex flex-row gap-1">
+          <h2>
+            {gettext("Invoice wizard")} |
+            <span class="text-grey-700">
+              <%= case @step do %>
+                <% _step when is_integer(@step) -> %>
+                  {gettext("Step %{step}.", step: @step)}
+                <% _step when is_binary(@step) -> %>
+                  {@step}
+              <% end %>
+            </span>
+          </h2>
+          <h1 :if={@title_in_breadcrumb} class="text-grey-700">{@title}</h1>
+        </div>
         <%= if @buyer_name do %>
           <p class="ml-auto">
             {gettext("Counterparty")} <span class="text-grey-700">{@buyer_name}</span>
@@ -1233,7 +1252,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           </p>
         <% end %>
       </div>
-      <h1 class="text-2xl/tight font-medium">
+      <h1 :if={not @title_in_breadcrumb} class="text-2xl/tight font-medium">
         {@title}
       </h1>
     </div>

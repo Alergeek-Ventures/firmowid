@@ -9,27 +9,20 @@
     class="absolute top-[-2.5px] -left-[calc(68px+1.5rem)]"
   />
 
+  <%!-- The end padding leaves room for the remove buttons, which hang outside the content. --%>
   <.form
     for={@items_form}
     phx-change="validate_items"
     phx-submit="submit_items"
     id="invoice-form"
-    class={[
-      "grid gap-x-2",
-      if(@current_org.is_vat_payer,
-        do: "grid-cols-[min-content_1fr_repeat(7,min-content)]",
-        else: "grid-cols-[min-content_1fr_repeat(6,min-content)]"
-      )
-    ]}
+    class="flex flex-col ps-9 pe-8"
   >
-    <div class={[
-      "mb-8",
-      if(@current_org.is_vat_payer, do: "col-start-2 col-end-9", else: "col-start-2 col-end-8")
-    ]}>
+    <div class="mb-12">
       <.render_header
         invoice={@invoice}
         step={@step_number}
         title={gettext("Goods and services sold")}
+        title_in_breadcrumb
       />
     </div>
 
@@ -41,15 +34,59 @@
       gross_item_price_inputs={@gross_item_price_inputs}
       focused_item_price_input_index={@focused_item_price_input_index}
       show_vat={@current_org.is_vat_payer}
-    />
+    >
+      <:rubric label={gettext("Invoice type")} id="invoice-kind-label">
+        <% kind = @items_form[:ksef_invoice_kind] %>
+        <div class="flex flex-col gap-3">
+          <div
+            role="radiogroup"
+            aria-labelledby="invoice-kind-label"
+            aria-describedby={if to_string(kind.value) == "advance", do: "invoice-kind-hint"}
+            class="flex flex-row flex-wrap items-baseline gap-x-8 gap-y-2"
+          >
+            <label
+              :for={
+                {value, label} <- [
+                  {"vat",
+                   if(@current_org.is_vat_payer,
+                     do: gettext("VAT invoice"),
+                     else: gettext("Invoice")
+                   )},
+                  {"advance", gettext("Advance invoice")}
+                ]
+              }
+              class="cursor-pointer"
+            >
+              <input
+                type="radio"
+                name={kind.name}
+                id={"#{kind.id}-#{value}"}
+                value={value}
+                checked={to_string(kind.value) == value}
+                class="peer sr-only"
+              />
+              <span class="inline-block border-b-2 border-transparent pb-1 text-2xl/tight font-medium text-grey-500 transition-colors duration-150 ease-out peer-checked:border-grey-900 peer-checked:text-black peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-(--focus-ring) peer-active:text-grey-900 hover:text-grey-800 peer-checked:hover:text-black">
+                {label}
+              </span>
+            </label>
+          </div>
+          <p
+            :if={to_string(kind.value) == "advance"}
+            id="invoice-kind-hint"
+            class="text-sm/snug text-grey-600"
+          >
+            {gettext(
+              "Paid in advance: in the next step you enter the date the payment was received, with no due date."
+            )}
+          </p>
+        </div>
+      </:rubric>
+    </FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems.invoice_items>
 
     <.button
       type="submit"
       phx-disable-with={gettext("Processing...")}
-      class={[
-        "mt-20 ml-auto h-11 w-full max-w-44",
-        if(@current_org.is_vat_payer, do: "col-start-1 col-end-9", else: "col-start-1 col-end-8")
-      ]}
+      class="mt-12 h-11 w-full max-w-44 self-end"
       variant="primary"
       accent="teal"
       disabled={not @items_form.source.valid?}

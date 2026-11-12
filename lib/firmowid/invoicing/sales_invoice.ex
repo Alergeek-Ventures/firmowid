@@ -63,9 +63,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Finances
   alias Firmowid.Invoicing, as: InvoicingDomain
   alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
+  alias Firmowid.Invoicing.Calculations.TaxIdType
   alias Firmowid.Invoicing.Changes
   alias Firmowid.Invoicing.Counterparty
-  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Invoicing.SalesInvoice.Numbering
@@ -85,7 +85,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   require Firmowid.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
   require Resource
 
-  @eu_countries CountryCodes.eu_countries_with_aliases()
   # A draft is the complete invoice except for its number; issuance dates it today.
   @draft_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
                   [:sales_invoice_items, :invoice_number, :issue_date, :correction_reason]
@@ -1459,33 +1458,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       constraints one_of: [:pending, :matched, :skipped]
     end
 
-    # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
-    # WizardState, and Counterparty (as :tax_id_type) because Ash expr()
-    # calculations run in the DB and cannot call Elixir functions.
-    # Runtime equivalent: CountryCodes.tax_id_type/3
-    calculate :buyer_id_type,
-              :atom,
-              expr(
-                cond do
-                  not is_nil(buyer_pesel) and buyer_pesel != "" ->
-                    :no_id
-
-                  buyer_type == :individual and buyer_country == "PL" ->
-                    :no_id
-
-                  buyer_country == "PL" ->
-                    :nip
-
-                  buyer_country in ^@eu_countries ->
-                    :eu_vat
-
-                  buyer_country == "US" ->
-                    :optional_id
-
-                  true ->
-                    :other_id
-                end
-              ) do
+    calculate :buyer_id_type, :atom, TaxIdType do
       description "Tax ID type for the buyer based on country, PESEL, and buyer type."
     end
 
