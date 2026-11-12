@@ -65,6 +65,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # month shows a window of a few months and widens it as either end comes into view.
   @window_months 3
 
+  # Files of one upload change state in bursts, each change asking for the whole
+  # page again; long enough to gather a burst, short enough to feel immediate.
+  @gather_ms 500
+
   @impl true
   def mount(_params, _session, socket) do
     if can_view_invoicing?(socket.assigns.current_user) do
@@ -141,6 +145,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:search_query, "")
       |> assign(:search_results, [])
       |> assign(:transactions_debounce_timer, nil)
+      |> assign(:refetch_gathering?, false)
 
     {:ok, socket}
   end
@@ -546,6 +551,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  def handle_info(:gathered_refetch, socket) do
+    {:noreply, socket |> assign(:refetch_gathering?, false) |> refetch_invoicing_entries()}
+  end
+
   # Blob created — file is being processed, refresh list
   @impl true
   def handle_info(
@@ -554,7 +563,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         },
         socket
       ) do
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, gather_refetch(socket)}
   end
 
   # Blob updated — processing state transitions
@@ -573,7 +582,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       BlobProcessingToasts.show_failure_toast(blob)
     end
 
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, gather_refetch(socket)}
   end
 
   # Blob destroyed — processing failed
@@ -592,7 +601,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       ) do
     LiveToast.send_toast(:error, notification.data.original_filename, title: gettext("Failed to upload the file"))
 
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, gather_refetch(socket)}
   end
 
   # Blob destroyed — invalid document uploaded
@@ -629,7 +638,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         },
         socket
       ) do
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, gather_refetch(socket)}
   end
 
   # Blobs of other targets (attachments, employment contracts) share the topics
@@ -643,7 +652,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         %Broadcast{payload: %Notification{resource: CostInvoice, action: %{type: :create}} = notification},
         socket
       ) do
-    socket = refetch_invoicing_entries(socket)
+    socket = gather_refetch(socket)
     cost_invoice = notification.data
     cost_invoice_path = Navigation.cost_invoice_show_path(cost_invoice)
 
@@ -675,7 +684,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         %Broadcast{payload: %Notification{resource: CostInvoice, action: %{name: :connect_transactions}, data: ci}},
         socket
       ) do
-    socket = refetch_invoicing_entries(socket)
+    socket = gather_refetch(socket)
     cost_invoice = ci
 
     LiveToast.send_toast(
@@ -726,7 +735,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_info({:ksef_invoice_status, _payload}, socket) do
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, gather_refetch(socket)}
   end
 
   def handle_info(%Broadcast{payload: %Notification{resource: BankAccount}}, socket) do
@@ -893,6 +902,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         can_write: true
       }
     end
+  end
+
+  # Reloads once, shortly after the first change of a burst.
+  defp gather_refetch(%{assigns: %{refetch_gathering?: true}} = socket), do: socket
+
+  defp gather_refetch(socket) do
+    Process.send_after(self(), :gathered_refetch, @gather_ms)
+    assign(socket, :refetch_gathering?, true)
   end
 
   defp refetch_invoicing_entries(socket) do

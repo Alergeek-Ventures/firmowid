@@ -609,7 +609,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       upload_invoice(view, "upload-success.png")
       assert_cost_invoice_created(user)
 
-      rendered = render(view)
+      rendered = await_rendered(view, "Zakup testowy")
 
       assert rendered =~ "Faktura załadowana"
       assert rendered =~ "Upload Supplier Sp. z o.o."
@@ -930,6 +930,22 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       %{date_from: ~D[2026-04-01], date_to: ~D[2026-04-30], date_field: :issue_date},
       scope: scope_for(user)
     )
+  end
+
+  # The page reloads on its own timer, shortly after the first event of an upload.
+  defp await_rendered(view, text, attempts \\ 60)
+
+  defp await_rendered(_view, text, 0), do: flunk("the page never showed #{inspect(text)}")
+
+  defp await_rendered(view, text, attempts) do
+    rendered = render(view)
+
+    if rendered =~ text do
+      rendered
+    else
+      Process.sleep(50)
+      await_rendered(view, text, attempts - 1)
+    end
   end
 
   defp subscribe_to_upload_notifications(user) do
