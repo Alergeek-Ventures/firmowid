@@ -4,7 +4,7 @@ defmodule Firmowid.Timetracker.Project do
 
   Attribute multitenancy via `organization_id`. Write actions include `create`
   (with automatic TagDefinition creation), `update` (with tag name sync),
-  `archive`, `unarchive`, and `destroy` (with tag cleanup).
+  `archive`, `unarchive`, and `destroy` (refused while sessions exist; with tag cleanup).
 
   Read actions: `:get` (single project by ID, loads members + counterparty) and
   `:list` (flexible listing with optional filters — archive, activity period,
@@ -24,6 +24,7 @@ defmodule Firmowid.Timetracker.Project do
   alias Firmowid.Timetracker.Changes.SyncProjectTagName
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
+  alias Firmowid.Timetracker.Validations.NoSessions
 
   require Resource
 
@@ -191,9 +192,10 @@ defmodule Firmowid.Timetracker.Project do
     end
 
     destroy :destroy do
-      description "Delete a project and clean up its orphaned tag definition."
+      description "Delete a project without recorded time and clean up its orphaned tag definition."
       primary? true
       require_atomic? false
+      validate NoSessions
       change CleanupProjectTag
     end
   end

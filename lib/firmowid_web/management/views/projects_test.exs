@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Management.Views.ProjectsTest do
   @moduledoc false
   use FirmowidWeb.ConnCase, async: true
+  use Gettext, backend: Firmowid.Gettext
 
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
@@ -100,6 +101,35 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
     {:ok, _active_lv, active_html} = live(conn, ~p"/zarzadzanie/projekty")
 
     assert active_html =~ "Projekt po edycji"
+  end
+
+  test "admin deletes an archived project only when it has no recorded time", %{conn: conn} do
+    admin = admin_fixture()
+    org_id = admin.member.organization_id
+    conn = log_in_user(conn, admin)
+
+    with_time = project_fixture(%{organization_id: org_id, name: "With Time"})
+    session_fixture(%{organization_id: org_id, project_id: with_time.id, user_id: admin.id})
+    {:ok, _} = Project.archive(with_time, tenant: org_id, actor: admin)
+
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/projekty/#{with_time.id}")
+    lv |> element("button[phx-click='delete_project']") |> render_click()
+
+    assert render(lv) =~ gettext("A project with recorded time cannot be deleted.")
+    assert get_project_by_name!(admin, "With Time")
+
+    without_time = project_fixture(%{organization_id: org_id, name: "Without Time"})
+    {:ok, _} = Project.archive(without_time, tenant: org_id, actor: admin)
+
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/projekty/#{without_time.id}")
+    lv |> element("button[phx-click='delete_project']") |> render_click()
+
+    assert_redirect(lv)
+
+    refute Enum.any?(
+             Timetracker.list_projects!(%{}, scope: current_scope(admin)),
+             &(&1.name == "Without Time")
+           )
   end
 
   defp current_scope(admin) do

@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
@@ -114,12 +115,16 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
     project = socket.assigns.project
 
-    :ok = Project.destroy(project, scope: scope)
+    case Project.destroy(project, scope: scope) do
+      :ok ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("The project has been deleted."))
+         |> push_navigate(to: Navigation.projects_path(:index, %{miesiac: socket.assigns.selected_date}))}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, gettext("The project has been deleted."))
-     |> push_navigate(to: Navigation.projects_path(:index, %{miesiac: socket.assigns.selected_date}))}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _]}} ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
+    end
   end
 
   # ── Archived project: all-time totals ─────────────────────────────────
