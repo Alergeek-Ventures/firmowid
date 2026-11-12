@@ -217,10 +217,6 @@ defmodule Firmowid.Finances.BankAccount do
       authorize_if always()
     end
 
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
-    end
-
     # invoice_matcher, cost_invoice_processor, billing_snapshotter and
     # analysis_classifier: read-only access
     bypass {SystemActorRole,
@@ -254,9 +250,10 @@ defmodule Firmowid.Finances.BankAccount do
       authorize_if always()
     end
 
-    # User-facing writes: admin only. Internal upserts run under the AshOban
-    # interaction bypass above.
-    policy action([:create_manual, :update, :clear_default, :destroy]) do
+    # User-facing writes: admin only. An admin switches accounts off when
+    # choosing what stays within the plan; only the plan limits actor turns
+    # them back on.
+    policy action([:create_manual, :update, :clear_default, :destroy, :suspend_by_plan]) do
       authorize_if {ActorRole, role: :admin}
     end
 

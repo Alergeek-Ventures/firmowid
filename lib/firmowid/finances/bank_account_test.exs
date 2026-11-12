@@ -5,6 +5,7 @@ defmodule Firmowid.Finances.BankAccountTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Changes.Required
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
@@ -110,6 +111,43 @@ defmodule Firmowid.Finances.BankAccountTest do
                Finances.create_manual_bank_account(%{iban: "", currency: "PLN"}, scope: scope)
 
       assert Enum.any?(errors, &match?(%Required{field: :iban}, &1))
+    end
+  end
+
+  describe "organization admin" do
+    test "cannot read other organizations' accounts or run the sync and plan actions" do
+      admin = admin_fixture()
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
+      other_organization_id = admin_fixture().member.organization_id
+
+      Ash.Seed.seed!(
+        BankAccount,
+        %{iban: "PL61109010140000071219812874", currency: "PLN", gocardless_id: "other-account"},
+        tenant: other_organization_id
+      )
+
+      account =
+        Ash.Seed.seed!(
+          BankAccount,
+          %{
+            iban: "PL27114020040000300201355387",
+            currency: "PLN",
+            gocardless_id: "own-account",
+            suspended_by_plan_at: DateTime.utc_now()
+          },
+          tenant: scope.tenant
+        )
+
+      assert {:ok, []} = Finances.list_bank_accounts_for_sync(actor: admin)
+
+      assert {:error, %Forbidden{}} =
+               Finances.sync_bank_account(%{iban: "PL1", currency: "PLN"}, scope: scope)
+
+      assert {:error, %Forbidden{}} =
+               Finances.restore_bank_account_from_plan(account, scope: scope)
+
+      assert {:error, %Forbidden{}} = BankAccount.sync_from_gocardless(account, scope: scope)
+      assert {:error, %Forbidden{}} = BankAccount.mark_sync_failed(account, scope: scope)
     end
   end
 

@@ -166,10 +166,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
              )
 
       assert {:ok, _} =
-               BankAccount.sync_from_gocardless(account,
-                 actor: user,
-                 tenant: user.member.organization_id
-               )
+               BankAccount.sync_from_gocardless(account, ash_oban_opts(user))
 
       refute has_element?(view, "#bank-connection-alert-#{account.id}")
 
@@ -198,10 +195,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute has_element?(view, "#bank-connection-alert-#{other_account.id}")
 
       assert {:ok, _} =
-               BankAccount.mark_sync_failed(account,
-                 actor: user,
-                 tenant: user.member.organization_id
-               )
+               BankAccount.mark_sync_failed(account, ash_oban_opts(user))
 
       renewed =
         Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.member.organization_id)
@@ -213,7 +207,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                  gocardless_id: "synthetic-renewed-account",
                  requisition_id: renewed.id
                })
-               |> Finances.sync_bank_account(actor: user, tenant: user.member.organization_id)
+               |> Finances.sync_bank_account(bank_sync_opts(user))
 
       assert reconnected.id == account.id
 
@@ -227,10 +221,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
              )
 
       assert {:ok, _} =
-               BankAccount.sync_from_gocardless(reconnected,
-                 actor: user,
-                 tenant: user.member.organization_id
-               )
+               BankAccount.sync_from_gocardless(reconnected, ash_oban_opts(user))
 
       refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
       refute has_element?(renewed_view, "#dashboard-attention .bg-brick-200")
@@ -763,7 +754,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     end
   end
 
-  # Requisition transitions run as the bank sync system actor of the organization.
+  # The options AshOban runs trigger actions with.
+  defp ash_oban_opts(user) do
+    [actor: user, tenant: user.member.organization_id, context: %{private: %{ash_oban?: true}}]
+  end
+
+  # Requisition transitions and synced accounts run as the bank sync system actor.
   defp bank_sync_opts(user) do
     organization_id = user.member.organization_id
     [actor: %SystemActor{org_id: organization_id, role: :bank_sync}, tenant: organization_id]

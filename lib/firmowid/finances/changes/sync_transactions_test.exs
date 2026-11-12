@@ -55,7 +55,16 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
     actor = %SystemActor{org_id: org_id, role: :bank_sync}
 
-    {:ok, org_id: org_id, user: user, actor: actor, bank_account_1: bank_account_1, bank_account_2: bank_account_2}
+    # The options AshOban runs the sync trigger with.
+    ash_oban = [actor: user, tenant: org_id, context: %{private: %{ash_oban?: true}}]
+
+    {:ok,
+     org_id: org_id,
+     user: user,
+     actor: actor,
+     ash_oban: ash_oban,
+     bank_account_1: bank_account_1,
+     bank_account_2: bank_account_2}
   end
 
   describe "upsert_from_sync identity" do
@@ -146,11 +155,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted = Finances.list_transactions!(%{}, actor: ctx.actor, tenant: ctx.org_id)
       payments = Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_1.id))
@@ -182,11 +188,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       dates =
         %{}
@@ -222,11 +225,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
@@ -254,11 +254,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
@@ -282,11 +279,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted_ids =
         %{}
@@ -319,7 +313,7 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
         end
 
       ids =
-        [actor: ctx.user, tenant: ctx.org_id]
+        ctx.ash_oban
         |> Finances.list_bank_accounts_for_sync!()
         |> Enum.map(& &1.id)
 
@@ -349,11 +343,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:error, error} =
                bank_account
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       assert {:cancel, :bank_connection_expired} = AshOban.check_for_oban_return(error)
     end
@@ -369,7 +360,7 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
       seed_successful_sync_event(bank_account, ctx.org_id, last_success_at)
 
       assert {:ok, _} =
-               BankAccount.mark_sync_failed(bank_account, actor: ctx.user, tenant: ctx.org_id)
+               BankAccount.mark_sync_failed(bank_account, ctx.ash_oban)
 
       stub_expired_eua()
 
@@ -432,7 +423,7 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
                  :gocardless_id
                ])
                |> Map.put(:requisition_id, reconnected.id)
-               |> Finances.sync_bank_account(actor: ctx.user, tenant: ctx.org_id)
+               |> Finances.sync_bank_account(actor: ctx.actor, tenant: ctx.org_id)
 
       stub_booked_transactions([
         api_transaction("synthetic-missed", Date.add(Date.utc_today(), -30)),
@@ -461,7 +452,7 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
       stub_expired_eua()
 
       assert {:error, error} =
-               BankAccount.sync_from_gocardless(bank_account, actor: ctx.user, tenant: ctx.org_id)
+               BankAccount.sync_from_gocardless(bank_account, ctx.ash_oban)
 
       assert AshOban.check_for_oban_return(error) == nil
       assert Repo.aggregate(from(e in Event, where: e.record_id == ^bank_account.id), :count) == 0
@@ -477,10 +468,7 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, {:error, error}} =
                Repo.transaction(fn ->
-                 BankAccount.sync_from_gocardless(ctx.bank_account_1,
-                   actor: ctx.user,
-                   tenant: ctx.org_id
-                 )
+                 BankAccount.sync_from_gocardless(ctx.bank_account_1, ctx.ash_oban)
                end)
 
       assert Exception.message(error) =~ "Bank sync must run outside an existing transaction"
@@ -497,11 +485,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:error, error} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       assert {:cancel, :bank_connection_expired} = AshOban.check_for_oban_return(error)
 
@@ -552,11 +537,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
@@ -609,11 +591,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
@@ -662,11 +641,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
@@ -726,11 +702,8 @@ defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
 
       assert {:ok, _bank_account} =
                ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{}, ctx.ash_oban)
+               |> Ash.update(ctx.ash_oban)
 
       persisted =
         %{}
