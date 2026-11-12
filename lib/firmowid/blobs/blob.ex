@@ -8,7 +8,7 @@ defmodule Firmowid.Blobs.Blob do
   use Ash.Resource,
     domain: Firmowid.Blobs,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban],
+    extensions: [AshOban, AshStateMachine],
     notifiers: [Ash.Notifier.PubSub],
     fragments: [Firmowid.Blobs.Blob.Persistence, Firmowid.Blobs.Blob.Policies]
 
@@ -17,7 +17,6 @@ defmodule Firmowid.Blobs.Blob do
   alias Firmowid.Blobs.Changes.DeleteFromS3
   alias Firmowid.Blobs.Changes.ProcessDocumentBlob
   alias Firmowid.Blobs.Changes.UploadToS3
-  alias Firmowid.Blobs.Changes.ValidateProcessingStateTransition
   alias Firmowid.Core.Member
   alias Firmowid.Core.Organization
   alias Firmowid.Delegations.Delegation
@@ -63,6 +62,23 @@ defmodule Firmowid.Blobs.Blob do
         worker_module_name Firmowid.Blobs.Blob.Worker.ProcessDocumentBlob
         scheduler_module_name Firmowid.Blobs.Blob.Scheduler.ProcessDocumentBlob
       end
+    end
+  end
+
+  state_machine do
+    state_attribute :processing_state
+    initial_states [:pending, :succeeded]
+    default_initial_state :succeeded
+
+    transitions do
+      transition :mark_processing, from: [:pending, :processing], to: :processing
+
+      transition :mark_processing_pending,
+        from: [:pending, :processing, :succeeded, :failed],
+        to: :pending
+
+      transition :mark_processing_succeeded, from: [:processing, :succeeded], to: :succeeded
+      transition :mark_processing_failed, from: [:processing, :failed], to: :failed
     end
   end
 
@@ -150,16 +166,14 @@ defmodule Firmowid.Blobs.Blob do
       primary? true
       require_atomic? false
       accept []
-      change {ValidateProcessingStateTransition, to: :processing}
-      change set_attribute(:processing_state, :processing)
+      change transition_state(:processing)
     end
 
     update :mark_processing_pending do
       description "Mark a blob as pending processing."
       require_atomic? false
       accept []
-      change {ValidateProcessingStateTransition, to: :pending}
-      change set_attribute(:processing_state, :pending)
+      change transition_state(:pending)
       change run_oban_trigger(:process_document_blobs)
     end
 
@@ -167,8 +181,7 @@ defmodule Firmowid.Blobs.Blob do
       description "Mark a blob as processed, retaining employee document ownership."
       require_atomic? false
       accept []
-      change {ValidateProcessingStateTransition, to: :succeeded}
-      change set_attribute(:processing_state, :succeeded)
+      change transition_state(:succeeded)
 
       change fn changeset, _context ->
         metadata =
@@ -189,8 +202,7 @@ defmodule Firmowid.Blobs.Blob do
       argument :error_code, :string
       argument :error_message, :string
       argument :cost_invoice_id, :uuid_v7
-      change {ValidateProcessingStateTransition, to: :failed}
-      change set_attribute(:processing_state, :failed)
+      change transition_state(:failed)
 
       change fn changeset, _context ->
         error = Ash.Changeset.get_argument(changeset, :error)
