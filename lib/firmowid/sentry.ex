@@ -598,21 +598,9 @@ defmodule Firmowid.Sentry do
 
   defp live_view_captured?(_event), do: false
 
-  defp scrub_log_attributes(attributes) do
-    Enum.reduce(@log_keys, %{}, fn key, acc ->
-      case Map.fetch(attributes, key) do
-        {:ok, value} when key == :mfa ->
-          Map.put(acc, key, value)
-
-        {:ok, value}
-        when is_atom(value) or is_binary(value) or is_number(value) or is_boolean(value) ->
-          Map.put(acc, key, value)
-
-        _ ->
-          acc
-      end
-    end)
-  end
+  # `mfa` is a tuple; before_send_log has already checked it names an application function.
+  defp scrub_log_attributes(attributes),
+    do: attributes |> scalar_map(@log_keys) |> Map.merge(Map.take(attributes, [:mfa]))
 
   defp application_log_mfa?(%{mfa: {module, function, arity}})
        when is_atom(module) and is_atom(function) and is_integer(arity) and arity >= 0, do: application_module?(module)
