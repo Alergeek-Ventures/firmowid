@@ -268,7 +268,19 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       data-tippy-truncate-selector="[data-label]"
     >
       <Lucideicons.render! name={@destination.icon} class="size-4.5 shrink-0" aria-hidden="true" />
-      <span data-label class={label_styles()}>{@destination.label}</span>
+      <%!-- The badge sits inside the label, so it follows the name and fades with it when collapsed. --%>
+      <span data-label class={label_styles()}>{@destination.label}
+      <span
+        :if={@destination[:beta?]}
+        id={"app-sidebar-beta-#{@destination.id}"}
+        class="ml-1.5 inline-block rounded bg-white/20 px-1.5 align-top text-xs/5"
+        phx-hook="Tippy"
+        data-tippy-content={
+          gettext(
+            "This feature is still in progress! Your feedback will help us make it even better."
+          )
+        }
+      >BETA</span></span>
     </.link>
     """
   end

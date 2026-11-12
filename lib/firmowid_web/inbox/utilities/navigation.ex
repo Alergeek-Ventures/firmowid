@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
 
   @type layer :: :main | :company | :me
   @type destination :: %{
+          optional(:beta?) => true,
           id: atom(),
           layer: layer(),
           label: String.t(),
@@ -147,7 +148,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         label: pgettext("main navigation", "Analysis"),
         icon: "chart-column",
         path: ~p"/analiza",
-        roles: [:admin]
+        roles: [:admin],
+        beta?: true
       },
       %{
         id: :company_settings,

@@ -11996,6 +11996,7 @@ msgstr ""
 msgid "This email is already taken."
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/sidebar.ex
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "This feature is still in progress! Your feedback will help us make it even better."
