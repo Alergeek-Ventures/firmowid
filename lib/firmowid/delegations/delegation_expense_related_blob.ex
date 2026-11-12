@@ -7,7 +7,6 @@ defmodule Firmowid.Delegations.DelegationExpenseRelatedBlob do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
 
@@ -41,10 +40,6 @@ defmodule Firmowid.Delegations.DelegationExpenseRelatedBlob do
   policies do
     bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
       authorize_if expr(blob_id == ^actor(:blob_id))
-    end
-
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
     end
 
     policy action_type(:read) do

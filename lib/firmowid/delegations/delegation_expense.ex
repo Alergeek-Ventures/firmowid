@@ -10,7 +10,6 @@ defmodule Firmowid.Delegations.DelegationExpense do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs.Blob
-  alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Delegations.Changes.UpdateDetectedDelegationDates
@@ -164,10 +163,6 @@ defmodule Firmowid.Delegations.DelegationExpense do
       authorize_if expr(blob_id == ^actor(:blob_id) or statement_blob_id == ^actor(:blob_id))
     end
 
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
-    end
-
     bypass {SystemActorRole, roles: [:leave_notifier]} do
       authorize_if action_type(:read)
     end
@@ -176,22 +171,7 @@ defmodule Firmowid.Delegations.DelegationExpense do
       authorize_if expr(delegation.member_id == ^actor([:member, :id]))
     end
 
-    policy action([
-             :create,
-             :update,
-             :add_related_document,
-             :add_statement_document,
-             :remove_statement_document,
-             :remove_related_document,
-             :destroy
-           ]) do
-      authorize_if expr(
-                     delegation.status == :in_progress and
-                       delegation.member_id == ^actor([:member, :id])
-                   )
-    end
-
-    policy action(:complete) do
+    policy action_type([:create, :update, :destroy]) do
       authorize_if expr(
                      delegation.status == :in_progress and
                        delegation.member_id == ^actor([:member, :id])

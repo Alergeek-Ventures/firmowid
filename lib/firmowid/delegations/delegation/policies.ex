@@ -2,7 +2,6 @@ defmodule Firmowid.Delegations.Delegation.Policies do
   @moduledoc "Authorization policies for business trip delegations."
   use Spark.Dsl.Fragment, of: Ash.Resource, authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Delegations.Signals
 
@@ -12,10 +11,6 @@ defmodule Firmowid.Delegations.Delegation.Policies do
                      signed_command_blob_id == ^actor(:blob_id) or
                        signed_settlement_blob_id == ^actor(:blob_id)
                    )
-    end
-
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
     end
 
     bypass {SystemActorRole, roles: [:leave_notifier]} do
@@ -50,32 +45,23 @@ defmodule Firmowid.Delegations.Delegation.Policies do
       authorize_if expr(status == :pending and member_id == ^actor([:member, :id]))
     end
 
-    policy action(:approve) do
-      forbid_if always()
-    end
-
-    policy action(:prepare_command) do
-      forbid_if always()
-    end
-
-    policy action([:prepare_settlement, :save_draft]) do
+    policy action([:prepare_settlement, :save_draft, :detect_dates]) do
       authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
     end
 
-    policy action(:edit_settlement) do
+    policy action([:edit_settlement, :submit_for_review]) do
       authorize_if expr(status == :awaiting_signature and member_id == ^actor([:member, :id]))
     end
 
-    policy action(:submit_for_review) do
-      authorize_if expr(status == :awaiting_signature and member_id == ^actor([:member, :id]))
-    end
-
-    policy action([:accept_settlement, :return_settlement]) do
+    policy action([
+             :approve,
+             :prepare_command,
+             :update_billing_month,
+             :accept_settlement,
+             :return_settlement
+           ]) do
+      description "Only admins, through the Delegations domain bypass."
       forbid_if always()
-    end
-
-    policy action(:detect_dates) do
-      authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
     end
   end
 end
