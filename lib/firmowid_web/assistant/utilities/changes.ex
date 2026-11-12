@@ -217,7 +217,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     with {:ok, invoice} <- invoice_input(input),
          {:ok, draft} <-
            result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
-      {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
+      # Skipping the draft in matching has no row on the card, so it cannot be approved.
+      if draft.skip_invoicing,
+        do: :error,
+        else: {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
     end
   end
 
@@ -434,6 +437,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Address"), & &1.buyer_address},
       {pgettext("sales invoice creator", "Country"), & &1.buyer_country},
       {gettext("Correspondence address"), & &1.buyer_mail_address},
+      {gettext("Different correspondence address"), &flag(&1.buyer_is_different_mail_address)},
       {gettext("Email"), & &1.buyer_email},
       {gettext("Phone"), & &1.buyer_phone},
       {gettext("Description"), & &1.buyer_description},
@@ -454,13 +458,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     end)
     |> Enum.reject(fn {_label, before, later} -> before == later end)
     |> Enum.map(fn {label, before, later} -> change(label, before, later) end)
-    |> Kernel.++(
-      if same_items?(saved, revised),
-        do: [],
-        else: [
-          change(gettext("Items"), saved && items(saved), items(revised)),
+    |> Kernel.++(item_changes(saved, revised))
+  end
+
+  defp item_changes(saved, revised) do
+    Enum.filter(
+      [
+        not same_items?(saved, revised) && change(gettext("Items"), saved && items(saved), items(revised)),
+        (is_nil(saved) or vat_rates(saved) != vat_rates(revised)) &&
           change(gettext("VAT"), saved && vat_rates(saved), vat_rates(revised))
-        ]
+      ],
+      & &1
     )
   end
 
