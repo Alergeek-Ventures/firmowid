@@ -117,7 +117,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         socket
       end
 
-    socket = assign(socket, :projects_column, nil)
+    socket =
+      socket
+      |> assign(:page_title, "Fakturowanie")
+      |> assign(:projects_column, nil)
 
     active_months =
       get_active_months(socket.assigns.ash_scope) ++
@@ -304,7 +307,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             suggestions={@dashboard_suggestions}
             suggestions_count={@dashboard_suggestions_count}
             month={@params.month}
-            return_to={build_invoicing_url(@params)}
+            return_to={Navigation.invoicing_index_path(@params)}
           />
         <% @is_month_closed and @params.filter == :unmatched -> %>
           <.live_component
@@ -318,7 +321,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             invoicing_entries={window_entries(@invoicing_entries, @month_window)}
             load_newer={newer_months?(@month_window) && "load-newer-months"}
             load_more={older_months?(@invoicing_entries, @month_window) && "load-older-months"}
-            return_to={build_invoicing_url(@params)}
+            return_to={Navigation.invoicing_index_path(@params)}
             can_write_invoicing={can_write_invoicing?(@current_user)}
             projects={@projects_column}
           />
@@ -349,11 +352,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    parsed = parse_url_params(params)
+    parsed = Navigation.parse_invoicing_index_params(params)
 
     socket =
       socket
-      |> apply_action(socket.assigns.live_action, params)
       |> assign(:params, parsed)
       |> then(&assign(&1, :all_months?, all_months_list?(&1.assigns)))
       |> assign(:month_window, {0, @window_months})
@@ -363,13 +365,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     {:noreply, socket}
   end
-
-  defp parse_url_params(params) do
-    Navigation.parse_invoicing_index_params(params)
-  end
-
-  defp parse_filter_value(filter_string), do: QueryCodec.parse_filter(filter_string)
-  defp parse_subfilter_value(subfilter_string), do: QueryCodec.parse_subfilter(subfilter_string)
 
   @impl true
   def handle_event("skipped-ksef-sales-invoices-viewed", _params, socket) do
@@ -431,7 +426,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("change-filter", %{"filter" => filter}, socket) do
-    case parse_filter_value(filter) do
+    case QueryCodec.parse_filter(filter) do
       nil ->
         {:noreply, socket}
 
@@ -447,7 +442,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("change-subfilter", %{"subfilter" => subfilter}, socket) do
-    case parse_subfilter_value(subfilter) do
+    case QueryCodec.parse_subfilter(subfilter) do
       nil ->
         {:noreply, socket}
 
@@ -515,10 +510,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     path =
       case type do
         "cost" ->
-          Navigation.cost_invoice_show_path(id, build_invoicing_url(socket.assigns.params))
+          Navigation.cost_invoice_show_path(
+            id,
+            Navigation.invoicing_index_path(socket.assigns.params)
+          )
 
         "sales" ->
-          Navigation.sales_invoice_show_path(id, build_invoicing_url(socket.assigns.params))
+          Navigation.sales_invoice_show_path(
+            id,
+            Navigation.invoicing_index_path(socket.assigns.params)
+          )
       end
 
     {:noreply, push_navigate(socket, to: path)}
@@ -755,12 +756,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp update_params(socket, params) do
-    url = build_invoicing_url(params)
-    push_patch(socket, to: url)
-  end
-
-  defp build_invoicing_url(params) do
-    Navigation.invoicing_index_path(params)
+    push_patch(socket, to: Navigation.invoicing_index_path(params))
   end
 
   defp handle_progress(:file, _, socket) do
@@ -782,22 +778,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
-        handle_upload_result(
-          upload_cost_invoice(
-            path,
-            entry.client_type,
-            entry.client_name,
-            scope
-          ),
-          scope
-        )
+        path
+        |> Blobs.create_or_retry_cost_invoice_blob(entry.client_type, entry.client_name, scope: scope)
+        |> handle_upload_result()
 
         {:ok, nil}
       end)
     end
   end
 
-  defp handle_upload_result({:ok, {:existing_cost_invoice, cost_invoice}}, _scope) do
+  defp handle_upload_result({:ok, {:existing_cost_invoice, cost_invoice}}) do
     LiveToast.send_toast(
       :info,
       gettext("This invoice is already in the system"),
@@ -818,35 +808,35 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp handle_upload_result({:ok, :blob_already_processing}, _scope) do
+  defp handle_upload_result({:ok, :blob_already_processing}) do
     LiveToast.send_toast(:info, gettext("This file is already being processed"))
   end
 
-  defp handle_upload_result({:ok, :blob_reprocessing_started}, _scope) do
+  defp handle_upload_result({:ok, :blob_reprocessing_started}) do
     LiveToast.send_toast(:info, gettext("The file was added to the processing queue again"))
   end
 
-  defp handle_upload_result({:error, :blob_already_exists}, _scope) do
+  defp handle_upload_result({:error, :blob_already_exists}) do
     LiveToast.send_toast(:info, gettext("This invoice is already in the system"))
   end
 
-  defp handle_upload_result(_result, _scope), do: nil
-
-  defp upload_cost_invoice(path, content_type, original_filename, scope) do
-    Blobs.create_or_retry_cost_invoice_blob(path, content_type, original_filename, scope: scope)
-  end
+  defp handle_upload_result(_result), do: nil
 
   defp do_toggle_skip(socket, id, "transaction") do
     scope = socket.assigns.ash_scope
     tx = Finances.get_transaction!(id, scope: scope)
-    new_skip = !tx.skip_invoicing
 
     updated_transaction =
-      tx
-      |> Finances.set_transaction_skip_invoicing!(%{skip_invoicing: new_skip}, scope: scope)
-      |> Ash.load!(:reconciliation_status, scope: scope)
+      Finances.set_transaction_skip_invoicing!(tx, %{skip_invoicing: !tx.skip_invoicing},
+        load: [:reconciliation_status],
+        scope: scope
+      )
 
-    toggle_transaction_skip(socket, updated_transaction)
+    update_entry(
+      socket,
+      id,
+      Map.take(updated_transaction, [:skip_invoicing, :reconciliation_status])
+    )
   end
 
   defp do_toggle_skip(socket, id, "cost_invoice") do
@@ -854,7 +844,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     cost_invoice = Invoicing.get_cost_invoice!(id, scope: scope)
     new_skip = !cost_invoice.skip_invoicing
     Invoicing.toggle_cost_invoice_skip!(cost_invoice, scope: scope)
-    toggle_entry_skip(socket, id, new_skip)
+    update_entry(socket, id, %{skip_invoicing: new_skip})
   end
 
   defp do_toggle_skip(socket, id, "sales_invoice") do
@@ -862,57 +852,23 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     invoice = SalesInvoice.by_id!(id, scope: scope)
     new_skip = !invoice.skip_invoicing
     SalesInvoice.toggle_skip!(invoice, scope: scope)
-    toggle_entry_skip(socket, id, new_skip)
+    update_entry(socket, id, %{skip_invoicing: new_skip})
   end
 
-  defp toggle_transaction_skip(socket, %Transaction{id: id} = updated_transaction) do
-    status = Map.take(updated_transaction, [:skip_invoicing, :reconciliation_status])
+  # A row may also sit inside a group of one party's transactions.
+  defp update_entry(socket, id, changes) do
+    update = fn
+      %{id: ^id} = entry -> Map.merge(entry, changes)
+      other -> other
+    end
 
     entries =
       Enum.map(socket.assigns.invoicing_entries, fn
-        %Transaction{id: ^id} = tx ->
-          Map.merge(tx, status)
+        %TransactionGroup{} = group ->
+          %{group | transactions: Enum.map(group.transactions, update)}
 
-        %TransactionGroup{transactions: txns} = group ->
-          updated =
-            Enum.map(txns, fn
-              %Transaction{id: ^id} = tx ->
-                Map.merge(tx, status)
-
-              other ->
-                other
-            end)
-
-          %{group | transactions: updated}
-
-        other ->
-          other
-      end)
-
-    assign(socket, :invoicing_entries, entries)
-  end
-
-  # Generalized skip toggle for any entry with id and skip_invoicing fields
-  defp toggle_entry_skip(socket, id, new_skip) do
-    entries =
-      Enum.map(socket.assigns.invoicing_entries, fn
-        %{__struct__: _, id: ^id, skip_invoicing: _} = entry ->
-          Map.put(entry, :skip_invoicing, new_skip)
-
-        %TransactionGroup{transactions: txns} = group ->
-          updated =
-            Enum.map(txns, fn
-              %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
-                Map.put(tx, :skip_invoicing, new_skip)
-
-              other ->
-                other
-            end)
-
-          %{group | transactions: updated}
-
-        other ->
-          other
+        entry ->
+          update.(entry)
       end)
 
     assign(socket, :invoicing_entries, entries)
@@ -964,8 +920,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:projects_column, projects_column)
 
     # Pending entries for badge count (no subfilter - we want all unmatched)
-    # ── Dashboard data fetching ─────────────────────────────────────────
-
     pending_entries =
       fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
 
@@ -1072,13 +1026,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         scope: scope
       )
 
-    invoices = Enum.sort_by(cost_invoices ++ sales_invoices, &due_date_for_invoice/1, Date)
+    invoices = Enum.sort_by(cost_invoices ++ sales_invoices, & &1.effective_due_date, Date)
 
     %{entries: Enum.take(invoices, @dashboard_tile_limit), total_count: length(invoices)}
   end
-
-  defp due_date_for_invoice(%CostInvoice{effective_due_date: date}), do: date
-  defp due_date_for_invoice(%SalesInvoice{effective_due_date: date}), do: date
 
   defp fetch_unmatched_transactions(from, to, scope) do
     transactions =
@@ -1245,10 +1196,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     end)
   end
 
-  defp apply_action(socket, :index, _params) do
-    assign(socket, :page_title, "Fakturowanie")
-  end
-
   defp group_cost_transactions_by_party(entries) do
     # Separate transactions from other entries (invoices)
     {transactions, other_entries} =
@@ -1284,8 +1231,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Enum.map(cost_groups, fn {party, txns} ->
         build_transaction_group(:cost, party, txns)
       end)
-
-    # ── Entries — direct resource calls ─────────────────────────────────
 
     income_group_structs =
       Enum.map(income_groups, fn {party, txns} ->
@@ -1475,7 +1420,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp list_sales_invoices(from, to, extra_args, scope) do
-    # ── Active months — 3 Ash reads + Elixir dedup ─────────────────────
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
     Invoicing.list_sales_invoices!(args,
@@ -1516,7 +1460,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     sales_months =
       SalesInvoice
-      # ── Entry sorting for display ──────────────────────────────────────
       |> Ash.Query.select([:issue_date])
       |> then(&Invoicing.list_sales_invoices!(Keyword.put(scope_opts, :query, &1)))
       |> Enum.map(& &1.issue_date)
@@ -1539,7 +1482,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> Enum.sort(Date)
   end
 
-  @doc false
   defp order_entries_for_display(entries) do
     Enum.sort(entries, fn a, b ->
       cond do
@@ -1570,15 +1512,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp entry_date(%Transaction{booking_date: date}), do: date
   defp entry_date(%TransactionGroup{date: date}), do: date
 
-  defp entry_matched?(%SalesInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
-
-  defp entry_matched?(%CostInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
+  defp entry_matched?(%struct{} = inv) when struct in [SalesInvoice, CostInvoice],
+    do: inv.transactions != [] or inv.skip_invoicing
 
   defp entry_matched?(%Transaction{} = tx), do: tx.reconciliation_status in [:matched, :skipped]
 
   # Groups only contain unmatched transactions by design
   defp entry_matched?(%TransactionGroup{}), do: false
-  defp entry_matched?(_), do: false
 
   # Draft = no invoice number assigned (only SalesInvoice)
   defp entry_draft?(%SalesInvoice{invoice_number: num}), do: is_nil(num)
