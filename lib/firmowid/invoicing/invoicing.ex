@@ -14,6 +14,7 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.Numbering
   alias Firmowid.Invoicing.Services.RecentMatchedEntries
   alias Firmowid.Ksef
   alias Firmowid.Scope
@@ -886,7 +887,7 @@ defmodule Firmowid.Invoicing do
 
   Always includes the monthly `NN/MM/YYYY` and `NN/MM/YYYY/A`, the yearly
   `N/YYYY` and, when the organization name yields initials, the yearly
-  `INITIALS/N/YYYY` (see `SalesInvoice.organization_initials/1`), plus every
+  `INITIALS/N/YYYY` (see `Numbering.organization_initials/1`), plus every
   monthly series already used by the organization's invoices (such as `FK`).
   Yearly prefixes other than the current initials are not suggested, because a
   number like `ABC/10/2026` may equally be a monthly one. Computes suggestions
@@ -896,12 +897,12 @@ defmodule Firmowid.Invoicing do
           {:monthly | :yearly, String.t() | nil} => String.t()
         }
   def get_next_numbers_for_series(date, opts, extra_opts \\ []) do
-    all_numbers = SalesInvoice.read_all_invoice_numbers(opts)
+    all_numbers = Numbering.read_all_invoice_numbers(opts)
 
     available_numbers =
       case extra_opts[:omit_invoice_id] do
         nil -> all_numbers
-        id -> SalesInvoice.read_all_invoice_numbers(opts, id)
+        id -> Numbering.read_all_invoice_numbers(opts, id)
       end
 
     counters = current_number_counters(available_numbers, date)
@@ -909,14 +910,14 @@ defmodule Firmowid.Invoicing do
 
     existing_monthly_sequences =
       all_numbers
-      |> Enum.map(&SalesInvoice.parse_invoice_number/1)
+      |> Enum.map(&Numbering.parse_invoice_number/1)
       |> Enum.flat_map(fn
         {:ok, %{format: :monthly, series: series}} -> [{:monthly, series}]
         _yearly_or_unparsed -> []
       end)
 
     initials_sequences =
-      case opts |> organization_name() |> SalesInvoice.organization_initials() do
+      case opts |> organization_name() |> Numbering.organization_initials() do
         nil -> []
         initials -> [{:yearly, initials}]
       end
@@ -931,7 +932,7 @@ defmodule Firmowid.Invoicing do
         |> Kernel.+(1)
         |> Stream.iterate(&(&1 + 1))
         |> Enum.find_value(fn counter ->
-          candidate = SalesInvoice.format_invoice_number(counter, format, date, series)
+          candidate = Numbering.format_invoice_number(counter, format, date, series)
           if not MapSet.member?(occupied, candidate), do: candidate
         end)
 
@@ -941,7 +942,7 @@ defmodule Firmowid.Invoicing do
 
   defp current_number_counters(numbers, date) do
     Enum.reduce(numbers, %{}, fn number, counters ->
-      with {:ok, parsed} <- SalesInvoice.parse_invoice_number(number),
+      with {:ok, parsed} <- Numbering.parse_invoice_number(number),
            true <- number_in_period?(number, parsed.format, date) do
         Map.update(
           counters,
