@@ -105,16 +105,12 @@ defmodule Firmowid.Invoicing.InvoiceMatching do
       reconciliation: :pending,
       merge_corrections: true
     }
-    |> Invoicing.list_cost_invoices!(scope: scope)
-    |> match_invoices(list_pending_transactions(scope), fn %{id: id}, transactions ->
-      id
-      |> Invoicing.get_cost_invoice!(load: [:effective_amount], scope: scope)
-      |> match_invoice(
-        transactions,
-        &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
-        scope
-      )
-    end)
+    |> Invoicing.list_cost_invoices!(load: [:effective_amount], scope: scope)
+    |> match_invoices(
+      list_pending_transactions(scope),
+      &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
+      scope
+    )
   end
 
   @doc """
@@ -124,14 +120,11 @@ defmodule Firmowid.Invoicing.InvoiceMatching do
   def match_cost_invoice(cost_invoice_id, scope) do
     %{ids: [cost_invoice_id], reconciliation: :pending}
     |> Invoicing.list_cost_invoices!(load: [:effective_amount], scope: scope)
-    |> match_invoices(list_pending_transactions(scope), fn invoice, transactions ->
-      match_invoice(
-        invoice,
-        transactions,
-        &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
-        scope
-      )
-    end)
+    |> match_invoices(
+      list_pending_transactions(scope),
+      &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
+      scope
+    )
   end
 
   @doc """
@@ -140,27 +133,23 @@ defmodule Firmowid.Invoicing.InvoiceMatching do
   @spec match_sales_invoices(Scope.t()) :: :ok
   def match_sales_invoices(scope) do
     %{kind: :vat, reconciliation: :pending, submission: :confirmed, date_field: :due_date}
-    |> Invoicing.list_sales_invoices!(scope: scope)
-    |> match_invoices(list_pending_transactions(scope), fn %{id: id}, transactions ->
-      id
-      |> Invoicing.get_sales_invoice!(
-        load: [:buyer_display_name_label, :effective_amount],
-        scope: scope
-      )
-      |> match_invoice(
-        transactions,
-        &Invoicing.connect_sales_invoice_transactions_auto_match!/4,
-        scope
-      )
-    end)
+    |> Invoicing.list_sales_invoices!(
+      load: [:buyer_display_name_label, :effective_amount],
+      scope: scope
+    )
+    |> match_invoices(
+      list_pending_transactions(scope),
+      &Invoicing.connect_sales_invoice_transactions_auto_match!/4,
+      scope
+    )
   end
 
   # Threads the still-available transactions through consecutive invoices, so
   # a whole organization pass reads pending transactions only once.
-  defp match_invoices([], _transactions, _match_fun), do: :ok
+  defp match_invoices([], _transactions, _connect, _scope), do: :ok
 
-  defp match_invoices([invoice | rest], transactions, match_fun) do
-    match_invoices(rest, match_fun.(invoice, transactions), match_fun)
+  defp match_invoices([invoice | rest], transactions, connect, scope) do
+    match_invoices(rest, match_invoice(invoice, transactions, connect, scope), connect, scope)
   end
 
   # Connects the invoice to its best candidate when the score is confident enough.
