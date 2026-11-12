@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
 
   # YearSummary accepts years 1-9999.
   defp parse_month(params, key, default) do
-    case is_binary(params[key]) && QueryParams.parse_date(params, key, nil) do
+    case QueryParams.parse_date(params, key, nil) do
       %Date{year: year} = date when year in 1..9999 -> Date.beginning_of_month(date)
       _invalid -> default
     end
