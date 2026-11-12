@@ -92,8 +92,11 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
     <nav id={@id} class="flex flex-col gap-0.5" aria-label={pgettext("sidebar", "Main")}>
       <%!--
         Side by side when expanded; collapsed, stacked as two 28 px icon buttons
-        on a grey-900 tray (Figma "Sidebar / Przełącznik pionowy"). Its buttons
-        stay hidden while the sidebar resizes and fade in once it has settled.
+        on a grey-900 tray (Figma "Sidebar / Przełącznik pionowy"). The switch
+        changes shape at once, so it hides while the sidebar resizes and fades
+        in with the labels, as the resize lands. It fades as a whole: a button fading on its own
+        would blend its label only with itself, white on the white pill, and
+        snap to black when the fade ends.
         One white pill sits under the current layer instead of each button
         painting its own. On the inbox a switch only patches the URL, so the
         pill stays in the DOM and its own transition slides it. Other pages
@@ -108,7 +111,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         id="app-sidebar-layers"
         phx-hook=".LayerSwitch"
         data-layer={@layer}
-        class="relative mb-3.5 grid h-8 grid-cols-2 gap-1 overflow-clip motion-safe:transition-[height,margin] motion-safe:duration-250 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:mb-2.5 md:in-data-[sidebar=collapsed]:h-15.5 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-0.5 md:in-data-[sidebar=collapsed]:overflow-visible md:in-data-[sidebar=collapsed]:rounded-lg md:in-data-[sidebar=collapsed]:bg-grey-900 md:in-data-[sidebar=collapsed]:p-0.5"
+        class="relative mb-3.5 grid h-8 grid-cols-2 gap-1 overflow-clip in-data-sidebar-moving:opacity-0 motion-safe:transition-[height,margin,opacity] motion-safe:duration-250 motion-safe:ease-out-quint motion-safe:in-data-sidebar-moving:transition-[height,margin] md:in-data-[sidebar=collapsed]:mb-2.5 md:in-data-[sidebar=collapsed]:h-15.5 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-0.5 md:in-data-[sidebar=collapsed]:overflow-visible md:in-data-[sidebar=collapsed]:rounded-lg md:in-data-[sidebar=collapsed]:bg-grey-900 md:in-data-[sidebar=collapsed]:p-0.5"
         role="group"
         aria-label={pgettext("sidebar", "Layer")}
       >
@@ -116,7 +119,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           data-layer-pill
           aria-hidden="true"
           class={[
-            "absolute inset-y-0 left-0 w-[calc(50%-2px)] rounded-sm bg-white in-data-sidebar-moving:opacity-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:inset-auto md:in-data-[sidebar=collapsed]:top-0.5 md:in-data-[sidebar=collapsed]:left-0.5 md:in-data-[sidebar=collapsed]:size-7 md:in-data-[sidebar=collapsed]:rounded-md",
+            "absolute inset-y-0 left-0 w-[calc(50%-2px)] rounded-sm bg-white motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:inset-auto md:in-data-[sidebar=collapsed]:top-0.5 md:in-data-[sidebar=collapsed]:left-0.5 md:in-data-[sidebar=collapsed]:size-7 md:in-data-[sidebar=collapsed]:rounded-md",
             @layer == :me &&
               "translate-x-[calc(100%+4px)] md:in-data-[sidebar=collapsed]:translate-x-0 md:in-data-[sidebar=collapsed]:translate-y-7.5"
           ]}
@@ -135,7 +138,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           data-tippy-delay="[300, 0]"
           data-tippy-truncate-selector="[data-label]"
           class={[
-            "relative flex h-8 min-w-0 items-center justify-center rounded-md font-medium transition-[color,opacity] duration-150 in-data-sidebar-moving:opacity-0 in-data-sidebar-moving:duration-0 md:in-data-[sidebar=collapsed]:size-7",
+            "relative flex h-8 min-w-0 items-center justify-center rounded-md font-medium transition-colors duration-150 md:in-data-[sidebar=collapsed]:size-7",
             if(@layer == layer, do: "text-white", else: "text-grey-400 hover:text-white")
           ]}
         >
