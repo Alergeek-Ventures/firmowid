@@ -39,8 +39,7 @@ defmodule Firmowid.Finances.BankAccount do
   end
 
   events do
-    # Track action events for derivation of sync status.
-    # Used only for derivation, not replay.
+    # Tracks action events only to derive the sync status, never to replay them.
     event_log Event
     only_actions [:sync_from_gocardless, :mark_sync_failed]
   end
