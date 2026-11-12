@@ -8,7 +8,9 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
   import FirmowidWeb.Management.Components.Card
 
   alias Firmowid.Core
+  alias Firmowid.Core.Member
   alias Firmowid.Payroll
+  alias Firmowid.Payroll.UserSalary
   alias Firmowid.TimeFormatter
 
   @impl true
@@ -145,13 +147,47 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
      |> assign_form()}
   end
 
-  def handle_event("save_payout", %{"hourly_rate" => hourly_rate, "bank_account_number" => bank_account_number}, socket) do
-    {:noreply,
-     socket
-     |> save_hourly_rate(hourly_rate)
-     |> save_bank_account(bank_account_number)
-     |> assign(:editing, false)
-     |> assign_form()}
+  # The rate and the account are saved together or not at all; a refusal keeps the editor
+  # open with what was typed.
+  def handle_event(
+        "save_payout",
+        %{"hourly_rate" => hourly_rate, "bank_account_number" => bank_account_number} = params,
+        socket
+      ) do
+    %{user: user, scope: scope} = socket.assigns
+
+    result =
+      Ash.transact([UserSalary, Member], fn ->
+        with {:ok, _salary} <-
+               Payroll.create_salary(%{hourly_rate: hourly_rate, member_id: user.member.id},
+                 scope: scope
+               ),
+             {:ok, member} <-
+               Core.update_member_profile(
+                 user.member,
+                 %{bank_account_number: bank_account_number},
+                 scope: scope
+               ) do
+          member
+        end
+      end)
+
+    case result do
+      {:ok, member} ->
+        updated_user = %{user | member: member}
+        send(self(), {:employee_updated, updated_user})
+
+        {:noreply,
+         socket
+         |> assign(:user, updated_user)
+         |> assign_salaries()
+         |> assign(:editing, false)
+         |> assign_form()}
+
+      {:error, error} ->
+        LiveToast.send_toast(:error, refusal_message(error))
+        {:noreply, assign(socket, :form, to_form(params))}
+    end
   end
 
   defp assign_salaries(socket) do
@@ -173,30 +209,10 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
     )
   end
 
-  defp save_hourly_rate(socket, hourly_rate) do
-    %{user: user, scope: scope} = socket.assigns
+  # The rate is saved first, so an error from its changeset means the account was not tried.
+  defp refusal_message(%{changeset: %{resource: UserSalary}}), do: gettext("Could not save the rate. Try again.")
 
-    case Payroll.create_salary(%{hourly_rate: hourly_rate, member_id: user.member.id},
-           scope: scope
-         ) do
-      {:ok, _salary} -> assign_salaries(socket)
-      {:error, _} -> put_flash(socket, :error, gettext("Could not save the rate. Try again."))
-    end
-  end
-
-  defp save_bank_account(socket, bank_account_number) do
-    %{user: user, scope: scope} = socket.assigns
-
-    case Core.update_member_profile(user.member, %{bank_account_number: bank_account_number}, scope: scope) do
-      {:ok, member} ->
-        updated_user = %{user | member: member}
-        send(self(), {:employee_updated, updated_user})
-        assign(socket, :user, updated_user)
-
-      {:error, _} ->
-        put_flash(socket, :error, gettext("Could not save the bank account number. Try again."))
-    end
-  end
+  defp refusal_message(_error), do: gettext("Could not save the bank account number. Try again.")
 
   defp assign_form(socket) do
     %{hourly_rate: hourly_rate, user: user} = socket.assigns
