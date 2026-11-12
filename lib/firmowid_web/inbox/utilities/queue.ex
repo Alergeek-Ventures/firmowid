@@ -194,9 +194,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       gettext("VIES did not confirm %{number} on %{date}.", number: tax_id, date: Calendar.strftime(checked_at, "%d.%m"))
 
   defp bank_items(scope) do
-    [scope: scope, load: [:broken?, :latest_successful_sync_at, :requisition]]
+    [scope: scope, query: [filter: [sync_stopped?: true]], load: [:latest_successful_sync_at]]
     |> Finances.list_bank_accounts!()
-    |> Enum.filter(&sync_stopped?/1)
     |> Enum.map(fn account ->
       %{
         id: "bank-#{account.id}",
@@ -213,15 +212,6 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       }
     end)
   end
-
-  # The same rule as the broken bank account status in the company settings: an
-  # expired or rejected consent stops the sync without a failed sync attempt.
-  defp sync_stopped?(%{institution_name: "Manual"}), do: false
-  defp sync_stopped?(%{gocardless_id: nil}), do: false
-
-  defp sync_stopped?(%{requisition: %{status: status}}) when status in [:rejected, :expired], do: true
-
-  defp sync_stopped?(account), do: account.broken? == true
 
   defp last_sync_context(nil), do: gettext("No transactions have been fetched from this account yet.")
 

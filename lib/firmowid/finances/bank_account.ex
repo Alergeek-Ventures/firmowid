@@ -30,10 +30,8 @@ defmodule Firmowid.Finances.BankAccount do
     table "bank_accounts"
     repo Firmowid.Repo
 
-    # Maps the logical identity name to the pre-existing partial unique index name
-    # created in migration 20250117142507_add_default_bank_accounts.exs.
-    # Without this, AshPostgres would look for `bank_accounts_unique_default_per_currency_index`
-    # and fail to convert Ecto.ConstraintError → Ash.Error.Invalid.
+    # The partial unique index has its own name; mapping the identity to it lets
+    # AshPostgres turn its constraint error into Ash.Error.Invalid.
     identity_index_names unique_default_per_currency: "bank_accounts_organization_id_currency_is_default_index"
 
     identity_wheres_to_sql unique_default_per_currency: "is_default = true"
@@ -207,8 +205,7 @@ defmodule Firmowid.Finances.BankAccount do
       Called when sync exhausts all retry attempts.
       """
 
-      # No changes needed — the action event is logged automatically by AshEvents,
-      # and the Broken calculation derives status from the event log.
+      # AshEvents logs the action itself; `broken?` derives the status from that log.
     end
   end
 
@@ -316,6 +313,16 @@ defmodule Firmowid.Finances.BankAccount do
       public? true
       description "True if the most recent sync failed permanently."
     end
+
+    calculate :sync_stopped?,
+              :boolean,
+              expr(
+                cond do
+                  is_nil(gocardless_id) -> false
+                  exists(requisition, status in [:rejected, :expired]) or broken? -> true
+                  true -> false
+                end
+              )
   end
 
   aggregates do
