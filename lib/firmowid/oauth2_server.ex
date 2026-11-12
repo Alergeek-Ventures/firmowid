@@ -14,7 +14,6 @@ defmodule Firmowid.Oauth2Server do
 
   HTTP exchanges register native access JWTs in Core.Token. Password changes and
   resets revoke those records; MCP and widget interactions require an active entry.
-  Previously issued, unregistered JWTs require reauthentication.
 
   Membership archival still relies on membership checks: restoring a member can
   re-enable an unexpired access token issued before the archive. Its multi-action
@@ -37,18 +36,9 @@ defmodule Firmowid.Oauth2Server do
     refresh_token_resource: Firmowid.Core.OauthRefreshToken,
     consent_resource: Firmowid.Core.OauthConsent,
     scopes: ["mcp", "api"],
-    # Dynamic client registration (RFC 7591). The library default is
-    # `false` for safety; the installer turns it on because most
-    # people setting up an OAuth server today need it for MCP-style
-    # flows (ChatGPT Apps SDK, Claude.ai connectors, etc.). Set to
-    # `false` if your auth server is for a fixed set of first-party
-    # clients only.
+    # MCP clients register either dynamically (RFC 7591) or with a Client ID
+    # Metadata Document: an HTTPS URL pointing at their metadata.
     dcr_enabled?: true,
-    # Client ID Metadata Documents — clients identify with an HTTPS
-    # URL pointing at their metadata. This is the registration
-    # mechanism the MCP spec (2026-07-28) recommends; DCR above is
-    # kept for backwards compatibility. Set to `false` if your auth
-    # server is for a fixed set of first-party clients only.
     cimd_enabled?: true,
     cimd_fetcher: Firmowid.Oauth2.CimdMetadataFetcher,
     sign_in_path: "/zaloguj"
