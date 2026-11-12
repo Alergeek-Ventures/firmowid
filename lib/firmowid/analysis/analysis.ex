@@ -499,20 +499,45 @@ defmodule Firmowid.Analysis do
 
   defp public_levy(_invoice), do: nil
 
+  # Issued invoices without a linked transaction, by sale date; a refund is income.
   defp unpaid_invoices_by_month(year, scope) do
-    unrealized = get_unrealized_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
+    analysis_scope = analysis_scope(scope)
+
+    args = %{
+      date_from: Date.new!(year, 1, 1),
+      date_to: Date.new!(year, 12, 31),
+      date_field: :sale_date,
+      merge_corrections: true,
+      reconciliation: :pending
+    }
+
+    sales_invoices =
+      args
+      |> Map.put(:submission, :confirmed)
+      |> Invoicing.list_sales_invoices!(load: [:effective_amount], scope: analysis_scope)
+
+    {refunds, costs} =
+      args
+      |> Invoicing.list_cost_invoices!(load: [:effective_amount], scope: analysis_scope)
+      |> Enum.split_with(&Money.positive?(&1.effective_amount))
 
     %{
-      income: unpaid_invoice_sums(unrealized.income_entries),
-      expenses: unpaid_invoice_sums(unrealized.expense_entries)
+      income: unpaid_invoice_sums(sales_invoices ++ refunds),
+      expenses: unpaid_invoice_sums(costs)
     }
   end
 
-  defp unpaid_invoice_sums(entries) do
-    entries
-    |> Enum.reject(&match?(%Transaction{}, &1))
+  defp unpaid_invoice_sums(invoices) do
+    invoices
     |> Enum.group_by(&Date.beginning_of_month(&1.sale_date))
-    |> Map.new(fn {month, invoices} -> {month, unrealized_sum(invoices)} end)
+    |> Map.new(fn {month, invoices} ->
+      {month,
+       invoices
+       |> Enum.flat_map(&normalized_entity(Map.put(&1, :entity_tags, [])))
+       |> Enum.reduce(Decimal.new(0), fn {amount, _tags}, sum ->
+         amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.add(sum)
+       end)}
+    end)
   end
 
   defp original_currency_totals(entries, filters) do
@@ -586,86 +611,6 @@ defmodule Firmowid.Analysis do
       sales_invoices: attach_entity_tags(sales_invoices, :sales_invoice, entity_tags_map),
       cost_invoices: attach_entity_tags(cost_invoices, :cost_invoice, entity_tags_map)
     }
-  end
-
-  @doc """
-  Lists unrealized entries between `date_from` and `date_to`, which are missing
-  from the totals:
-  issued invoices (by sale date) without a linked transaction and transactions
-  (by booking date) without an invoice or salary, neither skipped. Transfers
-  between own accounts are excluded. Entries are split by direction and sorted
-  by date; `:income` and `:expenses` are their positive PLN sums.
-  """
-  @spec get_unrealized_entries(Date.t(), Date.t(), Scope.t()) :: %{
-          income_entries: [SalesInvoice.t() | Transaction.t()],
-          expense_entries: [CostInvoice.t() | Transaction.t()],
-          income: Decimal.t(),
-          expenses: Decimal.t()
-        }
-  def get_unrealized_entries(date_from, date_to, scope) do
-    analysis_scope = analysis_scope(scope)
-    own_accounts = own_accounts(scope)
-
-    args = %{
-      date_from: date_from,
-      date_to: date_to,
-      date_field: :sale_date,
-      merge_corrections: true,
-      reconciliation: :pending
-    }
-
-    sales_invoices =
-      args
-      |> Map.put(:submission, :confirmed)
-      |> Invoicing.list_sales_invoices!(
-        load: [
-          :buyer_display_name_label,
-          :effective_amount,
-          :effective_due_date,
-          :sales_invoice_items
-        ],
-        scope: analysis_scope
-      )
-
-    cost_invoices =
-      Invoicing.list_cost_invoices!(args,
-        load: [
-          :effective_seller_display_name,
-          :effective_sale_date,
-          :effective_amount,
-          :effective_due_date
-        ],
-        scope: analysis_scope
-      )
-
-    {incoming, outgoing} =
-      %{date_from: date_from, date_to: date_to, reconciliation: :pending}
-      |> Finances.list_transactions!(scope: analysis_scope)
-      |> Enum.reject(&own_account_transfer?(&1, own_accounts))
-      |> Enum.split_with(&Money.positive?(&1.amount))
-
-    {refunds, costs} = Enum.split_with(cost_invoices, &Money.positive?(&1.effective_amount))
-
-    income_entries = Enum.sort_by(sales_invoices ++ refunds ++ incoming, &unrealized_date/1, Date)
-    expense_entries = Enum.sort_by(costs ++ outgoing, &unrealized_date/1, Date)
-
-    %{
-      income_entries: income_entries,
-      expense_entries: expense_entries,
-      income: unrealized_sum(income_entries),
-      expenses: unrealized_sum(expense_entries)
-    }
-  end
-
-  defp unrealized_date(%Transaction{booking_date: date}), do: date
-  defp unrealized_date(%{sale_date: date}), do: date
-
-  defp unrealized_sum(entries) do
-    entries
-    |> Enum.flat_map(&normalized_entity(Map.put(&1, :entity_tags, [])))
-    |> Enum.reduce(Decimal.new(0), fn {amount, _tags}, sum ->
-      amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.add(sum)
-    end)
   end
 
   defp get_amount_and_currency(%SalesInvoice{effective_amount: %Money{} = amount}) do
