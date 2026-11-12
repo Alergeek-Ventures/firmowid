@@ -169,7 +169,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
   end
 
   defp process_downloaded_package(package, args, scope, job) do
-    encryption_key = Base.decode64!(args["encryption_key"])
+    encryption_key = export_key!(args)
     encryption_iv = Base.decode64!(args["encryption_iv"])
 
     files =
@@ -209,6 +209,11 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
         end
     end
   end
+
+  defp export_key!(%{"export_key" => export_key}), do: export_key |> Base.decode64!() |> Firmowid.Vault.decrypt!()
+
+  # Poll jobs queued before the export key was encrypted carry it in plain text.
+  defp export_key!(%{"encryption_key" => export_key}), do: Base.decode64!(export_key)
 
   defp schedule_continuation_fetch(package, args, organization_id) do
     if package["isTruncated"] do
@@ -451,7 +456,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
       "organization_id" => organization_id,
       "subject_type" => subject_type,
       "reference_number" => reference_number,
-      "encryption_key" => Base.encode64(encryption_data.key),
+      "export_key" => encryption_data.key |> Firmowid.Vault.encrypt!() |> Base.encode64(),
       "encryption_iv" => Base.encode64(encryption_data.iv),
       "date_from" => date_from
     }
