@@ -326,8 +326,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     "w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
   end
 
-  @doc false
-  def document_element(assigns) do
+  defp document_element(assigns) do
     ~H"""
     <.link
       kind="unstyled"
@@ -374,10 +373,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
      socket
      |> assign(:type_filter, type)
      |> refetch_documents()}
-  end
-
-  def handle_event("validate_upload", _params, socket) do
-    {:noreply, socket}
   end
 
   def handle_event("upload", _params, socket) do
