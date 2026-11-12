@@ -130,7 +130,7 @@
       crossorigin
     />
     <%!-- restores the collapsed sidebar before the first paint, see `FirmowidWeb.Inbox.Components.Sidebar` --%>
-    <script>
+    <script nonce={assigns[:csp_nonce]}>
       try {
         if (localStorage.getItem("sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed";
       } catch {}
