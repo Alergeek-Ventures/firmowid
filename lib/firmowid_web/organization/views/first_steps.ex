@@ -694,7 +694,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
     assign(socket,
       bank_accounts: Finances.list_bank_accounts!(scope: scope),
-      bank_pending?: Enum.any?(Finances.list_requisitions!(scope: scope), &(&1.status == :pending))
+      bank_pending?: Finances.list_requisitions!(%{status: :pending}, scope: scope) != []
     )
   end
 

@@ -110,7 +110,7 @@ defmodule Firmowid.Finances.Requisition do
     defaults [:read]
 
     read :list do
-      description "List requisitions, optionally filtered by remote deletion state."
+      description "List requisitions, optionally filtered by status and remote deletion state."
 
       argument :remote_deleted?, :boolean do
         description "Omit to list all requisitions; false selects pending remote deletion, true selects completed deletion."
@@ -122,6 +122,15 @@ defmodule Firmowid.Finances.Requisition do
 
       prepare build(filter: expr(not is_nil(remote_deleted_at))) do
         where argument_equals(:remote_deleted?, true)
+      end
+
+      argument :status, :atom do
+        description "Omit to list requisitions in every status."
+        constraints one_of: [:pending, :accepted, :rejected, :expired]
+      end
+
+      prepare build(filter: expr(status == ^arg(:status))) do
+        where present(:status)
       end
     end
 
