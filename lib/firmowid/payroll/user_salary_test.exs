@@ -35,6 +35,16 @@ defmodule Firmowid.Payroll.UserSalaryTest do
       assert salary.member_id == user.member.id
       assert DateTime.compare(salary.starts_at, DateTime.utc_now()) in [:lt, :eq]
     end
+
+    test "rejects a member of another organization", %{scope: scope} do
+      outsider = admin_fixture()
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               Payroll.create_salary(
+                 %{member_id: outsider.member.id, hourly_rate: Decimal.new("100.00")},
+                 scope: scope
+               )
+    end
   end
 
   describe "bulk_create/2" do

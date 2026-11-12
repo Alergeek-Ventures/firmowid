@@ -126,6 +126,12 @@ defmodule Firmowid.Payroll.UserSalary do
     end
   end
 
+  validations do
+    validate Firmowid.Payroll.Validations.MemberInOrganization,
+      on: [:create],
+      where: [present(:member_id)]
+  end
+
   multitenancy do
     strategy :attribute
     attribute :organization_id
