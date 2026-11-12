@@ -9,8 +9,6 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   alias Firmowid.Invoicing.Matching.RateDate
   alias Firmowid.Invoicing.SalesInvoice
 
-  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
-
   @enforce_keys [
     :days_lag_le_3,
     :days_lag_le_7,
