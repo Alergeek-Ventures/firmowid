@@ -7,7 +7,9 @@ defmodule Firmowid.Blobs.BlobsTest do
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.SystemActor
   alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.LeaveRequest
 
   setup do
     user = admin_fixture()
@@ -121,6 +123,42 @@ defmodule Firmowid.Blobs.BlobsTest do
       assert {:ok, %Blob{}} = read.(owner)
       assert {:ok, %Blob{}} = read.(admin)
       assert {:ok, nil} = read.(colleague)
+    end
+
+    test "the leave notifier reads only files attached to leave requests", %{user: admin} do
+      org_id = admin.member.organization_id
+
+      scope = %Firmowid.Scope{
+        actor: %SystemActor{org_id: org_id, role: :leave_notifier},
+        tenant: org_id
+      }
+
+      seed = fn checksum ->
+        Ash.Seed.seed!(Blob, %{
+          blob_path: "#{org_id}/#{checksum}.pdf",
+          blob_checksum: checksum,
+          original_filename: "#{checksum}.pdf",
+          organization_id: org_id
+        })
+      end
+
+      attachment = seed.("leave-attachment")
+      contract = seed.("another-document")
+
+      Ash.Seed.seed!(LeaveRequest, %{
+        id: Ash.UUIDv7.generate(),
+        member_id: admin.member.id,
+        organization_id: org_id,
+        blob_id: attachment.id,
+        starts_on: ~D[2026-03-02],
+        ends_on: ~D[2026-03-03],
+        category: :absence,
+        reason: :rest,
+        status: :pending
+      })
+
+      assert {:ok, %Blob{}} = Blobs.get_blob(attachment.id, scope: scope, not_found_error?: false)
+      assert {:ok, nil} = Blobs.get_blob(contract.id, scope: scope, not_found_error?: false)
     end
 
     test "a file no record holds is readable only while it is fresh", %{user: admin} do

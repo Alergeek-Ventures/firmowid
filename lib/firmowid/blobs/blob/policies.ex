@@ -31,10 +31,14 @@ defmodule Firmowid.Blobs.Blob.Policies do
               :cost_invoice_processor,
               :document_blob_processor,
               :sales_invoice_processor,
-              :ksef_session,
-              :leave_notifier
+              :ksef_session
             ]} do
       authorize_if action(:read)
+    end
+
+    # The leave notifier attaches a request's document to its e-mail.
+    bypass [{SystemActorRole, roles: [:leave_notifier]}, action(:read)] do
+      authorize_if expr(exists(leave_requests, true))
     end
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor, :ksef_session]} do
