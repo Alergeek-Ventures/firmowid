@@ -19,7 +19,18 @@ defmodule Firmowid.Blobs.Blob do
   alias Firmowid.Blobs.Changes.ProcessDocumentBlob
   alias Firmowid.Blobs.Changes.UploadToS3
   alias Firmowid.Blobs.Changes.ValidateProcessingStateTransition
+  alias Firmowid.Core.Member
+  alias Firmowid.Core.Organization
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Delegations.DelegationExpense
+  alias Firmowid.Delegations.DelegationExpenseRelatedBlob
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Payroll.MemberPayrollInput
+  alias Firmowid.Payroll.MemberTaxDeclaration
+  alias Firmowid.Payroll.UserEmploymentContract
   alias Firmowid.Resource
+  alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.LeaveRequest
 
   require Resource
 
@@ -271,9 +282,29 @@ defmodule Firmowid.Blobs.Blob do
   end
 
   relationships do
-    belongs_to :organization, Firmowid.Core.Organization do
+    belongs_to :organization, Organization do
       allow_nil? false
     end
+
+    # The records that hold this file; its read policy follows theirs.
+    has_many :avatar_members, Member, destination_attribute: :avatar_blob_id
+    has_many :avatar_organizations, Organization, destination_attribute: :avatar_blob_id
+    has_many :cost_invoices, CostInvoice
+    has_many :employment_contracts, UserEmploymentContract
+    has_many :tax_declarations, MemberTaxDeclaration, destination_attribute: :source_blob_id
+    has_many :payroll_inputs, MemberPayrollInput, destination_attribute: :source_blob_id
+    has_many :hours_records, HoursRecord
+    has_many :leave_requests, LeaveRequest
+
+    has_many :signed_command_delegations, Delegation, destination_attribute: :signed_command_blob_id
+
+    has_many :signed_settlement_delegations, Delegation, destination_attribute: :signed_settlement_blob_id
+
+    has_many :delegation_expenses, DelegationExpense
+
+    has_many :statement_delegation_expenses, DelegationExpense, destination_attribute: :statement_blob_id
+
+    has_many :delegation_expense_links, DelegationExpenseRelatedBlob
   end
 
   calculations do
