@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Delegations.PerDiem
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.Navigation
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
@@ -166,6 +165,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           <div :if={@editable?} class="relative mt-6 lg:mt-47">
             <.summary
               delegation={@delegation}
+              per_diem={@per_diem}
               total={@total}
               balance={@balance}
               balance_label={@balance_label}
@@ -185,6 +185,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           <.summary
             :if={!@editable?}
             delegation={@delegation}
+            per_diem={@per_diem}
             total={@total}
             balance={@balance}
             balance_label={@balance_label}
@@ -496,15 +497,13 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   end
 
   attr :delegation, :map, required: true
+  attr :per_diem, :map, required: true
   attr :total, :any, required: true
   attr :balance, :any, required: true
   attr :balance_label, :string, required: true
   attr :class, :string, default: nil
 
   defp summary(assigns) do
-    assigns =
-      assign(assigns, :per_diem, PerDiem.for_delegation(assigns.delegation))
-
     ~H"""
     <div class={["rounded-lg bg-white px-6 py-4 shadow-sm", @class]}>
       <h2 class="font-normal text-grey-500">{gettext("Summary")}</h2>
