@@ -4,6 +4,7 @@ defmodule Firmowid.Timetracker.SessionTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Scope
@@ -163,6 +164,47 @@ defmodule Firmowid.Timetracker.SessionTest do
 
       assert {:error, _stale} = Session.stop(running, scope: scope)
       assert Ash.reload!(running, scope: scope).end_datetime == end_datetime
+    end
+
+    test "stops a running session in a month whose hours record is submitted, which stays locked otherwise",
+         %{user: user, project: project, scope: scope} do
+      {:ok, session} =
+        Session.create(
+          %{
+            title: "Running",
+            project_id: project.id,
+            member_id: user.member.id,
+            start_datetime: DateTime.utc_now()
+          },
+          scope: scope
+        )
+
+      organization_id = user.member.organization_id
+
+      blob =
+        Ash.Seed.seed!(Firmowid.Blobs.Blob, %{
+          blob_path: "/test/path/hours_record_#{System.unique_integer([:positive])}.pdf",
+          blob_checksum: "hr-checksum-#{System.unique_integer([:positive])}",
+          original_filename: "hours_record.pdf",
+          organization_id: organization_id
+        })
+
+      Ash.Seed.seed!(Firmowid.Timetracker.HoursRecord, %{
+        member_id: user.member.id,
+        blob_id: blob.id,
+        month: session.start_datetime.month,
+        year: session.start_datetime.year,
+        number_of_hours: 160,
+        organization_id: organization_id
+      })
+
+      assert {:error, %Forbidden{}} =
+               Session.update(session, %{title: "Renamed"}, scope: scope)
+
+      assert {:ok, stopped} = Session.stop(session, scope: scope)
+      assert stopped.end_datetime
+      assert {:error, %Forbidden{}} = Session.stop(stopped, scope: scope)
+      assert {:error, %Forbidden{}} = Session.destroy(stopped, scope: scope)
     end
   end
 
