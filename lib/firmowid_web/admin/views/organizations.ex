@@ -32,18 +32,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, gettext("Superadmin panel"))
-     |> assign(:params, %{})
-     |> assign(:search, "")
-     |> assign(:plan_filter, nil)
-     |> assign(:only_over_limit?, false)
-     |> assign(:rows, [])
-     |> assign(:keyset, nil)
-     |> assign(:more?, false)
-     |> assign(:current_month, Month.current())
-     |> assign(:form, to_form(%{"tylko_nadwyzki" => false}))}
+    {:ok, assign(socket, :page_title, gettext("Superadmin panel"))}
   end
 
   @impl true
@@ -303,21 +292,16 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp build_row(org, current_month) do
     usage_source = SnapshotCalculator.build_snapshot_attrs!(org, current_month)
     worksheet = Worksheet.build(usage_source)
-    started_on = to_date(org.inserted_at)
+    started_on = DateTime.to_date(org.inserted_at)
 
     %{
       org: org,
       worksheet: worksheet,
       started_on: started_on,
       age_days: max(Date.diff(Date.utc_today(), started_on), 0),
-      trial?: org.on_trial?,
       over_limit?: worksheet.over_limit?
     }
   end
-
-  defp to_date(%Date{} = date), do: date
-  defp to_date(%DateTime{} = datetime), do: DateTime.to_date(datetime)
-  defp to_date(%NaiveDateTime{} = datetime), do: NaiveDateTime.to_date(datetime)
 
   defp usage_value_styles(%{over_limit: over_limit}) when over_limit > 0, do: "font-medium text-rust-700"
 
@@ -333,13 +317,11 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp over_limit_prefix(%{over_limit: over_limit}) when over_limit > 0, do: "(+#{over_limit}) "
   defp over_limit_prefix(_usage), do: ""
 
-  defp short_org_name(name) when is_binary(name) do
+  defp short_org_name(name) do
     Enum.reduce(@legal_form_abbreviations, name, fn {full, short}, acc ->
       String.replace(acc, Regex.compile!(full, "iu"), short)
     end)
   end
-
-  defp short_org_name(name), do: to_string(name)
 
   defp format_date(%Date{} = date), do: Calendar.strftime(date, "%d.%m.%Y")
 
