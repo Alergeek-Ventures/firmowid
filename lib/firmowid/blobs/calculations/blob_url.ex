@@ -7,7 +7,7 @@ defmodule Firmowid.Blobs.Calculations.BlobUrl do
       blob |> Ash.load!(:url)
       Ash.Query.load(query, :url)
 
-  Presigned URLs expire after 200 seconds (matching the legacy behaviour).
+  Presigned URLs expire after 200 seconds.
   """
   use Ash.Resource.Calculation
 
