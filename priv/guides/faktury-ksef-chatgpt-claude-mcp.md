@@ -20,7 +20,7 @@ Firmowid przechowuje czas przy projekcie, obsługuje faktury sprzedażowe i kosz
 
 ## Co można zrobić przez ChatGPT lub Claude
 
-MCP, czyli Model Context Protocol, pozwala asystentowi korzystać z funkcji udostępnionych przez program. W przypadku Firmowida chodzi przede wszystkim o faktury, ale też o czas pracy, projekty i analizę rentowności.
+MCP, czyli Model Context Protocol, pozwala asystentowi korzystać z funkcji udostępnionych przez program. W przypadku Firmowida chodzi przede wszystkim o faktury, ale też o czas pracy, projekty i przypisywanie kosztów do projektów.
 
 We wczesnym dostępie można:
 
