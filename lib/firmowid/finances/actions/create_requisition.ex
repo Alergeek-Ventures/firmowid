@@ -12,21 +12,23 @@ defmodule Firmowid.Finances.Actions.CreateRequisition do
 
   alias Firmowid.Finances.GoCardless.ApiClient
   alias Firmowid.Finances.Requisition
+  alias Firmowid.SystemActor
 
   @impl true
   def run(input, _opts, context) do
     %{institution_id: institution_id, max_transaction_days: max_days, redirect_url: redirect_url} =
       input.arguments
 
-    # This action is authorized for the organization admin; the internal
-    # `:persist` action is forbidden to every actor, so it runs unauthorized
-    # here and only an id that GoCardless returned can become a requisition.
+    # This action is authorized for the organization admin. The record is
+    # stored as the bank sync actor, the only one allowed to `:persist`, so
+    # only an id that GoCardless returned can become a requisition.
     with {:ok, gc_requisition} <-
            ApiClient.create_requisition(institution_id, max_days, redirect_url),
          {:ok, _record} <-
            Requisition.persist(
              %{id: gc_requisition["id"]},
-             context |> Ash.Context.to_opts() |> Keyword.put(:authorize?, false)
+             actor: %SystemActor{org_id: context.tenant, role: :bank_sync},
+             tenant: context.tenant
            ) do
       {:ok, gc_requisition["link"]}
     end
