@@ -23,7 +23,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   attr :upload, :any, required: true
   attr :kind, :string, required: true
   attr :editable?, :boolean, required: true
-  attr :sort_active?, :boolean, required: true
   attr :description_visible?, :map, default: %{}
   attr :expense_forms, :map, required: true
   attr :trip_forms, :map, required: true

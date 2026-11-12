@@ -77,12 +77,18 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           <.settlement_status :if={!@editable?} delegation={@delegation} />
 
           <.expense_section
-            title={gettext("Journeys")}
-            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :transport)}
-            upload={Map.get(assigns[:uploads] || %{}, :transport)}
-            kind="transport"
+            :for={
+              {kind, title} <- [
+                transport: gettext("Journeys"),
+                accommodation: gettext("Accommodation"),
+                other: gettext("Other expenses")
+              ]
+            }
+            title={title}
+            expenses={SettlementPresentation.expenses_for(@delegation.expenses, kind)}
+            upload={Map.get(assigns[:uploads] || %{}, kind)}
+            kind={Atom.to_string(kind)}
             editable?={@editable?}
-            sort_active?={@sort_active?}
             description_visible?={@description_visible?}
             expense_forms={@expense_forms}
             trip_forms={@trip_forms}
@@ -93,45 +99,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
             statement_expense_id={@statement_expense_id}
           >
-            <:icon><Lucideicons.plane class="size-5" /></:icon>
-          </.expense_section>
-          <.expense_section
-            title={gettext("Accommodation")}
-            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)}
-            upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
-            kind="accommodation"
-            editable?={@editable?}
-            sort_active?={false}
-            description_visible?={@description_visible?}
-            expense_forms={@expense_forms}
-            trip_forms={@trip_forms}
-            related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
-            expense_currencies={@expense_currencies}
-            foreign_currency_modes={@foreign_currency_modes}
-            nbp_settlements={@nbp_settlements}
-            statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
-            statement_expense_id={@statement_expense_id}
-          >
-            <:icon><Lucideicons.bed_double class="size-5" /></:icon>
-          </.expense_section>
-          <.expense_section
-            title={gettext("Other expenses")}
-            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :other)}
-            upload={Map.get(assigns[:uploads] || %{}, :other)}
-            kind="other"
-            editable?={@editable?}
-            sort_active?={false}
-            description_visible?={@description_visible?}
-            expense_forms={@expense_forms}
-            trip_forms={@trip_forms}
-            related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
-            expense_currencies={@expense_currencies}
-            foreign_currency_modes={@foreign_currency_modes}
-            nbp_settlements={@nbp_settlements}
-            statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
-            statement_expense_id={@statement_expense_id}
-          >
-            <:icon><Lucideicons.wallet class="size-5" /></:icon>
+            <:icon><.category_icon kind={kind} /></:icon>
           </.expense_section>
           <.per_diem_fields
             form={@complete_form}
@@ -291,6 +259,14 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     </script>
     """
   end
+
+  attr :kind, :atom, required: true
+
+  defp category_icon(%{kind: :transport} = assigns), do: ~H|<Lucideicons.plane class="size-5" />|
+
+  defp category_icon(%{kind: :accommodation} = assigns), do: ~H|<Lucideicons.bed_double class="size-5" />|
+
+  defp category_icon(%{kind: :other} = assigns), do: ~H|<Lucideicons.wallet class="size-5" />|
 
   attr :form, :map, required: true
 
