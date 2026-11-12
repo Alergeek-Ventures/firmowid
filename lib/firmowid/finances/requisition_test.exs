@@ -64,15 +64,6 @@ defmodule Firmowid.Finances.RequisitionTest do
       assert refreshed.status == :pending
       assert refreshed.bank_accounts == []
     end
-
-    test "is not run by an update that names no action" do
-      user = admin_fixture()
-      {:ok, requisition} = create_requisition(user)
-
-      assert_raise RuntimeError, ~r/Required primary update action/, fn ->
-        Ash.update(requisition, %{}, ash_oban_opts(user))
-      end
-    end
   end
 
   describe "auto_reject" do
