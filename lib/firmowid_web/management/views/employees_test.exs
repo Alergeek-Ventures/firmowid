@@ -235,6 +235,31 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert has_element?(lv, "#payout-form input[value='PL23 1140 2004 0000 3002 0135 5362']")
   end
 
+  test "a refused bank account number leaves the rate unsaved too", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+
+    {:ok, lv, _html} =
+      live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}/profil")
+
+    lv |> element("[phx-click=toggle_payout_editor]") |> render_click()
+
+    lv
+    |> form("#payout-form", %{
+      "hourly_rate" => "100",
+      "bank_account_number" => "PL00 not an account"
+    })
+    |> render_submit()
+
+    assert Payroll.list_salaries!(%{user_id: employee.id, active_at: Date.utc_today()},
+             scope: current_scope(admin)
+           ) == []
+
+    assert Core.load_member(employee).member.bank_account_number == nil
+    assert render(lv) =~ "Nie udało się zapisać numeru konta. Spróbuj ponownie."
+    assert has_element?(lv, "#payout-form")
+  end
+
   test "an admin's bank account edit lands on the employee's member", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
