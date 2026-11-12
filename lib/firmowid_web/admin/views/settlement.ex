@@ -76,13 +76,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   end
 
   def handle_event("open-delete-organization", _params, socket) do
-    case {socket.assigns.current_user.system_role, socket.assigns.selected_org} do
-      {:superuser, %Organization{id: id}} ->
-        {:noreply, assign(socket, :delete_org_id, id)}
-
-      _ ->
-        {:noreply, socket}
-    end
+    {:noreply, assign(socket, :delete_org_id, socket.assigns.selected_org.id)}
   end
 
   def handle_event("cancel-delete-organization", _params, socket) do
@@ -92,16 +86,15 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   def handle_event("delete-organization", %{"deletion" => confirmation}, socket) do
     user = socket.assigns.current_user
 
-    with :superuser <- user.system_role,
-         %Organization{id: id} <- socket.assigns.selected_org,
+    # `RequireSuperuser` re-read the user before this event; the organization is
+    # re-read so the typed name is compared with the current one.
+    with %Organization{id: id} <- socket.assigns.selected_org,
          ^id <- socket.assigns.delete_org_id,
          true <- confirmation["name"] == socket.assigns.selected_org.name,
          "true" <- confirmation["testowa_lub_porzucona"],
-         {:ok, %{system_role: :superuser} = fresh_user} <- Core.get_user(user.id, actor: user),
-         {:ok, %Organization{name: name} = organization} <-
-           Core.get_organization(id, actor: fresh_user),
+         {:ok, %Organization{name: name} = organization} <- Core.get_organization(id, actor: user),
          true <- confirmation["name"] == name,
-         :ok <- Core.destroy_organization(organization, actor: fresh_user) do
+         :ok <- Core.destroy_organization(organization, actor: user) do
       LiveToast.send_toast(
         :success,
         gettext("The organization was deleted from the database. Deleting external data may require manual verification.")
