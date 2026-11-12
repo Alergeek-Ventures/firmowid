@@ -434,9 +434,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         %{member_id: user.member.id}
         |> maybe_add_month(parsed.month)
         |> maybe_add_year(parsed.year)
-        |> Timetracker.query_to_list_hours_records(scope: scope)
-        |> Ash.Query.load([:blob], scope: scope)
-        |> Ash.read!(scope: scope)
+        |> Timetracker.list_hours_records!(scope: scope, load: [:blob])
         |> Enum.map(fn doc ->
           %{
             id: doc.id,
