@@ -120,13 +120,14 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp preview("start_session", %{"input" => %{"project_id" => project_id} = input}, scope) do
-    with {:ok, running} <- result(Session.get_current(scope: scope)) do
+    with {:ok, remote?} <- boolean(input["is_remote"]),
+         {:ok, running} <- result(Session.get_current(scope: scope)) do
       {:ok, [{:project, project_id}],
        [
          running && change(gettext("Running session"), session_label(running), gettext("stopped")),
          change(gettext("Title"), nil, input["title"]),
          change(gettext("Start"), nil, gettext("now")),
-         input["is_remote"] == true && change(gettext("Remote work"), nil, gettext("Yes"))
+         remote? && change(gettext("Remote work"), nil, gettext("Yes"))
        ]}
     end
   end
@@ -145,7 +146,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     with {:ok, session} <- result(Session.current_session(id, scope: scope, load: [:project])),
          {:ok, start} <- optional(input["start_datetime"], &datetime/1),
          {:ok, finish} <- optional(input["end_datetime"], &datetime/1),
-         {:ok, project} <- optional(input["project_id"], &result(Project.get(&1, scope: scope))) do
+         {:ok, project} <- optional(input["project_id"], &result(Project.get(&1, scope: scope))),
+         {:ok, remote?} <- boolean(input["is_remote"]) do
       {:ok, [{:session, id}],
        [
          input["title"] && change(gettext("Title"), session.title, input["title"]),
@@ -153,8 +155,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
          finish && change(gettext("End"), time(session.end_datetime), time(finish)),
          project &&
            change(gettext("Project"), session.project && session.project.name, project.name),
-         is_boolean(input["is_remote"]) &&
-           change(gettext("Remote work"), yes_no(session.is_remote), yes_no(input["is_remote"]))
+         is_boolean(remote?) &&
+           change(gettext("Remote work"), yes_no(session.is_remote), yes_no(remote?))
        ]}
     end
   end
@@ -183,8 +185,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   # The member is read again: the actor's was loaded at mount, before earlier approved changes.
   defp preview("update_profile", %{"input" => input}, scope) when is_map(input) do
-    with {:ok, user} <-
+    with {:ok, same?} <- boolean(input["is_same_correspondence_address"]),
+         {:ok, user} <-
            result(Core.get_org_user(%{id: scope.actor.id}, scope: scope, load: [:member])) do
+      input = Map.put(input, "is_same_correspondence_address", same?)
+
       changes =
         for {field, label} <- profile_fields(),
             value = input[Atom.to_string(field)],
@@ -312,6 +317,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     with %{"project_id" => project_id, "start_datetime" => from, "end_datetime" => to} <- session,
          {:ok, from} <- datetime(from),
          {:ok, to} <- datetime(to),
+         {:ok, remote?} <- boolean(session["is_remote"]),
          {:ok, project} <- result(Project.get(project_id, scope: scope)) do
       {:ok,
        [
@@ -325,7 +331,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
              title: session["title"]
            )
          ),
-         session["is_remote"] == true && change(gettext("Remote work"), nil, gettext("Yes"))
+         remote? && change(gettext("Remote work"), nil, gettext("Yes"))
        ]}
     else
       _invalid -> :error
@@ -333,6 +339,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp datetime(value), do: parse(&DateTime.from_iso8601/1, value)
+
+  # Read as the action casts a boolean argument (Ash.Type.Boolean): "true" and "1" are true too; a
+  # value it rejects makes the card unavailable rather than show a guess.
+  defp boolean(value), do: Ecto.Type.cast(:boolean, value)
 
   defp local(datetime), do: DateTime.shift_zone!(datetime, @timezone)
 
