@@ -454,11 +454,12 @@ defmodule Firmowid.Core.User do
       authorize_if always()
     end
 
-    bypass [
-      {SystemActorRole, roles: [:organization_owner_setup]},
-      action([:read, :set_organization])
-    ] do
+    bypass [{SystemActorRole, roles: [:organization_owner_setup]}, action(:read)] do
       authorize_if expr(id == ^actor(:user_id))
+    end
+
+    bypass [{SystemActorRole, roles: [:organization_owner_setup]}, action(:set_organization)] do
+      authorize_if expr(id == ^actor(:user_id) and ^arg(:organization_id) == ^actor(:org_id))
     end
 
     # Default :read action — used for loading the current user and explicit admin access.
