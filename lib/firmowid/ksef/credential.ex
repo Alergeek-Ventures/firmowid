@@ -338,7 +338,18 @@ defmodule Firmowid.Ksef.Credential do
       authorize_if always()
     end
 
-    bypass OrganizationAdmin do
+    # admin: what the KSeF connection screen does (connect, show the status, disconnect)
+    bypass [
+      OrganizationAdmin,
+      action([
+        :authenticate_with_token,
+        :authenticate_with_uploaded_certificate,
+        :enroll_ksef_certificate,
+        :get,
+        :internal,
+        :destroy
+      ])
+    ] do
       authorize_if always()
     end
 

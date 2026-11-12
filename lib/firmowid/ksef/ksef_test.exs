@@ -4,6 +4,7 @@ defmodule Firmowid.KsefTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Ksef
@@ -74,5 +75,20 @@ defmodule Firmowid.KsefTest do
 
     own_scope = %{scope | actor: %{other_session | org_id: organization_id}}
     assert {:ok, %Credential{}} = Credential.get_internal(scope: own_scope)
+  end
+
+  test "an organization admin reaches only the credential actions of the connection screen" do
+    admin = admin_fixture()
+    scope = %Scope{actor: admin, tenant: admin.member.organization_id}
+    InvoicingFixtures.connect_ksef!(scope.tenant)
+    credential = Ksef.get_credential!(scope: scope)
+
+    assert {:error, %Forbidden{}} = Credential.read(scope: scope)
+    assert {:error, %Forbidden{}} = Credential.mark_working(credential, scope: scope)
+
+    assert {:error, %Forbidden{}} =
+             Credential.delete_failed(credential, :enrollment_failed, scope: scope)
+
+    assert :ok = Credential.destroy(credential, scope: scope)
   end
 end
