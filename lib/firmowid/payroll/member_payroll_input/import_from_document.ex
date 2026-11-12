@@ -6,21 +6,6 @@ defmodule Firmowid.Payroll.MemberPayrollInput.ImportFromDocument do
   alias Firmowid.Payroll.MemberPayrollInput
   alias Firmowid.Scope
 
-  @fact_fields [
-    :payout_date,
-    :payout_date_basis,
-    :gross,
-    :prior_taxable_income,
-    :prior_social_base,
-    :prior_exempt_income,
-    :employer_ppk_income,
-    :employer_ppk_date,
-    :single_payment,
-    :standard_pay,
-    :insurance_unchanged,
-    :source_blob_id
-  ]
-
   @impl true
   def run(input, _opts, context) do
     with %{member_id: raw_member_id, salary_month: %Date{day: 1} = salary_month} <-
@@ -37,7 +22,7 @@ defmodule Firmowid.Payroll.MemberPayrollInput.ImportFromDocument do
 
     incoming =
       attributes
-      |> Map.take(@fact_fields)
+      |> Map.take(Ash.Resource.Info.action(MemberPayrollInput, :update).accept)
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
 
