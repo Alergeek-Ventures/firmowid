@@ -287,7 +287,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
         name: project.name,
         amount: Map.fetch!(project, result),
         caption: project_caption(project, with_overhead),
-        patch: Navigation.view_path(%{view: :dashboard, period: period, month: nil}, [project.key])
+        patch: Navigation.view_path(%{view: :trends, period: period}, [project.key])
       }
     end)
     |> Enum.sort_by(& &1.amount, {:desc, Decimal})

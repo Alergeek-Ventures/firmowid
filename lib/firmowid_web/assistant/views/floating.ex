@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   alias Firmowid.Assistant
   alias Firmowid.Ksef
   alias FirmowidUI.Invoicing.Issuance
+  alias FirmowidWeb.Assistant.Components.AnalysisContext
   alias FirmowidWeb.Assistant.Components.Controls
   alias FirmowidWeb.Assistant.Components.History
   alias FirmowidWeb.Assistant.Components.Invoice
@@ -206,7 +207,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       class="flex-none border-be border-grey-200 bg-grey-100 px-4"
       aria-label={gettext("Conversation about")}
     >
-      <Records.preview record={@subject.record} class="mx-auto max-inline-182" />
+      <AnalysisContext.card
+        :if={@subject.type == "analysis"}
+        analysis={@subject.analysis}
+        class="mx-auto max-inline-182"
+      />
+      <Records.preview
+        :if={@subject.type != "analysis"}
+        record={@subject.record}
+        class="mx-auto max-inline-182"
+      />
     </section>
     <Transcript.transcript
       turns={@turns}
@@ -270,6 +280,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
 
   def handle_event("ask", %{"subject_type" => type, "subject_id" => id}, socket) do
     start_subject_conversation(socket, %{subject_type: type, subject_id: id})
+  end
+
+  def handle_event("ask_analysis", params, socket) do
+    params
+    |> Map.take(~w(view from to month project_id title))
+    |> Assistant.start_analysis_conversation(scope: socket.assigns.ash_scope)
+    |> subject_conversation_started(socket)
   end
 
   def handle_event("history", _params, socket) do
@@ -428,7 +445,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   end
 
   defp start_subject_conversation(socket, subject) do
-    case Assistant.start_subject_conversation(subject, scope: socket.assigns.ash_scope) do
+    subject
+    |> Assistant.start_subject_conversation(scope: socket.assigns.ash_scope)
+    |> subject_conversation_started(socket)
+  end
+
+  defp subject_conversation_started(result, socket) do
+    case result do
       {:ok, conversation} ->
         {:noreply,
          socket

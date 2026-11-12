@@ -189,5 +189,7 @@ defmodule FirmowidWeb.Assistant.Components.Transcript do
 
   defp welcome_heading(%{type: type}) when type in ["employee", "project"], do: gettext("How can I help?")
 
+  defp welcome_heading(%{type: "analysis"}), do: gettext("What would you like to know about these numbers?")
+
   defp welcome_heading(_subject), do: gettext("Choose a matching scenario")
 end

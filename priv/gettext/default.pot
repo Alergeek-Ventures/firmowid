@@ -44,6 +44,7 @@ msgstr ""
 msgid "%{amount} of every 100"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} stayed"
@@ -358,7 +359,7 @@ msgid "%{employee} · %{month}"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
-#: lib/firmowid_web/analysis/views/dashboard.ex
+#: lib/firmowid_web/analysis/utilities/periods.ex
 #, elixir-autogen, elixir-format
 msgid "%{from} – %{to}"
 msgstr ""
@@ -494,6 +495,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #, elixir-autogen, elixir-format
 msgid "%{title} - which documents should I attach?"
+msgstr ""
+
+#: lib/firmowid_web/analysis/views/dashboard.ex
+#, elixir-autogen, elixir-format
+msgid "%{view}: %{period}"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex
@@ -1341,9 +1347,29 @@ msgctxt "main navigation"
 msgid "Analysis"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Analysis the conversation is about"
+msgstr ""
+
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #, elixir-autogen, elixir-format
 msgid "Analysis views"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Analysis · Projects"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Analysis · Summary"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Analysis · Trends"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -1576,6 +1602,11 @@ msgstr ""
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Ask an administrator to assign you to a project"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/ask_assistant.ex
+#, elixir-autogen, elixir-format
+msgid "Ask the assistant"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -3289,11 +3320,17 @@ msgstr ""
 msgid "Cost invoices from the last 30 days will arrive by themselves, and you will send sales invoices in one click."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Costs"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Costs took all of the income."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -3903,12 +3940,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Customer database with cooperation statistics"
-msgstr ""
-
-#: lib/firmowid_web/analysis/views/dashboard.ex
-#, elixir-autogen, elixir-format
-msgctxt "analysis view"
-msgid "Dashboard"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -5925,6 +5956,11 @@ msgstr ""
 msgid "How do additional charges work?"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "How do shared costs change the projects' results?"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "How does migration from another program work?"
@@ -6124,6 +6160,7 @@ msgid "Included in the price: %{units}"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -6571,6 +6608,11 @@ msgstr ""
 msgid "Is my data safe?"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Is my result getting better month by month?"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Issue an invoice for Północny Kod: 120 h at PLN 180 net."
@@ -6944,6 +6986,11 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "Last 3 mo."
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Last invoice"
@@ -7279,11 +7326,6 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
-msgid "Margin %{margin}"
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/period_details.ex
-#, elixir-autogen, elixir-format
 msgid "Marketing"
 msgstr ""
 
@@ -7369,9 +7411,15 @@ msgctxt "weekday name"
 msgid "Monday"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Month"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/monthly_results.ex
+#, elixir-autogen, elixir-format
+msgid "Month by month"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
@@ -7756,6 +7804,11 @@ msgstr ""
 msgid "No history for this document."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
+#, elixir-autogen, elixir-format
+msgid "No income"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/financial_overview.ex
 #, elixir-autogen, elixir-format
 msgid "No income or expenses in this period."
@@ -7970,6 +8023,7 @@ msgid "Not applied"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #, elixir-autogen, elixir-format
 msgctxt "month"
 msgid "Not closed"
@@ -8119,8 +8173,14 @@ msgid "October"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
+#: lib/firmowid_web/assistant/components/analysis_context.ex
 #, elixir-autogen, elixir-format
 msgid "Of every %{hundred} of income, %{amount} stayed."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/monthly_results.ex
+#, elixir-autogen, elixir-format
+msgid "Of every 100 zł of income"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex
@@ -8338,6 +8398,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Open the invoice preview"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "Open the view"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -9039,6 +9104,11 @@ msgstr ""
 msgid "Previous documents"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "Previous mo."
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Previous version"
@@ -9560,7 +9630,12 @@ msgstr ""
 msgid "Restore project"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/period_details.ex
+#: lib/firmowid_web/analysis/components/monthly_results.ex
+#, elixir-autogen, elixir-format
+msgid "Result"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
 #, elixir-autogen, elixir-format
 msgid "Result %{amount}"
 msgstr ""
@@ -10346,6 +10421,11 @@ msgctxt "session overlap action"
 msgid "Shortened"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/project_switcher.ex
+#, elixir-autogen, elixir-format
+msgid "Show"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Show %{count} feature"
@@ -10407,14 +10487,19 @@ msgstr ""
 msgid "Show sessions"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex
+#: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
-msgid "Show the whole company"
+msgid "Show the whole period"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Show unpaid sales invoices past their due date, oldest first, with how many days each is overdue."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/project_switcher.ex
+#, elixir-autogen, elixir-format
+msgid "Show: %{slice}"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/utilities/leave_presentation.ex
@@ -10876,6 +10961,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
+msgid "Summary"
+msgstr ""
+
+#: lib/firmowid_web/analysis/views/dashboard.ex
+#, elixir-autogen, elixir-format
+msgctxt "analysis view"
 msgid "Summary"
 msgstr ""
 
@@ -11638,6 +11729,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "The last three months by category"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/analysis_context.ex
+#, elixir-autogen, elixir-format
+msgid "The most went to %{category}."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex
@@ -12419,6 +12515,7 @@ msgstr[1] ""
 msgid "Tools, office, accounting and other costs of running the company."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -12589,6 +12686,12 @@ msgstr ""
 msgid "Transport and fuel"
 msgstr ""
 
+#: lib/firmowid_web/analysis/views/dashboard.ex
+#, elixir-autogen, elixir-format
+msgctxt "analysis view"
+msgid "Trends"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Trial period"
@@ -12717,6 +12820,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
+#: lib/firmowid_web/assistant/components/analysis_context.ex
 #, elixir-autogen, elixir-format
 msgid "Uncategorized"
 msgstr ""
@@ -13328,6 +13432,11 @@ msgstr ""
 msgid "What can we improve?"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "What changed in the last three months?"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "What does your company do?"
@@ -13342,6 +13451,16 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "What should the employee correct?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "What takes the most of my money?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/transcript.ex
+#, elixir-autogen, elixir-format
+msgid "What would you like to know about these numbers?"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -13364,6 +13483,11 @@ msgstr ""
 msgid "When will you need a paid plan?"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Where could I spend less?"
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Whether the payout date is planned or actual"
@@ -13374,6 +13498,11 @@ msgstr ""
 msgid "Which banks do you support?"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which costs differ from the usual?"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Which documents should I attach?"
@@ -13381,7 +13510,22 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
+msgid "Which month was the weakest and why?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which project earns the most for an hour of work?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
 msgid "Which projects earn money and which lose it?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which projects lose money and why?"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -13407,6 +13551,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Who worked how much? What fit within the project budget? By the time you prepare a summary, the week is over."
+msgstr ""
+
+#: lib/firmowid_web/analysis/views/dashboard.ex
+#, elixir-autogen, elixir-format
+msgid "Whole company"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
@@ -13541,6 +13690,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
 msgid "YOUR MOVE!"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "Year before"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -14416,6 +14570,7 @@ msgstr ""
 msgid "less administrative work per week"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "loss %{amount}"

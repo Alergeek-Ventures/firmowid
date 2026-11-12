@@ -1,11 +1,14 @@
 defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @moduledoc """
-  Financial overview with month details, project results and category review.
+  Analysis of the company's money in three views: the summary of where every 100 zł of
+  income went by category, the trends month by month for the whole company or one project,
+  and the project results with the category review.
 
   Views share the selected period, any run of months, built from the authorized
-  year summaries; a chart month narrows the dashboard's details to it. Project
+  year summaries; a trends month opens the summary narrowed to it. Project
   results always allocate over the whole company. Entries are assigned to
-  projects in invoicing; tax estimates stay separate from realized totals.
+  projects in invoicing; tax estimates stay separate from realized totals. Each
+  view can start an assistant conversation about what it shows.
   """
   use FirmowidWeb, :live_view
 
@@ -14,13 +17,18 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   alias Firmowid.Analysis
   alias Firmowid.Analysis.CategoryReview
-  alias Firmowid.Analysis.CategoryTotals
   alias Firmowid.Analysis.CounterpartyCategory
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Analysis.ProjectProfitability
   alias Firmowid.Analysis.TagDefinition
-  alias Firmowid.Analysis.YearSummary
+  alias FirmowidWeb.Analysis.Components.AskAssistant
+  alias FirmowidWeb.Analysis.Components.FinancialOverview
+  alias FirmowidWeb.Analysis.Components.MonthlyResults
+  alias FirmowidWeb.Analysis.Components.PeriodDetails
+  alias FirmowidWeb.Analysis.Components.ProjectSwitcher
+  alias FirmowidWeb.Analysis.Components.SegmentRanking
   alias FirmowidWeb.Analysis.Utilities.Navigation
+  alias FirmowidWeb.Analysis.Utilities.Periods
 
   @impl true
   def mount(_params, _session, socket) do
@@ -47,13 +55,22 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_params(params, _uri, socket) do
+    view = Navigation.parse_view(params)
+
+    # Only the trends show one project; the summary's categories and the projects' allocation
+    # need the whole company.
+    tag_filters =
+      if view.view == :trends,
+        do:
+          params
+          |> Navigation.parse_tag_filters(socket.assigns.tag_definitions)
+          |> Enum.filter(&match?({:project, _id}, &1))
+          |> Enum.take(1),
+        else: []
+
     socket =
       socket
-      |> assign(:params, Navigation.parse_view(params))
-      |> assign(
-        :tag_filters,
-        Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
-      )
+      |> assign(params: view, tag_filters: tag_filters)
       |> load_view()
 
     {:noreply, socket}
@@ -99,19 +116,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   def handle_event("select-period", _params, socket), do: {:noreply, socket}
 
-  # A chart month narrows the details; choosing it again shows the whole period.
-  def handle_event("select-month", %{"month" => month}, %{assigns: %{params: %{view: :dashboard} = params}} = socket)
+  # A trends month of the whole company opens the summary narrowed to it.
+  def handle_event("select-month", %{"month" => month}, %{assigns: %{params: %{view: :trends}, tag_filters: []}} = socket)
       when is_binary(month) do
     case Date.from_iso8601(month) do
       {:ok, month} ->
         month = Date.beginning_of_month(month)
 
-        if month in closed_months(socket.assigns.summary) do
-          month = if month == params.month, do: nil, else: month
-          {:noreply, push_patch(socket, to: build_path(socket, month: month))}
-        else
-          {:noreply, socket}
-        end
+        if month in closed_months(socket.assigns.summary),
+          do: {:noreply, push_patch(socket, to: month_path(socket.assigns.params.period).(month))},
+          else: {:noreply, socket}
 
       _invalid ->
         {:noreply, socket}
@@ -148,11 +162,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   def handle_event("toggle-function", _params, socket), do: {:noreply, socket}
-
-  @impl true
-  def handle_event("clear-tag-filters", _params, socket) do
-    {:noreply, push_patch(socket, to: build_path(socket, tag_filters: []))}
-  end
 
   @impl true
   def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_view(socket)}
@@ -208,7 +217,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   defp load_view(%{assigns: %{params: %{view: :segments, period: period}, ash_scope: scope}} = socket) do
-    summary = period_summary(period, [], scope)
+    summary = Analysis.period_summary(period, [], scope)
 
     seconds =
       period
@@ -225,13 +234,44 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     |> update(:review, &closed_review(&1, closed_months(summary)))
   end
 
-  # Categories come from unfiltered entries, so project filters leave them out.
-  defp load_view(%{assigns: %{params: params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
-    socket = assign(socket, :summary, period_summary(params.period, tag_filters, scope))
+  defp load_view(%{assigns: %{params: %{view: :trends} = params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
+    assign(socket,
+      summary: Analysis.period_summary(params.period, tag_filters, scope),
+      review: nil
+    )
+  end
 
-    if tag_filters == [],
-      do: load_review(socket),
-      else: assign(socket, :review, nil)
+  defp load_view(%{assigns: %{params: params, ash_scope: scope}} = socket) do
+    summary = Analysis.period_summary(params.period, [], scope)
+
+    socket
+    |> assign(summary: summary, previous: previous(details_months(params, summary), scope))
+    |> load_review()
+  end
+
+  # What the summary compares with: a month with the month before, more months with the
+  # same months a year earlier, so seasons match. Without income then there is nothing to compare.
+  defp previous([], _scope), do: nil
+
+  defp previous(months, scope) do
+    shift = if length(months) == 1, do: -1, else: -12
+
+    {from, to} =
+      period =
+      {Date.shift(List.first(months), month: shift), Date.shift(List.last(months), month: shift)}
+
+    totals = Analysis.period_summary(period, [], scope).totals
+
+    if Decimal.positive?(totals.total_income) do
+      review = Analysis.get_category_review(Date.range(from, Date.end_of_month(to)), scope)
+
+      %{
+        period: period,
+        income: totals.total_income,
+        result: totals.net_profit,
+        groups: CategoryReview.period(review, Navigation.months(period), [])
+      }
+    end
   end
 
   # Income channels, like the projects, count only closed months.
@@ -261,24 +301,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     assign(socket, :review, review)
   end
 
-  # The period's months from the year summaries it spans; totals cover only closed months,
-  # since a month still waiting for its invoices' payments would mislead.
-  defp period_summary(period, tag_filters, scope) do
-    months = Navigation.months(period)
-
-    months =
-      for year <- years(period),
-          month <- YearSummary.get!(year, %{tag_filters: tag_filters}, scope: scope).months,
-          month.month in months,
-          do: month
-
-    %{
-      currency: "PLN",
-      months: months,
-      totals: months |> Enum.filter(& &1.closed?) |> Enum.map(& &1.totals) |> CategoryTotals.combine()
-    }
-  end
-
   defp closed(summary), do: Enum.filter(summary.months, & &1.closed?)
 
   defp closed_months(summary), do: summary |> closed() |> Enum.map(& &1.month)
@@ -294,7 +316,62 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   defp view_for(params, :dashboard), do: %{view: :dashboard, period: params.period, month: nil}
+  defp view_for(params, :trends), do: %{view: :trends, period: params.period}
   defp view_for(params, :segments), do: %{view: :segments, period: params.period}
+
+  defp month_path(period), do: &Navigation.view_path(%{view: :dashboard, period: period, month: &1}, [])
+
+  defp project_options(params, tag_filters, definitions) do
+    company = %{
+      name: gettext("Whole company"),
+      patch: Navigation.view_path(view_for(params, :trends), []),
+      selected?: tag_filters == []
+    }
+
+    projects =
+      for definition <- Enum.sort_by(definitions, &String.downcase(&1.name)),
+          not definition.overhead do
+        key = {:project, definition.id}
+
+        %{
+          name: definition.name,
+          patch: Navigation.view_path(view_for(params, :trends), [key]),
+          selected?: tag_filters == [key]
+        }
+      end
+
+    [company | projects]
+  end
+
+  # What the assistant is asked about: the view on screen, its period and month or project.
+  defp assistant_context(params, summary, tag_filters, definitions) do
+    {view, title} =
+      case params.view do
+        :dashboard -> {"summary", pgettext("analysis view", "Summary")}
+        :trends -> {"trends", pgettext("analysis view", "Trends")}
+        :segments -> {"projects", pgettext("analysis view", "Projects")}
+      end
+
+    month = if params.view == :dashboard, do: selected_month(params, summary)
+    project_id = Enum.find_value(tag_filters, fn {:project, id} -> id end)
+
+    shown =
+      cond do
+        params.view == :dashboard -> details_title(params, summary)
+        project_id -> "#{Periods.label(params.period)} · #{slice_name(tag_filters, definitions)}"
+        true -> Periods.label(params.period)
+      end
+
+    %{
+      view: view,
+      from: Date.to_iso8601(elem(params.period, 0)),
+      to: Date.to_iso8601(elem(params.period, 1)),
+      month: month && Date.to_iso8601(month),
+      project_id: project_id,
+      # The conversation keeps at most 200 characters of it; a long project name must not fail the ask.
+      title: String.slice(gettext("%{view}: %{period}", view: title, period: shown), 0, 200)
+    }
+  end
 
   # A month that is not closed has no result to show, so a link to one shows the whole period.
   defp selected_month(%{month: %Date{} = month}, summary) do
@@ -324,33 +401,21 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     cond do
       month = selected_month(params, summary) ->
-        month_name(month, "LLLL y")
+        Periods.month_name(month, "LLLL y")
 
       closed == [] or closed == Enum.map(summary.months, & &1.month) ->
-        period_title(params.period)
+        Periods.label(params.period)
 
       true ->
-        period_title({List.first(closed), List.last(closed)})
+        Periods.label({List.first(closed), List.last(closed)})
     end
   end
-
-  defp period_title({month, month}), do: month_name(month, "LLLL y")
-
-  defp period_title({%Date{month: 1, year: year}, %Date{month: 12, year: year}}), do: Integer.to_string(year)
-
-  defp period_title({%Date{year: year} = from, %Date{year: year} = to}),
-    do: gettext("%{from} – %{to}", from: month_name(from, "LLLL"), to: month_name(to, "LLLL y"))
-
-  defp period_title({from, to}),
-    do: gettext("%{from} – %{to}", from: month_name(from, "LLLL y"), to: month_name(to, "LLLL y"))
 
   # The picker holds only ranges; a single month or a calendar year is shown as its label instead,
   # so two clicks start a new range.
   defp range({%Date{month: 1, year: year}, %Date{month: 12, year: year}}), do: nil
   defp range({from, to}) when from != to, do: {from, to}
   defp range(_month), do: nil
-
-  defp month_name(month, format), do: month |> Firmowid.Cldr.Date.to_string!(format: format) |> String.capitalize()
 
   defp slice_name(filters, definitions) do
     Enum.map_join(filters, ", ", fn
@@ -369,10 +434,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         <.filter_tabs label={gettext("Analysis views")}>
           <:tab
             id="analysis-overview"
-            patch={Navigation.view_path(view_for(@params, :dashboard), @tag_filters)}
+            patch={Navigation.view_path(view_for(@params, :dashboard), [])}
             active={@params.view == :dashboard}
           >
-            {pgettext("analysis view", "Dashboard")}
+            {pgettext("analysis view", "Summary")}
+          </:tab>
+          <:tab
+            id="analysis-trends-tab"
+            patch={Navigation.view_path(view_for(@params, :trends), @tag_filters)}
+            active={@params.view == :trends}
+          >
+            {pgettext("analysis view", "Trends")}
           </:tab>
           <:tab
             id="analysis-segments-tab"
@@ -383,56 +455,70 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           </:tab>
         </.filter_tabs>
         <div class="flex flex-wrap items-center gap-3">
+          <ProjectSwitcher.switcher
+            :if={@params.view == :trends}
+            id="analysis-project-switcher"
+            label={
+              if @tag_filters == [],
+                do: gettext("Whole company"),
+                else: slice_name(@tag_filters, @tag_definitions)
+            }
+            options={project_options(@params, @tag_filters, @tag_definitions)}
+          />
           <.month_range_picker
             id="analysis-period-picker"
             selected={range(@params.period)}
-            label={period_title(@params.period)}
+            label={Periods.label(@params.period)}
             clear_label={gettext("This year")}
             aria-label={gettext("Period")}
             data-position="bottom right"
           />
+          <AskAssistant.button
+            id="analysis-ask-assistant"
+            context={
+              assistant_context(
+                @params,
+                @params.view != :segments && @summary,
+                @tag_filters,
+                @tag_definitions
+              )
+            }
+          />
         </div>
       </div>
-      <div
-        :if={@tag_filters != []}
-        id="analysis-slice"
-        class="flex flex-wrap items-baseline gap-x-4 gap-y-1"
-      >
-        <h2 class="text-2xl font-semibold text-grey-900">
-          {slice_name(@tag_filters, @tag_definitions)}
-        </h2>
-        <FirmowidUI.Components.Button.button
-          id="clear-tag-filters"
-          type="button"
-          variant="unstyled"
-          phx-click="clear-tag-filters"
-          class="cursor-pointer text-sm text-grey-700 underline active:text-grey-900"
-        >
-          {gettext("Show the whole company")}
-        </FirmowidUI.Components.Button.button>
-      </div>
-      <%= if @params.view == :dashboard do %>
-        <FirmowidWeb.Analysis.Components.FinancialOverview.overview
+      <PeriodDetails.details
+        :if={@params.view == :dashboard}
+        title={details_title(@params, @summary)}
+        title_shown={details_title(@params, @summary) != Periods.label(@params.period)}
+        previous={@previous}
+        whole_period={
+          selected_month(@params, @summary) &&
+            Navigation.view_path(view_for(@params, :dashboard), [])
+        }
+        months={Enum.filter(@summary.months, &(&1.month in details_months(@params, @summary)))}
+        groups={
+          @review &&
+            CategoryReview.period(
+              @review,
+              details_months(@params, @summary),
+              compared_months(@params, @summary)
+            )
+        }
+        industry={@review && @review.industry}
+        can_edit={can_tag?(assigns)}
+      />
+      <%= if @params.view == :trends do %>
+        <FinancialOverview.overview
           summary={@summary}
           tag_filters={@tag_filters}
-          selected_month={selected_month(@params, @summary)}
         />
-        <FirmowidWeb.Analysis.Components.PeriodDetails.details
-          title={details_title(@params, @summary)}
-          months={Enum.filter(@summary.months, &(&1.month in details_months(@params, @summary)))}
-          groups={
-            @review &&
-              CategoryReview.period(
-                @review,
-                details_months(@params, @summary),
-                compared_months(@params, @summary)
-              )
-          }
-          industry={@review && @review.industry}
-          can_edit={can_tag?(assigns)}
+        <MonthlyResults.table
+          months={@summary.months}
+          totals={@summary.totals}
+          month_path={@tag_filters == [] && month_path(@params.period)}
         />
       <% end %>
-      <FirmowidWeb.Analysis.Components.SegmentRanking.ranking
+      <SegmentRanking.ranking
         :if={@params.view == :segments}
         profitability={@profitability}
         review={@review}
