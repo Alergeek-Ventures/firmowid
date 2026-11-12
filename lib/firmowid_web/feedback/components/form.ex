@@ -1,13 +1,16 @@
 defmodule FirmowidWeb.Feedback.Components.Form do
   @moduledoc """
-  LiveComponent rendering the feedback modal. Sending only shows the thank-you
-  note: the text is neither stored nor sent anywhere.
+  LiveComponent rendering the feedback modal. Sending captures the typed text as a
+  PostHog survey response (see `Firmowid.Analytics.capture_feedback/4`) and shows
+  the thank-you note; the text is not stored in the application.
   """
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
+
+  alias Firmowid.Analytics
 
   @impl true
   def update(assigns, socket) do
@@ -41,6 +44,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
                 name="content"
                 rows="5"
                 required
+                maxlength="5000"
                 placeholder={gettext("Describe your idea or suggestion, or report a problem")}
                 class="min-h-[120px] w-full resize-y rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-rust-700 focus:ring-rust-700"
               ></textarea>
@@ -78,12 +82,17 @@ defmodule FirmowidWeb.Feedback.Components.Form do
   end
 
   @impl true
-  def handle_event("save", %{"content" => content}, socket) when content != "" do
-    {:noreply, assign(socket, :submitted, true)}
-  end
+  def handle_event("save", %{"content" => content}, socket) do
+    case String.trim(content) do
+      "" ->
+        {:noreply, socket}
 
-  def handle_event("save", _params, socket) do
-    {:noreply, socket}
+      text ->
+        %{current_user: user, current_uri: uri} = socket.assigns
+        Analytics.capture_feedback(user, user.member.organization_id, uri.path, text)
+
+        {:noreply, assign(socket, :submitted, true)}
+    end
   end
 
   def handle_event("reset", _params, socket) do
