@@ -8,7 +8,7 @@ category: firma-uslugowa
 
 Wcześniej nie do końca wiedzieliśmy, czy projekt się opłaca, mogliśmy szacować czas i niektóre koszty, jak wyjazdy. Teraz każdy koszt możemy oznaczyć i przypisać do konkretnego projektu. To bardzo wygodne, może to za nas zrobić Claude przez MCP, ChatGPT albo asystent. Bazuje na analogii, na wcześniejszych opisach faktur z poprzednich miesięcy.
 
-Do tego mamy pełny dashboard za zeszły rok: rentowność każdego projektu, czyli koszty kontra faktury, oraz to, co już jest opłacone, a co nie. Możemy poprosić czat o wykres, na którym nam zależy, na przykład symulację, jak decyzja X wpłynie na kolejne miesiące. Pytamy też o prognozy na podstawie trendów i o to, gdzie warto obciąć wydatki.
+Do tego mamy pełny dashboard za zeszły rok: rentowność każdego projektu, czyli koszty kontra faktury, oraz to, co już jest opłacone, a co nie. Możemy poprosić czat o wykres, na którym nam zależy, na przykład symulację, jak nowy etat wpłynie na kolejne miesiące. Pytamy też o prognozy na podstawie trendów i o to, gdzie warto obciąć wydatki.
 
 Małe firmy żyją z miesiąca na miesiąc. Takie dane pozwalają mądrzej planować budżet, strategicznie zrozumieć, gdzie jest problem, i rozwiązać go w ciągu kolejnych miesięcy.
 
