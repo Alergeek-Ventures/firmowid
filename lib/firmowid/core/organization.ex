@@ -18,10 +18,10 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Core
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Core.Changes.DefaultDisplayName
-  alias Firmowid.Core.Changes.SetOwnerOrganization
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
   alias Firmowid.Invoicing.VatExemption
@@ -110,7 +110,18 @@ defmodule Firmowid.Core.Organization do
       change set_attribute(:onboarding_completed_at, &DateTime.utc_now/0),
         where: [argument_equals(:start_onboarding, false)]
 
-      change SetOwnerOrganization
+      change after_action(fn changeset, organization, _context ->
+               owner_name = Ash.Changeset.get_argument(changeset, :owner_name)
+
+               Core.add_to_organization!(
+                 organization.owner_id,
+                 organization.id,
+                 :admin,
+                 owner_name
+               )
+
+               {:ok, organization}
+             end)
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
