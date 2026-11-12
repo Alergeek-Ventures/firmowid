@@ -42,7 +42,7 @@
                   <.link
                     kind="unstyled"
                     navigate={
-                      ~p"/faktura/#{@conn.params["token"]}?jezyk=#{QueryCodec.encode_invoice_language(:pl)}"
+                      ~p"/faktura/#{@token}?jezyk=#{QueryCodec.encode_invoice_language(:pl)}"
                     }
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
@@ -57,7 +57,7 @@
                   <.link
                     kind="unstyled"
                     navigate={
-                      ~p"/faktura/#{@conn.params["token"]}?jezyk=#{QueryCodec.encode_invoice_language(:en)}"
+                      ~p"/faktura/#{@token}?jezyk=#{QueryCodec.encode_invoice_language(:en)}"
                     }
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
@@ -80,8 +80,8 @@
                 kind="unstyled"
                 navigate={
                   case invoice.ksef_invoice_kind do
-                    :kor -> ~p"/faktura/#{@conn.params["token"] <> "." <> invoice.id}/pdf"
-                    :vat -> ~p"/faktura/#{@conn.params["token"]}/pdf"
+                    :kor -> ~p"/faktura/#{@token <> "." <> invoice.id}/pdf"
+                    :vat -> ~p"/faktura/#{@token}/pdf"
                   end
                 }
                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-rust-700"

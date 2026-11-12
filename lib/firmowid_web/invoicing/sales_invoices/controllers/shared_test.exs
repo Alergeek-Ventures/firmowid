@@ -60,6 +60,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     assert conn |> get(~p"/faktura/#{pdf_token}/pdf") |> html_response(404)
   end
 
+  test "a link naming a correction downloads each invoice of the chain", %{
+    conn: conn,
+    user: user,
+    token: token,
+    invoice: invoice
+  } do
+    correction =
+      invoice_fixture(user.member.organization_id, nil, %{
+        invoice_number: "FK/SYNTHETIC/1",
+        ksef_invoice_kind: :kor,
+        corrected_invoice_id: invoice.id
+      })
+
+    html = conn |> get(~p"/faktura/#{token <> "." <> correction.id}") |> html_response(200)
+
+    assert html =~ ~s(href="/faktura/#{token}/pdf")
+    assert html =~ ~s(href="/faktura/#{token}.#{correction.id}/pdf")
+  end
+
   test "public access does not grant a general organization read", %{user: user} do
     anonymous_scope = %Scope{
       actor: %SystemActor{org_id: user.member.organization_id, role: :anonymous},
@@ -91,37 +110,43 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     assert SalesInvoice.public_shared_chain!(other_invoice.id, token, scope: scope) == []
   end
 
-  defp invoice_fixture(organization_id, token) do
-    Ash.Seed.seed!(SalesInvoice, %{
-      invoice_number: "FV/SYNTHETIC/1",
-      sale_date: ~D[2026-01-01],
-      issue_date: ~D[2026-01-01],
-      due_date: ~D[2026-01-15],
-      payment_method: :transfer,
-      currency: "PLN",
-      buyer_type: :company,
-      buyer_id: "1234567890",
-      buyer_full_name: "Synthetic Buyer",
-      buyer_address: "Testowa 1",
-      buyer_country: "PL",
-      seller_display_name: "Synthetic Seller",
-      seller_nip: "1234567890",
-      seller_address: "Testowa 2",
-      organization_id: organization_id,
-      locked_at: DateTime.utc_now(:second),
-      share_token: token,
-      sales_invoice_items: [
+  defp invoice_fixture(organization_id, token, attrs \\ %{}) do
+    Ash.Seed.seed!(
+      SalesInvoice,
+      Map.merge(
         %{
+          invoice_number: "FV/SYNTHETIC/1",
+          sale_date: ~D[2026-01-01],
+          issue_date: ~D[2026-01-01],
+          due_date: ~D[2026-01-15],
+          payment_method: :transfer,
+          currency: "PLN",
+          buyer_type: :company,
+          buyer_id: "1234567890",
+          buyer_full_name: "Synthetic Buyer",
+          buyer_address: "Testowa 1",
+          buyer_country: "PL",
+          seller_display_name: "Synthetic Seller",
+          seller_nip: "1234567890",
+          seller_address: "Testowa 2",
           organization_id: organization_id,
-          index: 0,
-          name: "Synthetic service",
-          quantity: Decimal.new(1),
-          unit: "szt.",
-          unit_price: Decimal.new(100),
-          vat_rate: "23"
-        }
-      ]
-    })
+          locked_at: DateTime.utc_now(:second),
+          share_token: token,
+          sales_invoice_items: [
+            %{
+              organization_id: organization_id,
+              index: 0,
+              name: "Synthetic service",
+              quantity: Decimal.new(1),
+              unit: "szt.",
+              unit_price: Decimal.new(100),
+              vat_rate: "23"
+            }
+          ]
+        },
+        attrs
+      )
+    )
   end
 
   defp logo_fixture(organization_id) do

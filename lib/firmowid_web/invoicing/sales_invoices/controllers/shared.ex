@@ -33,8 +33,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   end
 
   def show(conn, %{"token" => token_string} = params) do
-    # we dont need correction_id - this view uses root token to show all invoices including related corrections
-    # but we need to split it to keep the old link format root_token.correction_id working
+    # The page shows the whole chain of the root token; a link may still name a correction.
     {root_token, _correction_id} = split_pdf_token(token_string)
 
     case shared_invoice(root_token) do
@@ -44,6 +43,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
         render(conn, :show,
           layout: false,
           invoice: invoice,
+          token: root_token,
           logo_url: logo_url,
           lang: lang,
           buyer_display_name: invoice.buyer_display_name_label || "",
