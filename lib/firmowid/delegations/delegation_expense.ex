@@ -99,7 +99,6 @@ defmodule Firmowid.Delegations.DelegationExpense do
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}
       validate {ForeignCurrencySettlementComplete, []}
-      change {UpdateDetectedDelegationDates, require_date_change_reason?: true}
     end
 
     update :add_related_document do
