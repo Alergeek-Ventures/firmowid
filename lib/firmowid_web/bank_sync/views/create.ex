@@ -2,8 +2,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   @moduledoc """
   LiveView for creating GoCardless bank connections.
 
-  Uses Ash native code interfaces from Firmowid.Finances domain.
-  The AshOban trigger on Requisition auto-schedules status polling.
+  The AshOban trigger on Requisition polls the status of a new connection.
   """
   use FirmowidWeb, :live_view
 
@@ -132,8 +131,6 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     if is_nil(requisition_id) do
       {:noreply, socket}
     else
-      # AshOban trigger auto-schedules status check when requisition is pending.
-      # No manual worker insertion needed.
       error = params["error"]
 
       if is_nil(error) do
@@ -172,22 +169,12 @@ defmodule FirmowidWeb.BankSync.Views.Create do
         %{"institution-id" => institution_id, "institution-transaction-total-days" => transaction_total_days},
         socket
       ) do
-    user = socket.assigns.current_user
-    organization_id = user.member.organization_id
-
-    # it comes as as string
-    transaction_total_days = String.to_integer(transaction_total_days)
-
-    # Use Ash native code interface with authorization
-    # The AshOban trigger auto-schedules status polling on create
     {:ok, link} =
       Finances.create_requisition(
         institution_id,
-        transaction_total_days,
+        String.to_integer(transaction_total_days),
         socket.assigns.redirect_url,
-        tenant: organization_id,
-        actor: user,
-        authorize?: true
+        scope: socket.assigns.ash_scope
       )
 
     {:noreply, assign(socket, :requisition_link, link)}
