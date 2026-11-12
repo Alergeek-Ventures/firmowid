@@ -2111,6 +2111,12 @@ msgstr ""
 msgid "Business trip settlement awaiting review"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Business trip settlement: %{title}"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -4434,6 +4440,7 @@ msgstr ""
 msgid "Download report"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Download the contract, sign it and upload the signed document."
@@ -6175,6 +6182,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "In one place."
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "workplace"
+msgid "In the office"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
@@ -8399,6 +8412,11 @@ msgstr ""
 msgid "Oops, something went wrong! Check the errors below."
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Open Time tracking"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Open a sales invoice"
@@ -9538,6 +9556,12 @@ msgstr ""
 msgid "Remote work"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "workplace"
+msgid "Remotely"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -10407,6 +10431,7 @@ msgctxt "hours record settings link"
 msgid "Settings"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Settle"
@@ -10491,6 +10516,13 @@ msgstr[1] ""
 msgid "Show %{count} more"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Show %{count} more person"
+msgid_plural "Show %{count} more people"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Show %{count} more row"
@@ -10571,6 +10603,7 @@ msgctxt "leave type"
 msgid "Sick leave"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
@@ -12130,6 +12163,11 @@ msgstr ""
 msgid "These Terms of Service set out the rules for using the Firmowid online service (hereinafter: the “Service”), available at"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Things waiting for you."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
 #, elixir-autogen, elixir-format
 msgid "This %{likely} means the month can be considered closed."
@@ -12412,7 +12450,6 @@ msgstr ""
 msgid "Time tracking"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/inbox/utilities/navigation.ex
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
@@ -13307,11 +13344,6 @@ msgstr ""
 msgid "Waiting for the bank's consent."
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Waiting for your signature or settlement."
-msgstr ""
-
 #: lib/firmowid_web/management/components/work_distribution.ex
 #, elixir-autogen, elixir-format
 msgctxt "weekday abbreviation"
@@ -13744,6 +13776,11 @@ msgstr ""
 msgid "Working time session started"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Workplace"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/dashboard.ex
 #, elixir-autogen, elixir-format
 msgid "Worth your attention"
@@ -14097,16 +14134,6 @@ msgstr ""
 msgid "Your account has not been confirmed yet. Check your inbox."
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Your business trip needs settlement"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Your business trip settlement needs a signature"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Your choice"
@@ -14153,6 +14180,7 @@ msgstr ""
 msgid "Your employer returned the settlement for correction"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Your employment contract is waiting for your signature"
@@ -14955,6 +14983,12 @@ msgstr ""
 msgid "selected %{selected} of %{limit}"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "settle by %{date}"
+msgstr ""
+
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "should be %{count} byte(s)"
@@ -15171,6 +15205,12 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "waiting for a stamp"
+msgstr ""
+
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "waiting for your signature"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

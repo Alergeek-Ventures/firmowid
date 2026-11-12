@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias Firmowid.Timetracker
   alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
+  alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.Navigation, as: DelegationNavigation
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
@@ -107,7 +108,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   @spec tier_hint(tier()) :: String.t()
   def tier_hint(:urgent), do: gettext("Something needs your urgent attention.")
   def tier_hint(:people), do: gettext("Someone on the team is waiting for your decision.")
-  def tier_hint(:personal), do: gettext("Waiting for your signature or settlement.")
+  def tier_hint(:personal), do: gettext("Things waiting for you.")
   def tier_hint(:books), do: gettext("Overdue invoices with no matched payment.")
 
   # Usage is counted only while a decision day is set. Nothing once the usage
@@ -337,27 +338,34 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
         scope: scope
       )
 
+    # The trip's dates lead the meta line, where company items name the person.
     Enum.map(finished ++ unsigned, fn trip ->
       %{
         id: "delegation-#{trip.id}",
         tier: :personal,
         icon: "plane",
-        title: delegation_title(trip),
-        context: trip.title,
-        person: nil,
+        title: gettext("Business trip settlement: %{title}", title: trip.title),
+        context: settlement_step(trip),
+        person: DelegationPresentation.format_range(trip.start_date, trip.end_date),
         action: if(trip.status == :awaiting_signature, do: gettext("Sign"), else: gettext("Settle")),
         href: DelegationNavigation.show_path(trip.reference)
       }
     end)
   end
 
+  # A business trip is settled within 14 days of its end (§ 5 of the business
+  # travel regulation under art. 77⁵ of the Labour Code).
+  defp settlement_step(%{status: :awaiting_signature}), do: gettext("waiting for your signature")
+
+  defp settlement_step(trip) do
+    gettext("settle by %{date}",
+      date: trip.end_date |> Date.add(14) |> Calendar.strftime("%d.%m")
+    )
+  end
+
   defp delegation_title(%{status: :pending}), do: gettext("Business trip order awaiting approval")
 
   defp delegation_title(%{status: :submitted}), do: gettext("Business trip settlement awaiting review")
-
-  defp delegation_title(%{status: :in_progress}), do: gettext("Your business trip needs settlement")
-
-  defp delegation_title(%{status: :awaiting_signature}), do: gettext("Your business trip settlement needs a signature")
 
   defp overdue_invoice_items(scope, today) do
     sales =

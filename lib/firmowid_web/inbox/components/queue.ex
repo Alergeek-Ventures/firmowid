@@ -137,7 +137,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       ]}>
         {@count}
       </span>
-      <p class="truncate text-sm text-grey-600 max-md:hidden">{Queue.tier_hint(@tier)}</p>
+      <p class="truncate text-sm leading-[1.35] text-grey-600 max-md:hidden">
+        {Queue.tier_hint(@tier)}
+      </p>
     </div>
     """
   end
@@ -155,8 +157,14 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   end
 
   @doc """
-  The member's session: the running one with a stop button, or the last one to
-  continue with a start button. Without any session yet, the way to Czasośledź.
+  The member's session: the running one with a stop button and where it is
+  worked from, or the last one to continue with a start button. Without any
+  session yet, the way to Czasośledź. The time counts seconds live, in a
+  lighter shade.
+
+  The page renders it twice: large under the queue and compact for the side
+  column. The `.SessionPlacement` hook of the inbox shows the compact one when
+  the large one would not fit on the first screen.
   """
   attr :session, :any, required: true, doc: "the running `Firmowid.Timetracker.Session` or nil"
 
@@ -164,87 +172,145 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     required: true,
     doc: "the most recent `Firmowid.Timetracker.Session` or nil"
 
+  attr :compact, :boolean, default: false
+
   def session_panel(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :id,
+        if(assigns.compact, do: "inbox-session-compact", else: "inbox-session")
+      )
+
     ~H"""
-    <section class="flex flex-col gap-3 rounded-md bg-white p-5">
-      <div class="flex items-center justify-between">
-        <h2 class="text-caps-sm font-medium tracking-wide text-grey-500 uppercase">
-          {gettext("Your session")}
-        </h2>
+    <section
+      id={@id}
+      class={[
+        "relative flex-col overflow-hidden rounded-sm bg-white",
+        if(@compact,
+          do: "hidden gap-8 p-5 group-data-compact-session:flex",
+          else: "flex min-h-65 justify-between gap-5 p-6 group-data-compact-session:hidden max-md:p-4"
+        )
+      ]}
+    >
+      <img
+        :if={!@compact}
+        src={~p"/images/figurine.png"}
+        alt=""
+        aria-hidden="true"
+        class="pointer-events-none absolute -top-18 right-16.75 w-84.5 max-w-none opacity-5 select-none max-md:-right-24"
+      />
+      <div class="relative flex items-center justify-between gap-3">
+        <h2 class="text-caps-sm font-medium text-grey-600 uppercase">{gettext("Your session")}</h2>
+        <%!-- The compact card has no room for the badge; the switch takes its place. --%>
+        <.workplace_switch :if={@compact && @session} id={@id} remote={@session.is_remote} />
         <span
-          :if={@session}
-          class="inline-flex items-center gap-1.5 text-xs font-medium text-moss-700"
+          :if={!@compact && @session}
+          class="inline-flex items-center gap-1.5 rounded-sm bg-moss-100 px-2 py-0.75 text-sm leading-[1.35] text-moss-800"
         >
-          <span class="size-2 animate-pulse rounded-full bg-moss-600"></span>
+          <span class="size-2 rounded-full bg-moss-700" aria-hidden="true"></span>
           {pgettext("session state", "Running")}
         </span>
       </div>
-      <%= if @session do %>
+      <div class="relative flex flex-col gap-1">
         <span
-          id="inbox-session-timer"
-          phx-hook="Timer"
-          data-start_time={DateTime.to_iso8601(@session.start_datetime)}
-          class="text-3xl font-semibold text-grey-900 tabular-nums"
+          id={if @session, do: "#{@id}-timer", else: "#{@id}-idle"}
+          phx-hook={@session && "Timer"}
+          data-start_time={@session && DateTime.to_iso8601(@session.start_datetime)}
+          class={[
+            "leading-[normal] font-semibold tracking-[-0.02em] tabular-nums",
+            if(@compact, do: "text-[2.5rem]", else: "text-[4rem]"),
+            if(@session, do: "text-black", else: "text-grey-400")
+          ]}
         >
-          00:00:00
+          <span data-timer-main>00:00</span><span data-timer-seconds class="text-grey-200">:00</span>
         </span>
-        <p class="truncate text-xs text-grey-500">{session_summary(@session)}</p>
-      <% else %>
-        <span class="text-3xl font-semibold text-grey-400 tabular-nums">00:00:00</span>
-        <p :if={@last_session} class="truncate text-xs text-grey-500">
-          {gettext("Continue: %{session}", session: session_summary(@last_session))}
+        <p class="truncate text-sm leading-[1.35] text-grey-600">
+          <%= cond do %>
+            <% @session -> %>
+              {session_summary(@session)}
+            <% @last_session -> %>
+              {gettext("Continue: %{session}", session: session_summary(@last_session))}
+            <% true -> %>
+              {gettext("You are not tracking time now.")}
+          <% end %>
         </p>
-        <p :if={!@last_session} class="text-xs text-grey-500">
-          {gettext("You are not tracking time now.")}
-        </p>
-      <% end %>
-      <div class="flex items-center justify-between gap-3">
-        <.button
-          :if={@session}
-          type="button"
-          size="small"
-          variant="tertiary"
-          phx-click="stop_session"
-        >
-          <Lucideicons.square class="size-4" aria-hidden="true" />{pgettext("session", "Stop")}
-        </.button>
-        <.button
-          :if={!@session && @last_session}
-          type="button"
-          size="small"
-          variant="special"
-          phx-click="start_session"
-        >
-          <Lucideicons.play class="size-4" aria-hidden="true" />{pgettext("session", "Start")}
-        </.button>
-        <.link
-          kind="button"
-          navigate={~p"/czasosledz"}
-          size="small"
-          variant="ghost"
-          class="ml-auto"
-        >
-          {pgettext("main navigation", "Time tracking")}
-          <Lucideicons.arrow_right class="size-4" aria-hidden="true" />
-        </.link>
+      </div>
+      <div class="relative flex flex-wrap items-center justify-between gap-3">
+        <div class={["flex items-center gap-2", @compact && "w-full"]}>
+          <.button
+            :if={@session}
+            type="button"
+            size="small"
+            variant="special"
+            phx-click="stop_session"
+          >
+            <Lucideicons.square class="size-4" aria-hidden="true" />{pgettext("session", "Stop")}
+          </.button>
+          <.button
+            :if={!@session && @last_session}
+            type="button"
+            size="small"
+            variant="special"
+            phx-click="start_session"
+          >
+            <Lucideicons.play class="size-4" aria-hidden="true" />{pgettext("session", "Start")}
+          </.button>
+          <.link
+            kind="button"
+            navigate={~p"/czasosledz"}
+            size="small"
+            variant="outline"
+            class={[@compact && "flex-1"]}
+          >
+            {gettext("Open Time tracking")}
+          </.link>
+        </div>
+        <.workplace_switch :if={!@compact && @session} id={@id} remote={@session.is_remote} />
       </div>
     </section>
     """
   end
 
-  defp session_summary(session) do
-    Enum.join(
-      [
-        session.title,
-        session.project.name,
-        if(session.is_remote,
-          do: pgettext("presence", "remotely"),
-          else: pgettext("presence", "in the office")
-        )
-      ],
-      " · "
-    )
+  attr :id, :string, required: true, doc: "id of the session card the switch belongs to"
+  attr :remote, :boolean, required: true
+
+  # Where the running session is worked from; switching it saves at once.
+  defp workplace_switch(assigns) do
+    ~H"""
+    <div
+      role="group"
+      aria-label={gettext("Workplace")}
+      class="flex items-center gap-0.5 rounded-sm bg-grey-100 p-0.5"
+    >
+      <.button
+        :for={
+          {remote, label} <- [
+            {false, pgettext("workplace", "In the office")},
+            {true, pgettext("workplace", "Remotely")}
+          ]
+        }
+        id={"#{@id}-#{if remote, do: "remote", else: "office"}"}
+        type="button"
+        variant="unstyled"
+        aria-pressed={to_string(@remote == remote)}
+        phx-click="set_workplace"
+        phx-value-remote={to_string(remote)}
+        class={[
+          "flex cursor-pointer items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm leading-[normal] font-medium transition-colors",
+          if(@remote == remote,
+            do: "bg-white text-black shadow-[0_1px_2px_0_rgb(0_0_0/0.08)]",
+            else: "text-grey-600 hover:text-grey-900"
+          )
+        ]}
+      >
+        <.presence_dot status={if remote, do: :remote, else: :office} />{label}
+      </.button>
+    </div>
+    """
   end
+
+  defp session_summary(session), do: Enum.join([session.title, session.project.name], " · ")
 
   @doc """
   Who works today: a dot for the office, a ring for remote work, a grey dot
@@ -432,6 +498,156 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     """
   end
 
+  @doc """
+  Who works today, for the member's own layer: the first five working people
+  with their avatars and where they work, the rest of them behind "show more",
+  and the others folded into one row of avatars that unfolds in place.
+  """
+  attr :presence, :list,
+    required: true,
+    doc: "from `Firmowid.Timetracker.Session.team_presence/2`"
+
+  def team_today(assigns) do
+    {working, absent} = Enum.split_with(assigns.presence, &(&1.status in [:office, :remote]))
+    assigns = assign(assigns, working: working, absent: absent, folded: 5)
+
+    ~H"""
+    <section id="inbox-team" class="flex flex-col gap-3.5 rounded-sm bg-white p-5">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-caps-sm font-medium text-grey-600 uppercase">
+          {gettext("Today at the company")}
+        </h2>
+        <span class="text-sm leading-[1.35] text-grey-700 tabular-nums">
+          {gettext("%{working} of %{count} working",
+            working: length(@working),
+            count: length(@presence)
+          )}
+        </span>
+      </div>
+      <ul :if={@working != []} id="inbox-team-working" class="flex flex-col gap-3">
+        <li
+          :for={{person, i} <- Enum.with_index(@working)}
+          data-more={i >= @folded}
+          hidden={i >= @folded}
+          class="flex items-center gap-2.5"
+        >
+          <span class="relative shrink-0">
+            <.initials person={person} class="size-8 bg-teal-200 text-teal-800" />
+            <span class="absolute -right-0.5 -bottom-0.5 flex rounded-full bg-white p-px">
+              <.presence_dot status={person.status} />
+            </span>
+          </span>
+          <span class="min-w-0 flex-1 truncate text-sm leading-[normal] font-medium text-black">
+            {person_name(person)}
+          </span>
+          <span class="sr-only">{status_label(person.status)}</span>
+        </li>
+      </ul>
+      <.button
+        :if={length(@working) > @folded}
+        type="button"
+        variant="unstyled"
+        id="inbox-team-more"
+        aria-expanded="false"
+        aria-controls="inbox-team-working"
+        phx-click={
+          JS.toggle_attribute({"hidden", ""}, to: "#inbox-team-working [data-more]")
+          |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+        }
+        class="group flex w-full cursor-pointer items-center justify-between gap-2.5 text-left text-sm leading-[1.35] text-grey-700 hover:text-grey-900"
+      >
+        <span class="group-aria-expanded:hidden">
+          {ngettext(
+            "Show %{count} more person",
+            "Show %{count} more people",
+            length(@working) - @folded
+          )}
+        </span>
+        <span class="hidden group-aria-expanded:inline">{gettext("Collapse")}</span>
+        <Lucideicons.chevron_down
+          class="size-4 shrink-0 transition-transform group-aria-expanded:rotate-180"
+          aria-hidden="true"
+        />
+      </.button>
+      <div :if={@working != [] and @absent != []} class="h-px bg-grey-100"></div>
+      <div :if={@absent != []} class="flex flex-col gap-3">
+        <.button
+          type="button"
+          variant="unstyled"
+          id="inbox-team-fold"
+          aria-expanded="false"
+          aria-controls="inbox-team-absent"
+          phx-click={
+            JS.toggle_attribute({"hidden", ""}, to: "#inbox-team-absent")
+            |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+          }
+          class="group flex w-full cursor-pointer items-center gap-2.5 text-left text-sm leading-[1.35] text-grey-700 hover:text-grey-900"
+        >
+          <span class="isolate flex shrink-0 items-center" aria-hidden="true">
+            <.initials
+              :for={{person, i} <- Enum.with_index(Enum.take(@absent, 4))}
+              person={person}
+              class="-mr-1.5 size-7 border-2 border-white bg-grey-200 text-grey-700"
+              style={"z-index: #{5 - i}"}
+            />
+            <span
+              :if={length(@absent) > 4}
+              class="flex size-7 items-center justify-center rounded-full border-2 border-white bg-grey-100 text-caps-sm font-semibold text-grey-700"
+            >
+              +{length(@absent) - 4}
+            </span>
+          </span>
+          <span class="min-w-0 flex-1">
+            {ngettext(
+              "%{count} person is not working",
+              "%{count} people are not working",
+              length(@absent)
+            )}
+          </span>
+          <Lucideicons.chevron_down
+            class="size-4 shrink-0 transition-transform group-aria-expanded:rotate-180"
+            aria-hidden="true"
+          />
+        </.button>
+        <ul id="inbox-team-absent" hidden class="flex flex-col gap-3">
+          <li :for={person <- @absent} class="flex items-center gap-2.5">
+            <.initials person={person} class="size-7 bg-grey-200 text-grey-700" />
+            <span class="min-w-0 flex-1 truncate text-sm leading-[normal] text-grey-700">
+              {person_name(person)}
+            </span>
+            <span class="sr-only">{status_label(person.status)}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+    """
+  end
+
+  attr :person, :map, required: true
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  defp initials(assigns) do
+    ~H"""
+    <span
+      class={[
+        "flex shrink-0 items-center justify-center rounded-full text-caps-sm font-semibold uppercase",
+        @class
+      ]}
+      aria-hidden="true"
+      {@rest}
+    >
+      {person_initials(@person)}
+    </span>
+    """
+  end
+
+  defp person_initials(%{name: name}) when is_binary(name) do
+    name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  end
+
+  defp person_initials(_person), do: "?"
+
   attr :status, :atom, required: true
 
   defp presence_dot(assigns) do
@@ -450,25 +666,53 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   defp status_label(:remote), do: pgettext("presence", "remotely")
   defp status_label(_absent), do: pgettext("presence", "not working")
 
-  @doc "The member's recorded time this month, using the same quiet rows as the company summary."
+  @doc """
+  The member's recorded time this month, as one large figure next to the icon
+  of the calendar season, in the season's colours.
+  """
   attr :duration, :integer, required: true, doc: "session seconds from Session.month_duration/2"
+  attr :today, Date, required: true
 
   def personal_month(assigns) do
+    {icon, color, icon_color} = season(assigns.today)
+    assigns = assign(assigns, icon: icon, color: color, icon_color: icon_color)
+
     ~H"""
-    <section id="inbox-personal-month" class="flex flex-col gap-3 rounded-md bg-white p-5">
-      <h2 class="text-caps-sm font-medium tracking-wide text-grey-500 uppercase">
-        {gettext("This month")}
+    <section
+      id="inbox-personal-month"
+      class="relative flex flex-col gap-2 rounded-sm bg-white p-5 pr-18"
+    >
+      <h2 class={["text-caps-sm leading-[normal] font-medium uppercase", @color]}>
+        {Firmowid.Cldr.Date.to_string!(@today, format: "LLLL")} · {gettext("Hours worked")}
       </h2>
-      <dl class="flex flex-col gap-2.5">
-        <div class="flex items-baseline justify-between gap-3">
-          <dt class="truncate text-sm text-grey-700">{gettext("Hours worked")}</dt>
-          <dd class="shrink-0 text-sm font-semibold text-grey-800 tabular-nums">
-            {hours_and_minutes(@duration)}
-          </dd>
-        </div>
-      </dl>
+      <p class="text-lg leading-[normal] font-medium text-black tabular-nums">
+        {hours_and_minutes(@duration)}
+      </p>
+      <Lucideicons.render!
+        name={@icon}
+        class={["absolute top-1/2 right-5 size-10 -translate-y-1/2 stroke-[0.9]", @icon_color]}
+        aria-hidden="true"
+      />
     </section>
     """
+  end
+
+  # Calendar seasons as counted in Poland: spring from 21 March, summer from
+  # 22 June, autumn from 23 September, winter from 22 December.
+  defp season(%Date{month: month, day: day}) do
+    case {month, day} do
+      day_of_year when day_of_year >= {12, 22} or day_of_year < {3, 21} ->
+        {"snowflake", "text-teal-700", "text-teal-700"}
+
+      day_of_year when day_of_year < {6, 22} ->
+        {"sprout", "text-moss-700", "text-moss-700"}
+
+      day_of_year when day_of_year < {9, 23} ->
+        {"sun", "text-rust-700", "text-rust-500"}
+
+      _autumn ->
+        {"leaf", "text-rust-700", "text-rust-700"}
+    end
   end
 
   # Whole hours read better without "0 min".
