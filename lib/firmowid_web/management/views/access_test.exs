@@ -20,6 +20,28 @@ defmodule FirmowidWeb.Management.Views.AccessTest do
     assert flash["error"] =~ "Nie masz dostępu do sekcji zarządzania."
   end
 
+  # The pages under /zarzadzanie come from the router, so one added there later
+  # cannot be left open; the three outside it are listed by hand.
+  test "a non-admin is redirected away from every admin-only page", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+    conn = log_in_user(conn, employee)
+
+    paths =
+      for %{path: path, metadata: %{phoenix_live_view: _live}} <-
+            Phoenix.Router.routes(FirmowidWeb.Core.Router),
+          String.starts_with?(path, "/zarzadzanie") or
+            path in ["/pierwsze-kroki", "/limit-planu", "/ustawienia/bank/dodaj"],
+          do: String.replace(path, ~r/:\w+/, Ecto.UUID.generate())
+
+    assert paths != []
+
+    for path <- paths do
+      assert {:error, {:redirect, %{to: to}}} = live(conn, path)
+      assert to == ~p"/czasosledz", "#{path} let a non-admin in"
+    end
+  end
+
   test "an admin opens employees and invites, an employee cannot", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})

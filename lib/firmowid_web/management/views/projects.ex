@@ -16,6 +16,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   require Ash.Query
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope

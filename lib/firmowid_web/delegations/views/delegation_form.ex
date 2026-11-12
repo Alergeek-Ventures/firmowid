@@ -17,6 +17,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   alias Firmowid.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :managing_employee}
+
   @impl true
   def mount(%{"reference" => reference} = params, _session, socket) do
     scope = socket.assigns.ash_scope

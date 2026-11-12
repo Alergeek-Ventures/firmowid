@@ -18,6 +18,8 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
   require Logger
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @institution_refresh_delay 300
   @institution_refresh_limit 5
 

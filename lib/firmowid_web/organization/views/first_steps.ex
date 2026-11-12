@@ -36,6 +36,8 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   require Logger
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   # KSeF reports no event when a fetch ends, so the page asks while one runs.
   @fetch_check_ms 3_000
   @connecting ~w(authenticating authenticating_epuap preparing_enrollment wait_for_certificate)a

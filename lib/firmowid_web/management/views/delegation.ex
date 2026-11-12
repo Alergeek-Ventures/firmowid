@@ -27,6 +27,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   alias FirmowidWeb.Management.Components.DelegationOrderPdf
   alias FirmowidWeb.Management.Utilities.Navigation
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(_params, _session, socket) do
     [sign_before, sign_after] =
