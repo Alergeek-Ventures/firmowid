@@ -7,6 +7,7 @@ defmodule Firmowid.Invoicing.Actions.WaitForKsefSubmissions do
   use Ash.Resource.Actions.Implementation
 
   alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
 
   require Ash.Query
 
@@ -58,7 +59,7 @@ defmodule Firmowid.Invoicing.Actions.WaitForKsefSubmissions do
            |> Ash.read(opts) do
       statuses =
         invoices
-        |> Ksef.get_submission_infos()
+        |> SubmissionInfo.for_invoices()
         |> Enum.zip_with(invoices, fn info, invoice ->
           %{
             invoice_id: invoice.id,

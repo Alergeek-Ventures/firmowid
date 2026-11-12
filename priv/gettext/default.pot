@@ -1299,7 +1299,7 @@ msgstr ""
 msgid "An invoice sent to KSeF cannot be deleted. Issue a correction invoice."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "An unexpected error occurred while sending to KSeF"
 msgstr ""
@@ -6728,12 +6728,12 @@ msgstr ""
 msgid "KSeF did not accept the invoice, so it returned to a draft without a number. Correct its details and issue it again."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF document validation error"
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF error: %{description}"
 msgstr ""
@@ -6791,7 +6791,7 @@ msgstr ""
 msgid "KSeF number assigned:"
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF rejected the submission as a duplicate. Change the invoice data and send it again."
 msgstr ""
@@ -6816,7 +6816,7 @@ msgstr ""
 msgid "KSeF tokens will be supported only until 1 January 2027. We recommend authenticating with a Trusted Profile or a KSeF certificate."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF validation error: %{details}"
 msgstr ""
@@ -7602,7 +7602,7 @@ msgstr ""
 msgid "No card, no trial period"
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "No connection to KSeF"
 msgstr ""
@@ -7821,7 +7821,7 @@ msgstr ""
 msgid "No sessions this month"
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "No submission information"
 msgstr ""
@@ -10691,7 +10691,7 @@ msgstr ""
 msgid "Submission error"
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "Submission finished without confirmation from KSeF"
 msgstr ""
@@ -11439,7 +11439,7 @@ msgstr ""
 msgid "The invoice draft was saved."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice has already been sent to KSeF"
 msgstr ""
@@ -11460,7 +11460,7 @@ msgstr ""
 msgid "The invoice has no counterparty assigned."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice is a draft - approve it first"
 msgstr ""
@@ -11510,7 +11510,7 @@ msgstr ""
 msgid "The invoice was issued outside KSeF — it cannot be edited or corrected."
 msgstr ""
 
-#: lib/firmowid/ksef/ksef.ex
+#: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice was not found"
 msgstr ""

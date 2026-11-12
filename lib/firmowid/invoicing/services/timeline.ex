@@ -7,7 +7,6 @@ defmodule Firmowid.Invoicing.Services.Timeline do
 
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
 
   defguardp is_loaded(value)
@@ -159,7 +158,7 @@ defmodule Firmowid.Invoicing.Services.Timeline do
     corrections
     |> Task.async_stream(
       fn correction ->
-        Ksef.get_submission_info(correction)
+        SubmissionInfo.for_invoice(correction)
       end,
       ordered: false
     )

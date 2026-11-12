@@ -16,7 +16,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias Firmowid.Invoicing.EuVatReview
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.CorrectionReason
-  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
@@ -34,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     # Fetch submission info when invoice is assigned
     submission_info =
       if assigns[:invoice] do
-        Ksef.get_submission_info(assigns.invoice)
+        SubmissionInfo.for_invoice(assigns.invoice)
       else
         %SubmissionInfo{status: :not_submitted}
       end
