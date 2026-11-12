@@ -6,6 +6,7 @@ defmodule Firmowid.Analysis.EntryTest do
   import Firmowid.FinancesFixtures
 
   alias Ash.Error.Forbidden
+  alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.Entry
   alias Firmowid.Finances.Transaction
   alias Firmowid.Scope
@@ -49,6 +50,28 @@ defmodule Firmowid.Analysis.EntryTest do
 
     assert {:error, %Forbidden{}} =
              Entry.list(~D[2026-10-01], ~D[2026-10-31], scope: %Scope{actor: user, tenant: user.member.organization_id})
+  end
+
+  test "hides entry tags from employees" do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id)
+    transaction = skipped_transaction(admin)
+    tag_query = %{entity_type: :transaction, resource_ids: [transaction.id]}
+
+    EntityTag.set_entity_category!(
+      %{entity_type: :transaction, resource_id: transaction.id, kind: :company},
+      scope: %Scope{actor: admin, tenant: admin.member.organization_id}
+    )
+
+    assert [_tag] =
+             EntityTag.list!(tag_query,
+               scope: %Scope{actor: admin, tenant: admin.member.organization_id}
+             )
+
+    assert [] ==
+             EntityTag.list!(tag_query,
+               scope: %Scope{actor: employee, tenant: employee.member.organization_id}
+             )
   end
 
   defp skipped_transaction(user) do
