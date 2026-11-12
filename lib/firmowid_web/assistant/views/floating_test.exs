@@ -279,35 +279,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     owner = admin_fixture()
     scope = Scope.new!(owner, owner.member.organization_id)
 
-    scope.tenant
-    |> Firmowid.Core.get_organization!(scope: scope)
-    |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
-
-    draft =
-      Ash.Seed.seed!(SalesInvoice, %{
-        organization_id: scope.tenant,
-        issue_date: Date.utc_today(),
-        sale_date: Date.utc_today(),
-        due_date: Date.add(Date.utc_today(), 7),
-        payment_method: :cash,
-        currency: "PLN",
-        buyer_type: :company,
-        buyer_country: "PL",
-        buyer_id: "1111111111",
-        buyer_full_name: "Acme Sp. z o.o.",
-        buyer_address: "ul. Przykładowa 1, Warszawa",
-        sales_invoice_items: [
-          %{
-            organization_id: scope.tenant,
-            index: 0,
-            name: "Consulting",
-            quantity: Decimal.new(1),
-            unit: "szt",
-            unit_price: Decimal.new(100),
-            vat_rate: "23"
-          }
-        ]
-      })
+    draft = seed_draft(scope)
 
     arguments =
       Jason.encode!(%{
@@ -428,6 +400,25 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(plan.view, "#{plan.id} dt", "Praca zdalna")
   end
 
+  test "a draft card with a field on both levels of its input cannot be approved", %{conn: conn} do
+    owner = admin_fixture()
+    draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
+
+    # The action keeps the outer true because the inner null falls back to the field's default.
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{
+          buyer_address: "ul. Inna 2, Kraków",
+          is_reverse_charge: true,
+          input: %{is_reverse_charge: nil}
+        }
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
+    refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+  end
+
   # Opens the assistant on a conversation that waits for approval of one tool call.
   defp open_plan(conn, owner, name, arguments) do
     scope = Scope.new!(owner, owner.member.organization_id)
@@ -451,6 +442,38 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     view |> element("#assistant-launcher") |> render_click()
 
     %{view: view, id: "#assistant-plan-#{conversation.version}"}
+  end
+
+  # A draft of an organization whose seller data is complete enough to preview it.
+  defp seed_draft(scope) do
+    scope.tenant
+    |> Firmowid.Core.get_organization!(scope: scope)
+    |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
+
+    Ash.Seed.seed!(SalesInvoice, %{
+      organization_id: scope.tenant,
+      issue_date: Date.utc_today(),
+      sale_date: Date.utc_today(),
+      due_date: Date.add(Date.utc_today(), 7),
+      payment_method: :cash,
+      currency: "PLN",
+      buyer_type: :company,
+      buyer_country: "PL",
+      buyer_id: "1111111111",
+      buyer_full_name: "Acme Sp. z o.o.",
+      buyer_address: "ul. Przykładowa 1, Warszawa",
+      sales_invoice_items: [
+        %{
+          organization_id: scope.tenant,
+          index: 0,
+          name: "Consulting",
+          quantity: Decimal.new(1),
+          unit: "szt",
+          unit_price: Decimal.new(100),
+          vat_rate: "23"
+        }
+      ]
+    })
   end
 
   defp seed_conversation(scope, owner, status, messages, version \\ 1) do

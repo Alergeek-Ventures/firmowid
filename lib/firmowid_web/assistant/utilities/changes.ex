@@ -208,21 +208,19 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
-    with {:ok, draft} <-
-           result(Invoicing.preview_sales_invoice(%{invoice: invoice_input(input)}, scope: scope)) do
+    with {:ok, invoice} <- invoice_input(input),
+         {:ok, draft} <-
+           result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
       {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
     end
   end
 
   defp preview("update_sales_invoice_draft", %{"id" => id, "input" => input}, scope) when is_map(input) do
-    with {:ok, saved} <-
+    with {:ok, invoice} <- invoice_input(input),
+         {:ok, saved} <-
            result(Invoicing.get_sales_invoice(id, scope: scope, load: [sales_invoice_items: []])),
          {:ok, revised} <-
-           result(
-             Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice_input(input)},
-               scope: scope
-             )
-           ) do
+           result(Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice}, scope: scope)) do
       # Compared on every reviewed field, not only those the card shows.
       if snapshot(saved) == snapshot(revised),
         do: :unchanged,
@@ -385,7 +383,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   # The draft actions take the invoice as fields beside an `input` (InvoiceInput) that
   # `ApplyInvoiceInput` applies over them; the preview takes the same invoice as one InvoiceInput.
-  defp invoice_input(input), do: Map.merge(Map.delete(input, "input"), input["input"] || %{})
+  # A field on both levels makes the card unavailable: the action keeps the outer value when the
+  # inner one is null and the field has a default, which one merged invoice cannot show.
+  defp invoice_input(%{"input" => inner} = input) when is_map(inner) do
+    outer = Map.delete(input, "input")
+
+    if Enum.any?(Map.keys(inner), &is_map_key(outer, &1)),
+      do: :error,
+      else: {:ok, Map.merge(outer, inner)}
+  end
+
+  defp invoice_input(input), do: {:ok, Map.merge(Map.delete(input, "input"), input["input"] || %{})}
 
   # A draft is compared by the fields it writes that decide who is invoiced, for what and how
   # they pay.
