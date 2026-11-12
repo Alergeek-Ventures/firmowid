@@ -5,10 +5,13 @@ defmodule Firmowid.Core.User.AuthenticationTest do
   use Firmowid.DataCase, async: false
 
   import Firmowid.AccountsFixtures
+  import Firmowid.Test.Support.AuthEmailHelpers
 
   alias Ash.Error.Forbidden
   alias AshAuthentication.Errors.CannotConfirmUnconfirmedUser
+  alias AshAuthentication.Errors.UnconfirmedUser
   alias AshAuthentication.Info
+  alias AshAuthentication.Plug.Helpers
   alias AshAuthentication.Strategy
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Core
@@ -38,6 +41,89 @@ defmodule Firmowid.Core.User.AuthenticationTest do
     assert [] = UserIdentity.read!(actor: user)
     assert Token.read!(context: @authentication_context) == tokens_before
     assert User.get!(user.id, actor: user).hashed_password == user.hashed_password
+  end
+
+  describe "confirmation of a password account" do
+    setup do
+      {:ok, password_strategy} = Info.strategy(User, :password)
+      {:ok, confirm_strategy} = Info.strategy(User, :confirm)
+      %{password_strategy: password_strategy, confirm_strategy: confirm_strategy}
+    end
+
+    test "the emailed token alone does not confirm it; its signed-in holder does", %{
+      confirm_strategy: strategy
+    } do
+      user =
+        valid_user_attributes()
+        |> Core.register_with_password!(authorize?: false)
+        |> Core.load_member()
+
+      params = %{"confirm" => extract_token_from_email!("/potwierdz-email/")}
+
+      for actor <- [nil, user_fixture()] do
+        assert {:error, %Forbidden{errors: [%UnconfirmedUser{}]}} =
+                 Strategy.action(strategy, :confirm, params, actor: actor)
+      end
+
+      assert is_nil(User.get!(user.id, actor: user).confirmed_at)
+      assert {:ok, confirmed} = Strategy.action(strategy, :confirm, params, actor: user)
+      assert confirmed.confirmed_at
+    end
+
+    test "an email change of a confirmed account is confirmed by the token alone", %{
+      confirm_strategy: strategy
+    } do
+      user = Ash.Seed.update!(user_fixture(), %{confirmed_at: DateTime.utc_now()})
+      drain_sent_emails()
+      new_email = unique_user_email()
+
+      Core.change_email!(user, %{email: new_email, current_password: valid_user_password()}, actor: user)
+
+      params = %{"confirm" => extract_token_from_email!("/potwierdz-email/")}
+      assert {:ok, confirmed} = Strategy.action(strategy, :confirm, params, [])
+      assert to_string(confirmed.email) == new_email
+    end
+
+    test "a password reset confirms it and shuts out the earlier password and sessions", %{
+      password_strategy: strategy
+    } do
+      user = Core.register_with_password!(valid_user_attributes(), authorize?: false)
+      credentials = %{"email" => to_string(user.email), "password" => valid_user_password()}
+      {:ok, signed_in} = Strategy.action(strategy, :sign_in, credentials, [])
+      drain_sent_emails()
+
+      :ok = Strategy.action(strategy, :reset_request, %{"email" => credentials["email"]}, [])
+      reset_token = extract_token_from_email!("/resetuj-haslo/")
+      new_password = String.reverse(valid_user_password())
+
+      assert {:ok, reset} =
+               Strategy.action(
+                 strategy,
+                 :reset,
+                 %{"reset_token" => reset_token, "password" => new_password},
+                 []
+               )
+
+      assert reset.confirmed_at
+      assert {:error, _} = Strategy.action(strategy, :sign_in, credentials, [])
+
+      assert :error ==
+               Helpers.authenticate_resource_from_session(
+                 User,
+                 %{"user_token" => signed_in.__metadata__.token},
+                 :firmowid,
+                 []
+               )
+
+      assert {:ok, linked} =
+               User.register_with_google(
+                 google_user_info(user),
+                 %{"access_token" => "test-google-token"},
+                 context: @authentication_context
+               )
+
+      assert linked.id == user.id
+    end
   end
 
   describe "account authentication" do
@@ -210,7 +296,7 @@ defmodule Firmowid.Core.User.AuthenticationTest do
 
     assert :error ==
              Sandbox.unboxed_run(Repo, fn ->
-               AshAuthentication.Plug.Helpers.authenticate_resource_from_session(
+               Helpers.authenticate_resource_from_session(
                  User,
                  %{"user_token" => signed_in.__metadata__.token},
                  :firmowid,

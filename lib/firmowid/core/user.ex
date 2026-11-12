@@ -85,8 +85,10 @@ defmodule Firmowid.Core.User do
         monitor_fields [:email]
 
         # Google OAuth users are already verified by Google — skip the confirmation
-        # flow and set confirmed_at immediately on registration.
-        auto_confirm_actions [:register_with_google]
+        # flow and set confirmed_at immediately on registration. A password reset
+        # proves the mailbox and replaces any password set before (with its sessions),
+        # so it confirms the account too.
+        auto_confirm_actions [:register_with_google, :password_reset_with_password]
 
         # Keep the existing address until the new owner confirms the change.
         confirm_on_update? true
@@ -215,6 +217,44 @@ defmodule Firmowid.Core.User do
       argument :token, :string, allow_nil?: false, sensitive?: true
 
       prepare AshAuthentication.Strategy.RememberMe.SignInPreparation
+
+      metadata :token, :string, allow_nil?: false
+    end
+
+    update :confirm do
+      description "Confirm the account, or a change of its email address, with an emailed token."
+      accept [:email]
+      require_atomic? false
+
+      argument :confirm, :string, allow_nil?: false, public?: true
+
+      change AshAuthentication.AddOn.Confirmation.ConfirmChange
+
+      # The link proves the mailbox, not the password: anyone can register a password
+      # account for an address they do not own. So its first confirmation, unlike a
+      # change of its address, needs the password holder signed in to it. Requesting
+      # an address change clears confirmed_at too, so this runs after ConfirmChange has
+      # applied the token and tells the two apart by the changing address.
+      change before_action(fn changeset, context ->
+               %{id: id, confirmed_at: confirmed_at, hashed_password: hashed_password} =
+                 changeset.data
+
+               if is_nil(confirmed_at) and is_binary(hashed_password) and
+                    not Ash.Changeset.changing_attribute?(changeset, :email) and
+                    not match?(%{__struct__: __MODULE__, id: ^id}, context.actor),
+                  do:
+                    Ash.Changeset.add_error(
+                      changeset,
+                      AshAuthentication.Errors.UnconfirmedUser.exception(
+                        resource: __MODULE__,
+                        field: :confirm,
+                        confirmation_field: :confirmed_at
+                      )
+                    ),
+                  else: changeset
+             end)
+
+      change AshAuthentication.GenerateTokenChange
 
       metadata :token, :string, allow_nil?: false
     end

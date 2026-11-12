@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias AshAuthentication.Errors.AuthenticationFailed
+  alias AshAuthentication.Errors.UnconfirmedUser
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias Assent.HTTPAdapter.HTTPResponse
   alias Assent.InvalidResponseError
@@ -115,6 +116,15 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   @doc """
   Failure callback when authentication fails
   """
+  def failure(conn, {:confirm, :confirm}, %Forbidden{errors: [%UnconfirmedUser{}]}) do
+    # Only the password holder, signed in, confirms a new password account (see the
+    # User `:confirm` action); signing in returns to the confirmation link.
+    conn
+    |> put_session(:return_to, ~p"/potwierdz-email/#{conn.params["user"]["confirm"]}")
+    |> put_flash(:error, gettext("Log in to confirm your account."))
+    |> redirect(to: ~p"/zaloguj")
+  end
+
   def failure(conn, activity, reason) do
     {message, path} = failure_message_and_path(activity, reason)
 
@@ -171,8 +181,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   defp failure_message_and_path({:google, _phase}, reason) do
     if unconfirmed_user_error?(reason) do
       {gettext(
-         "The account with this email address is awaiting confirmation. Confirm your email or log in with your password."
-       ), ~p"/zaloguj"}
+         "This email address already has an account with a password. To log in with Google, reset the password first."
+       ), ~p"/resetuj-haslo"}
     else
       {gettext("Google sign-in failed. Try again."), ~p"/zaloguj"}
     end
@@ -259,7 +269,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   # Password sign-in: AuthenticationFailed wrapping UnconfirmedUser directly in caused_by.
   # OAuth (prevent_hijacking): AuthenticationFailed wrapping Forbidden whose errors list
   # contains CannotConfirmUnconfirmedUser.
-  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %AshAuthentication.Errors.UnconfirmedUser{}}), do: true
+  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %UnconfirmedUser{}}), do: true
 
   defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %Forbidden{errors: errors}}) when is_list(errors) do
     Enum.any?(errors, &match?(%AshAuthentication.Errors.CannotConfirmUnconfirmedUser{}, &1))
