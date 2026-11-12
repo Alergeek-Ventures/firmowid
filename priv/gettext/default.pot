@@ -11960,7 +11960,6 @@ msgid "This insurance title requires an individual contribution assessment."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
-#: lib/firmowid_web/organization/views/legacy_form.ex
 #, elixir-autogen, elixir-format
 msgid "This invite code is invalid or has expired."
 msgstr ""
