@@ -4,25 +4,15 @@ defmodule Firmowid.Delegations.Validations.ExpenseDetailsMatchKind do
   use Ash.Resource.Validation
   use Gettext, backend: Firmowid.Gettext
 
-  alias Firmowid.Delegations.DelegationExpense.AccommodationDetails
-  alias Firmowid.Delegations.DelegationExpense.OtherDetails
-  alias Firmowid.Delegations.DelegationExpense.TransportDetails
-
+  # The details union names its member types after the expense categories.
   @impl true
   def validate(changeset, _opts, _context) do
-    kind = Ash.Changeset.get_attribute(changeset, :kind)
-    details = Ash.Changeset.get_attribute(changeset, :details)
+    case {Ash.Changeset.get_attribute(changeset, :kind), Ash.Changeset.get_attribute(changeset, :details)} do
+      {kind, %Ash.Union{type: kind}} ->
+        :ok
 
-    if matches?(kind, details),
-      do: :ok,
-      else: {:error, field: :details, message: gettext_noop("do not match the expense category")}
+      _mismatch ->
+        {:error, field: :details, message: gettext_noop("do not match the expense category")}
+    end
   end
-
-  defp matches?(:transport, %Ash.Union{value: %TransportDetails{}}), do: true
-  defp matches?(:accommodation, %Ash.Union{value: %AccommodationDetails{}}), do: true
-  defp matches?(:other, %Ash.Union{value: %OtherDetails{}}), do: true
-  defp matches?(:transport, %TransportDetails{}), do: true
-  defp matches?(:accommodation, %AccommodationDetails{}), do: true
-  defp matches?(:other, %OtherDetails{}), do: true
-  defp matches?(_, _), do: false
 end
