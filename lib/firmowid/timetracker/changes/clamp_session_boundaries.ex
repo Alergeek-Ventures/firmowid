@@ -22,22 +22,17 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
   @spec max_running_seconds() :: pos_integer()
   def max_running_seconds, do: @max_running_seconds
 
+  # Both actions run on a stored session and set its end from the clock first.
   @impl true
   def change(changeset, _opts, _context) do
     start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
     end_datetime = Ash.Changeset.get_attribute(changeset, :end_datetime)
 
-    case {start_datetime, end_datetime} do
-      {%DateTime{} = start_datetime, %DateTime{} = end_datetime} ->
-        Ash.Changeset.force_change_attribute(
-          changeset,
-          :end_datetime,
-          clamp(start_datetime, end_datetime)
-        )
-
-      _incomplete ->
-        changeset
-    end
+    Ash.Changeset.force_change_attribute(
+      changeset,
+      :end_datetime,
+      clamp(start_datetime, end_datetime)
+    )
   end
 
   # Clamps end_datetime down to the first limit that binds: the end of the month
