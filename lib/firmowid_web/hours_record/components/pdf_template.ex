@@ -2,6 +2,8 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
   @moduledoc false
   use FirmowidWeb, :html
 
+  alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
+
   attr :name, :string, required: true
   attr :contract_date, :any, required: true
   attr :start_date, :any, required: true
@@ -57,14 +59,5 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
     Calendar.strftime(date, "%d.%m.%Y")
   end
 
-  defp format_duration(hours) do
-    hours_text =
-      if rem(hours, 10) in [2, 3, 4] and div(hours, 10) != 1 do
-        "godziny"
-      else
-        "godzin"
-      end
-
-    "#{hours} #{hours_text}"
-  end
+  defp format_duration(hours), do: PolishQuantity.quantity(hours, "godzinę", "godziny", "godzin")
 end

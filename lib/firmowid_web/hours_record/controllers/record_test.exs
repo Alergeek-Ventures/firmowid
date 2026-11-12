@@ -19,6 +19,24 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
     assert html_response(conn, 200) =~ "Sable Orin"
   end
 
+  test "an hours record of one hour declines the noun", %{conn: conn} do
+    employee = user_fixture()
+
+    Firmowid.TimetrackerFixtures.session_fixture(%{
+      organization_id: employee.member.organization_id,
+      user_id: employee.id,
+      start_datetime: ~U[2026-09-10 08:00:00Z],
+      end_datetime: ~U[2026-09-10 09:00:00Z]
+    })
+
+    conn =
+      conn
+      |> log_in_user(employee)
+      |> get(~p"/czasosledz/ewidencja/2026-09-01/podglad")
+
+    assert html_response(conn, 200) =~ "przeznaczyłem 1 godzinę."
+  end
+
   test "employee cannot download another employee's submitted hours record", %{conn: conn} do
     admin = admin_fixture()
     employee_a = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
