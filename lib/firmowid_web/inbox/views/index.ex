@@ -187,17 +187,27 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     |> session_changed(socket)
   end
 
-  def handle_event("set_workplace", %{"remote" => remote}, %{assigns: %{session: %{} = session}} = socket) do
-    # The project stays the same, so the loaded one carries over.
-    result =
-      with {:ok, updated} <-
-             Session.edit_current_user_session(%{id: session.id, is_remote: remote == "true"},
-               scope: socket.assigns.ash_scope
-             ) do
-        {:ok, %{updated | project: session.project}}
-      end
+  # Changes the session running now: another tab or the auto-stop may have
+  # ended the one this page shows, and a finished session keeps its workplace.
+  def handle_event("set_workplace", %{"remote" => remote}, %{assigns: %{session: %{id: id}}} = socket) do
+    scope = socket.assigns.ash_scope
 
-    session_changed(result, socket)
+    case Session.get_current(scope: scope, load: [:project]) do
+      {:ok, %Session{id: ^id} = running} ->
+        # The project stays the same, so the loaded one carries over.
+        result =
+          with {:ok, updated} <-
+                 Session.edit_current_user_session(%{id: id, is_remote: remote == "true"},
+                   scope: scope
+                 ) do
+            {:ok, %{updated | project: running.project}}
+          end
+
+        session_changed(result, socket)
+
+      {:ok, other} ->
+        session_changed({:ok, other}, socket)
+    end
   end
 
   # A second click that arrives before the page shows the first one's result.

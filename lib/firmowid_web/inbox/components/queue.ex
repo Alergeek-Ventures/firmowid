@@ -230,7 +230,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             <% @session -> %>
               {session_summary(@session)}
             <% @last_session -> %>
-              {gettext("Continue: %{session}", session: session_summary(@last_session))}
+              {gettext("Continue: %{session}",
+                session: session_summary(@last_session, with_workplace: true)
+              )}
             <% true -> %>
               {gettext("You are not tracking time now.")}
           <% end %>
@@ -310,7 +312,19 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     """
   end
 
-  defp session_summary(session), do: Enum.join([session.title, session.project.name], " · ")
+  # A running session shows its workplace on the switch; the last one names it,
+  # since Start continues there.
+  defp session_summary(session, opts \\ []) do
+    parts = [session.title, session.project.name]
+
+    if opts[:with_workplace],
+      do:
+        Enum.join(
+          parts ++ [status_label(if(session.is_remote, do: :remote, else: :office))],
+          " · "
+        ),
+      else: Enum.join(parts, " · ")
+  end
 
   @doc """
   Who works today: a dot for the office, a ring for remote work, a grey dot
