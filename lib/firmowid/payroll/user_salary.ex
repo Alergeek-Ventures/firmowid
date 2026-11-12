@@ -37,7 +37,13 @@ defmodule Firmowid.Payroll.UserSalary do
       description "Create a salary record for an organization member."
       primary? true
       accept [:hourly_rate, :member_id, :starts_at]
+
+      argument :bank_account_number, :string do
+        description "When given, replaces the member's bank account number in the same transaction; empty clears it."
+      end
+
       change {Firmowid.Payroll.Changes.SkipUnchangedRate, []}
+      change Firmowid.Payroll.Changes.UpdateMemberBankAccount
     end
 
     read :list do

@@ -7,10 +7,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Management.Components.Card
 
-  alias Firmowid.Core
-  alias Firmowid.Core.Member
   alias Firmowid.Payroll
-  alias Firmowid.Payroll.UserSalary
   alias Firmowid.TimeFormatter
 
   @impl true
@@ -156,24 +153,14 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
       ) do
     %{user: user, scope: scope} = socket.assigns
 
-    result =
-      Ash.transact([UserSalary, Member], fn ->
-        with {:ok, _salary} <-
-               Payroll.create_salary(%{hourly_rate: hourly_rate, member_id: user.member.id},
-                 scope: scope
-               ),
-             {:ok, member} <-
-               Core.update_member_profile(
-                 user.member,
-                 %{bank_account_number: bank_account_number},
-                 scope: scope
-               ) do
-          member
-        end
-      end)
+    attributes = %{
+      hourly_rate: hourly_rate,
+      member_id: user.member.id,
+      bank_account_number: bank_account_number
+    }
 
-    case result do
-      {:ok, member} ->
+    case Payroll.create_salary(attributes, scope: scope) do
+      {:ok, %{member: member}} ->
         updated_user = %{user | member: member}
         send(self(), {:employee_updated, updated_user})
 
@@ -209,10 +196,11 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
     )
   end
 
-  # The rate is saved first, so an error from its changeset means the account was not tried.
-  defp refusal_message(%{changeset: %{resource: UserSalary}}), do: gettext("Could not save the rate. Try again.")
+  # The rate is saved first, so an error without the member's path means the account was not tried.
+  defp refusal_message(%{errors: [%{path: [:member | _]} | _]}),
+    do: gettext("Could not save the bank account number. Try again.")
 
-  defp refusal_message(_error), do: gettext("Could not save the bank account number. Try again.")
+  defp refusal_message(_error), do: gettext("Could not save the rate. Try again.")
 
   defp assign_form(socket) do
     %{hourly_rate: hourly_rate, user: user} = socket.assigns
