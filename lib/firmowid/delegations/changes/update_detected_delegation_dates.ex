@@ -2,9 +2,10 @@ defmodule Firmowid.Delegations.Changes.UpdateDetectedDelegationDates do
   @moduledoc "Updates a delegation's detected date range after evidence changes."
 
   use Ash.Resource.Change
-  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
 
   @impl true
@@ -15,23 +16,29 @@ defmodule Firmowid.Delegations.Changes.UpdateDetectedDelegationDates do
                scope: context,
                load: [:expenses]
              ),
-           {:ok, _delegation} <- update_dates(delegation, expense, opts, context) do
+           expenses = expenses_after_action(delegation.expenses, expense, opts),
+           {:ok, _delegation} <-
+             Delegations.detect_dates(delegation, detected_dates(delegation, expenses), scope: context) do
         {:ok, expense}
       end
     end)
   end
 
-  defp update_dates(delegation, expense, opts, context) do
-    dates =
-      delegation.expenses
-      |> expenses_after_action(expense, opts)
-      |> Enum.flat_map(&expense_dates/1)
+  @doc """
+  Returns the earliest and latest evidence dates of `expenses` when they fall before the
+  delegation's start date or after its end date, and `nil` for a side they stay within.
+  """
+  @spec detected_dates(Delegation.t(), [DelegationExpense.t()]) ::
+          %{detected_start_date: Date.t() | nil, detected_end_date: Date.t() | nil}
+  def detected_dates(delegation, expenses) do
+    dates = Enum.flat_map(expenses, &expense_dates/1)
+    earliest = Enum.min(dates, Date, fn -> nil end)
+    latest = Enum.max(dates, Date, fn -> nil end)
 
-    params = detected_date_params(delegation, dates)
-
-    with :ok <- require_date_change_reason(delegation, params, opts) do
-      Delegations.detect_dates(delegation, params, scope: context)
-    end
+    %{
+      detected_start_date: if(earliest && Date.before?(earliest, delegation.start_date), do: earliest),
+      detected_end_date: if(latest && Date.after?(latest, delegation.end_date), do: latest)
+    }
   end
 
   defp expenses_after_action(expenses, expense, operation: :destroy) do
@@ -42,41 +49,10 @@ defmodule Firmowid.Delegations.Changes.UpdateDetectedDelegationDates do
     [expense | Enum.reject(expenses, &(&1.id == expense.id))]
   end
 
-  defp expense_dates(%{details: %Ash.Union{value: details}}), do: expense_dates(details)
+  defp expense_dates(%{details: %Ash.Union{value: %{trips: trips}}}), do: Enum.flat_map(trips, &Trip.evidence_dates/1)
 
-  defp expense_dates(%{trips: trips}) when is_list(trips) do
-    Enum.flat_map(trips, &Trip.evidence_dates/1)
-  end
-
-  defp expense_dates(%{arrival_date: arrival_date, departure_date: departure_date}) do
-    Enum.reject([arrival_date, departure_date], &is_nil/1)
-  end
+  defp expense_dates(%{details: %Ash.Union{value: %{arrival_date: arrival_date, departure_date: departure_date}}}),
+    do: Enum.reject([arrival_date, departure_date], &is_nil/1)
 
   defp expense_dates(_expense), do: []
-
-  defp detected_date_params(_delegation, []), do: %{detected_start_date: nil, detected_end_date: nil}
-
-  defp detected_date_params(delegation, dates) do
-    earliest_date = Enum.min_by(dates, &Date.to_iso8601/1)
-    latest_date = Enum.max_by(dates, &Date.to_iso8601/1)
-
-    %{
-      detected_start_date: if(Date.before?(earliest_date, delegation.start_date), do: earliest_date),
-      detected_end_date: if(Date.after?(latest_date, delegation.end_date), do: latest_date)
-    }
-  end
-
-  defp require_date_change_reason(delegation, params, opts) do
-    if opts[:require_date_change_reason?] &&
-         (params.detected_start_date || params.detected_end_date) &&
-         blank?(delegation.date_change_reason) do
-      {:error, field: :date_change_reason, message: gettext_noop("This field is required")}
-    else
-      :ok
-    end
-  end
-
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(nil), do: true
-  defp blank?(_value), do: false
 end
