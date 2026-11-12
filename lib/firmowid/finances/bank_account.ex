@@ -229,10 +229,6 @@ defmodule Firmowid.Finances.BankAccount do
       authorize_if action(:read)
     end
 
-    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
-      authorize_if action(:read_global_for_sync)
-    end
-
     bypass action([:read, :suspend_by_plan, :restore_from_plan]) do
       authorize_if expr(^actor(:role) == :plan_limits and organization_id == ^actor(:org_id))
     end
