@@ -467,14 +467,23 @@ defmodule Firmowid.Core.User do
       authorize_if expr(id == ^actor(:id))
       authorize_if OrganizationMemberAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
+    end
 
-      authorize_if {SystemActorRole,
-                    roles: [
-                      :leave_notifier,
-                      :hours_record_change_notifier,
-                      :document_blob_processor,
-                      :employment_contract_notifier
-                    ]}
+    # The people a notification or a processed document of the organization names.
+    bypass [
+      {SystemActorRole,
+       roles: [
+         :leave_notifier,
+         :hours_record_change_notifier,
+         :document_blob_processor,
+         :employment_contract_notifier
+       ]},
+      action(:read)
+    ] do
+      authorize_if expr(
+                     not is_nil(^actor(:org_id)) and
+                       exists(member, organization_id == ^actor(:org_id))
+                   )
     end
 
     # :list action — admin-only user listing, plus system actors that need

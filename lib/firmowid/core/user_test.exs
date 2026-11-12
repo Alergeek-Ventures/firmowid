@@ -257,4 +257,22 @@ defmodule Firmowid.Core.UserTest do
 
     refute Ash.can?({user, :destroy}, actor)
   end
+
+  test "notifier system actors read only users of their organization" do
+    user = user_fixture()
+    outsider = user_fixture()
+    organization_id = user.member.organization_id
+
+    for role <- [
+          :leave_notifier,
+          :hours_record_change_notifier,
+          :document_blob_processor,
+          :employment_contract_notifier
+        ] do
+      actor = %SystemActor{org_id: organization_id, role: role}
+
+      assert {:ok, _} = Core.get_user(user.id, actor: actor)
+      assert {:error, _} = Core.get_user(outsider.id, actor: actor)
+    end
+  end
 end
