@@ -49,9 +49,6 @@ defmodule Firmowid.Invoicing.CountryCodes do
   @spec all_countries() :: [String.t()]
   def all_countries, do: @valid_country_codes
 
-  @spec eu_countries() :: [String.t()]
-  def eu_countries, do: @eu_country_codes
-
   @doc """
   EU country codes including the GR alias for Greece.
 
@@ -78,19 +75,6 @@ defmodule Firmowid.Invoicing.CountryCodes do
   @spec normalize(String.t() | nil) :: String.t() | nil
   def normalize("GR"), do: "EL"
   def normalize(code), do: code
-
-  @spec region(String.t() | nil) :: :eu | :non_eu | :invalid
-  def region(code) when is_binary(code) do
-    normalized = normalize(code)
-
-    cond do
-      normalized in @eu_country_codes -> :eu
-      valid_country?(normalized) -> :non_eu
-      true -> :invalid
-    end
-  end
-
-  def region(_), do: :invalid
 
   @doc """
   Determines the tax ID type based on country and entity characteristics.
