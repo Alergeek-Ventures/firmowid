@@ -177,24 +177,12 @@ defmodule FirmowidWeb.Core.Router do
       mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
   end
 
-  scope "/admin", FirmowidWeb.Admin.Controllers do
+  scope "/admin" do
     pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
 
-    post "/rozliczenia/:org_id/impersonacja", Impersonation, :create
-  end
+    post "/rozliczenia/:org_id/impersonacja", FirmowidWeb.Admin.Controllers.Impersonation, :create
 
-  scope "/admin" do
-    if Mix.env() == :dev do
-      pipe_through [:browser]
-
-      live_dashboard "/dashboard",
-        metrics: Telemetry
-
-      oban_dashboard("/oban", oban_name: Oban)
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    else
-      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
-
+    if Mix.env() != :dev do
       live_dashboard "/dashboard",
         metrics: Telemetry,
         on_mount: [
@@ -224,6 +212,17 @@ defmodule FirmowidWeb.Core.Router do
       ] do
       live "/rozliczenia", FirmowidWeb.Admin.Views.Organizations, :index
       live "/rozliczenia/:org_id", FirmowidWeb.Admin.Views.Settlement, :show
+    end
+  end
+
+  # Development tools, open without signing in.
+  if Mix.env() == :dev do
+    scope "/admin" do
+      pipe_through :browser
+
+      live_dashboard "/dashboard", metrics: Telemetry
+      oban_dashboard("/oban", oban_name: Oban)
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 
