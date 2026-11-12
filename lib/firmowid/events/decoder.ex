@@ -4,12 +4,9 @@ defmodule Firmowid.Events.Decoder do
   """
 
   alias Ash.Union
-  alias Firmowid.Events.Payloads.BankAccountSyncFailed
-  alias Firmowid.Events.Payloads.BankAccountSyncSucceeded
   alias Firmowid.Events.Payloads.InvoiceTransactionsConnected
   alias Firmowid.Events.Payloads.InvoiceTransactionsDisconnected
   alias Firmowid.Events.TypedEvent
-  alias Firmowid.Finances.BankAccount
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
 
@@ -59,14 +56,6 @@ defmodule Firmowid.Events.Decoder do
       %{action: nil} -> {:error, {:unsupported_action, field(event, :action)}}
       _ -> {:ok, normalized}
     end
-  end
-
-  defp decode_payload(%{resource: BankAccount, action: :sync_from_gocardless}) do
-    cast_payload(:bank_account_sync_succeeded, BankAccountSyncSucceeded, %{})
-  end
-
-  defp decode_payload(%{resource: BankAccount, action: :mark_sync_failed}) do
-    cast_payload(:bank_account_sync_failed, BankAccountSyncFailed, %{})
   end
 
   defp decode_payload(%{resource: CostInvoice, action: :connect_transactions} = event) do
@@ -161,15 +150,12 @@ defmodule Firmowid.Events.Decoder do
   defp normalize_source("auto_match"), do: :auto_match
   defp normalize_source(_source), do: nil
 
-  defp normalize_resource(BankAccount), do: BankAccount
   defp normalize_resource(CostInvoice), do: CostInvoice
   defp normalize_resource(SalesInvoice), do: SalesInvoice
 
-  defp normalize_resource("Elixir.Firmowid.Finances.BankAccount"), do: BankAccount
   defp normalize_resource("Elixir.Firmowid.Invoicing.CostInvoice"), do: CostInvoice
   defp normalize_resource("Elixir.Firmowid.Invoicing.SalesInvoice"), do: SalesInvoice
 
-  defp normalize_resource(:bank_account), do: BankAccount
   defp normalize_resource(:cost_invoice), do: CostInvoice
   defp normalize_resource(:sales_invoice), do: SalesInvoice
   defp normalize_resource(_resource), do: nil
@@ -178,8 +164,6 @@ defmodule Firmowid.Events.Decoder do
 
   defp normalize_action(action) when is_binary(action) do
     case action do
-      "sync_from_gocardless" -> :sync_from_gocardless
-      "mark_sync_failed" -> :mark_sync_failed
       "connect_transactions" -> :connect_transactions
       "disconnect_transactions" -> :disconnect_transactions
       "disconnect_all_transactions" -> :disconnect_all_transactions
@@ -189,7 +173,6 @@ defmodule Firmowid.Events.Decoder do
 
   defp normalize_action(_action), do: nil
 
-  defp resource_name(BankAccount), do: :bank_account
   defp resource_name(CostInvoice), do: :cost_invoice
   defp resource_name(SalesInvoice), do: :sales_invoice
 

@@ -7,12 +7,6 @@ defmodule Firmowid.Events.EventPayload do
     subtype_of: :union,
     constraints: [
       types: [
-        bank_account_sync_succeeded: [
-          type: Firmowid.Events.Payloads.BankAccountSyncSucceeded
-        ],
-        bank_account_sync_failed: [
-          type: Firmowid.Events.Payloads.BankAccountSyncFailed
-        ],
         cost_invoice_transactions_connected: [
           type: Firmowid.Events.Payloads.InvoiceTransactionsConnected
         ],
