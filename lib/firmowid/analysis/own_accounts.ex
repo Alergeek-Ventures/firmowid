@@ -6,6 +6,7 @@ defmodule Firmowid.Analysis.OwnAccounts do
   name counts as one between its accounts too.
   """
 
+  alias Firmowid.Analysis.CategoryReview
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Finances.AccountNumber
@@ -40,7 +41,7 @@ defmodule Firmowid.Analysis.OwnAccounts do
   # at its end, the whole name must match. A name that ends with another legal form ("Acme
   # Sp. z o.o. Sp. k.") must keep its own, so the general partner does not match.
   defp own_name(organization_name) do
-    {short_words, legal_form} = split_legal_form(words(organization_name))
+    {short_words, legal_form} = split_legal_form(CategoryReview.words(organization_name))
 
     if short_words != [] do
       %{
@@ -82,21 +83,10 @@ defmodule Firmowid.Analysis.OwnAccounts do
   # without a legal form or followed by the start of any spelling of its own legal form.
   # Another legal form is another company of the same name ("ACME Sp. k." for "ACME Sp. z o.o.").
   defp own_name?(name, %{short_words: short_words, legal_forms: legal_forms, bare?: bare?}) do
-    words = words(name)
+    words = CategoryReview.words(name)
     rest = Enum.join(Enum.drop(words, length(short_words)))
 
     List.starts_with?(words, short_words) and (bare? or rest != "") and
       Enum.any?(legal_forms, &String.starts_with?(&1, rest))
-  end
-
-  # Bank transfers often drop Polish letters ("SPOLKA Z OGRANICZONA"), so words are compared without them.
-  defp words(name) do
-    name
-    |> String.downcase()
-    # "ł" has no decomposition to drop.
-    |> String.replace("ł", "l")
-    |> :unicode.characters_to_nfd_binary()
-    |> String.replace(~r/\p{Mn}/u, "")
-    |> String.split(~r/[^\p{L}\p{N}]+/u, trim: true)
   end
 end
