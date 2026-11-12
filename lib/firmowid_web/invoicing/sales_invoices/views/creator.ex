@@ -27,12 +27,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
-  alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.WizardState
   alias Firmowid.Ksef
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -507,7 +507,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     case WizardState.preview(invoice.id, %{invoice_number: invoice_number}, scope: scope) do
       {:ok, preview_invoice} ->
-        counterparty_check = counterparty_check(invoice.counterparty_id, scope)
+        counterparty_check = InvoiceReview.counterparty_check(invoice.counterparty_id, scope)
         currency_rate = Invoicing.get_currency_rate(preview_invoice)
 
         socket
@@ -538,16 +538,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp maybe_setup_step(socket, _step, _params) do
     socket
-  end
-
-  defp counterparty_check(counterparty_id, scope) do
-    case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} ->
-        %{valid: true, tooltip: nil}
-
-      {:error, reason, _email} ->
-        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
-    end
   end
 
   defp initial_item_params([]), do: [%{"quantity" => "1"}]

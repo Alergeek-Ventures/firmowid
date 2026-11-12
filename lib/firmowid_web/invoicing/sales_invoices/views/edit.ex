@@ -21,7 +21,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
-  alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.Services.CorrectionReason
   alias Firmowid.Ksef
@@ -151,7 +150,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     reference_invoice = load_reference_invoice(invoice, scope)
 
     ash_form = build_ash_form(invoice, socket.assigns.ash_scope)
-    counterparty_check = counterparty_check(ash_form, invoice, scope)
+    counterparty_id = AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id
+    counterparty_check = InvoiceReview.counterparty_check(counterparty_id, scope)
 
     socket =
       socket
@@ -794,18 +794,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       end)
 
     Map.put(input, :sales_invoice_items, items)
-  end
-
-  defp counterparty_check(ash_form, invoice, scope) do
-    counterparty_id = AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id
-
-    case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} ->
-        %{valid: true, tooltip: nil}
-
-      {:error, reason, _email} ->
-        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
-    end
   end
 
   defp form_value_date(ash_form, field) do
