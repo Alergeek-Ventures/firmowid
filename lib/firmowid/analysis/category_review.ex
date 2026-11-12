@@ -268,7 +268,14 @@ defmodule Firmowid.Analysis.CategoryReview do
   reference numbers or a trailing legal form.
   """
   @spec key(String.t()) :: String.t()
-  def key(name) do
+  def key(name), do: name |> words() |> distinctive_words() |> Enum.join(" ")
+
+  @doc """
+  Splits a name into lowercase words without Polish letters or punctuation,
+  since bank transfers often drop Polish letters ("SPOLKA Z OGRANICZONA").
+  """
+  @spec words(String.t()) :: [String.t()]
+  def words(name) do
     name
     |> String.downcase()
     # "ł" has no decomposition to drop.
@@ -276,8 +283,6 @@ defmodule Firmowid.Analysis.CategoryReview do
     |> :unicode.characters_to_nfd_binary()
     |> String.replace(~r/\p{Mn}/u, "")
     |> String.split(~r/[^\p{L}\p{N}]+/u, trim: true)
-    |> distinctive_words()
-    |> Enum.join(" ")
   end
 
   # Card payments carry reference numbers, five or more digits with at most a letter before
