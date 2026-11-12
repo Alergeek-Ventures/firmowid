@@ -205,6 +205,32 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
     end
   end
 
+  describe "update_blob_id" do
+    test "attaches a blob only for document processing" do
+      admin = admin_fixture()
+      organization_id = admin.member.organization_id
+      invoice = insert_ksef_cost_invoice!(organization_id)
+
+      blob =
+        Ash.Seed.seed!(Firmowid.Blobs.Blob, %{
+          blob_path: "/test/path/invoice_#{System.unique_integer([:positive])}.xml",
+          blob_checksum: "cost-invoice-#{System.unique_integer([:positive])}",
+          original_filename: "invoice.xml",
+          organization_id: organization_id
+        })
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               CostInvoice.update_blob_id(invoice, blob.id, scope: %Scope{actor: admin, tenant: organization_id})
+
+      processor = %Firmowid.SystemActor{org_id: organization_id, role: :cost_invoice_processor}
+
+      assert {:ok, %{blob_id: blob_id}} =
+               CostInvoice.update_blob_id(invoice, blob.id, scope: %Scope{actor: processor, tenant: organization_id})
+
+      assert blob_id == blob.id
+    end
+  end
+
   describe "create" do
     test "persists a Money amount" do
       user = admin_fixture()
