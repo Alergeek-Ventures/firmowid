@@ -76,23 +76,16 @@ defmodule Firmowid.Delegations.DelegationExpenseExtractor do
   @spec extract(Path.t(), :transport | :accommodation | :other, Date.t(), Date.t()) ::
           {:ok, map()} | {:error, term()}
   def extract(file_path, expense_type, start_date, end_date) do
-    extract_details(file_path, expense_type, start_date, end_date)
-  end
-
-  defp extract_details(file_path, expense_type, start_date, end_date) do
     schema = put_in(@schema, [:properties, :details], details_schema(expense_type))
 
-    case ProcessBlobHelpers.reducto_client().extract_file(file_path, schema,
-           system_prompt: system_prompt(expense_type, start_date, end_date)
-         ) do
-      {:ok, metadata} ->
-        case extracted_details(metadata, expense_type) do
-          {:ok, details} -> {:ok, details}
-          {:error, reason} -> extraction_error(reason)
-        end
-
-      {:error, reason} ->
-        extraction_error(reason)
+    with {:ok, metadata} <-
+           ProcessBlobHelpers.reducto_client().extract_file(file_path, schema,
+             system_prompt: system_prompt(expense_type, start_date, end_date)
+           ),
+         {:ok, details} <- extracted_details(metadata, expense_type) do
+      {:ok, details}
+    else
+      {:error, reason} -> extraction_error(reason)
     end
   end
 
