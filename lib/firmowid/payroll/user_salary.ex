@@ -173,7 +173,19 @@ defmodule Firmowid.Payroll.UserSalary do
   end
 
   calculations do
-    calculate :ends_at, :date, Firmowid.Payroll.Calculations.EndsAt
+    calculate :ends_at,
+              :date,
+              expr(
+                first(Firmowid.Payroll.UserSalary,
+                  field: :starts_at,
+                  query: [
+                    filter: expr(member_id == parent(member_id) and starts_at > parent(starts_at)),
+                    sort: [starts_at: :asc]
+                  ]
+                )
+              ) do
+      description "The start of the member's next salary, which ends this one."
+    end
 
     calculate :monthly_payout, :map, Firmowid.Payroll.UserSalary.Calculations.MonthlyPayout do
       description """
