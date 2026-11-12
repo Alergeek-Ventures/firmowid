@@ -187,8 +187,22 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     |> session_changed(socket)
   end
 
+  def handle_event("set_workplace", %{"remote" => remote}, %{assigns: %{session: %{} = session}} = socket) do
+    # The project stays the same, so the loaded one carries over.
+    result =
+      with {:ok, updated} <-
+             Session.edit_current_user_session(%{id: session.id, is_remote: remote == "true"},
+               scope: socket.assigns.ash_scope
+             ) do
+        {:ok, %{updated | project: session.project}}
+      end
+
+    session_changed(result, socket)
+  end
+
   # A second click that arrives before the page shows the first one's result.
-  def handle_event(event, _params, socket) when event in ["start_session", "stop_session"], do: {:noreply, socket}
+  def handle_event(event, _params, socket) when event in ["start_session", "stop_session", "set_workplace"],
+    do: {:noreply, socket}
 
   defp decide(%{action: action, record_id: id}, scope) when action in [:accept_leave_request, :decline_leave_request] do
     case Timetracker.get_leave_request(id, scope: scope, not_found_error?: false) do
@@ -266,7 +280,15 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, shown: matching(assigns.items, assigns.query), folded: @folded)
+    assigns =
+      assign(assigns,
+        shown: matching(assigns.items, assigns.query),
+        folded: @folded,
+        # A session still running stays stoppable after hourly billing is turned off.
+        session?:
+          assigns.layer == :me and
+            (assigns.current_org.bills_hourly or not is_nil(assigns.session))
+      )
 
     ~H"""
     <%!-- Dissolves in when the layer changes (see the sidebar's LayerSwitch hook). --%>
@@ -276,13 +298,13 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     >
       <header class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex min-w-0 flex-col gap-1">
-          <p class="text-sm text-grey-600">
+          <p class="text-sm leading-[1.35] text-grey-600">
             {if @layer == :company, do: @current_org.display_name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
               @today,
               format: :full
             )}
           </p>
-          <h1 class="text-3xl font-bold text-black">{greeting(@items)}</h1>
+          <h1 class="text-3xl leading-[normal] font-bold text-black">{greeting(@items)}</h1>
         </div>
         <div class="flex items-center gap-4 max-md:w-full">
           <form phx-change="search" phx-submit="search" class="w-70 max-md:min-w-0 max-md:flex-1">
@@ -308,12 +330,24 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </div>
       </header>
       <%!-- With nothing waiting, the empty state stretches to end where the side panel ends. --%>
-      <div class={[
-        "grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_20rem]",
-        if(@items == [], do: "items-stretch", else: "items-start")
-      ]}>
-        <div id="inbox-queue" class="flex min-w-0 flex-col gap-7">
-          <.all_done :if={@items == []} class="h-full justify-center" />
+      <div
+        id="inbox-columns"
+        phx-hook=".SessionPlacement"
+        class={[
+          "group grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_20rem]",
+          if(@items == [], do: "items-stretch", else: "items-start")
+        ]}
+      >
+        <%!-- The member's session closes their queue; with nothing waiting it starts level with the side panel. --%>
+        <div
+          id="inbox-queue"
+          class={[
+            "flex min-w-0 flex-col",
+            if(@layer == :me, do: "gap-4", else: "gap-7"),
+            @items == [] && @session? && "@3xl:mt-7.75"
+          ]}
+        >
+          <.all_done :if={@items == [] and not @session?} class="h-full justify-center" />
           <p
             :if={@items != [] and @shown == []}
             class="rounded-sm bg-white px-5 py-4 text-sm text-grey-600"
@@ -358,6 +392,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               </.button>
             </div>
           </section>
+          <.session_panel :if={@session?} session={@session} last_session={@last_session} />
         </div>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SmoothHeight">
           // Animates a card from its old height to its new one when rows are
@@ -391,18 +426,61 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             }
           }
         </script>
-        <%!-- Starts level with the first card, below its group header (18px + 12px gap). --%>
-        <aside class={["flex flex-col gap-2.5", @items != [] && "@3xl:mt-7.75"]}>
-          <%!-- A session still running stays stoppable after hourly billing is turned off. --%>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".SessionPlacement">
+          // Moves the member's session to the side column, in its compact form,
+          // when the large card under the queue would end below the first
+          // screen. Only with two columns: stacked on phones, it stays under the
+          // queue.
+          const GAP = 16
+          const BOTTOM_GAP = 32
+
+          export default {
+            mounted() {
+              this.onChange = () => this.place()
+              window.addEventListener("resize", this.onChange)
+              this.observer = new ResizeObserver(this.onChange)
+              this.observer.observe(this.el)
+              this.place()
+              // Text set in a font that is still loading measures shorter.
+              document.fonts.ready.then(() => this.place())
+            },
+            updated() { this.place() },
+            destroyed() {
+              window.removeEventListener("resize", this.onChange)
+              this.observer.disconnect()
+            },
+            place() {
+              const card = this.el.querySelector("#inbox-session")
+              const lists = this.el.querySelectorAll("#inbox-queue > section > [id$=-list]")
+              const twoColumns = getComputedStyle(this.el).gridTemplateColumns.split(" ").length > 1
+              if (card && card.offsetParent) this.height = card.getBoundingClientRect().height
+              let compact = false
+              if (card && lists.length && twoColumns && this.el.querySelector("#inbox-session-compact")) {
+                // The list's content height is the one it ends at, while rows
+                // that arrive or fold still animate its box.
+                const list = lists[lists.length - 1]
+                const queueBottom = list.getBoundingClientRect().top + list.scrollHeight + window.scrollY
+                compact = queueBottom + GAP + (this.height || 260) > window.innerHeight - BOTTOM_GAP
+              }
+              if (compact === this.el.hasAttribute("data-compact-session")) return
+              if (compact) this.js().setAttribute(this.el, "data-compact-session", "")
+              else this.js().removeAttribute(this.el, "data-compact-session")
+            }
+          }
+        </script>
+        <%!-- Starts level with the first card, below its group header (19px + 12px gap). --%>
+        <aside class={["flex flex-col gap-2.5", (@items != [] or @session?) && "@3xl:mt-7.75"]}>
           <.session_panel
-            :if={@layer == :me and (@current_org.bills_hourly or not is_nil(@session))}
+            :if={@session? and @items != []}
             session={@session}
             last_session={@last_session}
+            compact
           />
-          <.personal_month :if={@layer == :me} duration={@month_duration} />
+          <.personal_month :if={@layer == :me} duration={@month_duration} today={@today} />
           <.month_list :if={@month != []} month={@month} />
+          <.team_today :if={@layer == :me and @presence != []} presence={@presence} />
           <.office_panel
-            :if={@presence != []}
+            :if={@layer == :company and @presence != []}
             presence={@presence}
             fit_to={@items != [] && "inbox-queue"}
           />

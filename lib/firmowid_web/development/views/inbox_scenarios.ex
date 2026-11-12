@@ -1,8 +1,9 @@
 defmodule FirmowidWeb.Development.Views.InboxScenarios do
   @moduledoc """
-  Development-only preview of the inbox's company layer in prepared situations:
-  an empty queue, a usual day, blocked integrations, many approvals, many
-  overdue invoices, long texts and so on.
+  Development-only preview of the inbox in prepared situations: for the
+  company layer an empty queue, a usual day, blocked integrations, many
+  approvals, many overdue invoices, long texts and so on; for the member's own
+  layer things to do next to a running session, or nothing at all.
 
   It renders the real inbox template with made-up items, so design changes to
   the inbox show here without preparing data in the database. Decisions only
@@ -15,6 +16,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Inbox.Views.Index
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
@@ -32,7 +35,23 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
     {"dlugie-teksty", "Długie teksty"},
     {"nowa-firma", "Nowa firma"},
     {"duzy-zespol", "Duży zespół"},
-    {"wszystko-naraz", "Wszystko naraz"}
+    {"wszystko-naraz", "Wszystko naraz"},
+    {"ty-sprawy", "Ty: sprawy i sesja"},
+    {"ty-wszystko-zrobione", "Ty: wszystko zrobione"},
+    {"ty-bez-sesji", "Ty: bez sesji"},
+    {"ty-duzy-zespol", "Ty: duży zespół, zdalnie"},
+    {"ty-duzo-zadan", "Ty: dużo zadań"},
+    {"ty-dlugie-teksty", "Ty: długie teksty"},
+    {"ty-sam", "Ty: sama w firmie"}
+  ]
+
+  # Trips the live button files for the member, one after another.
+  @trips [
+    "Targi w Poznaniu",
+    "Spotkanie z klientem w Gdańsku",
+    "Szkolenie we Wrocławiu",
+    "Konferencja w Berlinie",
+    "Audyt u klienta w Łodzi"
   ]
 
   @impl true
@@ -55,26 +74,45 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
         else: "zwykly-dzien"
 
     today = socket.assigns.timezone |> DateTime.now!() |> DateTime.to_date()
-    %{items: items, presence: presence, month: month} = scenario(key, today)
+    scenario = scenario(key, today)
 
     {:noreply,
      assign(socket,
        scenario: key,
-       layer: :company,
+       layer: Map.get(scenario, :layer, :company),
        today: today,
-       items: items,
-       presence: presence,
-       month: month,
-       month_duration: nil,
+       items: scenario.items,
+       presence: scenario.presence,
+       month: scenario.month,
+       month_duration: Map.get(scenario, :month_duration),
        fresh: MapSet.new(),
        query: "",
        expanded: MapSet.new(),
-       session: nil,
-       last_session: nil
+       session: Map.get(scenario, :session),
+       last_session: Map.get(scenario, :last_session)
      )}
   end
 
   @impl true
+  # Plays what an open inbox does when a new task of the member's arrives,
+  # such as a business trip that has just ended.
+  def handle_event("simulate_new", _params, %{assigns: %{layer: :me}} = socket) do
+    n = System.unique_integer([:positive])
+    ends_on = Date.add(socket.assigns.today, -1)
+    status = if rem(n, 3) == 0, do: :awaiting_signature, else: :in_progress
+
+    item =
+      personal_delegation(
+        "new-#{n}",
+        Enum.at(@trips, rem(n, length(@trips))),
+        Date.add(ends_on, -rem(n, 4)),
+        ends_on,
+        status
+      )
+
+    {:noreply, assign(socket, items: [item | socket.assigns.items], fresh: MapSet.new([item.id]))}
+  end
+
   # Plays what an open inbox does when someone files a request elsewhere.
   def handle_event("simulate_new", _params, socket) do
     n = System.unique_integer([:positive])
@@ -94,6 +132,18 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
 
   def handle_event(event, params, socket) when event in ["toggle_group", "search"],
     do: Index.handle_event(event, params, socket)
+
+  def handle_event("set_workplace", %{"remote" => remote}, socket) do
+    {:noreply, update(socket, :session, &%{&1 | is_remote: remote == "true"})}
+  end
+
+  def handle_event("stop_session", _params, socket) do
+    {:noreply, assign(socket, session: nil, last_session: socket.assigns.session)}
+  end
+
+  def handle_event("start_session", _params, socket) do
+    {:noreply, assign(socket, :session, %{socket.assigns.last_session | start_datetime: DateTime.utc_now()})}
+  end
 
   def handle_event("decide_item", %{"id" => id, "decision" => decision}, socket) do
     LiveToast.send_toast(
@@ -140,7 +190,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
           phx-click="simulate_new"
           class="ms-auto"
         >
-          <Lucideicons.plus class="size-4" aria-hidden="true" /> Nowy wniosek na żywo
+          <Lucideicons.plus class="size-4" aria-hidden="true" />
+          {if @layer == :me, do: "Nowe zadanie na żywo", else: "Nowy wniosek na żywo"}
         </.button>
       </nav>
       {Index.render(assigns)}
@@ -149,6 +200,135 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   end
 
   # Scenarios
+
+  defp scenario("ty-sprawy", today) do
+    %{
+      layer: :me,
+      items: [
+        personal_delegation("1", "Targi w Poznaniu", Date.add(today, -3), Date.add(today, -1)),
+        contract()
+      ],
+      session: session(13),
+      last_session: nil,
+      month_duration: 49 * 3600 + 43 * 60,
+      presence: presence(1, 0, 11),
+      month: []
+    }
+  end
+
+  defp scenario("ty-wszystko-zrobione", _today) do
+    %{
+      layer: :me,
+      items: [],
+      session: session(13),
+      last_session: nil,
+      month_duration: 49 * 3600 + 43 * 60,
+      presence: presence(1, 1, 3),
+      month: []
+    }
+  end
+
+  defp scenario("ty-bez-sesji", today) do
+    %{
+      layer: :me,
+      items: [
+        personal_delegation(
+          "1",
+          "Konferencja w Gdańsku",
+          Date.add(today, -10),
+          Date.add(today, -8)
+        )
+      ],
+      session: nil,
+      last_session: session(90),
+      month_duration: 12 * 3600,
+      presence: presence(2, 1, 4),
+      month: []
+    }
+  end
+
+  defp scenario("ty-duzy-zespol", today) do
+    %{
+      layer: :me,
+      items: [
+        personal_delegation("1", "Targi w Poznaniu", Date.add(today, -3), Date.add(today, -1)),
+        contract()
+      ],
+      session: %{session(187) | is_remote: true},
+      last_session: nil,
+      month_duration: 112 * 3600 + 5 * 60,
+      presence: presence(9, 6, 14),
+      month: []
+    }
+  end
+
+  defp scenario("ty-duzo-zadan", today) do
+    trips =
+      @trips
+      |> Enum.with_index(1)
+      |> Enum.map(fn {title, i} ->
+        ends_on = Date.add(today, -i * 3)
+
+        personal_delegation(
+          "#{i}",
+          title,
+          Date.add(ends_on, -2),
+          ends_on,
+          if(i == 2, do: :awaiting_signature, else: :in_progress)
+        )
+      end)
+
+    %{
+      layer: :me,
+      items: trips ++ [contract()],
+      session: session(48),
+      last_session: nil,
+      month_duration: 64 * 3600 + 30 * 60,
+      presence: presence(4, 2, 5),
+      month: []
+    }
+  end
+
+  defp scenario("ty-dlugie-teksty", today) do
+    %{
+      layer: :me,
+      items: [
+        personal_delegation(
+          "1",
+          "Wizyta u kontrahenta w Kędzierzynie-Koźlu, przegląd wdrożenia i szkolenie zespołu księgowego",
+          Date.add(today, -40),
+          Date.add(today, -5)
+        ),
+        contract()
+      ],
+      session: %Session{
+        title: "Przegląd i poprawki modułu rozliczeń delegacji zagranicznych po zmianie przepisów",
+        project: %{name: "Acme Sp. z o.o. — wdrożenie systemu rozliczeń"},
+        is_remote: false,
+        start_datetime: DateTime.shift(DateTime.utc_now(), minute: -(10 * 60 + 7))
+      },
+      last_session: nil,
+      month_duration: 168 * 3600,
+      presence: [
+        %{name: "Maria Konstancja Wielogórska-Przybyszewska", status: :office},
+        %{name: nil, status: :remote}
+        | presence(0, 0, 3)
+      ],
+      month: []
+    }
+  end
+
+  defp scenario("ty-sam", _today) do
+    %{
+      layer: :me,
+      items: [],
+      session: session(2),
+      last_session: nil,
+      month_duration: 0,
+      presence: [%{name: "Kinga Nowak", status: :office}],
+      month: []
+    }
+  end
 
   defp scenario("zwykly-dzien", today) do
     %{
@@ -441,6 +621,48 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
       person: person,
       action: gettext("Review"),
       href: "#"
+    }
+  end
+
+  defp personal_delegation(id, title, starts_on, ends_on, status \\ :in_progress) do
+    %{
+      id: "delegation-#{id}",
+      tier: :personal,
+      icon: "plane",
+      title: gettext("Business trip settlement: %{title}", title: title),
+      context:
+        if(status == :awaiting_signature,
+          do: gettext("waiting for your signature"),
+          else:
+            gettext("settle by %{date}",
+              date: ends_on |> Date.add(14) |> Calendar.strftime("%d.%m")
+            )
+        ),
+      person: DelegationPresentation.format_range(starts_on, ends_on),
+      action: if(status == :awaiting_signature, do: gettext("Sign"), else: gettext("Settle")),
+      href: "#"
+    }
+  end
+
+  defp contract do
+    %{
+      id: "contract-1",
+      tier: :personal,
+      icon: "file-signature",
+      title: gettext("Your employment contract is waiting for your signature"),
+      context: gettext("Download the contract, sign it and upload the signed document."),
+      person: nil,
+      action: gettext("Sign"),
+      href: "#"
+    }
+  end
+
+  defp session(minutes_ago) do
+    %Session{
+      title: "Poprawki [kod]",
+      project: %{name: "Acme"},
+      is_remote: false,
+      start_datetime: DateTime.shift(DateTime.utc_now(), minute: -minutes_ago)
     }
   end
 

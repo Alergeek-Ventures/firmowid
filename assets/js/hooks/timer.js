@@ -41,9 +41,21 @@ export const Timer = {
       .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
   },
 
+  // With `data-timer-main` and `data-timer-seconds` children, the seconds go to
+  // their own element so they can be styled apart.
   updateElement() {
     const elapsed = Math.max(new Date() - this.start_time, 0);
-    this.el.textContent = this.formatTime(elapsed);
+    const time = this.formatTime(elapsed);
+    const seconds = this.el.querySelector("[data-timer-seconds]");
+
+    if (seconds) {
+      const cut = time.lastIndexOf(":");
+      const main = this.el.querySelector("[data-timer-main]");
+      main.textContent = time.slice(0, cut);
+      seconds.textContent = time.slice(cut);
+    } else {
+      this.el.textContent = time;
+    }
   },
 
   startTimer() {
