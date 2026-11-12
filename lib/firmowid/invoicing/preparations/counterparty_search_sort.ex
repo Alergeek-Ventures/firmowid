@@ -27,13 +27,13 @@ defmodule Firmowid.Invoicing.Preparations.CounterpartySearchSort do
 
   defp apply_sorting(query, :name, order) do
     Ash.Query.sort(query, [
-      {calc(fragment("COALESCE(?, ?, ?)", display_name, full_name, surname), type: :string), order}
+      {calc(display_name || full_name || surname, type: :string), order}
     ])
   end
 
   defp apply_sorting(query, :display_name, order) do
     Ash.Query.sort(query, [
-      {calc(fragment("COALESCE(?, ?, ?)", display_name, full_name, given_name), type: :string), order}
+      {calc(display_name || full_name || given_name, type: :string), order}
     ])
   end
 
