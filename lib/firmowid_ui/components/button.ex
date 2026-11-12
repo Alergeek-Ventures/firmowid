@@ -2,9 +2,8 @@ defmodule FirmowidUI.Components.Button do
   @moduledoc """
   App-owned button primitive for the design system.
 
-  This component is the replacement target for legacy button usages from
-  `CoreComponents`. Its API is aligned with the Figma button taxonomy and keeps
-  styling logic private to the component.
+  Its API is aligned with the Figma button taxonomy; the classes it shares with
+  button-styled links live in `FirmowidUI.Utilities.ButtonStyles`.
   """
 
   use FirmowidUI, :html
