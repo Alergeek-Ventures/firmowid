@@ -118,21 +118,51 @@ defmodule Firmowid.Timetracker.SessionTest do
       project: project,
       scope: scope
     } do
-      {:ok, session} =
-        Session.start(
+      # Inline Oban would run the auto-stop as soon as the session starts.
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, session} =
+          Session.start(
+            %{
+              title: "Running",
+              project_id: project.id
+            },
+            scope: scope
+          )
+
+        assert is_nil(session.end_datetime)
+
+        {:ok, stopped} = Session.stop(session, scope: scope)
+
+        assert stopped.start_datetime.second == 0
+        assert stopped.end_datetime.second == 0
+      end)
+    end
+
+    test "leaves a session that has already ended untouched", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      start_datetime =
+        DateTime.utc_now() |> DateTime.shift(hour: -2) |> DateTime.truncate(:second)
+
+      {:ok, running} =
+        Session.create(
           %{
             title: "Running",
-            project_id: project.id
+            project_id: project.id,
+            member_id: user.member.id,
+            start_datetime: start_datetime
           },
           scope: scope
         )
 
-      assert is_nil(session.end_datetime)
+      {:ok, stopped} = Session.stop(running, scope: scope)
+      end_datetime = DateTime.shift(stopped.start_datetime, minute: 30)
+      {:ok, _edited} = Session.update(stopped, %{end_datetime: end_datetime}, scope: scope)
 
-      {:ok, stopped} = Session.stop(session, scope: scope)
-
-      assert stopped.start_datetime.second == 0
-      assert stopped.end_datetime.second == 0
+      assert {:error, _stale} = Session.stop(running, scope: scope)
+      assert Ash.reload!(running, scope: scope).end_datetime == end_datetime
     end
   end
 
