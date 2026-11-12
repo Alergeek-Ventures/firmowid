@@ -60,7 +60,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
   alias AshMoney.Types.Money
   alias AshOban.Checks.AshObanInteraction
-  alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Organization
@@ -77,13 +76,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Invoicing.Signals
   alias Firmowid.Invoicing.Types.InvoiceInput
   alias Firmowid.Invoicing.Validations
   alias Firmowid.Invoicing.VatExemption
   alias Firmowid.Resource
-  alias Firmowid.S3Client
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
@@ -419,52 +416,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       allow_nil? true
       argument :token, :string, allow_nil?: false
 
-      run fn input, context ->
-        # Justified Ecto exception: token-authorized public projection before the tenant is known.
-        # Ash multitenancy requires tenant to be set before querying, but here
-        # we don't know the tenant until we find the invoice.
-        # Only the VAT display setting and that organization's own logo path join
-        # the lookup; no general organization or blob read is granted. The invoice
-        # chain is then read through Ash with the discovered tenant and root token.
-        import Ecto.Query
-
-        share_token = input.arguments.token
-        opts = Ash.Context.to_opts(context)
-
-        root_invoice_row =
-          __MODULE__
-          |> join(:inner, [i], o in Organization, on: o.id == i.organization_id)
-          |> join(:left, [i, o], b in Blob, on: b.id == o.avatar_blob_id and b.organization_id == i.organization_id)
-          |> where([i], i.share_token == ^share_token and i.ksef_invoice_kind == :vat)
-          |> select([i, o, b], {i.id, i.organization_id, o.is_vat_payer, b.blob_path})
-          |> Firmowid.Repo.one(skip_organization_id: true)
-
-        case root_invoice_row do
-          nil ->
-            {:ok, nil}
-
-          {root_invoice_id, org_id, show_vat, logo_path} ->
-            read_opts =
-              opts
-              |> Keyword.delete(:tenant)
-              |> Keyword.put(:tenant, org_id)
-
-            chain =
-              SalesInvoiceChain.fetch_public_shared_chain!(
-                root_invoice_id,
-                share_token,
-                read_opts
-              )
-
-            logo_url =
-              if logo_path do
-                {:ok, url} = S3Client.presigned_get_url(logo_path, expires_in: 200)
-                url
-              end
-
-            {:ok, %{invoice: List.first(chain), show_vat: show_vat, logo_url: logo_url}}
-        end
-      end
+      run Firmowid.Invoicing.Actions.FetchSharedInvoice
     end
 
     # -- Write actions ---------------------------------------------------------
