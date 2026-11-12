@@ -430,8 +430,7 @@ defmodule Firmowid.Core.User do
     end
 
     destroy :destroy do
-      description "Delete a user record after callsite-level verification."
-      # The domain function verifies the password before invoking this action.
+      description "Delete a user record."
       require_atomic? false
 
       change get_and_lock_for_update()

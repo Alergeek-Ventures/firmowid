@@ -19,7 +19,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
-  alias AshAuthentication.Argon2Provider
   alias Firmowid.Billing.Month
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
@@ -198,7 +197,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       )
 
     socket
-    |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
     |> assign(:owned_organizations, Core.list_owned_organizations(current_user))
     |> assign(:current_password, nil)
     |> assign(:password_form, form_password_form(current_user))
@@ -358,29 +356,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
     Core.list_invites!(load: @invite_load, scope: scope)
   end
 
-  def handle_event("delete_account", %{"user" => params}, socket) do
-    user = socket.assigns.current_user
-    password = params["current_password"]
+  def handle_event("delete_account", _params, socket) do
+    case Core.destroy_user(socket.assigns.current_user, scope: socket.assigns.ash_scope) do
+      :ok ->
+        {:noreply, redirect(socket, to: ~p"/")}
 
-    # Verify password at callsite before destroying user
-    if Argon2Provider.valid?(password, user.hashed_password) do
-      case Core.destroy_user(user, scope: socket.assigns.ash_scope) do
-        :ok ->
-          LiveToast.send_toast(:info, gettext("The account has been deleted."))
-          {:noreply, redirect(socket, to: ~p"/")}
+      {:error, error} ->
+        LiveToast.send_toast(:error, gettext("An error occurred while deleting the account"))
 
-        {:error, error} ->
-          LiveToast.send_toast(:error, gettext("An error occurred while deleting the account"))
+        Logger.error("Failed to delete user account",
+          error_kind: ErrorKind.classify(error)
+        )
 
-          Logger.error("Failed to delete user account",
-            error_kind: ErrorKind.classify(error)
-          )
-
-          {:noreply, socket}
-      end
-    else
-      LiveToast.send_toast(:error, gettext("Incorrect password"))
-      {:noreply, socket}
+        {:noreply, socket}
     end
   end
 
@@ -1185,7 +1173,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             standalone={flag_enabled?(:inbox, assigns)}
             current_user={@current_user}
             owned_organizations={@owned_organizations}
-            delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
             member_form={@member_form}
             editing_credentials={@editing_credentials}
