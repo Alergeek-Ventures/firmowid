@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   @moduledoc """
-  Shared labels, icons, and formatting for leave request UI.
+  Shared labels and formatting for leave request UI.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -22,14 +22,6 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   def reason_label(:indisposition, _), do: pgettext("leave type", "Indisposition")
   def reason_label(:rest, _), do: pgettext("leave type", "Rest")
   def reason_label(:other, _), do: pgettext("leave type", "Other")
-
-  @spec reason_icon(reason()) :: String.t()
-  def reason_icon(:vacation), do: "hero-sun"
-  def reason_icon(:sick), do: "hero-heart"
-  def reason_icon(:unpaid), do: "hero-no-symbol"
-  def reason_icon(:indisposition), do: "hero-face-frown"
-  def reason_icon(:rest), do: "hero-moon"
-  def reason_icon(:other), do: "hero-ellipsis-horizontal"
 
   @spec status_label(status()) :: String.t()
   def status_label(:pending), do: gettext("Pending")

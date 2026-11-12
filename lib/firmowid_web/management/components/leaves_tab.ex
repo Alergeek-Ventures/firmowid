@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.YearPicker
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
+  import FirmowidWeb.Timetracker.Components.Leave
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Timetracker
@@ -239,22 +240,6 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         </div>
       </.modal>
     </div>
-    """
-  end
-
-  attr :reason, :atom, required: true
-  attr :class, :string, default: "size-4"
-
-  defp reason_icon(assigns) do
-    ~H"""
-    <%= cond do %>
-      <% @reason in [:sick, :indisposition] -> %>
-        <Lucideicons.cross class={@class} />
-      <% @reason in [:rest, :vacation] -> %>
-        <Lucideicons.sun class={@class} />
-      <% @reason in [:unpaid, :other] -> %>
-        <Lucideicons.slash class={@class} />
-    <% end %>
     """
   end
 
