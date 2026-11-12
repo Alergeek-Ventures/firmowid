@@ -7,6 +7,7 @@ defmodule Firmowid.Blobs.BlobsTest do
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Timetracker.HoursRecord
 
   setup do
     user = admin_fixture()
@@ -83,6 +84,43 @@ defmodule Firmowid.Blobs.BlobsTest do
       assert blob_with_url.url =~ "firmowid-uploads"
       assert blob_with_url.url =~ blob.blob_path
       assert blob_with_url.url =~ "X-Amz-Signature"
+    end
+  end
+
+  describe "read policy" do
+    test "a member reads a file only through a record they may read", %{user: admin} do
+      org_id = admin.member.organization_id
+      owner = user_in_org_fixture(org_id)
+      colleague = user_in_org_fixture(org_id)
+
+      blob =
+        Ash.Seed.seed!(Blob, %{
+          blob_path: "#{org_id}/hours-record.pdf",
+          blob_checksum: "hours-record-checksum",
+          original_filename: "hours-record.pdf",
+          organization_id: org_id
+        })
+
+      Repo.insert!(
+        %HoursRecord{
+          id: Ash.UUIDv7.generate(),
+          member_id: owner.member.id,
+          blob_id: blob.id,
+          month: 3,
+          year: 2025,
+          number_of_hours: 160,
+          organization_id: org_id
+        },
+        skip_organization_id: true
+      )
+
+      read = fn user ->
+        Blobs.get_blob(blob.id, scope: Firmowid.Scope.new!(user, org_id), not_found_error?: false)
+      end
+
+      assert {:ok, %Blob{}} = read.(owner)
+      assert {:ok, %Blob{}} = read.(admin)
+      assert {:ok, nil} = read.(colleague)
     end
   end
 
