@@ -159,8 +159,19 @@ defmodule Firmowid.Ksef do
     end
   end
 
+  # The admin's read above authorizes the disconnect; the certificate is read as the
+  # KSeF session, the only actor that sees credential material. The match on the id
+  # keeps the revocation on the credential the admin read.
   defp maybe_revoke_generated_certificate(%Credential{auth_type: :generated_certificate} = credential, access_token) do
-    serial_number = CredentialMetadata.certificate_serial_number(credential)
+    %Credential{id: credential_id, organization_id: organization_id} = credential
+
+    session_scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
+
+    %Credential{id: ^credential_id} = with_material = get_credential!(scope: session_scope)
+    serial_number = CredentialMetadata.certificate_serial_number(with_material)
 
     ApiClient.revoke_certificate(access_token, serial_number, :unspecified)
   end
