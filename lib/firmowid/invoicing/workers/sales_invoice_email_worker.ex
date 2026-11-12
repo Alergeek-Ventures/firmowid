@@ -4,8 +4,10 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
 
   Every attempt of a job sends the same Resend idempotency key, so a retry
   after the provider accepted the email (lost response, node stopped before
-  the job completed) does not send it again. A job is not enqueued while
-  another one for the same invoice and delivery type is waiting or running.
+  the job completed) does not send it again: Resend answers it with an
+  idempotency conflict, because the PDF is rendered again and differs, and
+  the delivery is recorded as sent. A job is not enqueued while another one
+  for the same invoice and delivery type is waiting or running.
   """
 
   use Oban.Worker,
@@ -46,6 +48,20 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
         record_delivery(Map.merge(attrs, %{status: :sent, sent_at: DateTime.utc_now()}), scope)
 
         Logger.info("Sales invoice email sent invoice_id=#{sales_invoice_id} delivery_type=#{delivery_type}")
+
+        :ok
+
+      # Resend keeps a key only for an email it accepted, so this answer to a retry
+      # means an earlier attempt of this job already sent the email.
+      {:error, attrs, %Resend.Error{name: "invalid_idempotent_request"}} when job.attempt > 1 ->
+        attrs
+        |> Map.delete(:error_message)
+        |> Map.merge(%{status: :sent, sent_at: DateTime.utc_now()})
+        |> record_delivery(scope)
+
+        Logger.info(
+          "Sales invoice email was already accepted by the provider invoice_id=#{sales_invoice_id} delivery_type=#{delivery_type}"
+        )
 
         :ok
 
