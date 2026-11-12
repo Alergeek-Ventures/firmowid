@@ -1363,27 +1363,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp get_active_months(scope) do
-    scope_opts = [scope: scope]
+    sales_dates = Invoicing.list_sales_invoices!(query: [select: [:issue_date]], scope: scope)
+    cost_dates = Invoicing.list_cost_invoices!(query: [select: [:issue_date]], scope: scope)
 
-    sales_months =
-      SalesInvoice
-      |> Ash.Query.select([:issue_date])
-      |> then(&Invoicing.list_sales_invoices!(Keyword.put(scope_opts, :query, &1)))
-      |> Enum.map(& &1.issue_date)
+    transaction_dates =
+      Finances.list_transactions!(query: [select: [:booking_date]], scope: scope)
 
-    cost_months =
-      CostInvoice
-      |> Ash.Query.select([:issue_date])
-      |> then(&Invoicing.list_cost_invoices!(Keyword.put(scope_opts, :query, &1)))
-      |> Enum.map(& &1.issue_date)
-
-    tx_months =
-      Transaction
-      |> Ash.Query.select([:booking_date])
-      |> then(&Finances.list_transactions!(Keyword.put(scope_opts, :query, &1)))
-      |> Enum.map(& &1.booking_date)
-
-    (sales_months ++ cost_months ++ tx_months)
+    (Enum.map(sales_dates ++ cost_dates, & &1.issue_date) ++
+       Enum.map(transaction_dates, & &1.booking_date))
     |> Enum.map(&Date.beginning_of_month/1)
     |> Enum.uniq()
     |> Enum.sort(Date)
