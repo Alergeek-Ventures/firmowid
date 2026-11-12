@@ -1300,125 +1300,58 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     "group-#{kind}-#{:erlang.phash2({kind, party})}"
   end
 
-  # The side filters of the inbox lists: sales or purchase invoices, incoming or outgoing transactions.
-  defp fetch_entries(from, to, :invoices, :sprzedazowe, scope) do
-    from
-    |> list_sales_invoices(to, %{date_field: :issue_date, kind: :vat}, scope)
-    |> order_entries_for_display()
-  end
-
-  defp fetch_entries(from, to, :invoices, :zakupowe, scope) do
-    from
-    |> list_cost_invoices(to, %{date_field: :issue_date}, scope)
-    |> order_entries_for_display()
-  end
-
-  defp fetch_entries(from, to, :transactions, side, scope) when side in [:wplywy, :wydatki] do
-    direction = if side == :wplywy, do: :income, else: :expense
-
-    from
-    |> list_transactions(to, %{}, scope)
-    |> Enum.filter(&(&1.direction == direction))
-    |> order_entries_for_display()
-  end
-
+  # Unordered: the list orders its entries once they are grouped by party.
   defp fetch_entries(from, to, filter, subfilter, scope) do
-    case {filter, subfilter} do
-      {:all, _} ->
-        [
-          list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
-          list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope),
-          list_transactions(from, to, %{}, scope)
-        ]
-        |> Enum.concat()
-        |> order_entries_for_display()
+    filter
+    |> entry_reads(subfilter)
+    |> Enum.flat_map(fn
+      {:cost_invoices, args} ->
+        list_cost_invoices(from, to, args, scope)
 
-      {:unmatched, _} ->
-        [
-          list_cost_invoices(from, to, %{date_field: :due_date, reconciliation: :pending}, scope),
-          list_sales_invoices(
-            from,
-            to,
-            %{
-              date_field: :due_date,
-              kind: :vat,
-              reconciliation: :pending,
-              submission: :confirmed
-            },
-            scope
-          ),
-          list_transactions(from, to, %{reconciliation: :pending}, scope)
-        ]
-        |> Enum.concat()
-        |> order_entries_for_display()
+      {:sales_invoices, args} ->
+        list_sales_invoices(from, to, Map.put(args, :kind, :vat), scope)
 
-      # Faktury tab with subfilters
-      {:invoices, :oplacone} ->
-        [
-          list_cost_invoices(
-            from,
-            to,
-            %{date_field: :issue_date, reconciliation: :matched},
-            scope
-          ),
-          list_sales_invoices(
-            from,
-            to,
-            %{date_field: :issue_date, kind: :vat, reconciliation: :matched},
-            scope
-          )
-        ]
-        |> Enum.concat()
-        |> order_entries_for_display()
+      {:transactions, args} ->
+        list_transactions(from, to, args, scope)
 
-      {:invoices, :nieoplacone} ->
-        [
-          list_cost_invoices(
-            from,
-            to,
-            %{date_field: :issue_date, reconciliation: :pending},
-            scope
-          ),
-          list_sales_invoices(
-            from,
-            to,
-            %{
-              date_field: :issue_date,
-              kind: :vat,
-              reconciliation: :pending,
-              submission: :confirmed
-            },
-            scope
-          )
-        ]
-        |> Enum.concat()
-        |> order_entries_for_display()
-
-      {:invoices, _} ->
-        [
-          list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
-          list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope)
-        ]
-        |> Enum.concat()
-        |> order_entries_for_display()
-
-      # Transakcje tab with subfilters
-      {:transactions, :dopasowane} ->
-        from
-        |> list_transactions(to, %{reconciliation: :matched}, scope)
-        |> order_entries_for_display()
-
-      {:transactions, :bez_dokumentu} ->
-        from
-        |> list_transactions(to, %{reconciliation: :pending}, scope)
-        |> order_entries_for_display()
-
-      {:transactions, _} ->
-        from
-        |> list_transactions(to, %{}, scope)
-        |> order_entries_for_display()
-    end
+      {:transactions, args, direction} ->
+        from |> list_transactions(to, args, scope) |> Enum.filter(&(&1.direction == direction))
+    end)
   end
+
+  @issued %{date_field: :issue_date}
+  @issued_matched %{date_field: :issue_date, reconciliation: :matched}
+  @issued_pending %{date_field: :issue_date, reconciliation: :pending}
+  @due_pending %{date_field: :due_date, reconciliation: :pending}
+
+  # The side filters of the inbox lists: sales or purchase invoices, incoming or outgoing transactions.
+  defp entry_reads(:invoices, :sprzedazowe), do: [{:sales_invoices, @issued}]
+  defp entry_reads(:invoices, :zakupowe), do: [{:cost_invoices, @issued}]
+  defp entry_reads(:transactions, :wplywy), do: [{:transactions, %{}, :income}]
+  defp entry_reads(:transactions, :wydatki), do: [{:transactions, %{}, :expense}]
+
+  defp entry_reads(:all, _subfilter), do: [{:cost_invoices, @issued}, {:sales_invoices, @issued}, {:transactions, %{}}]
+
+  defp entry_reads(:unmatched, _subfilter) do
+    [
+      {:cost_invoices, @due_pending},
+      {:sales_invoices, Map.put(@due_pending, :submission, :confirmed)},
+      {:transactions, %{reconciliation: :pending}}
+    ]
+  end
+
+  defp entry_reads(:invoices, :oplacone), do: [{:cost_invoices, @issued_matched}, {:sales_invoices, @issued_matched}]
+
+  defp entry_reads(:invoices, :nieoplacone),
+    do: [{:cost_invoices, @issued_pending}, {:sales_invoices, Map.put(@issued_pending, :submission, :confirmed)}]
+
+  defp entry_reads(:invoices, _subfilter), do: [{:cost_invoices, @issued}, {:sales_invoices, @issued}]
+
+  defp entry_reads(:transactions, :dopasowane), do: [{:transactions, %{reconciliation: :matched}}]
+
+  defp entry_reads(:transactions, :bez_dokumentu), do: [{:transactions, %{reconciliation: :pending}}]
+
+  defp entry_reads(:transactions, _subfilter), do: [{:transactions, %{}}]
 
   defp list_cost_invoices(from, to, extra_args, scope) do
     args = Map.merge(%{date_from: from, date_to: to, merge_corrections: true}, extra_args)
