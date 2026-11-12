@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   @spec account_tab(map()) :: Rendered.t()
   attr :current_user, :map, required: true
   attr :owned_organizations, :list, required: true
-  attr :delete_account_form, :map, required: true
   attr :editing_account_name, :boolean, required: true
   attr :member_form, :map, required: true
   attr :editing_credentials, :boolean, required: true
@@ -61,7 +60,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <.account_closure_section
           current_user={@current_user}
           owned_organizations={@owned_organizations}
-          delete_account_form={@delete_account_form}
         />
       </div>
       <div :if={!@standalone}></div>
@@ -441,7 +439,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   attr :current_user, :map, required: true
   attr :owned_organizations, :list, required: true
-  attr :delete_account_form, :map, required: true
 
   defp account_closure_section(assigns) do
     assigns =
@@ -493,36 +490,20 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <% end %>
         </p>
 
-        <.simple_form for={@delete_account_form} phx-submit="delete_account" id="delete_account_form">
-          <.input
-            field={@delete_account_form[:current_password]}
-            type="password"
-            required
-            input_class="w-full mb-0"
-            class="flex items-center gap-5 text-sm text-grey-700 [&>label]:mb-0"
-            label={gettext("Password")}
-          />
+        <div class="mt-6 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <.button type="button" variant="secondary" phx-click={hide_modal("confirm_modal")}>
+            {gettext("Cancel")}
+          </.button>
 
-          <:actions>
-            <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <.button
-                type="button"
-                variant="secondary"
-                phx-click={hide_modal("confirm_modal")}
-              >
-                {gettext("Cancel")}
-              </.button>
-
-              <.button
-                type="submit"
-                variant="destructive"
-                phx-disable-with={gettext("Deleting...")}
-              >
-                {gettext("Close account")}
-              </.button>
-            </div>
-          </:actions>
-        </.simple_form>
+          <.button
+            type="button"
+            variant="destructive"
+            phx-click="delete_account"
+            phx-disable-with={gettext("Deleting...")}
+          >
+            {gettext("Close account")}
+          </.button>
+        </div>
       </.modal>
     </.settings_section>
     """

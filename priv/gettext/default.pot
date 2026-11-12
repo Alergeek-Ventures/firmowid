@@ -6204,11 +6204,6 @@ msgstr ""
 msgid "Incorrect email or password."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "Incorrect password"
-msgstr ""
-
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Increased — PLN 300"
@@ -11233,11 +11228,6 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The account has been added."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "The account has been deleted."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
