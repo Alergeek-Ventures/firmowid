@@ -25,7 +25,7 @@ defmodule FirmowidUI.Components.Link do
 
   alias FirmowidUI.Utilities.ButtonStyles
 
-  @button_variants ~w(special primary secondary tertiary outline ghost destructive success plain)
+  @button_variants ~w(special primary tertiary secondary outline ghost destructive success plain)
   @accents ~w(rust teal)
   @kinds ~w(unstyled text button)
   @sizes ~w(big small)
@@ -37,7 +37,7 @@ defmodule FirmowidUI.Components.Link do
 
       <.link kind="unstyled" navigate={~p"/ustawienia"}>Ustawienia</.link>
       <.link kind="text" patch={~p"/zarzadzanie/projekty?archiwum=1"} size="small">Archiwum</.link>
-      <.link kind="button" navigate={~p"/zarzadzanie/projekty/dodaj"} variant="secondary">
+      <.link kind="button" navigate={~p"/zarzadzanie/projekty/dodaj"} variant="tertiary">
         Dodaj projekt
       </.link>
       <.link redirect={~p"/auth/user/google"} kind="button" variant="outline">

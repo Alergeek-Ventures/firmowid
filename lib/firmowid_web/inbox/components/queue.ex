@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 :if={!decision.show_label?}
                 id={"item-#{@item.id}-#{decision.action}"}
                 label={decision.label}
-                variant="secondary"
+                variant="tertiary"
                 class="w-8"
                 phx-click="decide_item"
                 phx-value-id={@item.id}
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 id={"item-#{@item.id}-#{decision.action}"}
                 type="button"
                 size="small"
-                variant="secondary"
+                variant="tertiary"
                 phx-click="decide_item"
                 phx-value-id={@item.id}
                 phx-value-decision={decision.action}
@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             kind="button"
             navigate={@item.href}
             size="small"
-            variant={if @decisions == [], do: "secondary", else: "outline"}
+            variant={if @decisions == [], do: "tertiary", else: "outline"}
           >
             {@item.action}
           </.link>
@@ -203,7 +203,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           :if={@session}
           type="button"
           size="small"
-          variant="secondary"
+          variant="tertiary"
           phx-click="stop_session"
         >
           <Lucideicons.square class="size-4" aria-hidden="true" />{pgettext("session", "Stop")}

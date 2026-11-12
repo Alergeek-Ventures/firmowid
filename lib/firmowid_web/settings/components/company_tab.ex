@@ -445,7 +445,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <div class="flex flex-wrap items-center gap-2.5">
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             phx-click={show_modal("manual_bank_account_modal_company")}
           >
@@ -542,7 +542,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           </.button>
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             phx-click={show_modal("organization_invite_modal")}
           >
@@ -831,7 +831,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <div class="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             phx-click={hide_modal("rename_bank_account_#{@account.id}")}
           >
@@ -864,7 +864,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <.button
           type="button"
-          variant="secondary"
+          variant="tertiary"
           size="small"
           phx-click={hide_modal("confirm_delete_bank_account_#{@account.id}")}
         >
@@ -930,7 +930,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <.button
               type="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
               phx-click={hide_modal("manual_bank_account_modal_company")}
             >

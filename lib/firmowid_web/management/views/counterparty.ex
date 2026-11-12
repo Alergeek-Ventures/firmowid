@@ -246,7 +246,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       </p>
 
       <.button
-        variant="tertiary"
+        variant="secondary"
         size="small"
         type="button"
         phx-click="unarchive_counterparty"

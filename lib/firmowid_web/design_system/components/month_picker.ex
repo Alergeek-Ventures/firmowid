@@ -8,7 +8,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   alias Phoenix.LiveView.Rendered
 
   @sizes ~w(big small)
-  @variants ~w(secondary outline)
+  @variants ~w(tertiary outline)
 
   @doc """
   Renders a month picker trigger styled like a secondary button.
@@ -27,7 +27,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
     doc: "label the trigger is sized for, so that its width does not follow the shown month"
 
   attr :size, :string, values: @sizes, default: "big"
-  attr :variant, :string, values: @variants, default: "secondary"
+  attr :variant, :string, values: @variants, default: "tertiary"
 
   def month_picker(assigns) do
     ~H"""
@@ -84,7 +84,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   attr :label, :string, required: true, doc: "what the trigger shows without a selected range"
   attr :clear_label, :string, required: true, doc: "text of the button clearing the range"
   attr :size, :string, values: @sizes, default: "big"
-  attr :variant, :string, values: @variants, default: "secondary"
+  attr :variant, :string, values: @variants, default: "tertiary"
   attr :rest, :global
 
   def month_range_picker(assigns) do

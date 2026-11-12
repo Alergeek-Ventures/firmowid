@@ -476,7 +476,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
         <.button
           type="button"
           size="small"
-          variant="secondary"
+          variant="tertiary"
           class="min-w-28"
           phx-click={if @kind == :link, do: "link", else: "create"}
           phx-value-key={@group.key}

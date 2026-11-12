@@ -28,7 +28,7 @@
           {gettext("Cancel")}
         </.link>
 
-        <.button variant="tertiary">
+        <.button variant="secondary">
           {case @live_action do
             :new -> gettext("Add counterparty")
             :edit -> gettext("Save changes")
@@ -55,7 +55,7 @@
               />
               <.button
                 type="button"
-                variant="tertiary"
+                variant="secondary"
                 size="small"
                 phx-click="fetch_by_nip"
                 phx-value-nip={@form[:tax_id].value}

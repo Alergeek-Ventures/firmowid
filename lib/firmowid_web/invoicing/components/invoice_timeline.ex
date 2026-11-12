@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
-          variant="secondary"
+          variant="tertiary"
           size="small"
         >
           <.icon name="hero-chevron-left-mini" class="size-4" /> {gettext("Back to preview")}

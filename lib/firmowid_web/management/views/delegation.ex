@@ -379,7 +379,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
               />
               <.button
                 type="submit"
-                variant="secondary"
+                variant="tertiary"
                 class="mt-3 w-full"
                 phx-disable-with={gettext("Returning...")}
               >
@@ -613,7 +613,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   {@command_upload_error}
                 </.alert>
                 <div class="mt-5 flex gap-3">
-                  <.button type="button" variant="secondary" class="w-[170px]">{gettext("Reject")}</.button>
+                  <.button type="button" variant="tertiary" class="w-[170px]">{gettext("Reject")}</.button>
                   <.button
                     type="submit"
                     variant="primary"

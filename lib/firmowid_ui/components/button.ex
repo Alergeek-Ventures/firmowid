@@ -18,7 +18,7 @@ defmodule FirmowidUI.Components.Button do
       <.button variant="primary">Save</.button>
       <.button variant="outline" size="small" type="button">Cancel</.button>
       <.button variant="primary" accent="teal">Continue</.button>
-      <.button as="label" for="upload-input" variant="secondary">Upload</.button>
+      <.button as="label" for="upload-input" variant="tertiary">Upload</.button>
       <.button variant="unstyled" type="button" class="w-full text-left">Open row</.button>
   """
   @spec button(map()) :: Phoenix.LiveView.Rendered.t()
@@ -53,8 +53,8 @@ defmodule FirmowidUI.Components.Button do
       "icon",
       "special",
       "primary",
-      "secondary",
       "tertiary",
+      "secondary",
       "outline",
       "ghost",
       "destructive",

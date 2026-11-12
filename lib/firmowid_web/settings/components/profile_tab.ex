@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   @spec plan_business_trip_link(map()) :: Rendered.t()
   def plan_business_trip_link(assigns) do
     ~H"""
-    <.link kind="button" navigate={~p"/delegacje/dodaj"} variant="secondary" size="small">
+    <.link kind="button" navigate={~p"/delegacje/dodaj"} variant="tertiary" size="small">
       <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
     </.link>
     """
@@ -186,7 +186,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             as="label"
             for={@document_upload.ref}
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="h-7.5 w-8"
             aria-label={gettext("Upload the contract")}
@@ -689,7 +689,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </form>
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             phx-click={show_modal("leave-request-modal")}
             class={["py-1.75", @standalone && "max-md:h-10 max-md:flex-1 max-md:text-base"]}
@@ -808,7 +808,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <.button
               as="label"
               for={@leave_request_upload.ref}
-              variant="secondary"
+              variant="tertiary"
               size="small"
               type="button"
             >

@@ -80,7 +80,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           type="button"
           size="small"
           class="h-8"
-          variant="secondary"
+          variant="tertiary"
           phx-click="suggest_payment_date"
           phx-value-field="sale_date"
           phx-value-suggestion={suggestion}
@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             :for={{suggestion, label} <- PaymentDateSuggestions.due_date_suggestions()}
             type="button"
             size="small"
-            variant="secondary"
+            variant="tertiary"
             class="h-8"
             phx-click="suggest_payment_date"
             phx-value-field="due_date"
@@ -151,7 +151,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           </p>
           <.link
             kind="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="inline-flex items-center gap-1.5"
             target="_blank"
@@ -171,7 +171,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           <.button
             type="button"
             size="small"
-            variant="secondary"
+            variant="tertiary"
             class="col-span-2 my-4"
             phx-click={show_modal("bank_account_selector_modal")}
           >
@@ -217,7 +217,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             <.button
               type="button"
               size="small"
-              variant="secondary"
+              variant="tertiary"
               class="ml-auto h-min"
               phx-click={show_modal("bank_account_selector_modal")}
             >

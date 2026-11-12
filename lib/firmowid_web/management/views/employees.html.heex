@@ -31,7 +31,7 @@
               JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
               |> JS.focus(to: "#search-container input")
             }
-            variant="secondary"
+            variant="tertiary"
           >
             <Lucideicons.search />
           </.button>
@@ -41,7 +41,7 @@
       <div class="flex gap-4 max-md:contents">
         <.link
           kind="button"
-          variant="secondary"
+          variant="tertiary"
           size="big"
           download
           redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
@@ -161,7 +161,7 @@
             <div class="flex gap-2 justify-self-end">
               <.button
                 id="wage-editor-toggle"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 class="size-8 p-0 text-grey-700"
                 phx-click="toggle_wage_editor"
@@ -174,7 +174,7 @@
                 <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
               </.button>
               <.button
-                variant="secondary"
+                variant="tertiary"
                 accent="rust"
                 size="small"
                 class="w-22 text-caps-sm/tight font-medium uppercase"
@@ -347,7 +347,7 @@
             <.button
               :if={@live_action == :archive}
               type="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
               phx-click="unarchive_employee"
               phx-value-id={employee.user.id}

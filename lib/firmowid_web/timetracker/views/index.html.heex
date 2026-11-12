@@ -88,7 +88,7 @@
               <.button
                 type="button"
                 id="toggle_extended_form"
-                variant="secondary"
+                variant="tertiary"
                 class="size-8! rounded-lg! p-0!"
                 phx-click="toggle_extended_form"
                 data-active={@is_form_extended}
@@ -270,7 +270,7 @@
       <.button
         :if={@next_sessions_after}
         phx-click="load_more"
-        variant="secondary"
+        variant="tertiary"
         class="mx-auto block"
       >
         {gettext("Show more")}
@@ -322,7 +322,7 @@
           JS.push("cancel_overlap_save")
           |> hide_modal("overlap-confirmation")
         }
-        variant="tertiary"
+        variant="secondary"
       >
         {gettext("Cancel")}
       </.button>

@@ -94,7 +94,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   module={InvoiceDownloadModal}
                   id={"cost-download-#{@invoice.id}"}
                   download_path={Navigation.cost_invoice_pdf_path(@invoice)}
-                  trigger_variant="secondary"
+                  trigger_variant="tertiary"
                   trigger_size="small"
                   button_label={gettext("Download PDF for printing")}
                 />
@@ -102,7 +102,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.link
                   :if={!downloadable_as_pdf?(@invoice)}
                   kind="button"
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                   external={@invoice.blob && @invoice.blob.url}
                   download
@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.button
                   :if={@can_delete_invoice? and @invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                     <div class="mt-6 flex justify-end gap-3">
                       <.button
                         type="button"
-                        variant="secondary"
+                        variant="tertiary"
                         phx-click={hide_modal("delete-invoice-modal")}
                       >
                         {gettext("Cancel")}
@@ -158,7 +158,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   target="_blank"
                   rel="noopener noreferrer"
                   kind="button"
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                 >
                   <Lucideicons.database /><span class="max-xl:sr-only">{gettext("Open in KSeF")}</span>
@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.button
                   :if={@invoice.ksef_number != nil}
                   class="ml-auto"
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                   phx-click="show_timeline"
                   phx-target={@myself}

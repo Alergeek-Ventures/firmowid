@@ -300,7 +300,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             kind="button"
             navigate={AssistantNavigation.page_path()}
             size="small"
-            variant="secondary"
+            variant="tertiary"
             class="shrink-0"
           >
             <Lucideicons.message_square aria-hidden="true" />{gettext("Ask Firmowid")}

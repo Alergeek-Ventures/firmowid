@@ -63,7 +63,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
             phx-click="connect_salary"
             phx-value-user_id={suggestion.user_id}
             phx-value-month={Date.to_iso8601(suggestion.month)}
-            variant={if index == 0, do: "tertiary", else: "secondary"}
+            variant={if index == 0, do: "secondary", else: "tertiary"}
             size="small"
           >
             {gettext("Confirm")}

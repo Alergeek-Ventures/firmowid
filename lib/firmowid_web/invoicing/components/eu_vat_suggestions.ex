@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.Components.EuVatSuggestions do
         <.button
           type="button"
           size="small"
-          variant="secondary"
+          variant="tertiary"
           phx-click="apply_eu_vat_suggestion"
           {suggestion_values(suggestion)}
         >

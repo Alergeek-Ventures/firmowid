@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
       <FirmowidUI.Components.Button.button
         id="download-button"
         type="button"
-        variant="secondary"
+        variant="tertiary"
         phx-click={show_modal("download-modal")}
         data-tippy-content={gettext("Download all invoices issued or with a sale date in this month")}
         phx-hook="Tippy"

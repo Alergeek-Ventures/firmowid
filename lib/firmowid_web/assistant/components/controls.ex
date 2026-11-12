@@ -148,7 +148,7 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
         />
         <Button.button
           type="submit"
-          variant="tertiary"
+          variant="secondary"
           class="size-8 justify-center p-0 min-block-8 min-inline-8 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
           disabled={@status in [:running, :awaiting_approval]}
           aria-label={gettext("Send message")}

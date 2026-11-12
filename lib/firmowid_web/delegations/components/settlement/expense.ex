@@ -102,7 +102,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               :if={!@editable? && expense.blob}
               kind="button"
               external={expense.blob.url}
-              variant="secondary"
+              variant="tertiary"
               size="small"
               download={expense.original_filename}
               class="shrink-0"
@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             as="label"
             for={@upload.ref}
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="absolute top-1/2 right-3 -translate-y-1/2"
           >{gettext("Choose a file")}</.button>

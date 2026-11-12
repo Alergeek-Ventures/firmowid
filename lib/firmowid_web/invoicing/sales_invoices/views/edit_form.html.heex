@@ -111,7 +111,7 @@
 
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="col-start-2 justify-self-end"
             phx-click={show_modal("buyer-edit-modal")}
@@ -267,7 +267,7 @@
     <div class="col-start-2 col-end-9 mb-14 flex justify-end gap-4">
       <.button
         type="button"
-        variant="secondary"
+        variant="tertiary"
         phx-click="cancel_edit"
         data-confirm-leave
       >
@@ -277,7 +277,7 @@
       <.button
         :if={is_nil(@invoice.invoice_number)}
         type="button"
-        variant="secondary"
+        variant="tertiary"
         phx-click="save_as_draft"
         phx-disable-with={pgettext("sales invoice button", "Saving...")}
       >

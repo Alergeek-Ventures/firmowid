@@ -6,7 +6,7 @@
       <div class="flex flex-row gap-2">
         <.button
           size="small"
-          variant="secondary"
+          variant="tertiary"
           phx-click={show_modal("counterparty-modal")}
         >
           {gettext("Enter manually")}
@@ -16,7 +16,7 @@
           :if={@can_manage_counterparties}
           kind="button"
           size="small"
-          variant="secondary"
+          variant="tertiary"
           navigate={counterparty_management_new_path(assigns)}
         >
           <Lucideicons.plus /> {gettext("Add new")}
@@ -37,7 +37,7 @@
         <.link
           :if={@can_manage_counterparties}
           kind="button"
-          variant="secondary"
+          variant="tertiary"
           accent="teal"
           navigate={counterparty_management_new_path(assigns)}
         >
@@ -268,7 +268,7 @@
                       phx-click="select_counterparty"
                       phx-value-counterparty_id={counterparty.id}
                       size="small"
-                      variant="secondary"
+                      variant="tertiary"
                     >
                       {pgettext("sales invoice creator", "Select")}
                     </.button>
@@ -313,7 +313,7 @@
                       phx-click="select_base_invoice"
                       phx-value-invoice_id={invoice.id}
                       size="small"
-                      variant="secondary"
+                      variant="tertiary"
                     >
                       {pgettext("sales invoice creator", "Copy")}
                     </.button>

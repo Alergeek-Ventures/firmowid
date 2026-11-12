@@ -643,7 +643,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               phx-click="add_item"
               class="col-span-1 col-start-2 mt-3"
               size="small"
-              variant="secondary"
+              variant="tertiary"
             >
               <Lucideicons.plus /> {gettext("Add item")}
             </.button>

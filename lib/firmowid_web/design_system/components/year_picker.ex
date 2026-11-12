@@ -6,7 +6,7 @@ defmodule FirmowidWeb.DesignSystem.Components.YearPicker do
   attr :disabled, :boolean, default: false
   attr :class, :any, default: nil
   attr :size, :string, values: ~w(big small), default: "small"
-  attr :variant, :string, values: ~w(secondary outline), default: "outline"
+  attr :variant, :string, values: ~w(tertiary outline), default: "outline"
   attr :rest, :global
   attr :active_years, :list, default: nil
 

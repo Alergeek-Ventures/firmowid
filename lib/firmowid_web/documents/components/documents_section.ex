@@ -227,7 +227,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
         <.button
           as="label"
-          variant="secondary"
+          variant="tertiary"
           size="small"
           class="relative py-1.75"
           type="button"

@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectSwitcher do
       <FirmowidUI.Components.Button.button
         id={"#{@id}-trigger"}
         type="button"
-        variant="secondary"
+        variant="tertiary"
         size="big"
         aria-haspopup="menu"
         aria-label={gettext("Show: %{slice}", slice: @label)}

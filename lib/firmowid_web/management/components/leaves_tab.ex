@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               <.button
                 :if={@selected_request.category == :leave}
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 phx-click="decline_leave_request"
                 phx-target={@myself}

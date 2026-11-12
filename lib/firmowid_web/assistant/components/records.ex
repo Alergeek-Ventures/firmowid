@@ -219,7 +219,7 @@ defmodule FirmowidWeb.Assistant.Components.Records do
         >{gettext("Reject")}</Button.button>
         <Button.button
           type="button"
-          variant="tertiary"
+          variant="secondary"
           class="pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
           disabled={!@plan.available?}
           phx-click="approve"

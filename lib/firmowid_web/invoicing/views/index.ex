@@ -185,7 +185,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         <.button
           :if={not @all_months?}
           type="button"
-          variant="secondary"
+          variant="tertiary"
           size="big"
           id="open-search"
           class="max-md:size-12 max-md:justify-center"
@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               <FirmowidUI.Components.Button.button
                 as="label"
                 for={@uploads.file.ref}
-                variant="secondary"
+                variant="tertiary"
                 accent="rust"
                 class="relative"
                 data-fab
@@ -271,7 +271,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             <.link
               navigate={Navigation.sales_invoice_creator_path()}
               kind="button"
-              variant="secondary"
+              variant="tertiary"
               accent="teal"
               id="sales-invoice-link"
               data-fab

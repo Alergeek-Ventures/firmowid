@@ -13,7 +13,7 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
   @spec icon_button(map()) :: Phoenix.LiveView.Rendered.t()
   attr :label, :string, required: true, doc: "Accessible name, also shown as the native tooltip."
   attr :size, :string, values: ~w(small big), default: "small"
-  attr :variant, :string, values: ~w(ghost outline secondary), default: "ghost"
+  attr :variant, :string, values: ~w(ghost outline tertiary), default: "ghost"
   attr :type, :string, default: "button"
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)

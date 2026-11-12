@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                     <.button
                       :if={index == length(@transport_types) - 1}
                       type="button"
-                      variant="secondary"
+                      variant="tertiary"
                       size="small"
                       phx-click="add_transport_type"
                     >

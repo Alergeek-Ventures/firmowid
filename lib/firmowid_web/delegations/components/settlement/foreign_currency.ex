@@ -162,7 +162,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
             as="label"
             for={@statement_upload.ref}
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="border-grey-200 bg-grey-200"
             phx-click="select-statement-expense"
