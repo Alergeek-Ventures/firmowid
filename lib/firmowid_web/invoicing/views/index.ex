@@ -897,7 +897,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     all_months? = socket.assigns.all_months?
 
     # The inbox lists of invoices and transactions show every month, newest first.
-    entries =
+    fetched_entries =
       if all_months?,
         do: fetch_entries(nil, nil, filter, subfilter, scope),
         else: fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
@@ -906,22 +906,35 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     entries =
       if projects_column,
-        do: ProjectCell.preload(entries, scope),
-        else: entries
+        do: ProjectCell.preload(fetched_entries, scope),
+        else: fetched_entries
 
     entries =
       if all_months?,
         do: with_month_separators(entries),
         else: group_cost_transactions_by_party(entries)
 
-    socket =
-      socket
-      |> assign(:invoicing_entries, entries)
-      |> assign(:projects_column, projects_column)
+    socket
+    |> assign(:invoicing_entries, entries)
+    |> assign(:projects_column, projects_column)
+    |> assign_month_status(fetched_entries)
+    |> refetch_upload_counts()
+    |> fetch_dashboard_data()
+  end
+
+  # The month's lists of unmatched and of all entries ignore the subfilter, so the list
+  # read serves for them when it is one of the two.
+  defp assign_month_status(socket, fetched_entries) do
+    %{month: month, filter: filter} = socket.assigns.params
+    scope = socket.assigns.ash_scope
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
 
     # Pending entries for badge count (no subfilter - we want all unmatched)
     pending_entries =
-      fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
+      if filter == :unmatched,
+        do: fetched_entries,
+        else: fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
 
     raw_pending_count = Enum.count(pending_entries)
 
@@ -931,12 +944,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Enum.count()
 
     # Check if any entries exist this month (regardless of filter)
-    all_entries_count =
-      date_range_from
-      |> fetch_entries(date_range_to, :all, nil, scope)
-      |> Enum.count()
-
-    is_month_touched = all_entries_count > 0 or raw_pending_count > 0
+    is_month_touched =
+      cond do
+        raw_pending_count > 0 -> true
+        filter == :all -> fetched_entries != []
+        true -> fetch_entries(date_range_from, date_range_to, :all, nil, scope) != []
+      end
 
     # No new transactions can be added after month ends
     has_month_ended =
@@ -944,15 +957,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Date.end_of_month()
       |> Date.compare(Date.utc_today()) == :lt
 
-    socket =
-      socket
-      |> assign(:is_month_touched, is_month_touched)
-      |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
-      |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
-      |> refetch_upload_counts()
-
-    # Also fetch dashboard data (used when view_mode is :dashboard)
-    fetch_dashboard_data(socket)
+    socket
+    |> assign(:is_month_touched, is_month_touched)
+    |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
+    |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
   end
 
   defp refetch_upload_counts(socket) do
@@ -975,7 +983,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @dashboard_tile_limit 5
 
-  defp fetch_dashboard_data(socket) do
+  # Only the dashboard shows its tiles; the lists leave them unread.
+  defp fetch_dashboard_data(%{assigns: %{params: %{view_mode: :dashboard}}} = socket) do
     month = socket.assigns.params.month
     scope = socket.assigns.ash_scope
     date_range_from = Date.beginning_of_month(month)
@@ -1003,6 +1012,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> assign(:dashboard_suggestions, suggestions.entries)
     |> assign(:dashboard_suggestions_count, suggestions.total_count)
   end
+
+  defp fetch_dashboard_data(socket), do: socket
 
   defp fetch_unpaid_invoices(from, to, scope) do
     cost_invoices =
