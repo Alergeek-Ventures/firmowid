@@ -18,7 +18,7 @@ Dane w tabeli pochodzą z cenników i stron producentów; działania KSeF w tych
 | **e-mikrofirma** | narzędzie MF w e-Urzędzie Skarbowym | brak opublikowanego limitu | wystawianie i odbiór, przenoszenie do ewidencji VAT | brak banku, projektów, magazynu |
 | **Firmowid Darmowy** | 0 zł bez limitu czasu, bez karty | faktury sprzedaży bez limitu | wysyłka i pobieranie bez limitu | 2 użytkowników, 1 konto bankowe, czas pracy w 3 projektach, OCR 10/mies.; brak księgowości i magazynu |
 | **Faktura.pl DARMOWY** | 0 zł bez limitu czasu | w planie 0 zł bez faktur VAT i bez nielimitowanej sprzedaży | tylko pobieranie i podgląd faktur z KSeF, bez wysyłki | wysyłka do KSeF i faktury bez limitu dopiero w planie BASIC (18,99 zł netto/mies. w cyklu 3-letnim) |
-| **Fakturownia Micro** | 0 zł | 3 faktury sprzedaży / mies.; koszty bez limitu | wysyłka; odbiór ręczny, automatyczny opisany niejasno | 1 użytkownik, bez połączenia z bankiem; powyżej 3 faktur plan płatny |
+| **Fakturownia Micro** | 0 zł | 3 faktury sprzedaży / mies.; koszty bez limitu | wysyłka i ręczny odbiór | 1 użytkownik, bez połączenia z bankiem; powyżej 3 faktur plan płatny |
 | **IFIRMA** | od 0 zł | 3 faktury / mies. | wysyłka i odbiór | powyżej 3 faktur plan Faktura+; księgowość płatna |
 | **PolskaFaktura FREE** | 0 zł, bez karty | 3 dokumenty sprzedaży / mies., korekty wliczają się do limitu | pełna obsługa; koszty pobierane raz dziennie | API: brak informacji |
 | **FakturaXL** | 0 zł bez limitu czasu | 10 dokumentów sprzedaży i kosztów łącznie / mies. | wysyłka ręczna, zbiorcza i automatyczna; pobieranie | bank, czas pracy: brak informacji |
