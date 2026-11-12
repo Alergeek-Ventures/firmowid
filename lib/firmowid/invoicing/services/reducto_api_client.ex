@@ -11,12 +11,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
 
   @default_base_url "https://platform.reducto.ai"
 
-  @type extract_options :: [
-          extraction_mode: :hybrid | :ocr | :metadata,
-          system_prompt: String.t() | nil
-        ]
-
-  def get_auth_token, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
+  @type extract_options :: [system_prompt: String.t()]
 
   @doc """
   Extracts metadata from a document using standard Reducto Extract. Pass in a file URL
@@ -24,8 +19,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
 
   ## Options
 
-    * `:extraction_mode` - `:hybrid` (default), `:ocr`, or `:metadata`
-    * `:system_prompt` - Optional context for the LLM about the document type
+    * `:system_prompt` - context for the LLM about the document type (required)
 
   Be mindful that the API is in synchronous mode, meaning that a very big
   files might fail (120s timeout). It's possible to use async mode, but it
@@ -55,26 +49,17 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
   end
 
   defp extract_input(file_url, json_schema, options) do
-    extraction_mode =
-      options
-      |> Keyword.get(:extraction_mode, :hybrid)
-      |> Atom.to_string()
-
-    system_prompt = Keyword.get(options, :system_prompt)
-
-    instructions = maybe_add_system_prompt(%{schema: json_schema}, system_prompt)
-
     request_body = %{
       input: file_url,
       parsing: %{
         settings: %{
-          extraction_mode: extraction_mode
+          extraction_mode: "hybrid"
         },
         retrieval: %{
           chunking: %{chunk_mode: "disabled"}
         }
       },
-      instructions: instructions,
+      instructions: %{schema: json_schema, system_prompt: Keyword.fetch!(options, :system_prompt)},
       settings: %{
         citations: %{
           enabled: true,
@@ -86,7 +71,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
     case Req.post(
            reducto_url("/extract"),
            extract_request_options(
-             auth: get_auth_token(),
+             auth: auth(),
              json: request_body,
              receive_timeout: 120_000,
              connect_options: [timeout: 120_000]
@@ -126,12 +111,10 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
     end
   end
 
-  defp maybe_add_system_prompt(instructions, nil), do: instructions
+  defp auth, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
 
-  defp maybe_add_system_prompt(instructions, prompt), do: Map.put(instructions, :system_prompt, prompt)
-
-  # When citations are enabled, values are wrapped in %{"value" => ..., "citations" => [...]}
-  # This function unwraps them to return just the values for backward compatibility
+  # With citations enabled, Reducto wraps every value as %{"value" => ..., "citations" => [...]};
+  # callers get the plain values.
   defp unwrap_citations(result) when is_map(result) do
     Map.new(result, fn {key, value} -> {key, unwrap_citation_value(value)} end)
   end
@@ -189,7 +172,6 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
   # sobelow_skip ["Traversal.FileModule"]
   # dest_path is constructed internally from Briefly temp paths, not user input.
   defp download_file(file_url, dest_path) do
-    # Validate dest_path to prevent directory traversal
     dest_path = Path.expand(dest_path)
 
     %{status: 200, body: body} = Req.get!(file_url, download_request_options())
@@ -199,7 +181,6 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
   # sobelow_skip ["Traversal.FileModule"]
   # file_path comes from Phoenix or Briefly temporary uploads, not raw web input.
   defp upload_file(file_path) do
-    # Validate file_path to prevent directory traversal
     file_path = Path.expand(file_path)
 
     {:ok, file_contents} = File.read(file_path)
@@ -221,7 +202,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
     case Req.post(
            reducto_url("/upload"),
            upload_request_options(
-             auth: get_auth_token(),
+             auth: auth(),
              headers: headers,
              body: Multipart.body_stream(multipart)
            )
