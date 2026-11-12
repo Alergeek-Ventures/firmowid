@@ -22,8 +22,9 @@ defmodule Firmowid.SystemActor do
   - `:sales_invoice_processor` — processes outgoing sales invoices (KSeF submission
     workers, invoice generation). Can read/write sales invoices and related items.
 
-  - `:ksef_session` — manages KSeF (National e-Invoice System) sessions. Can lock/
-    unlock invoices for KSeF submission, update KSeF fields, and read credentials.
+  - `:ksef_session` — manages KSeF (National e-Invoice System) sessions of `org_id`.
+    Can lock/unlock invoices for KSeF submission, update KSeF fields, and read
+    credentials and the organization.
 
   - `:invoice_matcher` — matches bank transactions to invoices. Can read transactions,
     invoices, bank accounts, and connect/disconnect transaction links.
@@ -40,15 +41,17 @@ defmodule Firmowid.SystemActor do
     the classifier chose per entry, and caches the register data of counterparties
     that it looks up for them. Reads sales invoices and gives untagged ones the
     project their client always has.
+
   - `:company_lookup` — reads and caches the public register data of the NIP a
     signed-in user is creating an organization for.
 
   - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
     exchange-rate backend.
 
-  - `:organization_owner_setup` — bootstrap-only actor used immediately after
-    organization creation to assign the new organization to its owner and promote
-    that specific user to `:admin`.
+  - `:organization_owner_setup` — adds `user_id` to the organization `org_id`: the
+    owner of a just created organization as `:admin`, or the holder of a consumed
+    invite with the invite's role. Can read only that user and run only that
+    assignment.
 
   - `:project_tag_manager` — manages analysis tag definitions created as an
     implementation detail of timetracker projects.
