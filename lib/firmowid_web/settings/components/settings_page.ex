@@ -26,11 +26,15 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   attr :standalone, :boolean, default: false
   attr :title, :string, default: nil
   slot :inner_block, required: true
+  slot :actions, doc: "Shown next to the title of a standalone page."
 
   def settings_page(%{standalone: true} = assigns) do
     ~H"""
     <section class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
-      <h1 class="text-2xl font-semibold text-grey-900">{@title}</h1>
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-2xl font-semibold text-grey-900">{@title}</h1>
+        {render_slot(@actions)}
+      </div>
       {render_slot(@inner_block)}
     </section>
     """

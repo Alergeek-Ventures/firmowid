@@ -49,6 +49,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       |> assign(Map.delete(assigns, :refetch))
       |> assign_new(:dimmed, fn -> false end)
       |> assign_new(:variant, fn -> :management end)
+      |> assign_new(:standalone, fn -> false end)
       |> assign_new(:current_contract_id, fn -> nil end)
       |> assign_new(:feature_flags, fn -> %{} end)
       |> assign(:can_upload?, can_upload?)
@@ -80,6 +81,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   end
 
   attr :variant, :atom, default: :management
+
+  attr :standalone, :boolean,
+    default: false,
+    doc: "On its own page the page title names the documents, so the list drops its heading and card."
+
   attr :class, :string, default: ""
 
   @impl true
@@ -104,16 +110,17 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <div class={outer_styles(@variant)}>
       <section class={[
-        section_styles(@variant),
+        section_styles(@variant, @standalone),
         @dimmed && "opacity-60",
         @class
       ]}>
         <div class={header_wrapper_styles(@variant)}>
           <%= if @profile? do %>
-            <div class="flex items-start justify-between gap-3">
-              <h2 class="text-base leading-none font-medium text-grey-900">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <h2 :if={!@standalone} class="text-base leading-none font-medium text-grey-900">
                 {gettext("Uploaded documents")}
               </h2>
+              <.filters :if={@standalone} myself={@myself} type_filter={@type_filter} />
               <.toolbar
                 id={@id}
                 myself={@myself}
@@ -145,7 +152,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             </h3>
           <% end %>
 
-          <.filters myself={@myself} type_filter={@type_filter} class={filters_styles(@variant)} />
+          <.filters
+            :if={!@standalone}
+            myself={@myself}
+            type_filter={@type_filter}
+            class={filters_styles(@variant)}
+          />
         </div>
 
         <.documents_list documents={@documents} variant={@variant} />
@@ -314,9 +326,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp outer_styles(:profile), do: "flex h-full w-full flex-col"
   defp outer_styles(_), do: "flex h-full min-h-0 flex-col"
 
-  defp section_styles(:profile), do: "flex w-full h-full flex-col gap-6 rounded-lg bg-white p-6"
+  defp section_styles(:profile, true), do: "flex w-full h-full flex-col gap-6"
 
-  defp section_styles(_), do: "relative flex h-full min-h-0 flex-col gap-y-6 rounded-md bg-white p-6 text-black"
+  defp section_styles(:profile, false), do: "flex w-full h-full flex-col gap-6 rounded-lg bg-white p-6"
+
+  defp section_styles(_, _), do: "relative flex h-full min-h-0 flex-col gap-y-6 rounded-md bg-white p-6 text-black"
 
   defp header_wrapper_styles(:profile), do: "space-y-6"
   defp header_wrapper_styles(_), do: "shrink-0"
