@@ -41,8 +41,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
     define :by_month, args: [:member_id, :month, :year]
     define :create
     define :request_change
-    define :accept_change_request
-    define :reject_change_request
+    define :review_change_request, args: [:decision]
     define :notify_admins, args: [:signal]
   end
 
@@ -130,9 +129,20 @@ defmodule Firmowid.Timetracker.HoursRecord do
       emit Signals, :hours_record_change_requested, fields: [hours_record_id: :id]
     end
 
-    update :accept_change_request do
-      description "Approve the request, retaining the document and unlocking its month for a new submission."
+    update :review_change_request do
+      description """
+      Record the administrator's decision on a pending change request. Accepting withdraws the
+      record, retaining the document and unlocking its month for a new submission; rejecting
+      leaves the submitted document and its month as they are.
+      """
+
       accept []
+
+      argument :decision, :atom do
+        allow_nil? false
+        constraints one_of: [:accepted, :rejected]
+      end
+
       validate PendingHoursRecordChange
 
       change filter(
@@ -143,28 +153,13 @@ defmodule Firmowid.Timetracker.HoursRecord do
                )
              )
 
-      change set_attribute(:change_request_decision, :accepted)
+      change set_attribute(:change_request_decision, arg(:decision))
       change set_attribute(:change_reviewed_at, &DateTime.utc_now/0)
       change set_attribute(:change_reviewer_id, actor(:id))
-      change set_attribute(:submission_status, :withdrawn)
-    end
 
-    update :reject_change_request do
-      description "Reject the request without changing the submitted document or unlocking its month."
-      accept []
-      validate PendingHoursRecordChange
-
-      change filter(
-               expr(
-                 submission_status == :submitted and not is_nil(change_requested_at) and
-                   is_nil(change_request_decision) and
-                   organization_id == ^actor([:member, :organization_id])
-               )
-             )
-
-      change set_attribute(:change_request_decision, :rejected)
-      change set_attribute(:change_reviewed_at, &DateTime.utc_now/0)
-      change set_attribute(:change_reviewer_id, actor(:id))
+      change set_attribute(:submission_status, :withdrawn) do
+        where argument_equals(:decision, :accepted)
+      end
     end
 
     create :create do
@@ -234,7 +229,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
       authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
-    policy action([:accept_change_request, :reject_change_request]) do
+    policy action(:review_change_request) do
       authorize_if {ActorRole, role: :admin}
     end
 

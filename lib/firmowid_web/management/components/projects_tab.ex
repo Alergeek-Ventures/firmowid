@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     with {:ok, record} <- HoursRecord.get(id, scope: scope),
          true <- record.member_id == socket.assigns.user.member.id,
-         {:ok, _record} <- review_request(record, decision, scope) do
+         {:ok, _record} <- HoursRecord.review_change_request(record, decision, scope: scope) do
       LiveToast.send_toast(:info, gettext("The request decision has been saved."))
       {:noreply, assign_hours_records(socket)}
     else
@@ -290,10 +290,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     assign(socket, :monthly_payout, if(salary, do: salary.monthly_payout))
   end
-
-  defp review_request(record, "accepted", scope), do: HoursRecord.accept_change_request(record, scope: scope)
-
-  defp review_request(record, "rejected", scope), do: HoursRecord.reject_change_request(record, scope: scope)
 
   defp assign_hours_records(socket) do
     date = socket.assigns.date
