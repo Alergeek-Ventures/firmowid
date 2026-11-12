@@ -495,32 +495,12 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         where present(:confirmation_id)
       end
 
-      change Changes.PrepareInvoiceSeller
-      change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
-
-      change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
-      change Changes.SetIsCashAccount
-      change {Changes.ValidateCountryCode, field: :buyer_country}
-      change Changes.BindInvoiceCounterparty
+      pipe_through [:prepare_invoice_body, :apply_invoice_body]
 
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:buyer_tax_id, :buyer_name, :internal_note]
     end
 
     create :issue do
@@ -536,16 +516,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         where present(:confirmation_id)
       end
 
-      change Changes.PrepareInvoiceSeller
-      change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
-
-      change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
-      change Changes.SetIsCashAccount
-      change {Changes.ValidateCountryCode, field: :buyer_country}
-      change Changes.BindInvoiceCounterparty
+      pipe_through [:prepare_invoice_body, :apply_invoice_body]
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -553,20 +524,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
+      pipe_through [:buyer_tax_id]
       validate Validations.ValidateEuVatNumber
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:buyer_name, :internal_note]
     end
 
     create :correct do
@@ -649,20 +609,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate Validations.CompleteInvoice
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+      pipe_through [:buyer_tax_id]
 
       validate {Validations.ValidateEuVatNumber, confirmation_argument: :confirm_corrected_buyer_vat_id}
 
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:buyer_name, :internal_note]
     end
 
     create :import_from_ksef do
@@ -685,14 +636,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate Validations.CompleteInvoice
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
+      pipe_through [:buyer_tax_id, :buyer_name]
     end
 
     update :revise do
@@ -705,10 +649,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       change Changes.ApplyInvoiceInput
       change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
-      change Changes.PrepareInvoiceSeller
-      change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+      pipe_through [:prepare_invoice_body]
 
       # A null list (agents send one for "unchanged") keeps the saved items.
       change fn changeset, _context ->
@@ -718,29 +659,14 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         end
       end
 
-      change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
-      change Changes.SetIsCashAccount
-      change {Changes.ValidateCountryCode, field: :buyer_country}
-      change Changes.BindInvoiceCounterparty
+      pipe_through [:apply_invoice_body]
 
       validate Validations.InvoiceDraft
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:buyer_tax_id, :buyer_name, :internal_note]
     end
 
     update :finalize do
@@ -759,16 +685,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       change Changes.ApplyInvoiceInput
       change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
-      change Changes.PrepareInvoiceSeller
-      change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
-
-      change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
-      change Changes.SetIsCashAccount
-      change {Changes.ValidateCountryCode, field: :buyer_country}
-      change Changes.BindInvoiceCounterparty
+      pipe_through [:prepare_invoice_body, :apply_invoice_body]
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -778,20 +695,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
 
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
+      pipe_through [:buyer_tax_id]
       validate Validations.ValidateEuVatNumber
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:buyer_name, :internal_note]
     end
 
     update :return_to_draft do
@@ -878,10 +784,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     update :update_internal_note do
       description "Update the internal note without changing the invoice or its KSeF submission."
       accept [:internal_note]
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
+      pipe_through [:internal_note]
     end
 
     update :toggle_skip do
@@ -1581,6 +1484,42 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       relationship_context %{data_layer: %{table: "sales_invoice_entity_tags"}}
       source_attribute :id
       destination_attribute :resource_id
+    end
+  end
+
+  pipelines do
+    pipeline :prepare_invoice_body do
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+    end
+
+    pipeline :apply_invoice_body do
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+    end
+
+    pipeline :buyer_tax_id do
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+    end
+
+    pipeline :buyer_name do
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+    end
+
+    pipeline :internal_note do
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
   end
 
