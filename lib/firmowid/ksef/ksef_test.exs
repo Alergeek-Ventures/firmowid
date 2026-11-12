@@ -7,7 +7,9 @@ defmodule Firmowid.KsefTest do
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Ksef
+  alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   setup do
     on_exit(fn -> Cachex.clear(:ksef) end)
@@ -57,5 +59,20 @@ defmodule Firmowid.KsefTest do
 
     assert Ksef.invoice_url!(invoice) =~ "/6161525811/15-01-2026/#{checksum}"
     assert SalesInvoice.by_id!(invoice.id, scope: scope).ksef_invoice_checksum == checksum
+  end
+
+  test "a KSeF session actor reaches only its own organization's credential" do
+    organization_id = admin_fixture().member.organization_id
+    other_organization_id = admin_fixture().member.organization_id
+    InvoicingFixtures.connect_ksef!(organization_id)
+
+    other_session = %SystemActor{org_id: other_organization_id, role: :ksef_session}
+    scope = %Scope{actor: other_session, tenant: organization_id}
+
+    assert {:ok, nil} = Ksef.get_credential(scope: scope)
+    assert {:ok, nil} = Credential.get_internal(scope: scope)
+
+    own_scope = %{scope | actor: %{other_session | org_id: organization_id}}
+    assert {:ok, %Credential{}} = Credential.get_internal(scope: own_scope)
   end
 end
