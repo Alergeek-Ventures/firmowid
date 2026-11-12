@@ -25,34 +25,28 @@ defmodule Firmowid.Translations do
   @spec polish_plural_forms() :: String.t()
   def polish_plural_forms, do: plural_forms("pl")
 
-  @doc "Returns the canonical gettext plural rule of a translated locale."
   @spec plural_forms(String.t()) :: String.t()
-  def plural_forms(locale), do: Map.fetch!(@plural_forms, locale)
+  defp plural_forms(locale), do: Map.fetch!(@plural_forms, locale)
 
-  @doc "Builds the canonical identity key for an Expo message."
   @spec message_key(struct(), String.t()) :: key()
-  def message_key(message, domain), do: {domain, text(message.msgctxt), text(message.msgid), plural_id(message)}
+  defp message_key(message, domain), do: {domain, text(message.msgctxt), text(message.msgid), plural_id(message)}
 
   @doc "Removes the gettext header message from a parsed catalog."
   @spec source_messages(struct()) :: [struct()]
   def source_messages(%Expo.Messages{messages: messages}), do: Enum.reject(messages, &header?/1)
 
-  @doc "Returns whether an Expo message is the gettext header."
   @spec header?(struct()) :: boolean()
-  def header?(message), do: List.first(message.msgid) == ""
+  defp header?(message), do: List.first(message.msgid) == ""
 
-  @doc "Returns the plural message identity, or nil for singular messages."
   @spec plural_id(struct()) :: String.t() | nil
-  def plural_id(message), do: message |> Map.get(:msgid_plural) |> text()
+  defp plural_id(message), do: message |> Map.get(:msgid_plural) |> text()
 
-  @doc "Converts Expo iodata text to a binary, preserving nil."
   @spec text(nil | String.t() | [String.t()]) :: String.t() | nil
-  def text(nil), do: nil
-  def text(value), do: IO.iodata_to_binary(value)
+  defp text(nil), do: nil
+  defp text(value), do: IO.iodata_to_binary(value)
 
-  @doc "Extracts named interpolation placeholders, ignoring repeated occurrences."
   @spec placeholders(String.t() | [String.t()]) :: MapSet.t(String.t())
-  def placeholders(value) do
+  defp placeholders(value) do
     value
     |> text()
     |> then(&Regex.scan(~r/%\{[a-zA-Z0-9_]+\}/, &1))
