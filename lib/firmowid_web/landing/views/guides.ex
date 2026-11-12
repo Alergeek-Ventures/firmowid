@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Landing.Components.LegalPage, only: [legal_page: 1]
+  import FirmowidWeb.Landing.Components.Primitives, only: [landing_button: 1]
 
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Core.Endpoint
@@ -91,8 +92,19 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </time>
       </p>
       <div class="[&_table]:block [&_table]:overflow-x-auto [&_tr.firmowid]:bg-[#1c1f23] [&_tr.firmowid_*]:text-white [&_tr.firmowid>td:first-child]:ps-3 [&_tr.firmowid>td:last-child]:pe-3">
-        {Phoenix.HTML.raw(@article.html)}
+        {Phoenix.HTML.raw(elem(@article.html_sections, 0))}
+        <.guide_signup :if={elem(@article.html_sections, 1) != ""} cta="guide_mid_register">
+          {gettext(
+            "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
+          )}
+        </.guide_signup>
+        {Phoenix.HTML.raw(elem(@article.html_sections, 1))}
       </div>
+      <.guide_signup cta="guide_end_register">
+        <strong class="block text-lg text-[#0f0f0f]">
+          {gettext("Run your business")} {gettext("with a lighter mind.")}
+        </strong>
+      </.guide_signup>
       <div class="not-prose mt-12 flex flex-wrap items-center gap-3 border-t border-grey-300 pt-6 text-sm font-medium [&>a]:rounded-full [&>a]:border [&>a]:border-grey-300 [&>a]:px-4 [&>a]:py-2 [&>a:hover]:border-grey-900 [&>button]:rounded-full [&>button]:border [&>button]:border-grey-300 [&>button]:px-4 [&>button]:py-2 [&>button:hover]:border-grey-900">
         <.icon name="hero-share" class="size-5 text-grey-600" />
         <a
@@ -127,6 +139,20 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </button>
       </div>
     </.legal_page>
+    """
+  end
+
+  attr :cta, :string, required: true, values: ~w(guide_mid_register guide_end_register)
+  slot :inner_block, required: true
+
+  defp guide_signup(assigns) do
+    ~H"""
+    <aside class="not-prose my-10 flex flex-col gap-4 rounded-sm border border-grey-300 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-base/6 text-grey-700">{render_slot(@inner_block)}</p>
+      <.landing_button navigate={~p"/zarejestruj"} class="shrink-0" data-landing-cta={@cta}>
+        {gettext("Start for free")}
+      </.landing_button>
+    </aside>
     """
   end
 end

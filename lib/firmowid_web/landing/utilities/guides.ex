@@ -5,8 +5,9 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated`, `category`); the file name is the URL slug. Categories, in display
   order, are defined in `priv/guides/categories.yml`. Questions in a
-  `## Najczęstsze pytania` section become the guide's `faq`. Images in the body get their
-  dimensions and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`,
+  `## Najczęstsze pytania` section become the guide's `faq`, and `html_sections`
+  splits the body before its second `h2`, where the article shows a sign-up box.
+  Images in the body get their dimensions and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`,
   when present, becomes the guide's link preview image.
   """
 
@@ -23,6 +24,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
           category: category(),
           html: String.t(),
           faq: [%{question: String.t(), answer: String.t()}],
+          html_sections: {String.t(), String.t()},
           image: image() | nil
         }
 
@@ -112,6 +114,13 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   []
               end
 
+            # The sign-up box goes before the second section, so the first one is read uninterrupted.
+            html_sections =
+              case String.split(html, "<h2", parts: 3) do
+                [lead, first, rest] -> {lead <> "<h2" <> first, "<h2" <> rest}
+                _ -> {html, ""}
+              end
+
             og_path = "/images/guides/og/#{slug}.png"
 
             image =
@@ -131,6 +140,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   raise("#{path}: unknown guide category #{inspect(category_slug)}"),
               html: html,
               faq: faq,
+              html_sections: html_sections,
               image: image,
               # Body images and the preview path (even when missing) recompile this module when they change.
               resources:
