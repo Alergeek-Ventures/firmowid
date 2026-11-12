@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations.PerDiem
+  alias Firmowid.TimeFormatter
 
   @type expense_kind :: :transport | :accommodation | :other
 
@@ -58,7 +59,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
 
   @spec format_date(Date.t() | nil) :: String.t()
   def format_date(nil), do: "—"
-  def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+  def format_date(date), do: TimeFormatter.format_date(date)
 
   @spec roman_numeral(pos_integer()) :: String.t()
   def roman_numeral(number) do

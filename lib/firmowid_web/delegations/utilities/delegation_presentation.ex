@@ -25,9 +25,6 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   @spec format_range(Date.t(), Date.t()) :: String.t()
   def format_range(start_date, end_date), do: TimeFormatter.format_date_range(start_date, end_date)
 
-  @spec format_date(Date.t()) :: String.t()
-  def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
-
   @doc "Formats an exchange rate with a Polish decimal comma."
   @spec format_rate(Decimal.t()) :: String.t()
   def format_rate(rate), do: rate |> Decimal.to_string(:normal) |> String.replace(".", ",")
@@ -41,7 +38,7 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
       label: per_diem_kind_label(line.kind),
       amount: Money.to_string!(line.foreign_amount),
       rate: format_rate(delegation.per_diem_nbp_rate),
-      date: format_date(delegation.per_diem_nbp_rate_date)
+      date: TimeFormatter.format_date(delegation.per_diem_nbp_rate_date)
     )
   end
 
