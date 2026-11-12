@@ -603,7 +603,10 @@ defmodule Firmowid.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
+    # A superuser working as the user (see `Firmowid.Core.impersonator_id/1`) cannot
+    # delete the account.
     bypass action_type(:destroy) do
+      forbid_if expr(not is_nil(^actor([:__metadata__, :token_claims, "impersonator_id"])))
       authorize_if expr(id == ^actor(:id))
     end
   end
