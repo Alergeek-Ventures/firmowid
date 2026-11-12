@@ -48,7 +48,6 @@ defmodule Firmowid.Delegations do
     end
 
     resource DelegationExpense do
-      define :read_expenses, action: :read
       define :get_expense, action: :read, get_by: [:id]
       define :create_expense, action: :create
       define :update_expense, action: :update
@@ -60,9 +59,7 @@ defmodule Firmowid.Delegations do
       define :remove_statement_document, action: :remove_statement_document
     end
 
-    resource DelegationExpenseRelatedBlob do
-      define :read_related_expense_blobs, action: :read
-    end
+    resource DelegationExpenseRelatedBlob
 
     resource DelegationReferenceCounter
   end
