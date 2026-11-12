@@ -59,8 +59,9 @@ defmodule Firmowid.SystemActor do
   - `:vat_id_checker` — lists an organization's counterparties and records the
     result of the periodic EU VAT number check on them.
 
-  - `:cross_tenant_reader` — reads data across organization boundaries. Used by the
-    KSeF fetch dispatcher to enumerate all organizations and queue per-org work.
+  - `:cross_tenant_reader` — reads every organization and the KSeF credentials that
+    need fetching or renewal. Schedulers use it to enumerate organizations and hand
+    each one to work under an actor bound to that organization.
 
   - `:ksef_digest` — builds and delivers scheduled KSeF cost-invoice digests.
     Can read invoice and admin-user data required for digest delivery.
@@ -72,8 +73,9 @@ defmodule Firmowid.SystemActor do
   - `:document_blob_processor` — processes document blobs for various use cases.
     Can read/write blobs and read related records as needed for blob processing.
 
-  - `:leave_notifier` — emails org admins about new leave/absence requests.
-    Can read leave requests and list/read users needed for delivery.
+  - `:leave_notifier` — emails org admins about new leave/absence requests and
+    delegations, and employees about their reviewed delegations. Can read those
+    requests and the organization's users needed for delivery.
 
   - `:hours_record_change_notifier` — reads submitted hours records and emails
     organization admins about correction/cancellation requests.
