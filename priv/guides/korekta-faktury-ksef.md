@@ -10,7 +10,7 @@ Od chwili, gdy KSeF nada fakturze numer, dokumentu nie da się już w systemie z
 
 ## Odrzucony plik i błędny NIP
 
-Inaczej traktuje się plik XML, który KSeF odrzucił, ponieważ według MF taka faktura w ogóle nie została wystawiona i zamiast korekty wysyła się nowy, poprawny plik. System nie sprawdza natomiast danych kontrahenta, więc faktura z błędnym NIP nabywcy zostaje przyjęta, a resort zaleca w takiej sytuacji korektę do zera dla niewłaściwego kontrahenta i nową fakturę dla właściwego. Korekty do zera nie wystawia się jednak na żądanie klienta tylko dlatego, że na fakturze zabrakło danych nieobowiązkowych albo podano je w innym formacie.
+Inaczej traktuje się plik XML, który KSeF odrzucił, ponieważ według MF taka faktura w ogóle nie została wystawiona i zamiast korekty wysyła się nowy, poprawny plik. Faktura z trybu offline już istnieje, dlatego po odrzuceniu wysyła się korektę techniczną, czyli tę samą fakturę w pliku zgodnym ze schematem. System nie sprawdza natomiast danych kontrahenta, więc faktura z błędnym NIP nabywcy zostaje przyjęta, a resort zaleca w takiej sytuacji korektę do zera dla niewłaściwego kontrahenta i nową fakturę dla właściwego. Korekty do zera nie wystawia się jednak na żądanie klienta tylko dlatego, że na fakturze zabrakło danych nieobowiązkowych albo podano je w innym formacie.
 
 ## Korekta kilku faktur naraz
 
