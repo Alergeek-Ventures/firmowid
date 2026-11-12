@@ -1,10 +1,8 @@
 defmodule Firmowid.Timetracker.HoursRecord do
   @moduledoc """
-  Ash resource wrapping the existing `hours_records` table.
-
-  Attribute multitenancy via `organization_id`. Stores the number of hours
-  worked by a member in a given month/year, with an attached blob (uploaded
-  hours record document).
+  A member's hours record for one month: the number of hours worked and the
+  uploaded hours record document (blob). Submitting it locks the month's
+  sessions. Scoped by `organization_id` (attribute multitenancy).
   """
   use Ash.Resource,
     domain: Firmowid.Timetracker,

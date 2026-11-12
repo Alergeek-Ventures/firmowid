@@ -1,12 +1,12 @@
 defmodule Firmowid.Timetracker.Project do
   @moduledoc """
-  Ash resource wrapping the existing `projects` table.
+  A project that members are assigned to and log sessions against.
 
   Attribute multitenancy via `organization_id`. Write actions include `create`
   (with automatic TagDefinition creation), `update` (with tag name sync),
   `archive`, `unarchive`, and `destroy` (with tag cleanup).
 
-  Read actions: `:get` (single project by ID, loads users + counterparty) and
+  Read actions: `:get` (single project by ID, loads members + counterparty) and
   `:list` (flexible listing with optional filters — archive, activity period,
   user membership, ParadeDB search, ID set, tag definition).
   """

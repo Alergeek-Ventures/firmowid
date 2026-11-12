@@ -1,7 +1,6 @@
 defmodule Firmowid.Timetracker.ProjectUser do
   @moduledoc """
-  Ash resource wrapping the existing `projects_users` join table: an organization
-  member assigned to a project.
+  An organization member assigned to a project.
 
   Attribute multitenancy via `organization_id`. Managed as a relationship
   on `Project` — typically not interacted with directly.

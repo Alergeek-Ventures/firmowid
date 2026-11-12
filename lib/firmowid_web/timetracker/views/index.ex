@@ -286,7 +286,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   # TOCTOU note: The trim plan is computed here and shown to the user for
   # confirmation. Between this check and `confirm_overlap_save`, the overlap
   # landscape may change (another session created/modified). The DB trigger
-  # `prevent_overlapping_sessions` acts as the authoritative safety net — if
+  # `prevent_session_overlap` acts as the authoritative safety net — if
   # it fires during execution, we catch the error and ask the user to retry.
   defp save_with_overlap_check(attrs, socket) do
     scope = socket.assigns.ash_scope
@@ -299,7 +299,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     case Session.list_overlapping(member_id, new_start, %{end_datetime: new_end}, scope: scope) do
       {:ok, []} ->
-        # No overlaps — save normally (original flow)
+        # No overlaps — save normally
         save_session_directly(attrs, socket)
 
       {:ok, overlapping_sessions} ->
