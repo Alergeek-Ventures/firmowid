@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
           </td>
           <td class="py-3 text-end max-md:ms-auto max-md:p-0">
             <.link
-              :if={delegation.status == :pending && is_nil(delegation.signed_command_blob_id)}
+              :if={delegation.order_editable?}
               kind="button"
               variant="outline"
               size="small"

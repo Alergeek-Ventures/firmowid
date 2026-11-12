@@ -66,6 +66,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         delegation =
           case Delegations.get_delegation_by_reference(reference,
                  scope: scope,
+                 load: [:order_editable?],
                  not_found_error?: false
                ) do
             {:ok, %{member_id: ^member_id} = delegation} -> delegation
@@ -112,7 +113,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     case Delegations.prepare_delegation_command(
            socket.assigns.delegation.id,
            %{advance_amount: advance_amount},
-           scope: socket.assigns.ash_scope
+           scope: socket.assigns.ash_scope,
+           load: [:order_editable?]
          ) do
       {:ok, delegation} ->
         {:noreply,
@@ -135,7 +137,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         case Delegations.update_delegation_billing_month(
                socket.assigns.delegation.id,
                %{billing_month: billing_month},
-               scope: socket.assigns.ash_scope
+               scope: socket.assigns.ash_scope,
+               load: [:order_editable?]
              ) do
           {:ok, delegation} ->
             {:noreply,
@@ -440,7 +443,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           </dl>
 
           <.link
-            :if={@delegation.status == :pending && is_nil(@delegation.signed_command_blob_id)}
+            :if={@delegation.order_editable?}
             kind="button"
             variant="outline"
             size="small"
