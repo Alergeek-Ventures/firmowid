@@ -34,6 +34,8 @@ Klient dostaje fakturę, a do niej łatwo wygenerować raport godzin z projektu.
 
 MCP działa od planu [Przedsiębiorca](/cennik).
 
+![Porównanie programów: Firmowid ma czas pracy w projektach, KSeF i fakturę przez asystenta AI po potwierdzeniu. Fakturownia i inFakt mają KSeF, ale nie czas pracy w projektach. Kadromierz i RCPonline mają czas pracy, ale nie KSeF.](/images/guides/faktura-za-godziny-czas-pracy-programy.webp)
+
 ## Źródła
 
 - Firmowid: kod źródłowy (AGPL-3.0), moduły czasu pracy, faktur i MCP, stan 11.11.2026.

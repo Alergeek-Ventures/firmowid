@@ -38,6 +38,8 @@ Na komputerze faktur nie liczą ProFak i KsefInvoice. Księgowość z KPiR, któ
 
 Fakturownia ma w każdym planie, także w Micro, otwarte API i połączenie z asystentem AI przez MCP, a od planu Standard pobiera transakcje z banku raz dziennie i sama oznacza opłacone faktury. Magazyn działa od planu Standard, z limitem trzech magazynów, a moduł księgowości online z raportami i eksportem do programów Raks SQL i CDN Optima od planu Pro, więc firma, która z tych funkcji korzysta, zwykle niewiele zyska na przeprowadzce.
 
+![Tabela darmowych planów z KSeF: Fakturownia Micro, IFIRMA i PolskaFaktura dają 3 faktury miesięcznie, Fakturoza 5, Comarch Betterfly i Biuromat 10, a Aplikacja Podatnika KSeF i Firmowid Darmowy wystawiają faktury bez limitu. Konto bankowe w planie za 0 zł ma Firmowid (1 konto przez Open Banking) i Fakturoza (1 wyciąg MT940).](/images/guides/darmowe-plany-faktur-ksef-limit-faktur.webp)
+
 ## Źródła
 
 - [Fakturownia: cennik](https://fakturownia.pl/cennik), dostęp 11.11.2026.

@@ -16,6 +16,8 @@ Czynności zwolnione z VAT dokumentuje się fakturą na żądanie nabywcy, przy 
 
 Inaczej niż czynnych podatników VAT, zwolnionych nie obejmuje od 2027 r. obowiązek wpisywania numeru KSeF w tytule przelewu, zarówno gdy płacą swoim dostawcom, jak i gdy pieniądze przelewa im czynny podatnik. KSeF nie weryfikuje przy tym statusu kontrahenta w wykazie podatników VAT, o czym MF również pisze w odpowiedziach na pytania. W Firmowidzie, naszym programie do faktur, po zaznaczeniu zwolnienia w danych firmy znika z faktur kolumna VAT, a na dokumencie pojawia się podstawa prawna zwolnienia, na przykład art. 113 ustawy.
 
+![Podatnik zwolniony z VAT od 1 stycznia 2027 r. wystawia faktury dla firm tylko w KSeF, faktury dla konsumentów może wystawiać poza systemem, a numeru KSeF w tytule przelewu nie podaje ani nie dostaje.](/images/guides/zwolnienie-z-vat-ksef-2027.webp)
+
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.

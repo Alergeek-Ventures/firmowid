@@ -16,6 +16,8 @@ Przepis, o którym mowa, to art. 106ni ustawy o VAT, a kara grozi w nim za wysta
 
 Odroczenie obejmuje tylko kary pieniężne, natomiast obowiązek wystawiania faktur w KSeF przez firmy, które w 2026 r. korzystały z [limitu 10 000 zł](/poradnik/limit-10000-ksef), rusza 1 stycznia 2027 r. bez względu na to, jak skończą się prace nad nowelizacją. W prasie podkreśla się też, że projekt nie dotyka Kodeksu karnego skarbowego. Faktura spoza systemu nie dostaje też numeru KSeF, którego od stycznia nabywca będący czynnym podatnikiem VAT potrzebuje do zapłaty przelewem innemu czynnemu podatnikowi, i to on pierwszy zauważy jego brak. Czy faktura została przyjęta, widać po jej statusie w Aplikacji Podatnika KSeF albo w programie do faktur, a nasz Firmowid przy nieudanej wysyłce pozwala ją powtórzyć.
 
+![Kara z art. 106ni ustawy o VAT może wynieść do 100% kwoty podatku, czyli do 460 zł przy fakturze na 2 000 zł netto i 460 zł VAT, a przy fakturze bez VAT do 18,7% należności, czyli do 374 zł. Kary obowiązują od 1 stycznia 2027 r., a nowelizacja przesuwająca je o rok 12 listopada nie była jeszcze w Dzienniku Ustaw.](/images/guides/kary-ksef-wysokosc-art-106ni.webp)
+
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.
