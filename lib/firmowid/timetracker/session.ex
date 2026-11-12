@@ -287,6 +287,8 @@ defmodule Firmowid.Timetracker.Session do
       accept []
       require_atomic? false
 
+      # The member may have stopped it between the trigger's read and this update.
+      change filter(expr(is_nil(end_datetime)))
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
       change NormalizeSessionBoundaries
