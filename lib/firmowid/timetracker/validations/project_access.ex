@@ -13,9 +13,6 @@ defmodule Firmowid.Timetracker.Validations.ProjectAccess do
   require Ash.Query
 
   @impl true
-  def init(opts), do: {:ok, opts}
-
-  @impl true
   def validate(changeset, _opts, context) do
     project_id = Ash.Changeset.get_attribute(changeset, :project_id)
     member_id = Ash.Changeset.get_attribute(changeset, :member_id)

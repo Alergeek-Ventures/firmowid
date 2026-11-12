@@ -21,9 +21,6 @@ defmodule Firmowid.Timetracker.Validations.SessionMonthBoundaries do
   @max_session_seconds 24 * 3600
 
   @impl true
-  def init(opts), do: {:ok, opts}
-
-  @impl true
   def validate(changeset, _opts, _context) do
     start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
     end_datetime = Ash.Changeset.get_attribute(changeset, :end_datetime)
