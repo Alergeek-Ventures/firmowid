@@ -1236,7 +1236,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
       :bank_institutions,
       list_bank_institutions(socket.assigns.current_user, bank_accounts)
     )
-    |> assign(:pending_requisitions, list_pending_requisitions(scope))
+    |> assign(
+      :pending_requisitions,
+      Finances.list_requisitions!(%{status: :pending}, scope: scope)
+    )
     |> assign_subscription_preview_if_visible()
   end
 
@@ -1251,10 +1254,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     # Keep the latest outcome independent of the last-success aggregate's filter.
     |> Ash.load!(:latest_successful_sync_at, scope: scope)
     |> Enum.sort_by(&{&1.iban, &1.id})
-  end
-
-  defp list_pending_requisitions(scope) do
-    Enum.filter(Finances.list_requisitions!(scope: scope), &(&1.status == :pending))
   end
 
   defp list_bank_institutions(current_user, bank_accounts) do
