@@ -12,7 +12,6 @@ defmodule Firmowid.Invoicing.Digests.Email do
 
   alias Firmowid.Core.User
   alias Firmowid.Invoicing.CostInvoice
-  alias Firmowid.Invoicing.KsefInvoiceDigest
   alias Firmowid.Invoicing.RecommendationThresholds
   alias Firmowid.Mailer
   alias FirmowidWeb.Core.Endpoint
@@ -28,21 +27,13 @@ defmodule Firmowid.Invoicing.Digests.Email do
   @score_colors %{high: "#475E45", mid: "#8B3F13", low: "#A22A2A"}
 
   @type invoice_summary :: %{
-          optional(:suggestions_count) => non_neg_integer(),
-          optional(:top_prediction_score) => float(),
           optional(:top_suggestions) => [map()],
-          optional(:amount_placeholder) => String.t(),
           optional(:matched?) => boolean()
         }
 
-  @spec deliver_ksef_invoice_digest(
-          User.t() | map(),
-          KsefInvoiceDigest.t() | map(),
-          [CostInvoice.t() | map()],
-          keyword()
-        ) ::
+  @spec deliver_ksef_invoice_digest(User.t() | map(), [CostInvoice.t() | map()], keyword()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
-  def deliver_ksef_invoice_digest(user, digest, invoices, opts \\ []) do
+  def deliver_ksef_invoice_digest(user, invoices, opts \\ []) do
     invoice_count = length(invoices)
     invoice_summaries = Keyword.get(opts, :invoice_summaries, %{})
 
@@ -51,24 +42,17 @@ defmodule Firmowid.Invoicing.Digests.Email do
       |> to(to_string(user.email))
       |> from({"Firmowid", "piotr@firmowid.pl"})
       |> subject(digest_subject(invoice_count))
-      |> html_body(html_email(digest, invoices, invoice_summaries))
-      |> text_body(text_email(digest, invoices, invoice_summaries))
+      |> html_body(html_email(invoices, invoice_summaries))
+      |> text_body(text_email(invoices, invoice_summaries))
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
   end
 
-  @spec render_html(KsefInvoiceDigest.t() | map(), [CostInvoice.t() | map()], keyword()) ::
-          String.t()
-  def render_html(digest, invoices, opts \\ []) do
-    html_email(digest, invoices, Keyword.get(opts, :invoice_summaries, %{}))
-  end
-
-  @spec render_text(KsefInvoiceDigest.t() | map(), [CostInvoice.t() | map()], keyword()) ::
-          String.t()
-  def render_text(digest, invoices, opts \\ []) do
-    text_email(digest, invoices, Keyword.get(opts, :invoice_summaries, %{}))
+  @spec render_html([CostInvoice.t() | map()], keyword()) :: String.t()
+  def render_html(invoices, opts \\ []) do
+    html_email(invoices, Keyword.get(opts, :invoice_summaries, %{}))
   end
 
   defp digest_subject(1), do: "Nowa faktura w Firmowidzie"
@@ -76,7 +60,7 @@ defmodule Firmowid.Invoicing.Digests.Email do
   defp digest_subject(count),
     do: "#{count} #{polish_form(count, "nowa faktura", "nowe faktury", "nowych faktur")} w Firmowidzie"
 
-  defp html_email(_digest, invoices, invoice_summaries) do
+  defp html_email(invoices, invoice_summaries) do
     visible =
       invoices
       |> Enum.take(@max_visible_invoices)
@@ -286,7 +270,7 @@ defmodule Firmowid.Invoicing.Digests.Email do
 
   defp score_color(score), do: @score_colors[RecommendationThresholds.prediction_level(score, true)]
 
-  defp text_email(_digest, [], _invoice_summaries) do
+  defp text_email([], _invoice_summaries) do
     """
     W Twojej organizacji pojawiły się nowe faktury kosztowe pobrane z KSeF.
 
@@ -294,7 +278,7 @@ defmodule Firmowid.Invoicing.Digests.Email do
     """
   end
 
-  defp text_email(_digest, invoices, invoice_summaries) do
+  defp text_email(invoices, invoice_summaries) do
     visible = Enum.take(invoices, @max_visible_invoices)
     remaining = length(invoices) - length(visible)
 

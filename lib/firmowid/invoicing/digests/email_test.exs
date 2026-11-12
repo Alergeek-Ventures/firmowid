@@ -13,15 +13,13 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
         })
 
       html =
-        Email.render_html(%{}, [invoice],
+        Email.render_html([invoice],
           invoice_summaries: %{
             invoice.id => %{
-              suggestions_count: 1,
               top_suggestions: [
                 %{
                   booking_date_label: "<svg onload=alert(1)>",
-                  score: 0.96,
-                  avatar_color: "#D9E7F7"
+                  score: 0.96
                 }
               ]
             }
@@ -39,22 +37,18 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
 
     test "single invoice body shows suggestion placeholders without exposing sensitive values" do
       user = %{email: "admin@example.com"}
-      digest = %{}
 
       invoice = invoice_with_sensitive_fields(%{invoice_identifier: "FV-KSEF-2026-001"})
 
       assert {:ok, email} =
-               Email.deliver_ksef_invoice_digest(user, digest, [invoice],
+               Email.deliver_ksef_invoice_digest(user, [invoice],
                  invoice_summaries: %{
                    invoice.id => %{
-                     suggestions_count: 3,
-                     top_prediction_score: 0.86,
                      top_suggestions: [
-                       %{booking_date_label: "wczoraj", score: 0.96, avatar_color: "#D9E7F7"},
-                       %{booking_date_label: "7 dni temu", score: 0.84, avatar_color: "#D9E7F7"},
-                       %{booking_date_label: "10 dni temu", score: 0.70, avatar_color: "#D9E7F7"}
+                       %{booking_date_label: "wczoraj", score: 0.96},
+                       %{booking_date_label: "7 dni temu", score: 0.84},
+                       %{booking_date_label: "10 dni temu", score: 0.70}
                      ],
-                     amount_placeholder: "•••• zł",
                      matched?: false
                    }
                  }
@@ -82,7 +76,6 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
 
     test "renders placeholders when optional values are absent" do
       user = %{email: "admin@example.com"}
-      digest = %{}
 
       invoice =
         invoice_with_sensitive_fields(%{
@@ -91,7 +84,7 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
           invoice_identifier: nil
         })
 
-      assert {:ok, email} = Email.deliver_ksef_invoice_digest(user, digest, [invoice])
+      assert {:ok, email} = Email.deliver_ksef_invoice_digest(user, [invoice])
 
       bodies = [email.html_body, email.text_body]
 
@@ -105,7 +98,6 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
 
     test "list digest caps displayed invoices and keeps useful masked summaries" do
       user = %{email: "admin@example.com"}
-      digest = %{}
 
       invoices = [
         invoice_with_sensitive_fields(%{
@@ -133,37 +125,28 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
       ]
 
       assert {:ok, email} =
-               Email.deliver_ksef_invoice_digest(user, digest, invoices,
+               Email.deliver_ksef_invoice_digest(user, invoices,
                  invoice_summaries: %{
                    Enum.at(invoices, 0).id => %{
-                     suggestions_count: 2,
-                     top_prediction_score: 0.89,
                      top_suggestions: [
-                       %{booking_date_label: "2 dni temu", score: 0.91, avatar_color: "#E6D8F5"},
-                       %{booking_date_label: "6 dni temu", score: 0.88, avatar_color: "#E6D8F5"}
+                       %{booking_date_label: "2 dni temu", score: 0.91},
+                       %{booking_date_label: "6 dni temu", score: 0.88}
                      ],
-                     amount_placeholder: "•••• zł",
                      matched?: false
                    },
                    Enum.at(invoices, 1).id => %{matched?: true},
                    Enum.at(invoices, 2).id => %{
-                     suggestions_count: 1,
-                     top_prediction_score: 0.94,
                      top_suggestions: [
-                       %{booking_date_label: "dzisiaj", score: 0.94, avatar_color: "#D6ECE7"}
+                       %{booking_date_label: "dzisiaj", score: 0.94}
                      ],
-                     amount_placeholder: "•••• EUR",
                      matched?: false
                    },
                    Enum.at(invoices, 3).id => %{
-                     suggestions_count: 5,
-                     top_prediction_score: 0.78,
                      top_suggestions: [
-                       %{booking_date_label: "3 dni temu", score: 0.78, avatar_color: "#F4E7C6"},
-                       %{booking_date_label: "8 dni temu", score: 0.74, avatar_color: "#F4E7C6"},
-                       %{booking_date_label: "12 dni temu", score: 0.69, avatar_color: "#F4E7C6"}
+                       %{booking_date_label: "3 dni temu", score: 0.78},
+                       %{booking_date_label: "8 dni temu", score: 0.74},
+                       %{booking_date_label: "12 dni temu", score: 0.69}
                      ],
-                     amount_placeholder: "•••• zł",
                      matched?: false
                    }
                  }
