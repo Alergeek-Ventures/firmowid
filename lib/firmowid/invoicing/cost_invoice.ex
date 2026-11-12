@@ -49,6 +49,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Blobs.Validations.ReadableBlob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.IsSystemActor
@@ -361,6 +362,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
       description "Create a cost invoice from metadata extracted from an uploaded document."
       primary? true
 
+      validate {ReadableBlob, attribute: :blob_id}
+
       # KSeF identifiers come only from KSeF imports (:create_from_ksef). A number read
       # from a document is unverified and must not mark the invoice as KSeF-sourced.
       accept [
@@ -416,6 +419,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
     create :create_from_ksef do
       description "Create a cost invoice from a KSeF import, generating names and descriptions in the background."
+
+      validate {ReadableBlob, attribute: :blob_id}
 
       accept [
         :blob_id,

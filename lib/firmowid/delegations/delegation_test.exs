@@ -8,10 +8,12 @@ defmodule Firmowid.Delegations.DelegationTest do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Ecto.Adapters.SQL.Sandbox
+  alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Delegations
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
+  alias Firmowid.Delegations.DelegationExpenseRelatedBlob
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
@@ -237,9 +239,10 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert Enum.sort(references) == Enum.map(1..8, &"KV-2026-09-#{&1}")
   end
 
-  test "only the delegation notifier among system actors reads delegations and expenses", %{
-    employee_scope: scope
-  } do
+  test "the delegation notifier reads delegations and expenses and the leave notifier does not",
+       %{
+         employee_scope: scope
+       } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
     expense = seed_expense(delegation, scope.actor, %{})
 
@@ -258,6 +261,74 @@ defmodule Firmowid.Delegations.DelegationTest do
 
     assert {:error, _not_found} =
              Delegations.get_expense(expense.id, scope: notifier_scope.(:leave_notifier))
+  end
+
+  test "an employee cannot attach a file they cannot read to their own expense", %{
+    employee_scope: scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+
+    delegation =
+      Delegations.approve_delegation!(delegation.id, approval_attrs(delegation), scope: admin_scope)
+
+    expense = seed_expense(delegation, scope.actor, %{})
+
+    colleague = user_in_org_fixture(scope.tenant)
+    colleague_scope = %Scope{actor: colleague, tenant: scope.tenant}
+
+    colleague_delegation =
+      Delegations.create_delegation!(delegation_attrs(), scope: colleague_scope)
+
+    foreign_blob_id = seed_expense(colleague_delegation, colleague, %{}).blob_id
+
+    assert {:error, _not_found} = Blobs.get_blob(foreign_blob_id, scope: scope)
+
+    assert {:error, %Forbidden{}} =
+             DelegationExpenseRelatedBlob.create(
+               %{delegation_expense_id: expense.id, blob_id: foreign_blob_id},
+               scope: scope
+             )
+
+    assert {:error, _not_found} = Blobs.get_blob(foreign_blob_id, scope: scope)
+  end
+
+  test "an employee attaches a document whose bytes a colleague's expense already holds", %{
+    employee_scope: scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+
+    delegation =
+      Delegations.approve_delegation!(delegation.id, approval_attrs(delegation), scope: admin_scope)
+
+    expense = seed_expense(delegation, scope.actor, %{})
+    upload = Map.put(upload_attrs(), :original_filename, "faktura-hotel.pdf")
+
+    # The same invoice, already stored for a colleague's trip: one file, which the
+    # employee cannot read until their own expense holds it too.
+    colleague = user_in_org_fixture(scope.tenant)
+    colleague_scope = %Scope{actor: colleague, tenant: scope.tenant}
+
+    {:ok, shared} =
+      Blobs.create_blob(upload.upload_path, upload.content_type, upload.original_filename, scope: colleague_scope)
+
+    colleague_delegation =
+      Delegations.create_delegation!(delegation_attrs(), scope: colleague_scope)
+
+    colleague_delegation
+    |> seed_expense(colleague, %{})
+    |> Ash.Seed.update!(%{blob_id: shared.id})
+
+    assert {:error, _not_found} = Blobs.get_blob(shared.id, scope: scope)
+
+    assert {:ok, %{related_blobs: [%{id: attached_id}]}} =
+             Delegations.add_related_document(expense, upload,
+               scope: scope,
+               load: [:related_blobs]
+             )
+
+    assert attached_id == shared.id
   end
 
   test "only an administrator can approve a delegation", %{
