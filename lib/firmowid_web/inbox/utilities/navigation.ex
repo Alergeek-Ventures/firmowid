@@ -37,18 +37,6 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   @spec employee_leaves_path(String.t()) :: String.t()
   def employee_leaves_path(user_id), do: ~p"/zarzadzanie/pracownicy/#{user_id}/urlopy"
 
-  @doc "Company details settings."
-  @spec company_settings_path() :: String.t()
-  def company_settings_path, do: SettingsNavigation.canonical_path(:organization)
-
-  @doc "KSeF integration settings."
-  @spec ksef_settings_path() :: String.t()
-  def ksef_settings_path, do: SettingsNavigation.canonical_path(:ksef)
-
-  @doc "Bank account settings."
-  @spec bank_settings_path() :: String.t()
-  def bank_settings_path, do: SettingsNavigation.canonical_path(:bank_accounts)
-
   @doc """
   The destinations a member with `role` may open. `analysis?` and
   `delegations?` reflect the analysis dashboard and business trips flags;
@@ -56,7 +44,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   company that does not bill by the hour, which hides time tracking and projects.
   """
   @spec for_role(UserRole.t(), boolean(), boolean(), boolean(), boolean()) :: [destination()]
-  def for_role(role, analysis?, owner? \\ false, delegations? \\ false, time_tracking? \\ true) do
+  def for_role(role, analysis?, owner?, delegations?, time_tracking?) do
     Enum.filter(all(), fn destination ->
       role in destination.roles and (destination.id != :analysis or analysis?) and
         (destination.id != :subscription or owner?) and
@@ -166,7 +154,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: SettingsNavigation.page_title(:organization),
         icon: "briefcase",
-        path: company_settings_path(),
+        path: SettingsNavigation.canonical_path(:organization),
         roles: [:admin]
       },
       %{
@@ -174,7 +162,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: SettingsNavigation.page_title(:ksef),
         icon: "unplug",
-        path: ksef_settings_path(),
+        path: SettingsNavigation.canonical_path(:ksef),
         roles: [:admin]
       },
       %{
@@ -182,7 +170,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: SettingsNavigation.page_title(:bank_accounts),
         icon: "landmark",
-        path: bank_settings_path(),
+        path: SettingsNavigation.canonical_path(:bank_accounts),
         roles: [:admin]
       },
       %{
