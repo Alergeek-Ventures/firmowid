@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   import FirmowidUI.Components.Link
 
   import FirmowidWeb.Inbox.Components.Sidebar,
-    only: [close_on_phone: 0, label_styles: 0, link_styles: 1]
+    only: [close_on_phone: 0, label_styles: 0, layer_label: 1, link_styles: 1]
 
   import Phoenix.Component, except: [link: 1]
 
@@ -296,7 +296,4 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   defp collapsed_badge_styles do
     "md:in-data-[sidebar=collapsed]:-top-1.5 md:in-data-[sidebar=collapsed]:-right-1.5 md:in-data-[sidebar=collapsed]:ml-0 md:in-data-[sidebar=collapsed]:size-4 md:in-data-[sidebar=collapsed]:border-2 md:in-data-[sidebar=collapsed]:border-black md:in-data-[sidebar=collapsed]:bg-white md:in-data-[sidebar=collapsed]:text-[10px] md:in-data-[sidebar=collapsed]:text-black"
   end
-
-  defp layer_label(:company), do: pgettext("sidebar layer", "Company")
-  defp layer_label(:me), do: pgettext("sidebar layer", "You")
 end

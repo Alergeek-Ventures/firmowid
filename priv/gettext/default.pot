@@ -2617,7 +2617,6 @@ msgid "Company"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/sidebar.ex
-#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar layer"
 msgid "Company"
@@ -13455,7 +13454,6 @@ msgid "Yes. You can cancel at any time and delete your account without long-term
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/sidebar.ex
-#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar layer"
 msgid "You"

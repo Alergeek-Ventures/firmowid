@@ -244,8 +244,10 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
     """
   end
 
-  defp layer_label(:company), do: pgettext("sidebar layer", "Company")
-  defp layer_label(:me), do: pgettext("sidebar layer", "You")
+  @doc "Name of a sidebar layer."
+  @spec layer_label(:company | :me) :: String.t()
+  def layer_label(:company), do: pgettext("sidebar layer", "Company")
+  def layer_label(:me), do: pgettext("sidebar layer", "You")
 
   attr :destination, :map, required: true
   attr :active, :boolean, required: true
