@@ -7,10 +7,6 @@ defmodule Firmowid.Finances.Transaction.Policies do
   alias Firmowid.Checks.SystemActorRole
 
   policies do
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
-    end
-
     bypass [{SystemActorRole, roles: [:invoice_matcher]}, action_type(:read)] do
       authorize_if always()
     end
@@ -45,7 +41,6 @@ defmodule Firmowid.Finances.Transaction.Policies do
       authorize_if {ActorRole, role: :admin}
     end
 
-    # Write actions (non-system, non-admin): admin only
     policy action_type([:create, :destroy]) do
       authorize_if {ActorRole, role: :admin}
     end
