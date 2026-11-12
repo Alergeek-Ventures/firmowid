@@ -106,32 +106,31 @@ defmodule Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions do
   defp invoice_id(%{id: id}), do: id
   defp invoice_id(id), do: id
 
-  defp suggested_invoice_query(counterparty, :tax_id, normalized_tax_id, %Scope{} = scope) do
+  defp suggested_invoice_query(counterparty, identifier_type, normalized_identifier, %Scope{} = scope) do
     %{}
     |> SalesInvoice.query_to_list(scope: scope)
     |> Ash.Query.filter(
-      organization_id == ^scope.tenant and
-        is_nil(counterparty_id) and
+      is_nil(counterparty_id) and
         buyer_type == ^counterparty.type and
-        buyer_country == ^counterparty.country and
-        not is_nil(buyer_id) and
+        buyer_country == ^counterparty.country
+    )
+    |> filter_by_buyer_identifier(identifier_type, normalized_identifier)
+  end
+
+  defp filter_by_buyer_identifier(query, :tax_id, normalized_tax_id) do
+    Ash.Query.filter(
+      query,
+      not is_nil(buyer_id) and
         buyer_id != "" and
-        fragment(
-          "regexp_replace(upper(coalesce(?, '')), '[^0-9A-Z]', '', 'g')",
-          buyer_id
-        ) == ^normalized_tax_id
+        fragment("regexp_replace(upper(coalesce(?, '')), '[^0-9A-Z]', '', 'g')", buyer_id) ==
+          ^normalized_tax_id
     )
   end
 
-  defp suggested_invoice_query(counterparty, :pesel, normalized_pesel, %Scope{} = scope) do
-    %{}
-    |> SalesInvoice.query_to_list(scope: scope)
-    |> Ash.Query.filter(
-      organization_id == ^scope.tenant and
-        is_nil(counterparty_id) and
-        buyer_type == ^counterparty.type and
-        buyer_country == ^counterparty.country and
-        not is_nil(buyer_pesel) and
+  defp filter_by_buyer_identifier(query, :pesel, normalized_pesel) do
+    Ash.Query.filter(
+      query,
+      not is_nil(buyer_pesel) and
         buyer_pesel != "" and
         fragment("regexp_replace(coalesce(?, ''), '\\D', '', 'g')", buyer_pesel) ==
           ^normalized_pesel
