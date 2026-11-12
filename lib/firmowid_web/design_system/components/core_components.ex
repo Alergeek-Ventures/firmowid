@@ -1,18 +1,8 @@
 defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   @moduledoc """
-  Provides core UI components.
-
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as modals, tables, and
-  forms. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
-
-  The default components use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
-  how to customize them or feel free to swap in another framework altogether.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `FirmowidUI.Components.Inputs.icon/1` for usage.
+  Shared UI building blocks of the app: modals, forms, uploads, dropdowns,
+  avatars, tables, back links, popovers, switches, the navbar and the JS
+  commands that show and hide them.
   """
   use Phoenix.Component
   use Gettext, backend: Firmowid.Gettext
@@ -109,7 +99,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       </.simple_form>
   """
   attr :for, :any, required: true, doc: "the data structure for the form"
-  attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
 
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
@@ -120,7 +109,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def simple_form(assigns) do
     ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
+    <.form :let={f} for={@for} {@rest}>
       <div class="mt-10 space-y-8">
         {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
@@ -141,7 +130,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :prompt_class, :string, default: nil
   attr :error_formatter, :any, default: nil
   attr :show_errors, :boolean, default: true
-  attr :disabled, :boolean, default: false
   attr :phx_change, :string, default: nil
 
   def file_upload(assigns) do
@@ -149,22 +137,16 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     <label
       class={[
         "flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed border-rust-700 px-6 py-8",
-        @disabled && "cursor-not-allowed border-grey-200",
         @class
       ]}
-      phx-drop-target={unless @disabled, do: @upload.ref}
+      phx-drop-target={@upload.ref}
     >
-      <div class={["text-sm text-rust-700", @disabled && "text-grey-200", @content_class]}>
+      <div class={["text-sm text-rust-700", @content_class]}>
         <div :if={Enum.empty?(@upload.entries)} class={@prompt_class}>
           {@prompt}
         </div>
 
-        <Phoenix.Component.live_file_input
-          upload={@upload}
-          class="sr-only"
-          disabled={@disabled}
-          phx-change={@phx_change}
-        />
+        <Phoenix.Component.live_file_input upload={@upload} class="sr-only" phx-change={@phx_change} />
 
         <div :if={!Enum.empty?(@upload.entries)}>
           <%= for entry <- @upload.entries do %>
@@ -433,12 +415,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :id, :string, required: true
   attr :class, :any, default: nil
   attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
-
-  attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
 
   slot :col, required: true do
     attr :label, :string
@@ -447,11 +423,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   slot :action, doc: "the slot for showing user actions in the last table column"
 
   def table(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
-
     ~H"""
     <table class={[@class]}>
       <thead class="text-left text-sm/6 text-grey-600">
@@ -466,20 +437,15 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       </thead>
       <tbody
         id={@id}
-        phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
         class="relative divide-y divide-grey-100 border-t border-grey-100 text-sm/6 text-grey-700"
       >
-        <tr
-          :for={row <- @rows}
-          id={@row_id && @row_id.(row)}
-          class="group transition-colors hover:bg-white"
-        >
-          <td :for={col <- @col} phx-click={@row_click && @row_click.(row)} class="py-1">
-            {render_slot(col, @row_item.(row))}
+        <tr :for={row <- @rows} class="group transition-colors hover:bg-white">
+          <td :for={col <- @col} class="py-1">
+            {render_slot(col, row)}
           </td>
           <td :if={@action != []} class="relative w-14 p-0">
             <span :for={action <- @action}>
-              {render_slot(action, @row_item.(row))}
+              {render_slot(action, row)}
             </span>
           </td>
         </tr>
@@ -675,7 +641,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def show_popover(js \\ %JS{}, id) do
     js
-    # |> show("##{id}")
     |> JS.show(to: "##{id}")
     |> JS.dispatch("showPopover", to: "##{id}")
     |> JS.focus_first(to: "##{id}")
@@ -683,7 +648,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def hide_popover(js \\ %JS{}, id) do
     js
-    # |> hide("##{id}")
     |> JS.hide(to: "##{id}")
     |> JS.dispatch("hidePopover", to: "##{id}")
     |> JS.pop_focus()
