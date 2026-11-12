@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp assign_tab_data(socket, :account), do: load_once(socket, :email_form, &assign_account/1)
 
-  defp assign_tab_data(socket, tab) when tab in [:profile, :documents, :delegations],
+  defp assign_tab_data(socket, tab) when tab in [:profile, :documents, :delegations, :leaves],
     do: load_once(socket, :leave_requests, &assign_profile/1)
 
   defp assign_tab_data(socket, :subscription), do: socket
@@ -1196,6 +1196,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
           />
         <% :delegations -> %>
           <.delegations_list delegations={@delegations} />
+        <% :leaves -> %>
+          <.leave_section
+            leave_requests={@leave_requests}
+            leave_request_form={@leave_request_form}
+            leave_request_upload={@uploads.leave_request_attachment}
+            leave_search={@leave_search}
+            leave_days={@leave_days}
+            standalone
+          />
         <% :documents -> %>
           <.live_component
             module={DocumentsSection}

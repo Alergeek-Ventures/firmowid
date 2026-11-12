@@ -94,14 +94,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         date={@projects_date}
       />
 
-      <div class={[
-        if(@standalone,
-          do: "flex flex-col gap-5",
-          else: "grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2"
-        )
-      ]}>
+      <%!-- Behind the `inbox` flag documents and absences have pages of their own. --%>
+      <div
+        :if={!@standalone}
+        class="grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2"
+      >
         <.live_component
-          :if={!@standalone}
           module={FirmowidWeb.Documents.Components.DocumentsSection}
           id="profile-documents"
           user={@current_user}
@@ -620,7 +618,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :leave_search, :string, required: true
   attr :leave_days, :integer, required: true
 
-  defp leave_section(assigns) do
+  attr :standalone, :boolean,
+    default: false,
+    doc: "On its own page the page title names it, so it drops its heading, card and fixed height."
+
+  @doc """
+  The member's absence requests with a way to submit one. Behind the `inbox` flag it
+  is a page of its own with the requests in a table; without it, a card of the profile.
+  """
+  @spec leave_section(map()) :: Rendered.t()
+  def leave_section(assigns) do
     assigns =
       assign(
         assigns,
@@ -629,12 +636,22 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       )
 
     ~H"""
-    <section class="flex size-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
-      <div class="flex items-start justify-between gap-3">
-        <h2 class="text-base leading-none font-medium text-grey-900">
+    <section class={[
+      "flex flex-col gap-6",
+      !@standalone && "size-full rounded-lg bg-white p-6 shadow"
+    ]}>
+      <div class={[
+        if(@standalone,
+          do: "flex flex-wrap items-end justify-between gap-x-3 gap-y-4",
+          else: "flex items-start justify-between gap-3"
+        )
+      ]}>
+        <h2 :if={!@standalone} class="text-base leading-none font-medium text-grey-900">
           {gettext("Absences")}
         </h2>
-        <div class="flex items-center gap-3">
+        <.leave_days_used :if={@standalone} leave_days={@leave_days} />
+        <%!-- On its own page on a phone the actions fill the row: the request button takes what the search leaves. --%>
+        <div class={["flex items-center gap-3", @standalone && "max-md:w-full"]}>
           <form class="flex gap-4" phx-submit="search_leave_requests">
             <div
               id="profile-leave-search-container"
@@ -655,7 +672,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 type="button"
                 size="small"
                 variant="outline"
-                class="py-2 group-data-[expanded=true]:rounded-r-lg"
+                class={[
+                  "py-2 group-data-[expanded=true]:rounded-r-lg",
+                  @standalone && "max-md:size-10"
+                ]}
                 phx-click={
                   JS.toggle_attribute({"data-expanded", "true", "false"},
                     to: "#profile-leave-search-container"
@@ -672,49 +692,53 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             variant="secondary"
             size="small"
             phx-click={show_modal("leave-request-modal")}
-            class="py-1.75"
+            class={["py-1.75", @standalone && "max-md:h-10 max-md:flex-1 max-md:text-base"]}
           >
             <.icon name="hero-paper-airplane" class="size-4" /> {gettext("Submit a request")}
           </.button>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
-          {pgettext("leave days", "Used this year:")}
-          <span class="pl-1 font-medium text-grey-700">
-            {ngettext("%{count} day", "%{count} days", @leave_days)}
-          </span>
+      <%= if @standalone do %>
+        <.leave_requests_table requests={@filtered_leave_requests} />
+      <% else %>
+        <div class="flex items-center gap-3">
+          <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
+            {pgettext("leave days", "Used this year:")}
+            <span class="pl-1 font-medium text-grey-700">
+              {ngettext("%{count} day", "%{count} days", @leave_days)}
+            </span>
+          </div>
         </div>
-      </div>
-      <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
-        <ul class="divide-y divide-grey-100">
-          <li
-            :for={request <- @filtered_leave_requests}
-            class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+        <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
+          <ul class="divide-y divide-grey-100">
+            <li
+              :for={request <- @filtered_leave_requests}
+              class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+            >
+              <span class="flex size-6.5 items-center justify-center rounded bg-grey-100 text-grey-700">
+                <.reason_icon reason={request.reason} />
+              </span>
+              <span class="min-w-0 flex-1 truncate">
+                {LeavePresentation.reason_label(request.reason, :short)}
+              </span>
+              <span class="shrink-0 tabular-nums">
+                {LeavePresentation.format_range(request.starts_on, request.ends_on)}
+              </span>
+              <span class={leave_status_badge_styles(request.status)}>
+                {LeavePresentation.status_label(request.status)}
+              </span>
+            </li>
+          </ul>
+          <div
+            :if={Enum.empty?(@filtered_leave_requests)}
+            class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
           >
-            <span class="flex size-6.5 items-center justify-center rounded bg-grey-100 text-grey-700">
-              <.reason_icon reason={request.reason} />
-            </span>
-            <span class="min-w-0 flex-1 truncate">
-              {LeavePresentation.reason_label(request.reason, :short)}
-            </span>
-            <span class="shrink-0 tabular-nums">
-              {LeavePresentation.format_range(request.starts_on, request.ends_on)}
-            </span>
-            <span class={leave_status_badge_styles(request.status)}>
-              {LeavePresentation.status_label(request.status)}
-            </span>
-          </li>
-        </ul>
-        <div
-          :if={Enum.empty?(@filtered_leave_requests)}
-          class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
-        >
-          <p>
-            {gettext("No absence requests.")}
-          </p>
+            <p>
+              {gettext("No absence requests.")}
+            </p>
+          </div>
         </div>
-      </div>
+      <% end %>
 
       <.modal id="leave-request-modal" class="max-w-xl">
         <h2 class="mb-8 text-xl font-medium">
@@ -897,6 +921,66 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     minutes = div(rem(seconds, 3600), 60)
     pgettext("compact duration", "%{hours}h %{minutes}min", hours: hours, minutes: minutes)
   end
+
+  attr :leave_days, :integer, required: true
+
+  defp leave_days_used(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-1">
+      <p class="text-sm text-grey-700">{pgettext("leave days", "Used this year:")}</p>
+      <p class="text-2xl font-semibold text-grey-900 tabular-nums">
+        {ngettext("%{count} day", "%{count} days", @leave_days)}
+      </p>
+    </div>
+    """
+  end
+
+  attr :requests, :list, required: true
+
+  # The absences page lists the requests in a table whose rows stack on a phone.
+  defp leave_requests_table(assigns) do
+    ~H"""
+    <table :if={@requests != []} class="w-full table-fixed text-start max-md:block">
+      <col />
+      <col class="w-36" />
+      <col class="w-36" />
+      <thead class="max-md:hidden">
+        <tr class="border-be border-grey-100">
+          <th scope="col" class={leave_header_styles()}>{gettext("Type")}</th>
+          <th scope="col" class={leave_header_styles()}>{gettext("Period")}</th>
+          <th scope="col" class={leave_header_styles()}>{gettext("Status")}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-grey-100 max-md:block">
+        <tr
+          :for={request <- @requests}
+          class="max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3 max-md:gap-y-2 max-md:py-3"
+        >
+          <td class="py-3 pe-4 max-md:basis-full max-md:p-0">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex size-6.5 shrink-0 items-center justify-center rounded bg-grey-100 text-grey-700">
+                <.reason_icon reason={request.reason} />
+              </span>
+              <span class="truncate">{LeavePresentation.reason_label(request.reason, :short)}</span>
+            </div>
+          </td>
+          <td class="py-3 pe-4 text-sm tabular-nums max-md:p-0">
+            {LeavePresentation.format_range(request.starts_on, request.ends_on)}
+          </td>
+          <td class="py-3 max-md:ms-auto max-md:p-0">
+            <span class={leave_status_badge_styles(request.status)}>
+              {LeavePresentation.status_label(request.status)}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p :if={@requests == []} class="text-sm text-grey-500">{gettext("No absence requests.")}</p>
+    """
+  end
+
+  # The same header style as the list of business trips.
+  defp leave_header_styles, do: "pbe-3 pe-4 text-start text-xs font-normal text-grey-700 uppercase"
 
   defp leave_status_badge_styles(status) do
     [
