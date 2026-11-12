@@ -420,6 +420,26 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
   end
 
+  test "a profile card shows the correspondence address the same-address flag clears", %{
+    conn: conn
+  } do
+    owner = admin_fixture()
+
+    Ash.Seed.update!(owner.member, %{correspondence_address: "ul. Stara 1, 00-001 Warszawa"})
+
+    plan =
+      open_plan(conn, owner, "update_profile", %{
+        input: %{
+          is_same_correspondence_address: true,
+          correspondence_address: "ul. Nowa 2, 00-002 Warszawa"
+        }
+      })
+
+    assert has_element?(plan.view, "#{plan.id} dt", "Adres korespondencyjny")
+    assert has_element?(plan.view, "#{plan.id} del", "ul. Stara 1, 00-001 Warszawa")
+    refute has_element?(plan.view, "#{plan.id} ins", "ul. Nowa 2, 00-002 Warszawa")
+  end
+
   test "a draft card whose inner input is not a map stays rejectable", %{conn: conn} do
     owner = admin_fixture()
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
