@@ -123,6 +123,31 @@ defmodule Firmowid.Blobs.BlobsTest do
       assert {:ok, nil} = read.(colleague)
     end
 
+    test "a file no record holds is readable only while it is fresh", %{user: admin} do
+      org_id = admin.member.organization_id
+      member_scope = Firmowid.Scope.new!(user_in_org_fixture(org_id), org_id)
+      now = DateTime.truncate(DateTime.utc_now(), :second)
+
+      seed = fn checksum, inserted_at ->
+        Ash.Seed.seed!(Blob, %{
+          blob_path: "#{org_id}/#{checksum}.pdf",
+          blob_checksum: checksum,
+          original_filename: "#{checksum}.pdf",
+          organization_id: org_id,
+          inserted_at: inserted_at
+        })
+      end
+
+      fresh = seed.("fresh-upload", now)
+      detached = seed.("detached-long-ago", DateTime.shift(now, hour: -2))
+
+      assert {:ok, %Blob{}} =
+               Blobs.get_blob(fresh.id, scope: member_scope, not_found_error?: false)
+
+      assert {:ok, nil} =
+               Blobs.get_blob(detached.id, scope: member_scope, not_found_error?: false)
+    end
+
     test "a member uploading a file held by a record they cannot read reuses it", %{user: admin} do
       org_id = admin.member.organization_id
       owner = user_in_org_fixture(org_id)
