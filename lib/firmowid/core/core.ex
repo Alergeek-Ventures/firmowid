@@ -1,13 +1,11 @@
 defmodule Firmowid.Core do
   @moduledoc """
-  Core domain — identity and authentication.
+  Core domain — accounts, organizations and their members.
 
-  Owns the User, Member, Organization, OrganizationInvite, Token, and UserIdentity resources.
-  Authentication flows (password, Google OAuth, confirmation, password reset)
-  are handled by `ash_authentication` on the User resource.
-
-  Organization is fully writable with create, update, and destroy actions.
-  OrganizationInvite handles invite creation, consumption, and expiry.
+  Owns the User, Member, Organization, OrganizationInvite, Token, UserIdentity,
+  OAuth and RegisteredCompany resources. Authentication flows (password, Google
+  OAuth, confirmation, password reset) are handled by `ash_authentication` on
+  the User resource.
   """
   use Ash.Domain, extensions: [AshPhoenix, AshAi]
 

@@ -134,8 +134,7 @@ defmodule Firmowid.Core.Member do
 
       filter expr(user_id == ^arg(:user_id) and is_nil(archived_at))
 
-      # The most recently updated first: it is the default organization (the
-      # drop_user_organization migration touched the one an account worked in).
+      # The most recently updated first: it is the default organization.
       prepare build(sort: [updated_at: :desc, id: :desc])
     end
 

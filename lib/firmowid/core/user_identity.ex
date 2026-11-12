@@ -3,8 +3,6 @@ defmodule Firmowid.Core.UserIdentity do
   OAuth identity resource for `ash_authentication`.
 
   Stores the link between a user and an external OAuth provider (e.g. Google).
-  Replaces the legacy `google_provider_id` column on the users table with a
-  proper relational model that supports multiple providers.
 
   The `AshAuthentication.UserIdentity` extension auto-generates all attributes,
   actions, and internal plumbing.

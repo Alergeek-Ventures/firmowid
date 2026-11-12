@@ -1,7 +1,7 @@
 # credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Core.User do
   @moduledoc """
-  User resource — the sole owner of the `users` table.
+  An account: the person who signs in.
 
   Handles authentication (password + Google OAuth) and organization
   membership; the person's name, avatar, role and profile details live on the
@@ -649,7 +649,4 @@ defmodule Firmowid.Core.User do
   identities do
     identity :unique_email, [:email]
   end
-
-  # Use a dedicated validation module placed next to the resource file.
-  # See lib/firmowid/core/validations/not_self_archive.ex
 end
