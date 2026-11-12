@@ -8,6 +8,7 @@ defmodule Firmowid.Delegations.DelegationExpenseRelatedBlob do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Resource
 
   require Resource
@@ -46,6 +47,12 @@ defmodule Firmowid.Delegations.DelegationExpenseRelatedBlob do
       authorize_if expr(delegation_expense.delegation.member_id == ^actor([:member, :id]))
     end
 
+    # Only the expense's own action links a document, after storing the uploaded file.
+    # A link to a file id given directly would expose a file the member cannot read.
+    policy action_type(:create) do
+      authorize_if accessing_from(DelegationExpense, :related_blobs_join_assoc)
+    end
+
     policy action_type([:create, :destroy]) do
       authorize_if expr(
                      delegation_expense.delegation.status == :in_progress and
@@ -66,7 +73,7 @@ defmodule Firmowid.Delegations.DelegationExpenseRelatedBlob do
   end
 
   relationships do
-    belongs_to :delegation_expense, Firmowid.Delegations.DelegationExpense do
+    belongs_to :delegation_expense, DelegationExpense do
       allow_nil? false
       attribute_writable? true
     end
