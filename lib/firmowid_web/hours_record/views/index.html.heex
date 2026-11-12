@@ -22,18 +22,23 @@
             variant="unstyled"
             class="flex w-full items-center gap-6 py-5 text-left disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span class="mr-auto">{project.name}</span>
-            <span>{TimeFormatter.format_duration(project.duration)}</span>
+            <span class="me-auto">{project.name}</span>
+            <span class="shrink-0 whitespace-nowrap tabular-nums">
+              {TimeFormatter.format_duration(project.duration)}
+            </span>
             <span class="inline-flex items-center justify-center">
               <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-grey-700" />
               <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-grey-700" />
             </span>
           </FirmowidUI.Components.Button.button>
 
-          <div :if={project.expanded} class="space-y-4 py-4 pr-11">
-            <div :for={session <- project.sessions} class="flex justify-between text-sm">
-              <span>{session.title}</span>
-              <span>{TimeFormatter.format_duration(session.duration)}</span>
+          <%!-- A wrapped title keeps tight lines and the gap between sessions stays wider, so each session reads as one block. --%>
+          <div :if={project.expanded} class="flex flex-col gap-5 py-4 pe-11">
+            <div :for={session <- project.sessions} class="flex items-baseline gap-6 text-sm">
+              <span class="max-w-prose leading-snug text-pretty wrap-anywhere">{session.title}</span>
+              <span class="ms-auto shrink-0 whitespace-nowrap tabular-nums">
+                {TimeFormatter.format_duration(session.duration)}
+              </span>
             </div>
           </div>
         </div>
