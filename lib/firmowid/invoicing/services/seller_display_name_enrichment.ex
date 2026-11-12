@@ -12,7 +12,7 @@ defmodule Firmowid.Invoicing.Services.SellerDisplayNameEnrichment do
 
   alias Firmowid.ErrorKind
   alias Firmowid.Invoicing.CostInvoice
-  alias OpenaiEx.Responses
+  alias Firmowid.Invoicing.Services.OpenAIStructuredResponse
 
   require Ash.Expr
   require Ash.Query
@@ -21,12 +21,6 @@ defmodule Firmowid.Invoicing.Services.SellerDisplayNameEnrichment do
   @candidate_limit 20
   @max_history_scan 100
   @prompt_version 3
-
-  @web_search_tool %{
-    type: "web_search",
-    search_context_size: "medium",
-    user_location: %{type: "approximate", country: "PL"}
-  }
 
   @response_format %{
     type: "json_schema",
@@ -151,30 +145,9 @@ defmodule Firmowid.Invoicing.Services.SellerDisplayNameEnrichment do
 
   @spec generate_via_llm(String.t(), boolean()) :: map() | nil
   defp generate_via_llm(user_prompt, web_search?) do
-    openai =
-      :firmowid
-      |> Application.get_env(:openai_api_key)
-      |> OpenaiEx.new()
-      |> OpenaiEx.with_receive_timeout(60_000)
-      |> configure_openai_client()
-
-    request = %{
-      model: "gpt-6-luna",
-      reasoning: %{effort: "none"},
-      # Web search calls count towards this limit.
-      max_output_tokens: 1000,
-      instructions: developer_prompt(),
-      input: user_prompt,
-      text: %{format: @response_format}
-    }
-
-    openai
-    |> Responses.create!(maybe_add_web_search(request, web_search?))
-    |> Map.fetch!("output")
-    |> Enum.filter(&(&1["type"] == "message"))
-    |> Enum.flat_map(& &1["content"])
-    |> Enum.map_join(&(&1["text"] || ""))
-    |> Jason.decode!()
+    OpenAIStructuredResponse.request!(developer_prompt(), user_prompt, @response_format,
+      web_search: if(web_search?, do: "medium")
+    )
   rescue
     error ->
       Logger.warning("Failed to generate seller display name via OpenAI",
@@ -182,21 +155,6 @@ defmodule Firmowid.Invoicing.Services.SellerDisplayNameEnrichment do
       )
 
       nil
-  end
-
-  # Left to choose, the model often skips the search and guesses from the name.
-  defp maybe_add_web_search(request, true), do: Map.merge(request, %{tools: [@web_search_tool], tool_choice: "required"})
-
-  defp maybe_add_web_search(request, false), do: request
-
-  defp configure_openai_client(openai) do
-    case Application.get_env(:firmowid, :openai_ex, [])[:base_url] do
-      base_url when is_binary(base_url) and base_url != "" ->
-        OpenaiEx.with_base_url(openai, base_url)
-
-      _ ->
-        openai
-    end
   end
 
   defp developer_prompt do
