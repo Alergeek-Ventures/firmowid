@@ -103,8 +103,7 @@ defmodule Firmowid.Core.Organization do
         default: false,
         description: "Whether the owner still takes the first steps, which the app leads them back to."
 
-      change {ClearVatExemptionFields, []}
-      change DefaultDisplayName
+      pipe_through [:company_details]
       change set_attribute(:owner_id, actor(:id))
 
       change set_attribute(:onboarding_completed_at, &DateTime.utc_now/0),
@@ -122,9 +121,6 @@ defmodule Firmowid.Core.Organization do
 
                {:ok, organization}
              end)
-
-      validate match(:nip, ~r/^[0-9]{10}$/)
-      validate {ValidateNip, field: :nip}
     end
 
     # ── General update ──────────────────────────────────────────────
@@ -146,11 +142,7 @@ defmodule Firmowid.Core.Organization do
         :vat_exemption_basis
       ]
 
-      change {ClearVatExemptionFields, []}
-      change DefaultDisplayName
-
-      validate match(:nip, ~r/^[0-9]{10}$/)
-      validate {ValidateNip, field: :nip}
+      pipe_through [:company_details]
     end
 
     # ── Scoped updates ──────────────────────────────────────────────
@@ -173,14 +165,10 @@ defmodule Firmowid.Core.Organization do
 
       argument :is_same_correspondence_address, :boolean
 
-      change {ClearVatExemptionFields, []}
-      change DefaultDisplayName
+      pipe_through [:company_details]
 
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]
-
-      validate match(:nip, ~r/^[0-9]{10}$/)
-      validate {ValidateNip, field: :nip}
     end
 
     update :complete_onboarding do
@@ -371,6 +359,16 @@ defmodule Firmowid.Core.Organization do
     end
 
     has_many :members, Firmowid.Core.Member
+  end
+
+  pipelines do
+    # Normalizes and validates the company details in every action that edits them.
+    pipeline :company_details do
+      change ClearVatExemptionFields
+      change DefaultDisplayName
+      validate match(:nip, ~r/^[0-9]{10}$/)
+      validate {ValidateNip, field: :nip}
+    end
   end
 
   calculations do
