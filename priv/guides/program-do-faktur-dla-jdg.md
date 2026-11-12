@@ -19,7 +19,7 @@ O tym, czy do KSeF trzeba kupować program, pisaliśmy już osobno, dlatego tuta
 | KPiR, ryczałt, ZUS lub deklaracje | program księgowy albo biuro księgowe |
 | ręczne szukanie wpłat do faktur | program z połączeniem bankowym i parowaniem przelewów |
 | przepisywanie godzin z projektów do faktur | program z ewidencją czasu przy projekcie |
-| bank, projekty i faktury w jednym miejscu | program dla firmy usługowej; porównaj też [Firmowid](https://firmowid.pl/cennik) z większością programów tego typu |
+| bank, projekty i faktury w jednym miejscu | program dla firmy usługowej, na przykład [Firmowid](https://firmowid.pl/cennik) |
 
 ## Test na ostatnim miesiącu
 
