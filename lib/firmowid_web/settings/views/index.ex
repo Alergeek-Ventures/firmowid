@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]
 
-  def form_basic_info_form(organization, scope) do
+  defp form_basic_info_form(organization, scope) do
     organization
     |> AshPhoenix.Form.for_update(:update_basic_info,
       scope: scope,
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_member_form(member, scope) do
+  defp form_member_form(member, scope) do
     member
     |> AshPhoenix.Form.for_update(:update_profile,
       scope: scope,
@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_password_form(current_user) do
+  defp form_password_form(current_user) do
     current_user
     |> AshPhoenix.Form.for_update(:change_password,
       domain: Core,
@@ -85,7 +85,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_email_form(current_user, scope) do
+  defp form_email_form(current_user, scope) do
     current_user
     |> AshPhoenix.Form.for_update(:change_email,
       scope: scope,
@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  def handle_avatar_upload(:user_avatar, blob_id, socket) do
+  defp handle_avatar_upload(:user_avatar, blob_id, socket) do
     current_user = socket.assigns.current_user
 
     {:ok, updated} =
@@ -270,7 +270,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :current_user, %{current_user | member: updated_with_avatar})}
   end
 
-  def handle_avatar_upload(:organization_avatar, blob_id, socket) do
+  defp handle_avatar_upload(:organization_avatar, blob_id, socket) do
     current_org = socket.assigns.current_org
 
     {:ok, updated} =
