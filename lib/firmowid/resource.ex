@@ -2,9 +2,8 @@ defmodule Firmowid.Resource do
   @moduledoc """
   Shared macros for Firmowid Ash resources.
 
-  Currently provides timestamp macros that match the existing Ecto schema
-  conventions. Import or `require` this module in each resource that needs
-  Firmowid-standard timestamps.
+  `require` this module in each resource that needs Firmowid-standard
+  timestamps.
 
   ## Available macros
 
