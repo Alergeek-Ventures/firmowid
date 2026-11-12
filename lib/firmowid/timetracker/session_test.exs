@@ -95,6 +95,24 @@ defmodule Firmowid.Timetracker.SessionTest do
     end
   end
 
+  describe "start/2" do
+    test "starts a session for a member of any role assigned to the project", %{user: user} do
+      organization_id = user.member.organization_id
+      project = project_fixture(%{organization_id: organization_id})
+
+      for role <- [:invoicing, :accountant] do
+        member_user = user_in_org_fixture(organization_id, %{role: role})
+        user_project_fixture(member_user.id, project.id, organization_id)
+        scope = %Scope{actor: member_user, tenant: organization_id}
+
+        assert {:ok, session} =
+                 Session.start(%{title: "Running", project_id: project.id}, scope: scope)
+
+        assert session.member_id == member_user.member.id
+      end
+    end
+  end
+
   describe "stop/2" do
     test "stops a running session by setting end_datetime", %{
       project: project,
