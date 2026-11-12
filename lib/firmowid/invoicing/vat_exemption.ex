@@ -34,12 +34,6 @@ defmodule Firmowid.Invoicing.VatExemption do
   def valid_types, do: @valid_types
 
   @doc """
-  Checks if the given type is a valid VAT exemption type.
-  """
-  @spec valid?(exemption_type()) :: boolean()
-  def valid?(type), do: type in @valid_types
-
-  @doc """
   Returns the display label for an exemption type.
   """
   @spec label(exemption_type()) :: String.t()
@@ -69,11 +63,4 @@ defmodule Firmowid.Invoicing.VatExemption do
   end
 
   def basis_label(_type, _resource), do: @labels[:art_113]
-
-  @doc """
-  Returns true if the given type requires a free-text legal basis.
-  """
-  @spec requires_basis?(exemption_type()) :: boolean()
-  def requires_basis?(:other), do: true
-  def requires_basis?(_), do: false
 end
