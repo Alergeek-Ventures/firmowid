@@ -80,18 +80,6 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
   end
 
   @doc """
-  Resolves a raw counterparty details path into its canonical allowlisted path.
-  """
-  @spec counterparty_show_return_path(String.t() | nil) :: String.t() | nil
-  def counterparty_show_return_path(raw_return_to), do: normalize_counterparty_show_path(raw_return_to)
-
-  @doc """
-  Resolves a raw counterparties return path into its canonical allowlisted path.
-  """
-  @spec counterparties_return_path(String.t() | nil) :: String.t() | nil
-  def counterparties_return_path(raw_return_to), do: normalize_counterparty_return_path(raw_return_to)
-
-  @doc """
   Filters query params for the employees listing.
   """
   @spec employees_params(map()) :: map()
@@ -267,7 +255,11 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     |> QueryParams.compact()
   end
 
-  defp normalize_counterparty_return_path(raw_return_to) when is_binary(raw_return_to) do
+  @doc """
+  Resolves a raw counterparties return path into its canonical allowlisted path.
+  """
+  @spec counterparties_return_path(String.t() | nil) :: String.t() | nil
+  def counterparties_return_path(raw_return_to) when is_binary(raw_return_to) do
     case URI.parse(raw_return_to) do
       %URI{
         scheme: nil,
@@ -293,7 +285,7 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     end
   end
 
-  defp normalize_counterparty_return_path(_raw_return_to), do: nil
+  def counterparties_return_path(_raw_return_to), do: nil
 
   defp normalize_counterparties_return_params(params) do
     Enum.reduce_while(params, {:ok, %{}}, fn
@@ -314,7 +306,11 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     end)
   end
 
-  defp normalize_counterparty_show_path(raw_return_to) when is_binary(raw_return_to) do
+  @doc """
+  Resolves a raw counterparty details path into its canonical allowlisted path.
+  """
+  @spec counterparty_show_return_path(String.t() | nil) :: String.t() | nil
+  def counterparty_show_return_path(raw_return_to) when is_binary(raw_return_to) do
     case URI.parse(raw_return_to) do
       %URI{
         scheme: nil,
@@ -339,7 +335,7 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     end
   end
 
-  defp normalize_counterparty_show_path(_raw_return_to), do: nil
+  def counterparty_show_return_path(_raw_return_to), do: nil
 
   defp normalize_counterparty_show_params(params) do
     Enum.reduce_while(params, {:ok, %{}}, fn
