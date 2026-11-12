@@ -949,7 +949,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
-      change Changes.RequireTransactionIds
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
       change Changes.ValidateTransactionAvailability
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
@@ -960,7 +962,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
-      change Changes.RequireTransactionIds
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
       change manage_relationship(:transaction_ids, :transactions, type: :remove)
     end
 
