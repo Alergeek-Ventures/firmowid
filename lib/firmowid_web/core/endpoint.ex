@@ -11,15 +11,22 @@ defmodule FirmowidWeb.Core.Endpoint do
   alias FirmowidWeb.Core.RequestLogMetadata
   alias Phoenix.LiveView.Socket
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
+  # The session is stored in the cookie, signed and encrypted, so its contents can be
+  # neither read nor tampered with. Salts are not secrets: the keys derive from
+  # `secret_key_base`. Changing either salt signs everyone out once.
+  # Development (also behind its https tunnel) and tests reach Phoenix over plain http,
+  # so only production marks the cookie Secure.
   @session_options [
-    store: :cookie,
-    key: "_firmowid_key",
-    signing_salt: "3lt8Vcq/",
-    same_site: "Lax"
-  ]
+                     store: :cookie,
+                     key: "_firmowid_key",
+                     signing_salt: "3lt8Vcq/",
+                     encryption_salt: "Z6rsQoMz",
+                     same_site: "Lax"
+                   ] ++
+                     if(Application.compile_env(:firmowid, :environment) == :prod,
+                       do: [secure: true],
+                       else: []
+                     )
 
   socket "/live", Socket,
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
