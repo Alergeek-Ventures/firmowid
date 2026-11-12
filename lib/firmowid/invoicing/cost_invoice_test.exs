@@ -231,6 +231,24 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
     end
   end
 
+  test "the cost invoice processor runs only the actions of its jobs" do
+    organization_id = admin_fixture().member.organization_id
+    invoice = insert_ksef_cost_invoice!(organization_id)
+    actor = %Firmowid.SystemActor{org_id: organization_id, role: :cost_invoice_processor}
+    opts = [tenant: organization_id]
+
+    assert Ash.can?({invoice, :update_blob_id}, actor, opts)
+    assert Ash.can?({invoice, :refresh_seller_display_name}, actor, opts)
+    assert Ash.can?({CostInvoice, :create_from_ksef, %{}}, actor, opts)
+    refute Ash.can?({invoice, :toggle_skip}, actor, opts)
+    refute Ash.can?({invoice, :update_internal_note}, actor, opts)
+    refute Ash.can?({invoice, :refresh_description}, actor, opts)
+
+    # The AshOban default actor has no organization, and the global read is not among its actions.
+    default_actor = %Firmowid.SystemActor{org_id: nil, role: :cost_invoice_processor}
+    assert %{results: []} = CostInvoice.read_global!(actor: default_actor, page: [limit: 5])
+  end
+
   describe "create" do
     test "persists a Money amount" do
       user = admin_fixture()
