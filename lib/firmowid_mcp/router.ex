@@ -20,6 +20,7 @@ defmodule FirmowidMcp.Router do
     |> Keyword.put(:mcp_name, "Firmowid")
     |> Keyword.put(:instructions, FirmowidMcp.instructions())
     |> Keyword.put(:tool_argument_transformer, &Privacy.validate_arguments/3)
+    |> Keyword.put(:mcp_icons, &__MODULE__.server_icons/1)
     |> Transport.init()
   end
 
@@ -76,7 +77,7 @@ defmodule FirmowidMcp.Router do
   defp decorate_response(conn) do
     case Jason.decode(conn.resp_body || "") do
       {:ok, response} ->
-        response = response |> decorate(conn.body_params, conn) |> put_server_icons()
+        response = decorate(response, conn.body_params, conn)
         %{conn | resp_body: Jason.encode!(response)}
 
       _ ->
@@ -98,30 +99,6 @@ defmodule FirmowidMcp.Router do
 
   defp decorate(%{"result" => %{"tools" => tools}} = response, _request, _conn) do
     put_in(response, ["result", "tools"], Enum.map(tools, &tool_metadata/1))
-  end
-
-  defp decorate(%{"result" => %{"capabilities" => capabilities}} = response, request, _conn) do
-    params = request["params"] || %{}
-
-    client =
-      params["capabilities"] ||
-        get_in(params, ["_meta", "io.modelcontextprotocol/clientCapabilities"]) || %{}
-
-    mime_types = get_in(client, ["extensions", "io.modelcontextprotocol/ui", "mimeTypes"]) || []
-
-    if is_list(mime_types) and "text/html;profile=mcp-app" in mime_types do
-      capabilities = Map.update(capabilities, "extensions", %{}, & &1)
-
-      put_in(
-        response,
-        ["result", "capabilities"],
-        put_in(capabilities, ["extensions", "io.modelcontextprotocol/ui"], %{
-          "mimeTypes" => ["text/html;profile=mcp-app"]
-        })
-      )
-    else
-      response
-    end
   end
 
   defp decorate(%{"result" => %{"contents" => contents}} = response, _request, _conn) do
@@ -149,19 +126,9 @@ defmodule FirmowidMcp.Router do
 
   defp decorate(response, _request, _conn), do: response
 
-  # AshAi has no serverInfo icons. Initialize-era results carry serverInfo in the result,
-  # 2026-07-28 results in `_meta`; clients that render icons get the app favicon.
-  defp put_server_icons(responses) when is_list(responses), do: Enum.map(responses, &put_server_icons/1)
-
-  defp put_server_icons(%{"result" => %{"serverInfo" => _info}} = response),
-    do: put_in(response, ["result", "serverInfo", "icons"], server_icons())
-
-  defp put_server_icons(%{"result" => %{"_meta" => %{"io.modelcontextprotocol/serverInfo" => _info}}} = response),
-    do: put_in(response, ["result", "_meta", "io.modelcontextprotocol/serverInfo", "icons"], server_icons())
-
-  defp put_server_icons(response), do: response
-
-  defp server_icons do
+  @doc "Returns the app favicon as the server icon, read per request from the endpoint's runtime URL."
+  @spec server_icons(keyword()) :: [map()]
+  def server_icons(_opts) do
     [
       %{
         "src" => FirmowidMcp.endpoint().url() <> "/images/favicon.png",
