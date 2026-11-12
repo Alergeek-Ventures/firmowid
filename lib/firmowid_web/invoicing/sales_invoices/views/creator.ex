@@ -539,10 +539,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp maybe_setup_step(socket, _step, _params) do
-    socket
-  end
-
   defp initial_item_params([]), do: [%{"quantity" => "1"}]
 
   defp initial_item_params(items) do
