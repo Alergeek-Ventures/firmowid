@@ -373,21 +373,13 @@ defmodule Firmowid.Invoicing do
       define :record_counterparty_vat_id_check, action: :record_vat_id_check
       define :archive_counterparty, action: :archive
       define :unarchive_counterparty, action: :unarchive
-      define :destroy_counterparty, action: :destroy
     end
 
     resource CostInvoice do
       define :list_cost_invoices, action: :list
       define :get_cost_invoice, action: :by_id, args: [:id]
-      define :get_cost_invoice_by_checksum, action: :by_checksum, args: [:blob_checksum]
       define :get_cost_invoice_by_blob_id, action: :read, get_by: [:blob_id]
       define :toggle_cost_invoice_skip, action: :toggle_skip
-
-      define :update_cost_invoice_internal_note,
-        action: :update_internal_note,
-        args: [:internal_note]
-
-      define :update_cost_invoice_blob, action: :update_blob_id, args: [:blob_id]
 
       define :connect_cost_invoice_transactions,
         action: :connect_transactions,
@@ -416,7 +408,6 @@ defmodule Firmowid.Invoicing do
     resource SalesInvoice do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
-      define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
       define :draft_sales_invoice, action: :draft
       define :issue_sales_invoice, action: :issue
       define :correct_sales_invoice, action: :correct
@@ -435,28 +426,11 @@ defmodule Firmowid.Invoicing do
         args: [:counterparty_id]
 
       define :destroy_sales_invoice, action: :destroy
-      define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]
       define :toggle_sales_invoice_skip, action: :toggle_skip
 
-      define :update_sales_invoice_internal_note,
-        action: :update_internal_note,
-        args: [:internal_note]
-
-      define :generate_sales_invoice_share_token, action: :generate_share_token
       define :start_sales_invoice_ksef_submission, action: :start_ksef_submission
       define :record_sales_invoice_ksef_submission, action: :record_ksef_submission
       define :confirm_sales_invoice_in_ksef, action: :confirm_in_ksef
-      define :withdraw_sales_invoice_ksef_submission, action: :withdraw_ksef_submission
-
-      define :get_next_sales_invoice_number,
-        action: :get_next_number,
-        args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
-
-      define :validate_sales_invoice_number,
-        action: :validate_number,
-        args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
-
-      define :list_sales_invoice_series, action: :list_series
 
       define :connect_sales_invoice_transactions,
         action: :connect_transactions,
@@ -483,13 +457,7 @@ defmodule Firmowid.Invoicing do
     resource Firmowid.Invoicing.WizardState do
       define :list_wizard_states, action: :read
       define :get_wizard_state, action: :read, get_by: [:id]
-      define :create_wizard_state, action: :create
-      define :update_wizard_state_counterparty, action: :update_counterparty
-      define :update_wizard_state_items, action: :update_items
-      define :update_wizard_state_payment, action: :update_payment
       define :reset_wizard_state_bank_account, action: :reset_bank_account
-      define :populate_wizard_state_from_invoice, action: :populate_from_invoice
-      define :destroy_wizard_state, action: :destroy
     end
 
     resource Firmowid.Invoicing.SkippedKsefSalesInvoice do
