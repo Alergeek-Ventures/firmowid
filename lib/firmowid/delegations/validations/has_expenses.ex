@@ -10,25 +10,13 @@ defmodule Firmowid.Delegations.Validations.HasExpenses do
   alias Firmowid.Delegations.PerDiem
 
   @impl true
-  def init(opts), do: {:ok, opts}
-
-  @impl true
   def validate(changeset, _opts, context) do
-    case Ash.load(changeset.data, expense_loads(), actor: context.actor, tenant: context.tenant) do
-      {:ok, delegation} ->
-        if has_expenses?(delegation) or per_diem_due?(changeset),
-          do: :ok,
-          else: {:error, gettext_noop("Add at least one document.")}
-
-      {:error, error} ->
-        {:error, error}
+    with {:ok, delegation} <-
+           Ash.load(changeset.data, :expenses, actor: context.actor, tenant: context.tenant) do
+      if delegation.expenses != [] or per_diem_due?(changeset),
+        do: :ok,
+        else: {:error, gettext_noop("Add at least one document.")}
     end
-  end
-
-  defp expense_loads, do: [:expenses]
-
-  defp has_expenses?(delegation) do
-    delegation.expenses != []
   end
 
   defp per_diem_due?(changeset) do
