@@ -223,9 +223,9 @@ defmodule Firmowid.Timetracker.Session do
     create :start do
       description "Start a new time tracking session, stopping the current session if one exists."
       primary? true
-      accept [:title, :project_id, :is_remote]
+      accept [:title, :project_id, :is_remote, :start_datetime]
 
-      change set_attribute(:start_datetime, &DateTime.utc_now/0)
+      change set_new_attribute(:start_datetime, &DateTime.utc_now/0)
       change NormalizeSessionBoundaries
       change set_attribute(:member_id, actor([:member, :id]))
       change SynchronizeSubmittedMonth
@@ -234,27 +234,30 @@ defmodule Firmowid.Timetracker.Session do
         opts = Ash.Scope.to_opts(context)
 
         Ash.Changeset.before_action(changeset, fn changeset ->
-          case stop_current(opts) do
-            {:ok, nil} ->
-              changeset
-
-            {:ok, stopped} ->
-              if DateTime.after?(
-                   stopped.end_datetime,
-                   Ash.Changeset.get_attribute(changeset, :start_datetime)
-                 ) do
-                Ash.Changeset.force_change_attribute(
-                  changeset,
-                  :start_datetime,
-                  stopped.end_datetime
-                )
-              else
+          changeset =
+            case stop_current(opts) do
+              {:ok, nil} ->
                 changeset
-              end
 
-            {:error, error} ->
-              Ash.Changeset.add_error(changeset, error)
-          end
+              {:ok, stopped} ->
+                if DateTime.after?(
+                     stopped.end_datetime,
+                     Ash.Changeset.get_attribute(changeset, :start_datetime)
+                   ) do
+                  Ash.Changeset.force_change_attribute(
+                    changeset,
+                    :start_datetime,
+                    stopped.end_datetime
+                  )
+                else
+                  changeset
+                end
+
+              {:error, error} ->
+                Ash.Changeset.add_error(changeset, error)
+            end
+
+          SynchronizeSubmittedMonth.check_month(changeset, context)
         end)
       end
     end

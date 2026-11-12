@@ -121,6 +121,7 @@ export const startSessionMutationOptions = sessionMutationOptions(
         title: session.title,
         project_id: session.project.id,
         is_remote: session.is_remote,
+        start_datetime: session.start_datetime,
       },
     }),
   ({ session }, { current }, client) => {

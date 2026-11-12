@@ -223,7 +223,9 @@ export function startSession({
   token,
   signal,
   input,
-}: RequestOptions & { input: SessionInput }) {
+}: RequestOptions & {
+  input: SessionInput & { start_datetime?: string };
+}) {
   return request({
     token,
     signal,

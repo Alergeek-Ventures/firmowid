@@ -26,16 +26,21 @@ defmodule Firmowid.Timetracker.Changes.SynchronizeSubmittedMonth do
           do: changeset,
           else: GetAndLockForUpdate.change(changeset, [], context)
 
-      Ash.Changeset.before_action(changeset, fn changeset ->
-        if ActorRole.role(context.actor, %{subject: changeset}) == :admin do
-          changeset
-        else
-          case HoursRecordNotSubmitted.match?(context.actor, %{subject: changeset}, []) do
-            {:ok, true} -> changeset
-            {:ok, false} -> Ash.Changeset.add_error(changeset, Ash.Error.Forbidden.exception())
-          end
-        end
-      end)
+      Ash.Changeset.before_action(changeset, &check_month(&1, context))
+    else
+      changeset
+    end
+  end
+
+  @doc "Checks the final session month while the member lock is held."
+  @spec check_month(Ash.Changeset.t(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
+  def check_month(changeset, context) do
+    if match?(%User{}, context.actor) and
+         ActorRole.role(context.actor, %{subject: changeset}) != :admin do
+      case HoursRecordNotSubmitted.match?(context.actor, %{subject: changeset}, []) do
+        {:ok, true} -> changeset
+        {:ok, false} -> Ash.Changeset.add_error(changeset, Ash.Error.Forbidden.exception())
+      end
     else
       changeset
     end

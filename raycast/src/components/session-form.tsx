@@ -59,7 +59,7 @@ function SessionForm(props: SessionFormProps) {
       title: session?.title ?? "",
       project_id: session?.project.id ?? projects[0]?.id ?? undefined,
       is_remote: session?.is_remote ?? false,
-      start_datetime: session ? new Date(session.start_datetime) : null,
+      start_datetime: session ? new Date(session.start_datetime) : new Date(),
       end_datetime: session?.end_datetime
         ? new Date(session.end_datetime)
         : null,
@@ -67,7 +67,7 @@ function SessionForm(props: SessionFormProps) {
     validation: {
       title: FormValidation.Required,
       project_id: FormValidation.Required,
-      start_datetime: session ? FormValidation.Required : undefined,
+      start_datetime: FormValidation.Required,
       end_datetime: session?.end_datetime ? FormValidation.Required : undefined,
     },
     async onSubmit(submittedValues) {
@@ -97,10 +97,10 @@ function SessionForm(props: SessionFormProps) {
           is_remote: input.is_remote,
           lockdown: session?.lockdown ?? false,
           project,
-          start_datetime: session
-            ? (submittedValues.start_datetime?.toISOString() ??
-              session.start_datetime)
-            : new Date().toISOString(),
+          start_datetime:
+            submittedValues.start_datetime?.toISOString() ??
+            session?.start_datetime ??
+            new Date().toISOString(),
           end_datetime: submittedValues.end_datetime?.toISOString(),
         };
 
@@ -195,37 +195,35 @@ function SessionForm(props: SessionFormProps) {
         ))}
       </Form.Dropdown>
       <Form.Checkbox label="Remote Work" {...itemProps.is_remote} />
+      <Form.Separator />
+      <Form.DatePicker
+        title="Start Time"
+        type={Form.DatePicker.Type.DateTime}
+        min={
+          neighbors?.previous?.end_datetime
+            ? new Date(neighbors.previous.end_datetime)
+            : undefined
+        }
+        max={
+          values.end_datetime ??
+          (neighbors?.next
+            ? new Date(neighbors.next.start_datetime)
+            : undefined)
+        }
+        {...itemProps.start_datetime}
+      />
       {props.kind === "edit" ? (
-        <>
-          <Form.Separator />
-          <Form.DatePicker
-            title="Start Time"
-            type={Form.DatePicker.Type.DateTime}
-            min={
-              neighbors?.previous?.end_datetime
-                ? new Date(neighbors.previous.end_datetime)
-                : undefined
-            }
-            max={
-              values.end_datetime ??
-              (neighbors?.next
-                ? new Date(neighbors.next.start_datetime)
-                : undefined)
-            }
-            {...itemProps.start_datetime}
-          />
-          <Form.DatePicker
-            title="End Time"
-            type={Form.DatePicker.Type.DateTime}
-            min={values.start_datetime ?? undefined}
-            max={
-              neighbors?.next
-                ? new Date(neighbors.next.start_datetime)
-                : undefined
-            }
-            {...itemProps.end_datetime}
-          />
-        </>
+        <Form.DatePicker
+          title="End Time"
+          type={Form.DatePicker.Type.DateTime}
+          min={values.start_datetime ?? undefined}
+          max={
+            neighbors?.next
+              ? new Date(neighbors.next.start_datetime)
+              : undefined
+          }
+          {...itemProps.end_datetime}
+        />
       ) : null}
       {error ? <Form.Description text={error.message} /> : null}
       {neighborsError ? (
