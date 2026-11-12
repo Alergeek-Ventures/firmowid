@@ -401,23 +401,36 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(plan.view, "#{plan.id} dt", "Praca zdalna")
   end
 
-  test "a draft card with a field on both levels of its input cannot be approved", %{conn: conn} do
+  test "a draft card shows the outer value an inner null leaves in place", %{conn: conn} do
     owner = admin_fixture()
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
-    # The action keeps the outer true because the inner null falls back to the field's default.
+    # The action keeps the outer true: a null on a field with a default means "left out".
     plan =
       open_plan(conn, owner, "update_sales_invoice_draft", %{
         id: draft.id,
-        input: %{
-          buyer_address: "ul. Inna 2, Kraków",
-          is_reverse_charge: true,
-          input: %{is_reverse_charge: nil}
-        }
+        input: %{is_reverse_charge: true, input: %{is_reverse_charge: nil}}
       })
 
-    assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
-    refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} dt", "Reverse charge")
+  end
+
+  test "a draft card ignores a null on a field with a default, as the action does", %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+    draft = seed_draft(scope, %{is_reverse_charge: true})
+
+    # Strict tool schemas make the model send a null for every field it leaves out.
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{buyer_address: "ul. Inna 2, Kraków", is_reverse_charge: nil}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} ins", "ul. Inna 2, Kraków")
+    refute has_element?(plan.view, "#{plan.id} dt", "Reverse charge")
   end
 
   test "a profile card shows the correspondence address the same-address flag clears", %{

@@ -425,19 +425,22 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   # The draft actions take the invoice as fields beside an `input` (InvoiceInput) that
   # `ApplyInvoiceInput` applies over them; the preview takes the same invoice as one InvoiceInput.
-  # A field on both levels makes the card unavailable: the action keeps the outer value when the
-  # inner one is null and the field has a default, which one merged invoice cannot show. An inner
-  # input that is not a map (the action also decodes a JSON string) makes it unavailable too.
+  # The two levels are merged the way the action applies them: the inner value wins, except that
+  # a null on a field with a default leaves the outer one. An inner input that is not a map (the
+  # action also decodes a JSON string) makes the card unavailable.
   defp invoice_input(%{"input" => inner} = input) when is_map(inner) do
-    outer = Map.delete(input, "input")
+    merged =
+      Map.merge(Map.delete(input, "input"), inner, fn field, outer, inner ->
+        if is_nil(inner) and defaulted?(field), do: outer, else: inner
+      end)
 
-    if Enum.any?(Map.keys(inner), &is_map_key(outer, &1)),
-      do: :error,
-      else: {:ok, Map.merge(outer, inner)}
+    {:ok, merged}
   end
 
   defp invoice_input(%{"input" => inner}) when not is_nil(inner), do: :error
   defp invoice_input(input), do: {:ok, Map.delete(input, "input")}
+
+  defp defaulted?(field), do: match?(%{default: default} when not is_nil(default), Info.attribute(SalesInvoice, field))
 
   # A draft is compared by the fields it writes that decide who is invoiced, for what and how
   # they pay.
