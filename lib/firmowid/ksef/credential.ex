@@ -274,17 +274,24 @@ defmodule Firmowid.Ksef.Credential do
       argument :private_key, :string, allow_nil?: false
       argument :private_key_password, :string, allow_nil?: true
 
+      # Both files arrive as the raw bytes the user uploaded. Bytes that are not
+      # text (a DER file, or a PEM file with binary data after it) are refused here
+      # rather than failing when stored as JSON below.
       validate fn changeset, _context ->
-        case changeset
-             |> Ash.Changeset.get_argument(:certificate)
-             |> X509.Certificate.from_pem() do
-          {:ok, _certificate} ->
-            :ok
+        certificate = Ash.Changeset.get_argument(changeset, :certificate)
+        private_key = Ash.Changeset.get_argument(changeset, :private_key)
+        message = gettext_noop("Could not sign in to KSeF. Check the files and the key password.")
 
-          {:error, _reason} ->
-            {:error,
-             field: :certificate,
-             message: gettext_noop("Could not sign in to KSeF. Check the files and the key password.")}
+        cond do
+          not String.valid?(certificate) or
+              not match?({:ok, _certificate}, X509.Certificate.from_pem(certificate)) ->
+            {:error, field: :certificate, message: message}
+
+          not String.valid?(private_key) ->
+            {:error, field: :private_key, message: message}
+
+          true ->
+            :ok
         end
       end
 
@@ -292,19 +299,20 @@ defmodule Firmowid.Ksef.Credential do
       change set_attribute(:organization_id, tenant())
 
       change fn changeset, _context ->
-        cert = Ash.Changeset.get_argument(changeset, :certificate)
-        key = Ash.Changeset.get_argument(changeset, :private_key)
-        password = Ash.Changeset.get_argument(changeset, :private_key_password)
+               cert = Ash.Changeset.get_argument(changeset, :certificate)
+               key = Ash.Changeset.get_argument(changeset, :private_key)
+               password = Ash.Changeset.get_argument(changeset, :private_key_password)
 
-        credentials =
-          Jason.encode!(%{
-            "certificate" => cert,
-            "private_key" => key,
-            "private_key_password" => password
-          })
+               credentials =
+                 Jason.encode!(%{
+                   "certificate" => cert,
+                   "private_key" => key,
+                   "private_key_password" => password
+                 })
 
-        Ash.Changeset.force_change_attribute(changeset, :credentials, credentials)
-      end
+               Ash.Changeset.force_change_attribute(changeset, :credentials, credentials)
+             end,
+             only_when_valid?: true
 
       change after_action(fn _changeset, credential, _context ->
                with {:ok, _job} <- SessionWorker.enqueue(credential.organization_id),

@@ -6,6 +6,7 @@ defmodule Firmowid.Ksef.CertificateAuthTest do
   import Firmowid.AccountsFixtures
   import Firmowid.Ksef.KsefTestHelpers, only: [jwt: 1]
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.Workers.SessionWorker
@@ -143,10 +144,44 @@ defmodule Firmowid.Ksef.CertificateAuthTest do
     scope: scope,
     credentials: credentials
   } do
-    assert {:error, %Ash.Error.Invalid{errors: [%{field: :certificate}]}} =
+    assert {:error, %Invalid{errors: [%{field: :certificate}]}} =
              Credential.authenticate_with_uploaded_certificate(
                "not a certificate",
                credentials.private_key,
+               credentials.password,
+               scope: scope
+             )
+
+    assert Credential.get_internal!(scope: scope) == nil
+  end
+
+  test "rejects certificate and key files whose bytes are not PEM text", %{
+    scope: scope,
+    credentials: credentials
+  } do
+    private_key = X509.PrivateKey.new_ec(:secp256r1)
+    certificate = X509.Certificate.self_signed(private_key, "/C=PL/O=Firmowid/CN=KSeF Test")
+
+    assert {:error, %Invalid{errors: [%{field: :certificate}]}} =
+             Credential.authenticate_with_uploaded_certificate(
+               X509.Certificate.to_der(certificate),
+               credentials.private_key,
+               credentials.password,
+               scope: scope
+             )
+
+    assert {:error, %Invalid{errors: [%{field: :certificate}]}} =
+             Credential.authenticate_with_uploaded_certificate(
+               X509.Certificate.to_pem(certificate) <> <<255, 254>>,
+               credentials.private_key,
+               credentials.password,
+               scope: scope
+             )
+
+    assert {:error, %Invalid{errors: [%{field: :private_key}]}} =
+             Credential.authenticate_with_uploaded_certificate(
+               X509.Certificate.to_pem(certificate),
+               X509.PrivateKey.to_der(private_key),
                credentials.password,
                scope: scope
              )
