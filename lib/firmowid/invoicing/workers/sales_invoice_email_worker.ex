@@ -1,6 +1,10 @@
 defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
   @moduledoc """
   Sends one queued sales invoice email and records the final delivery outcome.
+
+  Every attempt of a job sends the same Resend idempotency key, so a retry
+  after the provider accepted the email (lost response, node stopped before
+  the job completed) does not send it again.
   """
 
   use Oban.Worker,
@@ -30,7 +34,12 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
       "Sending sales invoice email invoice_id=#{sales_invoice_id} delivery_type=#{delivery_type} attempt=#{job.attempt}/#{job.max_attempts}"
     )
 
-    case SalesInvoiceEmailSender.deliver(sales_invoice_id, delivery_type, scope) do
+    case SalesInvoiceEmailSender.deliver(
+           sales_invoice_id,
+           delivery_type,
+           "sales-invoice-email-#{job.id}",
+           scope
+         ) do
       {:ok, attrs} ->
         record_delivery(Map.merge(attrs, %{status: :sent, sent_at: DateTime.utc_now()}), scope)
 
@@ -63,9 +72,9 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
     end
   end
 
+  # Raises when the record cannot be saved, so Sentry reports it. A retry of a
+  # sent email reuses the job's idempotency key, so Resend does not send it again.
   defp record_delivery(attrs, scope) do
-    attrs
-    |> SalesInvoiceEmailDelivery.changeset_to_record_delivery(scope: scope)
-    |> Ash.create(scope: scope)
+    SalesInvoiceEmailDelivery.record_delivery!(attrs, scope: scope)
   end
 end

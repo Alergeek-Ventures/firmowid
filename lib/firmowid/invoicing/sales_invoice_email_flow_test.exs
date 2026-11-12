@@ -78,6 +78,33 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
     end
   end
 
+  describe "sending an invoice email once" do
+    test "a retried job sends with the same idempotency key, another job with its own" do
+      admin = admin_fixture()
+      counterparty = valid_counterparty_fixture!(admin)
+
+      invoice =
+        sales_invoice_fixture!(admin, %{
+          counterparty_id: counterparty.id,
+          should_send_emails: true
+        })
+
+      drain_swoosh_email_messages()
+      job = build_sales_invoice_email_job(invoice, :basic)
+
+      assert :ok = perform_sales_invoice_email_job(job)
+      assert_received {:email, %{provider_options: %{idempotency_key: first_key}}}
+
+      # Resend sends one email per key, so a retry after a lost response is not delivered twice.
+      assert :ok = perform_sales_invoice_email_job(%{job | attempt: 2})
+      assert_received {:email, %{provider_options: %{idempotency_key: ^first_key}}}
+
+      assert :ok = perform_sales_invoice_email_job(build_sales_invoice_email_job(invoice, :basic))
+      assert_received {:email, %{provider_options: %{idempotency_key: other_key}}}
+      assert other_key != first_key
+    end
+  end
+
   describe "invoice correction email flow" do
     test "email enabled initially and enabled on correction flow sends basic then correction emails" do
       Oban.Testing.with_testing_mode(:manual, fn ->

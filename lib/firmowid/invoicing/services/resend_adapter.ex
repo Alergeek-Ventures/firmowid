@@ -16,7 +16,10 @@ defmodule Firmowid.Invoicing.Services.ResendAdapter do
 
   @impl true
   def deliver(%Swoosh.Email{} = email, config) do
-    Resend.Emails.send(Resend.client(config), %{
+    config
+    |> put_idempotency_key(email.provider_options[:idempotency_key])
+    |> Resend.client()
+    |> Resend.Emails.send(%{
       subject: email.subject,
       from: format_sender(email.from),
       to: format_recipients(email.to),
@@ -47,6 +50,20 @@ defmodule Firmowid.Invoicing.Services.ResendAdapter do
   def validate_config(config) do
     Resend.validate_config!(config)
     :ok
+  end
+
+  # `Resend.Emails.send/2` takes no request headers. `Resend.Client.ReqClient`
+  # merges `req_options` over its own request options, replacing its headers,
+  # so the authorization header is set here again.
+  defp put_idempotency_key(config, nil), do: config
+
+  defp put_idempotency_key(config, idempotency_key) do
+    headers = [
+      {"authorization", "Bearer #{Keyword.fetch!(config, :api_key)}"},
+      {"idempotency-key", idempotency_key}
+    ]
+
+    Keyword.update(config, :req_options, [headers: headers], &Keyword.put(&1, :headers, headers))
   end
 
   defp format_attachment(%Swoosh.Attachment{} = attachment) do

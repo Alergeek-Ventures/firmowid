@@ -114,6 +114,23 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
   end
 
   @doc """
+  Builds an unsaved sales invoice email Oban job for `invoice` and
+  `delivery_type`, to perform it more than once as Oban retries do.
+  """
+  @spec build_sales_invoice_email_job(struct(), atom()) :: Oban.Job.t()
+  def build_sales_invoice_email_job(invoice, delivery_type) do
+    Oban.Testing.build_job(SalesInvoiceEmailWorker, email_job_args(invoice, delivery_type), [])
+  end
+
+  @doc """
+  Performs an already built sales invoice email Oban `job`.
+  """
+  @spec perform_sales_invoice_email_job(Oban.Job.t()) :: term()
+  def perform_sales_invoice_email_job(%Oban.Job{} = job) do
+    Oban.Testing.perform_job(job, @oban_test_opts)
+  end
+
+  @doc """
   Asserts that a sales invoice email job is enqueued for `invoice` and `delivery_type`.
   """
   @spec assert_enqueued_email_job(struct(), atom()) :: true
