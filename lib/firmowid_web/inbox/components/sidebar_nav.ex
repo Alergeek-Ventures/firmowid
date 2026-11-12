@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   @moduledoc """
   The top of the sidebar: the layer switch, the inbox and Czasośledź, with the
-  number of waiting company items and whether the member's session runs.
+  number of all waiting company items on the inbox and whether the member's
+  session runs.
 
   It lives in the layout of every page, so the numbers load after the page
   connects instead of delaying it. Until they arrive it shows the last numbers
@@ -148,21 +149,6 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           >
             {layer_label(layer)}
           </span>
-          <%!--
-            On the Firma button in both layers, expanded and collapsed, so the
-            company badge never jumps when the layer changes. Collapsed, it rides
-            the corner outside the tray, which stops clipping then.
-          --%>
-          <.count
-            :if={layer == :company}
-            count={@company_count}
-            last_count={@last_company_count}
-            shown="ml-2 w-4.5"
-            class={[
-              "h-4.5 bg-grey-700 text-caps-sm text-white",
-              collapsed_badge_styles()
-            ]}
-          />
         </.link>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".LayerSwitch">
@@ -233,6 +219,16 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
       >
         <Lucideicons.render! name={@inbox.icon} class="size-4.5 shrink-0" aria-hidden="true" />
         <span data-label class={label_styles()}>{@inbox.label}</span>
+        <%!-- Company items needing someone, shown in the company layer only. Collapsed, it rides the icon's corner. --%>
+        <.count
+          count={if @layer == :company, do: @company_count, else: 0}
+          last_count={if @layer == :company, do: @last_company_count, else: 0}
+          shown="ml-auto min-w-4.5 px-1"
+          class={[
+            "h-4.5 bg-white text-caps-sm text-black",
+            collapsed_badge_styles()
+          ]}
+        />
       </.link>
       <.link
         :if={@layer == :me and @timetracker}

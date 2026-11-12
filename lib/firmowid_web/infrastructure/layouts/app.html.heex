@@ -264,9 +264,15 @@
   </div>
 </main>
 
-<%!-- The full assistant page renders the same chat itself, so the panel stays out of it. --%>
+<%!--
+  The full assistant page renders the same chat itself, so the panel stays out
+  of it; the company inbox links to that page from its header instead.
+--%>
 <%= if app_navigation?(assigns) and match?(%{member: %{role: role}} when role != :employee, @current_user) and
-       @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() do %>
+       @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() and
+       not (inbox_sidebar?(assigns) and
+              @current_uri.path == FirmowidWeb.Inbox.Utilities.Navigation.inbox_path(:company) and
+              not String.contains?(@current_uri.query || "", "warstwa=ty")) do %>
   {Phoenix.Component.live_render(
     assigns[:socket] || assigns[:conn],
     FirmowidWeb.Assistant.Views.Floating,

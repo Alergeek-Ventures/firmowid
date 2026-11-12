@@ -37,7 +37,13 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Skrzynka: scenariusze", scenarios: @scenarios, path: @path)}
+    {:ok,
+     assign(socket,
+       page_title: "Skrzynka: scenariusze",
+       scenarios: @scenarios,
+       path: @path,
+       no_padding: true
+     )}
   end
 
   @impl true
@@ -60,6 +66,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        month: month,
        month_duration: nil,
        fresh: MapSet.new(),
+       query: "",
+       expanded: MapSet.new(),
        session: nil,
        last_session: nil
      )}
@@ -83,6 +91,9 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
     {:noreply, assign(socket, items: [item | socket.assigns.items], fresh: MapSet.new([item.id]))}
   end
 
+  def handle_event(event, params, socket) when event in ["toggle_group", "search"],
+    do: Index.handle_event(event, params, socket)
+
   def handle_event("decide_item", %{"id" => id, "decision" => decision}, socket) do
     LiveToast.send_toast(
       :info,
@@ -98,10 +109,10 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col">
       <nav
         aria-label="Scenariusze skrzynki"
-        class="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-1.5 rounded-md border border-dashed border-grey-300 p-2"
+        class="mx-4 mt-4 flex flex-wrap items-center gap-1.5 rounded-sm border border-dashed border-grey-300 p-2 md:mx-10"
       >
         <span class="px-1 text-xs font-medium text-grey-500 uppercase">Podgląd</span>
         <.link
@@ -445,7 +456,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
       tier: :books,
       side: side,
       due_date: due,
-      icon: "file-clock",
+      days_late: -due_in,
+      icon: "file-chart-column",
       title:
         if(side == :sales,
           do: gettext("Overdue sales invoice %{number}", number: number),
