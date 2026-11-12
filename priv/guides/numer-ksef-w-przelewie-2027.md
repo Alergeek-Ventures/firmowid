@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: bank-i-platnosci
 ---
 
-Z płatnościami za faktury od 1 stycznia 2027 r. wiąże się nowy art. 108g ustawy o VAT, zgodnie z którym w tytule przelewu podaje się numer KSeF opłacanej faktury albo, gdy przelew obejmuje kilka faktur jednego sprzedawcy, identyfikator zbiorczy. Przy poleceniu zapłaty ten obowiązek ma wystawca faktury. Ministerstwo Finansów wyjaśnia, że obowiązek dotyczy płatności między czynnymi podatnikami VAT, a jako główny cel zmiany podaje przeciwdziałanie zatorom płatniczym. Podatnik zwolniony z VAT podmiotowo nie musi więc podawać numeru, kiedy płaci za otrzymane e-faktury, a jego kontrahent, czynny podatnik, nie musi tego robić, kiedy płaci jemu. Od tego samego dnia zmienia się też art. 108a ustawy, przez co numer KSeF trafia również do przelewów w mechanizmie podzielonej płatności.
+Z płatnościami za faktury od 1 stycznia 2027 r. wiąże się nowy art. 108g ustawy o VAT, zgodnie z którym w tytule przelewu podaje się numer KSeF opłacanej faktury albo, gdy przelew obejmuje kilka faktur jednego sprzedawcy, identyfikator zbiorczy. Przy poleceniu zapłaty ten obowiązek ma wystawca faktury. Ministerstwo Finansów wyjaśnia, że obowiązek dotyczy płatności między czynnymi podatnikami VAT, a jako główny cel zmiany podaje przeciwdziałanie zatorom płatniczym. Podatnik zwolniony z VAT podmiotowo nie musi więc podawać numeru, kiedy płaci za otrzymane e-faktury zwykłym przelewem, a jego kontrahent, czynny podatnik, nie musi tego robić, kiedy płaci jemu. Od tego samego dnia zmienia się też art. 108a ustawy, przez co numer KSeF trafia również do przelewów w mechanizmie podzielonej płatności.
 
 ## Kilka faktur w jednym przelewie
 
