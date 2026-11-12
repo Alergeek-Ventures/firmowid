@@ -119,7 +119,9 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
         >
           {label}
         </.link>
+        <%!-- An accountant never receives approvals, so nothing arrives in that scenario. --%>
         <.button
+          :if={@scenario != "ksiegowa"}
           type="button"
           size="small"
           variant="secondary"
@@ -355,7 +357,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   defp leave(id, person, reason, today, starts_in, days) do
     starts_on = Date.add(today, starts_in)
     ends_on = Date.add(starts_on, days - 1)
-    reject? = reason in [:vacation, :unpaid]
+    reject? = reason in [:vacation, :sick, :unpaid]
 
     %{
       id: "leave-#{id}",

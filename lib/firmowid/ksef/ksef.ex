@@ -137,7 +137,7 @@ defmodule Firmowid.Ksef do
         with :ok <- maybe_revoke_generated_certificate(credential, access_token),
              :ok <- ApiClient.revoke_refresh_token(access_token),
              {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
-          Repo.transact(fn ->
+          fn ->
             # Oban.Job is not an Ash resource — raw Ecto query is required here.
             Firmowid.Oban.cancel_all_jobs(
               from(j in Oban.Job,
@@ -152,12 +152,21 @@ defmodule Firmowid.Ksef do
               )
             )
 
-            Credential.destroy!(credential, scope: scope)
-            {:ok, :disconnected}
-          end)
+            {:ok, Credential.destroy!(credential, scope: scope, return_notifications?: true)}
+          end
+          |> Repo.transact()
+          |> notify_disconnected()
         end
     end
   end
+
+  # The credential's notifications wait for the transaction around it to commit.
+  defp notify_disconnected({:ok, notifications}) do
+    Ash.Notifier.notify(notifications)
+    {:ok, :disconnected}
+  end
+
+  defp notify_disconnected(error), do: error
 
   # The admin's read above authorizes the disconnect; the certificate is read as the
   # KSeF session, the only actor that sees credential material. The match on the id
