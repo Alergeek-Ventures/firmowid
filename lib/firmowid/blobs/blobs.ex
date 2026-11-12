@@ -152,7 +152,7 @@ defmodule Firmowid.Blobs do
 
       {:error, %Invalid{} = error} ->
         if blob_checksum_conflict?(error) do
-          checksum = compute_checksum(path)
+          checksum = UploadFingerprint.normalized_checksum(path, content_type)
           handle_duplicate_cost_invoice_blob(checksum, scope)
         else
           {:error, error}
@@ -218,18 +218,6 @@ defmodule Firmowid.Blobs do
   defp blob_checksum_conflict_error?(%InvalidChanges{fields: fields}) when is_list(fields), do: :blob_checksum in fields
 
   defp blob_checksum_conflict_error?(_), do: false
-
-  # sobelow_skip ["Traversal.FileModule"]
-  # path comes from Briefly temp files or Phoenix uploads, not user-controlled web input.
-  defp compute_checksum(upload_path) do
-    upload_path
-    |> Path.expand()
-    |> File.stream!(64 * 1024)
-    |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
-    |> :crypto.hash_final()
-    |> Base.encode16()
-    |> String.downcase()
-  end
 
   def get_processing_blobs_count(processing_target, scope) do
     processing_target
