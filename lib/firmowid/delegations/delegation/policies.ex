@@ -42,7 +42,7 @@ defmodule Firmowid.Delegations.Delegation.Policies do
     end
 
     policy action(:update_pending) do
-      authorize_if expr(status == :pending and member_id == ^actor([:member, :id]))
+      authorize_if expr(order_editable? and member_id == ^actor([:member, :id]))
     end
 
     policy action([:prepare_settlement, :save_draft, :detect_dates]) do

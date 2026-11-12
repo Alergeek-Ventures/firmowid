@@ -21,8 +21,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   def mount(%{"reference" => reference} = params, _session, socket) do
     scope = socket.assigns.ash_scope
 
-    case Delegations.get_delegation_by_reference(reference, scope: scope, not_found_error?: false) do
-      {:ok, %{status: :pending, signed_command_blob_id: nil} = delegation} ->
+    case Delegations.get_delegation_by_reference(reference,
+           scope: scope,
+           load: [:order_editable?],
+           not_found_error?: false
+         ) do
+      {:ok, %{order_editable?: true} = delegation} ->
         if Ash.can?({delegation, :update_pending}, scope) do
           {:ok, setup_form(socket, delegation, params)}
         else

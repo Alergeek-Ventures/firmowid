@@ -6,6 +6,14 @@ defmodule Firmowid.Delegations.Delegation.PendingOrderActions do
 
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
 
+  calculations do
+    calculate :order_editable?,
+              :boolean,
+              expr(status == :pending and is_nil(signed_command_blob_id)) do
+      description "Whether the order can still be corrected: pending and not signed by the employer."
+    end
+  end
+
   actions do
     update :update_pending do
       description "Correct an existing business trip order before employer signature."
@@ -25,12 +33,7 @@ defmodule Firmowid.Delegations.Delegation.PendingOrderActions do
 
       validate attribute_equals(:status, :pending)
       # Checks the stored state too, so a stale form cannot edit an approved order.
-      change filter(
-               expr(
-                 status == :pending and is_nil(signed_command_blob_id) and
-                   organization_id == ^actor([:member, :organization_id])
-               )
-             )
+      change filter(expr(order_editable? and organization_id == ^actor([:member, :organization_id])))
 
       change atomic_update(:title, expr(^atomic_ref(:purpose)))
       change {ValidateCountryCode, field: :destination_country}
@@ -47,7 +50,7 @@ defmodule Firmowid.Delegations.Delegation.PendingOrderActions do
       require_atomic? false
       accept [:advance_amount]
       validate attribute_equals(:status, :pending)
-      change filter(expr(status == :pending and is_nil(signed_command_blob_id)))
+      change filter(expr(order_editable?))
 
       validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
         message: gettext_noop("must be greater than or equal to 0 PLN")
@@ -58,7 +61,7 @@ defmodule Firmowid.Delegations.Delegation.PendingOrderActions do
       require_atomic? false
       accept [:billing_month]
       validate attribute_equals(:status, :pending)
-      change filter(expr(status == :pending and is_nil(signed_command_blob_id)))
+      change filter(expr(order_editable?))
     end
   end
 end

@@ -220,7 +220,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket
     |> assign(:leave_requests, list_leave_requests(member_id, scope))
-    |> assign(:delegations, Delegations.list_delegations_for_member!(member_id, scope: scope))
+    |> assign(
+      :delegations,
+      Delegations.list_delegations_for_member!(member_id, scope: scope, load: [:order_editable?])
+    )
     |> assign(:leave_days, leave_days || 0)
     |> assign(:leave_search, "")
     |> assign(:leave_request_form, leave_request_form(current_user, scope))
