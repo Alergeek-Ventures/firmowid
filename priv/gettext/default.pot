@@ -2620,6 +2620,7 @@ msgstr ""
 msgid "Code valid until"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/inbox/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Collapse"

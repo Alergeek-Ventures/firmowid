@@ -266,13 +266,12 @@
 
 <%!--
   The full assistant page renders the same chat itself, so the panel stays out
-  of it; the company inbox links to that page from its header instead.
+  of it; pages that link to that page instead (the company inbox) set
+  `hide_floating_assistant`.
 --%>
 <%= if app_navigation?(assigns) and match?(%{member: %{role: role}} when role != :employee, @current_user) and
        @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() and
-       not (inbox_sidebar?(assigns) and
-              @current_uri.path == FirmowidWeb.Inbox.Utilities.Navigation.inbox_path(:company) and
-              not String.contains?(@current_uri.query || "", "warstwa=ty")) do %>
+       !assigns[:hide_floating_assistant] do %>
   {Phoenix.Component.live_render(
     assigns[:socket] || assigns[:conn],
     FirmowidWeb.Assistant.Views.Floating,

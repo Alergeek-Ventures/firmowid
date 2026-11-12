@@ -60,7 +60,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         do: socket,
         else: assign(socket, query: "", expanded: MapSet.new())
 
-    {:noreply, socket |> assign(:fresh, MapSet.new()) |> load(layer)}
+    # The company layer links to the assistant from its header instead.
+    {:noreply,
+     socket
+     |> assign(fresh: MapSet.new(), hide_floating_assistant: layer == :company)
+     |> load(layer)}
   end
 
   # Something the inbox shows changed elsewhere (see `FirmowidWeb.Inbox.Hooks.LiveQueue`).
