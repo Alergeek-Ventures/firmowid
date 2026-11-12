@@ -189,10 +189,14 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
         for {field, label} <- profile_fields(),
             value = input[Atom.to_string(field)],
             not is_nil(value),
-            before = profile_value(field, Map.get(user.member, field)),
-            later = profile_value(field, value),
-            before != later,
-            do: change(label, before, later)
+            do:
+              change(
+                label,
+                profile_value(field, Map.get(user.member, field)),
+                profile_value(field, value)
+              )
+
+      changes = Enum.reject(changes, &(&1.from == &1.to))
 
       if changes == [], do: :unchanged, else: {:ok, [], changes}
     end
