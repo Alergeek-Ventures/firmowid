@@ -1382,7 +1382,6 @@ msgstr ""
 msgid "Apply when eligible"
 msgstr ""
 
-#: lib/firmowid_web/delegations/components/delegations_list.ex
 #: lib/firmowid_web/management/components/leaves_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Approve"
