@@ -419,6 +419,21 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
   end
 
+  test "a draft card whose inner input is not a map stays rejectable", %{conn: conn} do
+    owner = admin_fixture()
+    draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
+
+    # The action decodes a JSON string into the map it applies; the card does not.
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{input: Jason.encode!(%{buyer_address: "ul. Inna 2, Kraków"})}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
+    refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+  end
+
   # Opens the assistant on a conversation that waits for approval of one tool call.
   defp open_plan(conn, owner, name, arguments) do
     scope = Scope.new!(owner, owner.member.organization_id)
