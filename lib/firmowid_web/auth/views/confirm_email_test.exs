@@ -92,6 +92,19 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert Core.get_user_by_email!(user.email, authorize?: false).confirmed_at
   end
 
+  test "a refused confirmation posted with a top-level token leads to the login page too", %{
+    conn: conn
+  } do
+    drain_sent_emails()
+    Core.register_with_password!(valid_user_attributes(), authorize?: false, actor: %{})
+    token = extract_token_from_email!("/potwierdz-email/")
+
+    refused_conn = post(conn, "/auth/user/confirm", %{"confirm" => token})
+
+    assert redirected_to(refused_conn) == ~p"/zaloguj"
+    assert Plug.Conn.get_session(refused_conn, :return_to) == ~p"/potwierdz-email/#{token}"
+  end
+
   test "user without an organization confirms email without loading another tenant's avatar", %{
     conn: conn
   } do

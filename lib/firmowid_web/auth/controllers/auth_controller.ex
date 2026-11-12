@@ -119,8 +119,11 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   def failure(conn, {:confirm, :confirm}, %Forbidden{errors: [%UnconfirmedUser{}]}) do
     # Only the account's holder, signed in, confirms it or a change of its address
     # (see the User `:confirm` action); signing in returns to the confirmation link.
+    # The strategy reads the token from either place, so this does too.
+    token = conn.params["confirm"] || conn.params["user"]["confirm"]
+
     conn
-    |> put_session(:return_to, ~p"/potwierdz-email/#{conn.params["user"]["confirm"]}")
+    |> put_session(:return_to, ~p"/potwierdz-email/#{token}")
     |> put_flash(:error, gettext("Log in to confirm your email address."))
     |> redirect(to: ~p"/zaloguj")
   end
