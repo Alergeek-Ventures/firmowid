@@ -6,10 +6,11 @@
       active_months={@active_months}
       selected_date={@selected_date}
       data-position="bottom right"
+      show_on_mobile
     />
   </div>
 
-  <div class="mt-8 flex flex-col justify-between gap-20 md:flex-row">
+  <div class="mt-6 flex flex-col justify-between gap-6 md:mt-8 md:flex-row md:gap-20">
     <div class="col-span-4 w-full space-y-2">
       <%= for project <- @projects do %>
         <div class="flex flex-col divide-y divide-grey-200 rounded-md bg-grey-50 px-4">
@@ -39,19 +40,26 @@
       <% end %>
     </div>
 
-    <div class="flex w-full max-w-[360px] flex-col gap-6">
-      <div class="flex flex-col space-y-8 rounded-sm bg-grey-50 p-4">
-        <h3 class="font-bold">{gettext("Summary:")}</h3>
-        <div>
-          <p class="mb-3">{gettext("Hours worked:")}</p>
-          <p class="text-xl font-bold">{TimeFormatter.format_duration(@total_duration)}</p>
+    <%!-- On a phone the summary and the timesheet actions come before the project list, which can be long. --%>
+    <div class="flex w-full flex-col gap-4 max-md:order-first md:max-w-[360px] md:gap-6">
+      <%!-- On a phone each figure is one row: the label on the left, the value on the right. --%>
+      <div class="flex flex-col gap-2 rounded-sm bg-grey-50 p-4 md:gap-8">
+        <h3 class="font-bold max-md:sr-only">{gettext("Summary:")}</h3>
+        <div class="max-md:flex max-md:flex-wrap max-md:items-baseline max-md:justify-between max-md:gap-x-4">
+          <p class="max-md:text-sm max-md:text-grey-700 md:mb-3">{gettext("Hours worked:")}</p>
+          <p class="font-bold md:text-xl">{TimeFormatter.format_duration(@total_duration)}</p>
         </div>
-        <div :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)}>
-          <p class="mb-3">{gettext("Most demanding project:")}</p>
-          <p class="text-xl font-bold">
+        <div
+          :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)}
+          class="max-md:flex max-md:flex-wrap max-md:items-baseline max-md:justify-between max-md:gap-x-4"
+        >
+          <p class="max-md:text-sm max-md:text-grey-700 md:mb-3">
+            {gettext("Most demanding project:")}
+          </p>
+          <p class="font-bold md:text-xl">
             {TimeFormatter.format_duration(most_demanding.duration)}
           </p>
-          <p class="text-sm text-grey-700">{most_demanding.name}</p>
+          <p class="text-sm text-grey-700 max-md:basis-full">{most_demanding.name}</p>
         </div>
       </div>
       <div

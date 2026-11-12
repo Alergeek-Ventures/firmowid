@@ -71,7 +71,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             data-download-url={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
             data-download-success-event="download"
             data-download-target={@myself}
-            class="ml-auto w-full max-w-32"
+            class="w-full md:ml-auto md:max-w-32"
           >
             <span data-download-idle>{gettext("Download")}</span>
             <span data-download-loading class="hidden items-center gap-2">
@@ -79,7 +79,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             </span>
           </.link>
         <% :sign -> %>
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <.button
               id="hours-record-sign"
               type="button"
@@ -93,7 +93,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               phx-click="sign"
               phx-target={@myself}
               variant="outline"
-              class="w-full max-w-32 text-center"
+              class="w-full text-center md:max-w-32"
             >
               {gettext("Signed!")}
             </.button>
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             phx-change="upload"
             phx-submit="send"
             phx-target={@myself}
-            class="flex flex-col items-end gap-6"
+            class="flex flex-col gap-6 md:items-end"
           >
             <.file_upload
               upload={@uploads.hours_record}
@@ -113,7 +113,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               prompt_class="font-medium"
               error_formatter={&error_to_string/1}
             />
-            <.button disabled={value == :upload} class="w-full max-w-32">
+            <.button disabled={value == :upload} class="w-full md:max-w-32">
               {gettext("Send")}
             </.button>
           </form>
