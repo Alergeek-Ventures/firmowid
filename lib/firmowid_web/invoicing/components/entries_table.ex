@@ -244,7 +244,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             const row = Array.from(this.el.querySelectorAll("tr[data-month]"))
               .find(row => row.dataset.month <= month);
             // No month to scroll to: the picker names the chosen one, so name the one on screen.
-            if (!row) return this.sync();
+            // A jump still waiting for newer months is dropped, or it would override this choice.
+            if (!row) {
+              this.pending = null;
+              return this.sync();
+            }
             // A separator comes to rest just under the column headings, which makes its month
             // the one on top. The hidden one of the first month has no box, so its first row
             // comes to rest a row gap (12px) below them.
