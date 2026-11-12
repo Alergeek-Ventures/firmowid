@@ -133,17 +133,21 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   def handle_event(event, params, socket) when event in ["toggle_group", "search"],
     do: Index.handle_event(event, params, socket)
 
-  def handle_event("set_workplace", %{"remote" => remote}, socket) do
+  def handle_event("set_workplace", %{"remote" => remote}, %{assigns: %{session: %Session{}}} = socket) do
     {:noreply, update(socket, :session, &%{&1 | is_remote: remote == "true"})}
   end
 
-  def handle_event("stop_session", _params, socket) do
-    {:noreply, assign(socket, session: nil, last_session: socket.assigns.session)}
+  def handle_event("stop_session", _params, %{assigns: %{session: %Session{} = session}} = socket) do
+    {:noreply, assign(socket, session: nil, last_session: session)}
   end
 
-  def handle_event("start_session", _params, socket) do
-    {:noreply, assign(socket, :session, %{socket.assigns.last_session | start_datetime: DateTime.utc_now()})}
+  def handle_event("start_session", _params, %{assigns: %{session: nil, last_session: %Session{} = last}} = socket) do
+    {:noreply, assign(socket, :session, %{last | start_datetime: DateTime.utc_now()})}
   end
+
+  # A second click that arrives before the page shows the first one's result.
+  def handle_event(event, _params, socket) when event in ["set_workplace", "stop_session", "start_session"],
+    do: {:noreply, socket}
 
   def handle_event("decide_item", %{"id" => id, "decision" => decision}, socket) do
     LiveToast.send_toast(
