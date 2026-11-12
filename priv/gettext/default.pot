@@ -2006,6 +2006,11 @@ msgstr ""
 msgid "Buyer identifier"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Buyer type"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "CEO of a television production company"
@@ -2099,6 +2104,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Cash"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Cash accounting"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/entry_categories.ex
@@ -3178,6 +3188,11 @@ msgstr ""
 msgid "Correspondence address"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Correspondence country"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/search_overlay.ex
 #, elixir-autogen, elixir-format
 msgctxt "invoice type badge"
@@ -4197,6 +4212,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "employee tab"
 msgid "Documents"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Domestic invoice"
 msgstr ""
 
 #: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
@@ -5410,6 +5430,11 @@ msgstr ""
 msgid "Foreign currency detected"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Foreign invoice"
+msgstr ""
+
 #: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Foreign per diem"
@@ -6093,6 +6118,7 @@ msgctxt "leave type"
 msgid "Indisposition"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Individual"
@@ -6367,6 +6393,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Invoice type"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/views/index.ex
@@ -8480,6 +8511,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "PDF, up to 8 MB. For files up to 32 MB, we try lossless compression locally on Firmowid's server. PDFs with electronic signatures are not modified."
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "PESEL"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
