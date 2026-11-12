@@ -1,15 +1,13 @@
 defmodule FirmowidWeb.Delegations.Components.DelegationsList do
-  @moduledoc "Shared delegation list for employee profiles and management tabs."
+  @moduledoc "The employee's own business trips on their profile."
 
   use FirmowidWeb, :html
 
-  import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.Delegation
   import Phoenix.Component, except: [link: 1]
 
   attr :delegations, :list, required: true
-  attr :management?, :boolean, default: false
 
   @spec delegations_list(map()) :: Phoenix.LiveView.Rendered.t()
   def delegations_list(assigns) do
@@ -21,20 +19,14 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
       >
         <.delegation_title
           delegation={delegation}
-          is_link={
-            delegation.status == :complete ||
-              (delegation.status in [:in_progress, :awaiting_signature, :submitted] && !@management?)
-          }
+          is_link={delegation.status in [:in_progress, :awaiting_signature, :submitted, :complete]}
         />
         <p class="shrink-0 text-sm tabular-nums">
           <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />
         </p>
         <.status_badge status={delegation.status} />
         <.link
-          :if={
-            !@management? && delegation.status == :pending &&
-              is_nil(delegation.signed_command_blob_id)
-          }
+          :if={delegation.status == :pending && is_nil(delegation.signed_command_blob_id)}
           kind="button"
           variant="outline"
           size="small"
@@ -42,17 +34,6 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
         >
           {gettext("Edit")}
         </.link>
-        <.button
-          :if={@management? && delegation.status == :pending}
-          type="button"
-          variant="primary"
-          accent="teal"
-          size="small"
-          phx-click="approve_delegation"
-          phx-value-id={delegation.id}
-        >
-          {gettext("Approve")}
-        </.button>
       </li>
     </ul>
     <p :if={@delegations == []} class="text-sm text-grey-500">{gettext("No business trips.")}</p>
