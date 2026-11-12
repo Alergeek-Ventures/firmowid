@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   def suggestions(%{type: type}) when type in ["employee", "project"], do: []
 
-  # Fixed scenarios the current tools answer; data-driven tiles come later.
+  # Fixed scenarios the current tools answer.
   def suggestions(nil) do
     for tile <- tiles(), do: {tile.key, tile.question}
   end
