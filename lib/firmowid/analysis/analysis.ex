@@ -598,19 +598,15 @@ defmodule Firmowid.Analysis do
       |> Finances.list_transactions!(scope: analysis_scope)
       |> Enum.filter(&(&1.salary_month in Date.range(date_from, date_to)))
 
-    transactions = skipped_transactions ++ salary_transactions
+    salary_tags = salary_project_tags(salary_transactions, scope)
 
-    all_entities = build_entity_id_list(sales_invoices, cost_invoices, skipped_transactions)
-
-    entity_tags_map =
-      all_entities
-      |> load_entity_tags_map(scope)
-      |> Map.merge(salary_tags_map(salary_transactions, analysis_scope, scope))
-
+    # Stored tags are read as the caller.
     %{
-      transactions: attach_entity_tags(transactions, :transaction, entity_tags_map),
-      sales_invoices: attach_entity_tags(sales_invoices, :sales_invoice, entity_tags_map),
-      cost_invoices: attach_entity_tags(cost_invoices, :cost_invoice, entity_tags_map)
+      transactions:
+        Ash.load!(skipped_transactions, [entity_tags: :tag_definition], scope: scope) ++
+          Enum.map(salary_transactions, &%{&1 | entity_tags: Map.fetch!(salary_tags, &1.id)}),
+      sales_invoices: Ash.load!(sales_invoices, [entity_tags: :tag_definition], scope: scope),
+      cost_invoices: Ash.load!(cost_invoices, [entity_tags: :tag_definition], scope: scope)
     }
   end
 
@@ -657,44 +653,14 @@ defmodule Firmowid.Analysis do
 
   defp analysis_relevant_invoice?(_, _own_accounts), do: false
 
-  defp build_entity_id_list(sales_invoices, cost_invoices, transactions) do
-    si = Enum.map(sales_invoices, &{:sales_invoice, &1.id})
-    ci = Enum.map(cost_invoices, &{:cost_invoice, &1.id})
-    tx = Enum.map(transactions, &{:transaction, &1.id})
-    si ++ ci ++ tx
-  end
-
-  defp load_entity_tags_map([], _scope), do: %{}
-
-  defp load_entity_tags_map(entity_ids, scope) do
-    grouped = Enum.group_by(entity_ids, &elem(&1, 0), &elem(&1, 1))
-
-    grouped
-    |> Enum.flat_map(fn {entity_type, ids} ->
-      %{entity_type: entity_type, resource_ids: ids}
-      |> EntityTag.list!(
-        scope: scope,
-        load: :tag_definition
-      )
-      |> Enum.map(&{entity_type, &1})
-    end)
-    |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
-  end
-
   @doc """
   Project tags of transfers pinned to a salary, keyed by transaction ID, derived
   from the time tracked in the salary month like the totals; never stored.
   """
   @spec salary_project_tags([Transaction.t()], Scope.t()) :: %{String.t() => [EntityTag.t()]}
+  def salary_project_tags([], _scope), do: %{}
+
   def salary_project_tags(transactions, scope) do
-    transactions
-    |> salary_tags_map(analysis_scope(scope), scope)
-    |> Map.new(fn {{:transaction, id}, tags} -> {id, tags} end)
-  end
-
-  defp salary_tags_map([], _analysis_scope, _scope), do: %{}
-
-  defp salary_tags_map(transactions, analysis_scope, scope) do
     seconds_by_salary =
       transactions
       |> Enum.map(& &1.salary_month)
@@ -704,7 +670,7 @@ defmodule Firmowid.Analysis do
           %{month: month.month, year: month.year},
           load: [:duration, :member],
           query: [filter: [member: [user_id: [in: Enum.map(transactions, & &1.salary_user_id)]]]],
-          scope: analysis_scope
+          scope: analysis_scope(scope)
         )
       end)
       |> Enum.reject(&(is_nil(&1.project_id) or &1.duration <= 0))
@@ -739,19 +705,12 @@ defmodule Firmowid.Analysis do
           )
         end
 
-      {{:transaction, transaction.id}, if(tags == [], do: [%EntityTag{kind: :company}], else: tags)}
+      {transaction.id, if(tags == [], do: [%EntityTag{kind: :company}], else: tags)}
     end)
   end
 
   defp analysis_scope(%Scope{tenant: tenant}) do
     %Scope{actor: %SystemActor{org_id: tenant, role: :analysis_reader}, tenant: tenant}
-  end
-
-  defp attach_entity_tags(entities, entity_type, entity_tags_map) do
-    Enum.map(entities, fn entity ->
-      tags = Map.get(entity_tags_map, {entity_type, entity.id}, [])
-      Map.put(entity, :entity_tags, tags)
-    end)
   end
 
   defp internal?(tags), do: Enum.any?(tags, &(&1.kind == :internal))
