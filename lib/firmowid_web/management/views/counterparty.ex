@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     # VatIdCheckWorker checks a saved number right away; show its result when it lands.
     if connected?(socket), do: Endpoint.subscribe("counterparty:vat_id_checked:#{id}")
 
-    {:ok, assign(socket, :params, %{})}
+    {:ok, socket}
   end
 
   @impl true
@@ -37,16 +37,13 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     params = Navigation.counterparty_params(params)
     return_path = Navigation.counterparty_return_path(params)
 
-    case Invoicing.get_counterparty(id,
-           load: [:display_label],
-           scope: scope,
-           not_found_error?: false
-         ) do
+    case Invoicing.get_counterparty(id, scope: scope, not_found_error?: false) do
       {:ok, nil} ->
         {:noreply, push_navigate(socket, to: return_path)}
 
       {:ok, counterparty} ->
-        invoice_filter = parse_invoice_filter(params["filtr_faktur"])
+        invoice_filter =
+          Navigation.parse_counterparty_invoice_filter(params["filtr_faktur"]) || :all
 
         {:noreply,
          socket
@@ -236,13 +233,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp archive_notice(assigns) do
     ~H"""
-    <div
-      :if={@counterparty.archived_at}
-      class={[
-        "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card",
-        @class
-      ]}
-    >
+    <div class={[
+      "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card",
+      @class
+    ]}>
       <Lucideicons.info class="size-4" />
       <p class="text-sm/snug text-balance">
         {gettext(
@@ -533,7 +527,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             }
             patch={
               Navigation.counterparty_path(@counterparty.id, %{
-                filtr_faktur: encode_invoice_filter(value),
+                filtr_faktur: Navigation.encode_counterparty_invoice_filter(value),
                 powrot_do: @params["powrot_do"]
               })
             }
@@ -708,10 +702,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp maybe_put_reconciliation(args, :paid), do: Map.put(args, :reconciliation, :matched)
   defp maybe_put_reconciliation(args, :all), do: args
 
-  defp parse_invoice_filter(filter), do: Navigation.parse_counterparty_invoice_filter(filter) || :all
-
-  defp encode_invoice_filter(filter), do: Navigation.encode_counterparty_invoice_filter(filter)
-
   defp build_stats(counterparty, invoices) do
     paid_invoices = Enum.filter(invoices, &(&1.reconciliation_status == :matched))
 
@@ -751,8 +741,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_status(:matched), do: {pgettext("invoice payment status", "paid"), "bg-teal-100 text-teal-700"}
 
-  defp invoice_status(_), do: {pgettext("invoice payment status", "paid"), "bg-teal-100 text-teal-700"}
-
   defp money_to_string(nil), do: "—"
   defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)
 
@@ -769,11 +757,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp format_date(nil), do: "—"
   defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
 
-  defp maybe_country(""), do: "—"
-  defp maybe_country(code), do: CountryCodes.country_name(code)
-
-  defp country_flag(nil), do: "🏳️"
-  defp country_flag(""), do: "🏳️"
   defp country_flag("EL"), do: country_flag("GR")
   defp country_flag("XI"), do: "🇬🇧"
 
@@ -787,12 +770,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     _error -> "🏳️"
   end
 
-  defp country_label(nil), do: "—"
-  defp country_label(""), do: "—"
-
-  defp country_label(code) do
-    "#{country_flag(code)} #{maybe_country(code)}"
-  end
+  # The country is required, so every saved counterparty has one.
+  defp country_label(code), do: "#{country_flag(code)} #{CountryCodes.country_name(code)}"
 
   defp formatted_multiline(nil), do: "—"
   defp formatted_multiline(""), do: "—"
