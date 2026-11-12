@@ -1,12 +1,15 @@
 defmodule Firmowid.Invoicing.SalesInvoice.Numbering do
   @moduledoc """
   Sales invoice numbers: the supported numbering formats, organization initials
-  used as a yearly prefix, and the organization's existing numbers.
+  used as a yearly prefix, the organization's existing numbers and the next free
+  number of a sequence.
   """
 
   alias Firmowid.Invoicing.SalesInvoice
 
   require Ash.Query
+
+  @type sequence :: {:monthly | :yearly, String.t() | nil}
 
   @monthly_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
   @yearly_number_regex ~r/^(?:([A-Z]+)\/)?(\d+)\/(\d{4})$/
@@ -85,9 +88,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Numbering do
     Enum.join(List.wrap(series) ++ [num, date.year], "/")
   end
 
-  @doc false
-  @spec pad_two(integer()) :: String.t()
-  def pad_two(number), do: String.pad_leading("#{number}", 2, "0")
+  defp pad_two(number), do: String.pad_leading("#{number}", 2, "0")
 
   @legal_form_words ~w(
     SP SPOLKA Z OO O OGRANICZONA ODPOWIEDZIALNOSCIA SA AKCYJNA SK SKA SPK SJ JAWNA
@@ -140,4 +141,97 @@ defmodule Firmowid.Invoicing.SalesInvoice.Numbering do
     |> then(&SalesInvoice.list!(Keyword.put(opts, :query, &1)))
     |> Enum.map(& &1.invoice_number)
   end
+
+  @doc """
+  Returns the next free number of each `{format, series}` sequence on `date`:
+  one above the sequence's highest counter among `numbers` in the date's month
+  (monthly) or year (yearly), skipping numbers already in `numbers`.
+  """
+  @spec next_numbers([String.t()], Date.t(), [sequence()]) :: %{sequence() => String.t()}
+  def next_numbers(numbers, date, sequences) do
+    counters = current_number_counters(numbers, date)
+    occupied = MapSet.new(numbers)
+
+    Map.new(sequences, fn {format, series} = sequence ->
+      number =
+        counters
+        |> Map.get(sequence, 0)
+        |> Kernel.+(1)
+        |> Stream.iterate(&(&1 + 1))
+        |> Enum.find_value(fn counter ->
+          candidate = format_invoice_number(counter, format, date, series)
+          if not MapSet.member?(occupied, candidate), do: candidate
+        end)
+
+      {sequence, number}
+    end)
+  end
+
+  @doc """
+  Returns the next free number of one sequence on `date`, see `next_numbers/3`.
+  """
+  @spec next_number([String.t()], :monthly | :yearly, Date.t(), String.t() | nil) :: String.t()
+  def next_number(numbers, format, date, series) do
+    numbers
+    |> next_numbers(date, [{format, series}])
+    |> Map.fetch!({format, series})
+  end
+
+  @doc """
+  Lists the warnings about `number` issued on `date`, given the organization's
+  other `numbers` and the `suggestions` offered instead: an unsupported format
+  and a number already in use carry the suggestions, a number above its
+  sequence's next free number carries that number.
+  """
+  @spec warnings(String.t(), Date.t(), [String.t()], [String.t()]) :: [
+          {:invalid_format | :duplicate, [String.t()]} | {:gap, String.t()}
+        ]
+  def warnings(number, date, numbers, suggestions) do
+    parsed = parse_invoice_number(number)
+
+    Enum.reject(
+      [
+        if(parsed == :error, do: {:invalid_format, suggestions}),
+        if(number in numbers, do: {:duplicate, suggestions}),
+        gap_warning(parsed, numbers, date)
+      ],
+      &is_nil/1
+    )
+  end
+
+  defp gap_warning({:ok, %{num: num, format: format, series: series}}, numbers, date) do
+    expected = next_number(numbers, format, date, series)
+
+    case parse_invoice_number(expected) do
+      {:ok, %{num: expected_num}} when num > expected_num -> {:gap, expected}
+      _ -> nil
+    end
+  end
+
+  defp gap_warning(:error, _numbers, _date), do: nil
+
+  defp current_number_counters(numbers, date) do
+    Enum.reduce(numbers, %{}, fn number, counters ->
+      with {:ok, parsed} <- parse_invoice_number(number),
+           true <- number_in_period?(number, parsed.format, date) do
+        Map.update(
+          counters,
+          {parsed.format, parsed.series},
+          parsed.num,
+          &Kernel.max(&1, parsed.num)
+        )
+      else
+        _ -> counters
+      end
+    end)
+  end
+
+  defp number_in_period?(number, :monthly, date) do
+    [_counter, month, year | _] = String.split(number, "/", parts: 4)
+
+    month == String.pad_leading(Integer.to_string(date.month), 2, "0") and
+      year == Integer.to_string(date.year)
+  end
+
+  defp number_in_period?(number, :yearly, date), do: List.last(String.split(number, "/")) == Integer.to_string(date.year)
 end

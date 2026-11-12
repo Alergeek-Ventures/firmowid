@@ -905,9 +905,6 @@ defmodule Firmowid.Invoicing do
         id -> Numbering.read_all_invoice_numbers(opts, id)
       end
 
-    counters = current_number_counters(available_numbers, date)
-    occupied = MapSet.new(available_numbers)
-
     existing_monthly_sequences =
       all_numbers
       |> Enum.map(&Numbering.parse_invoice_number/1)
@@ -922,48 +919,14 @@ defmodule Firmowid.Invoicing do
         initials -> [{:yearly, initials}]
       end
 
-    ([{:monthly, nil}, {:monthly, "A"}, {:yearly, nil}] ++
-       initials_sequences ++ existing_monthly_sequences)
-    |> Enum.uniq()
-    |> Map.new(fn {format, series} = sequence ->
-      number =
-        counters
-        |> Map.get(sequence, 0)
-        |> Kernel.+(1)
-        |> Stream.iterate(&(&1 + 1))
-        |> Enum.find_value(fn counter ->
-          candidate = Numbering.format_invoice_number(counter, format, date, series)
-          if not MapSet.member?(occupied, candidate), do: candidate
-        end)
+    sequences =
+      Enum.uniq(
+        [{:monthly, nil}, {:monthly, "A"}, {:yearly, nil}] ++
+          initials_sequences ++ existing_monthly_sequences
+      )
 
-      {sequence, number}
-    end)
+    Numbering.next_numbers(available_numbers, date, sequences)
   end
-
-  defp current_number_counters(numbers, date) do
-    Enum.reduce(numbers, %{}, fn number, counters ->
-      with {:ok, parsed} <- Numbering.parse_invoice_number(number),
-           true <- number_in_period?(number, parsed.format, date) do
-        Map.update(
-          counters,
-          {parsed.format, parsed.series},
-          parsed.num,
-          &Kernel.max(&1, parsed.num)
-        )
-      else
-        _ -> counters
-      end
-    end)
-  end
-
-  defp number_in_period?(number, :monthly, date) do
-    [_counter, month, year | _] = String.split(number, "/", parts: 4)
-
-    month == String.pad_leading(Integer.to_string(date.month), 2, "0") and
-      year == Integer.to_string(date.year)
-  end
-
-  defp number_in_period?(number, :yearly, date), do: List.last(String.split(number, "/")) == Integer.to_string(date.year)
 
   # Callers pass either `scope:` or the `actor:`/`tenant:` options of an action context.
   defp organization_name(opts) do
