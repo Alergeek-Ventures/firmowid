@@ -10,8 +10,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
 
   alias FirmowidWeb.Delegations.Utilities.Navigation
   alias FirmowidWeb.Delegations.Utilities.SettlementDocument
-
-  @profile_signature_url "https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
+  alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
 
   @doc "Renders the responsive signature, upload, preview, and submission screen."
   @spec settlement_signature_page(map()) :: Phoenix.LiveView.Rendered.t()
@@ -26,7 +25,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
       |> assign(sign_before: sign_before, sign_after: sign_after)
       |> assign(:pdf_filename, SettlementDocument.filename(assigns.delegation))
       |> assign(:pdf_url, Navigation.settlement_download_path(assigns.delegation.reference))
-      |> assign(:profile_signature_url, @profile_signature_url)
       |> assign(:entry, List.first(assigns.uploads.signed_settlement.entries))
 
     ~H"""
@@ -106,7 +104,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
                   {@sign_before}
                   <.link
                     kind="unstyled"
-                    external={@profile_signature_url}
+                    external={ElectronicSignature.trusted_profile_url()}
                     class="inline-flex items-center gap-1 font-medium text-teal-700"
                   >
                     {gettext("with a Trusted Profile")} <Lucideicons.external_link class="size-4" />
