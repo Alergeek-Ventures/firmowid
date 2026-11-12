@@ -355,9 +355,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp parse_step_param(step) when is_integer(step), do: number_to_step(step)
-  defp parse_step_param(step) when is_atom(step), do: step
-
   # Clamp step to max allowed based on draft data
   defp clamp_step(requested_step, max_allowed_step) do
     requested_idx = step_to_number(requested_step)
@@ -373,14 +370,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp calculate_max_step(draft) do
     cond do
       draft.sale_date && draft.due_date && draft.payment_method -> :preview
-      has_items?(draft) -> :payment
+      draft.items != [] -> :payment
       draft.buyer_country -> :items
       true -> :counterparty
     end
   end
-
-  defp has_items?(%{items: items}) when is_list(items), do: items != []
-  defp has_items?(_draft), do: false
 
   defp maybe_setup_step(socket, :counterparty, params) do
     # Counterparty selection - setup search/tabs
@@ -681,7 +675,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     Navigation.sales_invoice_creator_path(params)
   end
 
-  # Query params management (for step 0 tabs/search)
+  # Query params of the counterparty step (tabs, search)
 
   defp parse_filter(raw_filter), do: QueryCodec.parse_counterparty_type(raw_filter)
 
@@ -977,19 +971,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("update_invoice_number", %{"invoice_number" => invoice_number}, socket) do
-    preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
-    issue_date = socket.assigns.preview_invoice.issue_date
-
-    scope = socket.assigns.ash_scope
-    actor = socket.assigns.current_user
-
-    invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
-
-    {:noreply,
-     socket
-     |> assign(:invoice_number, invoice_number)
-     |> assign(:preview_invoice, preview_invoice)
-     |> assign(:invoice_warnings, invoice_warnings)}
+    {:noreply, assign_invoice_number(socket, invoice_number)}
   end
 
   def handle_event("update_notes", %{"invoice_note" => invoice_note, "internal_note" => internal_note}, socket) do
@@ -1022,21 +1004,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("select_invoice_series", %{"number" => invoice_number}, socket) do
-    # User clicked a series suggestion button - set the invoice number
-    preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
-    issue_date = socket.assigns.preview_invoice.issue_date
-
-    # Validate (should be empty for suggestions, but check anyway)
-    scope = socket.assigns.ash_scope
-    actor = socket.assigns.current_user
-
-    invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
-
-    {:noreply,
-     socket
-     |> assign(:invoice_number, invoice_number)
-     |> assign(:preview_invoice, preview_invoice)
-     |> assign(:invoice_warnings, invoice_warnings)}
+    {:noreply, assign_invoice_number(socket, invoice_number)}
   end
 
   def handle_event("save_as_draft", _params, socket) do
@@ -1083,12 +1051,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("toggle_should_send_emails", %{"should_send_emails" => value}, socket) do
-    {:noreply, assign(socket, :should_send_emails, to_boolean(value))}
+  # An unchecked checkbox sends no value.
+  def handle_event("toggle_should_send_emails", params, socket) do
+    {:noreply, assign(socket, :should_send_emails, params["should_send_emails"] == "true")}
   end
 
-  def handle_event("toggle_should_send_emails", _params, socket) do
-    {:noreply, assign(socket, :should_send_emails, false)}
+  defp assign_invoice_number(socket, invoice_number) do
+    preview_invoice = socket.assigns.preview_invoice
+    scope = socket.assigns.ash_scope
+    actor = socket.assigns.current_user
+
+    socket
+    |> assign(:invoice_number, invoice_number)
+    |> assign(:preview_invoice, Map.put(preview_invoice, :invoice_number, invoice_number))
+    |> assign(
+      :invoice_warnings,
+      number_warnings(String.trim(invoice_number), preview_invoice.issue_date, actor, scope)
+    )
   end
 
   defp handle_counterparty_selection(socket, counterparty_id) do
@@ -1183,10 +1162,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp get_error_message(_), do: gettext("Could not issue the invoice.")
 
-  def to_boolean(bool) when is_boolean(bool), do: bool
-  def to_boolean("true"), do: true
-  def to_boolean("false"), do: false
-
   defp maybe_clear_should_send_emails(socket, %{valid: true}), do: socket
 
   defp maybe_clear_should_send_emails(socket, _check), do: assign(socket, :should_send_emails, false)
@@ -1200,8 +1175,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     if String.trim(number || "") == "", do: {:error, :missing_invoice_number}, else: :ok
   end
 
-  # Confirmed VAT invoices from the previous 2 months (replaces list_recent action).
-  # The range covers [first_of_month - 2 months, last day of previous month].
+  # Confirmed VAT invoices from the two months before the current one.
   defp recent_invoices(scope) do
     today = Date.utc_today()
     first_of_this_month = %{today | day: 1}
