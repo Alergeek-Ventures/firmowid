@@ -295,11 +295,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         restore_draft(socket, scope, draft, params)
 
       {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, gettext("The wizard draft was not found, starting over."))
-         |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
+        {:noreply, restart_wizard(socket)}
     end
+  end
+
+  defp restart_wizard(socket) do
+    socket
+    |> put_flash(:info, gettext("The wizard draft was not found, starting over."))
+    |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)
   end
 
   defp restore_draft(socket, scope, draft, params) do
@@ -805,6 +808,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           |> assign(:draft, updated_draft)
 
         {:noreply, setup_partial_copy(socket, changeset, draft.id)}
+
+      # Another tab issued or discarded this draft.
+      {:error, %{errors: [%Ash.Error.Changes.StaleRecord{}]}} ->
+        {:noreply, restart_wizard(socket)}
     end
   end
 
