@@ -20,14 +20,9 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Inbox.Utilities.Queue
 
-  # Checks for what changes with time alone; writes are pushed right away.
-  @tick_ms to_timeout(minute: 5)
-
   @impl true
   def mount(_params, _session, socket) do
     if flag_enabled?(:inbox, socket.assigns) do
-      if connected?(socket), do: schedule_tick()
-
       {:ok, assign(socket, page_title: pgettext("sidebar", "Inbox"), items: [], fresh: MapSet.new())}
     else
       {:ok, push_navigate(socket, to: ~p"/fakturowanie")}
@@ -48,15 +43,9 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   @impl true
   def handle_info(:inbox_refresh, socket), do: {:noreply, reload(socket)}
 
-  # Overdue invoices and expiring connections change with time alone, without
-  # any write to tell about it.
-  def handle_info(:inbox_tick, socket) do
-    schedule_tick()
-    send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
-    {:noreply, reload(socket)}
-  end
-
-  defp schedule_tick, do: Process.send_after(self(), :inbox_tick, @tick_ms)
+  # Overdue invoices and expiring connections change with time alone (see
+  # `FirmowidWeb.Inbox.Hooks.LiveQueue`).
+  def handle_info(:inbox_tick, socket), do: {:noreply, reload(socket)}
 
   # Reloads the current layer and marks the items that were not there before,
   # so the page can point them out.

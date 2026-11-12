@@ -19,6 +19,10 @@ defmodule FirmowidWeb.Inbox.Hooks.LiveQueue do
   # Long enough to gather a burst of changes, short enough to feel immediate.
   @gather_ms 500
 
+  # Overdue invoices and expiring connections change with time alone, without
+  # any write to tell about it.
+  @tick_ms to_timeout(minute: 5)
+
   @doc false
   @spec on_mount(:default, map(), map(), LiveView.Socket.t()) :: {:cont, LiveView.Socket.t()}
   def on_mount(:default, _params, _session, socket) do
@@ -26,6 +30,7 @@ defmodule FirmowidWeb.Inbox.Hooks.LiveQueue do
       %{member: %{organization_id: organization_id}} when is_binary(organization_id) ->
         if LiveView.connected?(socket) and flag_enabled?(:inbox, socket.assigns) do
           InboxChanged.subscribe(organization_id)
+          Process.send_after(self(), :inbox_tick, @tick_ms)
           {:cont, LiveView.attach_hook(socket, :inbox_live_queue, :handle_info, &handle_info/2)}
         else
           {:cont, socket}
@@ -52,6 +57,12 @@ defmodule FirmowidWeb.Inbox.Hooks.LiveQueue do
     end
 
     socket = LiveView.put_private(socket, :inbox_changes, MapSet.new())
+    if socket.view == Index, do: {:cont, socket}, else: {:halt, socket}
+  end
+
+  defp handle_info(:inbox_tick, socket) do
+    Process.send_after(self(), :inbox_tick, @tick_ms)
+    LiveView.send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
     if socket.view == Index, do: {:cont, socket}, else: {:halt, socket}
   end
 
