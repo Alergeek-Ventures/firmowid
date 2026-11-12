@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    Invoicing.delete_cost_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
+    Invoicing.destroy_cost_invoice!(socket.assigns.invoice, scope: socket.assigns.ash_scope)
 
     {:noreply,
      socket
