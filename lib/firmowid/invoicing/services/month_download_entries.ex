@@ -89,14 +89,7 @@ defmodule Firmowid.Invoicing.Services.MonthDownloadEntries do
 
   @spec include_cost_invoice?(map(), include_options()) :: boolean()
   defp include_cost_invoice?(invoice, include_opts) do
-    extension =
-      invoice.blob.url
-      |> String.split("?")
-      |> hd()
-      |> Path.extname()
-      |> String.downcase()
-
-    case extension do
+    case String.downcase(blob_extension(invoice)) do
       ".pdf" -> include_opts.include_digital
       ".xml" -> include_opts.include_ksef
       _image -> include_opts.include_photos
@@ -107,28 +100,17 @@ defmodule Firmowid.Invoicing.Services.MonthDownloadEntries do
     if pdf_downloadable?(document) do
       %{source: {:generated_pdf, :cost, document.id}, path: "kosztowe/#{file_name}.pdf"}
     else
-      blob_url = document.blob.url
-
-      file_extension =
-        blob_url
-        |> String.split("?")
-        |> hd()
-        |> Path.extname()
-
-      %{source: {:remote_url, blob_url}, path: "kosztowe/#{file_name}#{file_extension}"}
+      %{
+        source: {:remote_url, document.blob.url},
+        path: "kosztowe/#{file_name}#{blob_extension(document)}"
+      }
     end
   end
 
   defp pdf_downloadable?(%{ksef_number: ksef_number}) when not is_nil(ksef_number), do: true
 
-  defp pdf_downloadable?(document) do
-    extension =
-      document.blob.url
-      |> String.split("?")
-      |> hd()
-      |> Path.extname()
-      |> String.downcase()
+  defp pdf_downloadable?(document), do: String.downcase(blob_extension(document)) == ".pdf"
 
-    extension == ".pdf"
-  end
+  # The blob URL is presigned, so the query string is dropped before reading the extension.
+  defp blob_extension(document), do: document.blob.url |> String.split("?") |> hd() |> Path.extname()
 end
