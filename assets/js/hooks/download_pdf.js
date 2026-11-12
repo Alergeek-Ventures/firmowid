@@ -1,3 +1,13 @@
+// Phoenix's send_download percent-encodes a name with characters outside the
+// unreserved set and repeats it as `filename*`, which is the one to decode.
+const downloadFilename = (contentDisposition) => {
+  const encoded = contentDisposition.match(/filename\*=utf-8''([^;]+)/i);
+  if (encoded) return decodeURIComponent(encoded[1]);
+
+  const plain = contentDisposition.match(/filename="?([^"]+)"?/);
+  return plain ? plain[1] : "faktura.pdf";
+};
+
 export const DownloadPdf = {
   mounted() {
     this.el.addEventListener("click", (e) => {
@@ -23,9 +33,7 @@ export const DownloadPdf = {
           if (!r.ok) {
             throw new Error(`PDF generation failed: ${r.status}`);
           }
-          const cd = r.headers.get("content-disposition") || "";
-          const match = cd.match(/filename="?([^"]+)"?/);
-          const filename = match ? match[1] : "faktura.pdf";
+          const filename = downloadFilename(r.headers.get("content-disposition") || "");
           return r.blob().then((blob) => ({ blob, filename }));
         })
         .then(({ blob, filename }) => {
