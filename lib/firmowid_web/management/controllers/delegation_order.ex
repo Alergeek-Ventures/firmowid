@@ -18,20 +18,25 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
     with true <- conn.assigns.current_user.member.role == :admin,
          {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope, load: [:member]),
          {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
-         {:ok, employment_contract} <-
-           Payroll.load_current_contract(employee.member.id, scope: scope),
-         true <- delegation.member_id == employee.member.id,
-         {:ok, pdf} <- render_pdf(employee, employment_contract, delegation) do
+         true <- delegation.member_id == employee.member.id do
+      {:ok, employment_contract} = Payroll.load_current_contract(employee.member.id, scope: scope)
+      {:ok, pdf} = render_pdf(employee, employment_contract, delegation)
+
       send_download(conn, {:binary, pdf},
         filename: DelegationOrderPdf.filename(employee),
         content_type: "application/pdf"
       )
     else
-      _ ->
-        conn
-        |> LiveToast.put_toast(:error, gettext("You do not have access to this business trip."))
-        |> redirect(to: ~p"/zarzadzanie/pracownicy")
+      false -> deny(conn)
+      # A record outside the actor's reach reads as not found.
+      {:error, %Ash.Error.Invalid{}} -> deny(conn)
     end
+  end
+
+  defp deny(conn) do
+    conn
+    |> LiveToast.put_toast(:error, gettext("You do not have access to this business trip."))
+    |> redirect(to: ~p"/zarzadzanie/pracownicy")
   end
 
   defp render_pdf(employee, employment_contract, delegation) do
