@@ -169,15 +169,23 @@ defmodule FirmowidWeb.BankSync.Views.Create do
         %{"institution-id" => institution_id, "institution-transaction-total-days" => transaction_total_days},
         socket
       ) do
-    {:ok, link} =
-      Finances.create_requisition(
-        institution_id,
-        String.to_integer(transaction_total_days),
-        socket.assigns.redirect_url,
-        scope: socket.assigns.ash_scope
-      )
+    case Finances.create_requisition(
+           institution_id,
+           String.to_integer(transaction_total_days),
+           socket.assigns.redirect_url,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, link} ->
+        {:noreply, assign(socket, :requisition_link, link)}
 
-    {:noreply, assign(socket, :requisition_link, link)}
+      {:error, _error} ->
+        {:noreply,
+         LiveToast.put_toast(
+           socket,
+           :error,
+           gettext("An error occurred while connecting the bank account. Try again.")
+         )}
+    end
   end
 
   attr :rest, :global

@@ -289,8 +289,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/sprzedazowe/:id", Invoicing.SalesInvoices.Views.Show, :show
       live "/transakcje/:id", Invoicing.Transactions.Views.Show, :show
 
-      live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
-
       live "/zaproszenia", Organization.Invites.Views.Index, :index
 
       live "/analiza", Analysis.Views.Dashboard, :index
@@ -314,6 +312,7 @@ defmodule FirmowidWeb.Core.Router do
       ] do
       live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
       live "/limit-planu", Billing.Views.PlanLimit, :index
+      live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Employee, :projects
