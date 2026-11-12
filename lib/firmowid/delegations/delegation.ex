@@ -118,7 +118,6 @@ defmodule Firmowid.Delegations.Delegation do
 
     update :approve do
       description "Approve a pending delegation and mark it as in progress."
-      primary? true
       require_atomic? false
       accept [:advance_amount, :signed_command_filename]
 
