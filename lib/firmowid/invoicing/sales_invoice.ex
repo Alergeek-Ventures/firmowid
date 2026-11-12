@@ -44,10 +44,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     * `:wait_for_ksef_submissions` — wait for KSeF to accept or reject issued invoices
     * `:get_next_number` — get next available invoice number for date/format/series
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
-
-  ## Public functions
-
-
   """
   use Ash.Resource,
     domain: Firmowid.Invoicing,
@@ -1211,8 +1207,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     attribute :invoice_note, :string, public?: true
     # Internal-only note, visible inside Firmowid only. Max 10_000 chars.
     attribute :internal_note, :string, public?: false
-    # Validate internal_note length (DB will allow large text but enforce here)
-    # Use an action-level validation instead of a bare validate/1 call inside attributes
 
     attribute :vat_exemption_type, :atom,
       public?: true,
@@ -1375,8 +1369,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     calculate :effective_items,
               {:array, :struct},
               Firmowid.Invoicing.Calculations.EffectiveItems
-
-    # net_value, vat_value, gross_value moved to aggregates (sum over expression calcs on items)
 
     calculate :effective_snapshot,
               :struct,

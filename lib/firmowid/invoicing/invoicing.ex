@@ -818,10 +818,7 @@ defmodule Firmowid.Invoicing do
 
   def hydrate_invoice_with_fa3_blob(invoice), do: invoice
 
-  # ---------------------------------------------------------------------------
-  # Logo / currency / numbering orchestration
-  # (moved from SalesInvoice — crosses context boundaries)
-  # ---------------------------------------------------------------------------
+  # ── Logo, currency and numbering ────────────────────────────────────
 
   @doc """
   Returns the organization's logo URL for the given organization ID.
