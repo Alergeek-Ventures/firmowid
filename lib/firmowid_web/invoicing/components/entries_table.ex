@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :columns,
         columns
       )
-      # A list of every month repeats the column headings under each month.
+      # A list of every month separates the months with a line naming each.
       |> assign(:by_month?, Enum.any?(assigns.invoicing_entries, &match?({:month, _}, &1)))
 
     ~H"""
@@ -113,11 +113,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         id="invoicing-entries"
         class={
           [
-            # from xl the full width lets the party take only what the fixed columns leave,
-            # so a long description cannot push the amount off the screen; narrower tables
-            # keep sizing their columns to the content, which keeps the party readable
-            "table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block xl:w-full",
-            # month headings start where they stick, so nothing moves as scrolling begins
+            # rows span the page at every width; from xl the fixed layout lets the party take
+            # only what the fixed columns leave, so a long description cannot push the amount
+            # off the screen; narrower tables size their columns to the content, which keeps
+            # the party readable
+            "w-full border-separate border-spacing-y-3 max-md:mt-0 max-md:block xl:table-fixed",
+            # the headings start where they stick, so nothing moves as scrolling begins
             if(@by_month?, do: "-mt-6", else: "-mt-8")
           ]
         }
@@ -139,10 +140,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             end
           ]}
         />
-        <thead
-          :if={not @by_month?}
-          class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-1 bg-grey-100 max-md:hidden"
-        >
+        <thead class={
+          [
+            "sticky z-1 bg-grey-100 max-md:hidden",
+            # the list of every month (`Index`) has a taller bar, 1.25rem more than the plain page header
+            if(@by_month?,
+              do: "top-[calc(var(--spacing-navbar)+var(--page-header-height)+1.25rem)]",
+              else: "top-[calc(var(--spacing-navbar)+var(--page-header-height))]"
+            )
+          ]
+        }>
           <tr>
             <th
               :for={column <- @columns}
@@ -165,7 +172,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           <%= for entry <- @invoicing_entries do %>
             <%= case entry do %>
               <% {:month, month} -> %>
-                <.month_row month={month} columns={@columns} />
+                <.month_row month={month} />
               <% %TransactionGroup{} = group -> %>
                 <.group_row
                   group={group}
@@ -189,40 +196,31 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <.load_indicator :if={@load_more} event={@load_more} />
       <script :type={Phoenix.LiveView.ColocatedHook} name=".MonthScroll">
         export default {
-          // Headings stick this far from the top. On phones they scroll with the page under the
-          // navbar, which their scroll margin matches, so the month on top is the last heading
-          // that passed below the navbar.
-          stickyTop(heading) {
-            const style = getComputedStyle(heading);
-            return style.position === "sticky" ? parseFloat(style.top) : parseFloat(style.scrollMarginTop) || 0;
+          // Rows pass out of sight here: under the column headings, which stick from md, or on
+          // phones, where the headings are hidden, under the navbar, which the separators' scroll
+          // margin matches.
+          topEdge(separator) {
+            const head = this.el.querySelector("thead");
+            return head.offsetHeight
+              ? parseFloat(getComputedStyle(head).top) + head.offsetHeight
+              : parseFloat(getComputedStyle(separator).scrollMarginTop) || 0;
           },
           mounted() {
             this.sync = () => {
               const rows = Array.from(this.el.querySelectorAll("tr[data-month]"));
-              // Headings stick at their offset; the last one there covers the others.
-              const stuck = rows.filter(row => {
-                const heading = row.querySelector("th");
-                return heading.getBoundingClientRect().top <= this.stickyTop(heading) + 0.5;
-              }).pop();
+              // The month on top is the last whose separator passed out of sight. The first month
+              // has none to pass from md, the column headings above it in its stead.
+              const edge = rows[0] && this.topEdge(rows[0]) + 0.5;
+              const current = rows.filter((row, index) =>
+                index === 0 || row.getBoundingClientRect().top <= edge
+              ).pop();
               const picker = document.getElementById("month");
-              const current = stuck ?? rows[0];
               if (current && picker) picker.value = current.dataset.label;
               // The server downloads the month on screen, so it hears of each new one.
               if (current && current.dataset.month !== this.month) {
                 this.month = current.dataset.month;
                 this.pushEvent("visible-month", {month: this.month});
               }
-              // The stuck heading is underlined once rows pass under it. A later month's heading
-              // sticks over the rows of the month before; the first heading rests where it sticks,
-              // so for it the first row tells, a row gap (12px) below it at rest. A shadow just below
-              // the heading, unlike a border inside it, leaves the headings' text in place and keeps
-              // the 8px gap the border leaves between them on the other lists.
-              const heading = stuck?.querySelector("th");
-              const underlined = heading && (stuck !== rows[0] ||
-                stuck.nextElementSibling?.getBoundingClientRect().top < heading.getBoundingClientRect().bottom + 11.5);
-              rows.forEach(row => row.querySelectorAll("th").forEach(cell =>
-                cell.classList.toggle("shadow-[0_4px_0_0_color-mix(in_oklab,var(--color-grey-700)_40%,transparent)]", underlined && row === stuck)
-              ));
             };
             this.onScroll = () => {
               if (this.frame) return;
@@ -239,21 +237,26 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             }, {rootMargin: "1200px 0px"});
             this.observe();
             this.sync();
-            this.handleEvent("scroll-to-month", ({month}) => {
-              // Months run newest first; a month without entries scrolls to the next older one.
-              const row = Array.from(this.el.querySelectorAll("tr[data-month]"))
-                .find(row => row.dataset.month <= month);
-              // No month to scroll to: the picker names the chosen one, so name the one on screen.
-              if (!row) return this.sync();
-              const heading = row.querySelector("th");
-              // The heading sticks, so the row's own box is measured from its unstuck neighbour.
-              const anchor = row.nextElementSibling ?? row;
-              const top = anchor.getBoundingClientRect().top + window.scrollY
-                - this.stickyTop(heading) - heading.offsetHeight - 12;
-              // Gliding across many months takes seconds, so a far month is shown at once.
-              const far = Math.abs(top - window.scrollY) > 3 * window.innerHeight;
-              window.scrollTo({top, behavior: far ? "instant" : "smooth"});
-            });
+            this.handleEvent("scroll-to-month", ({month}) => this.scrollToMonth(month));
+          },
+          scrollToMonth(month) {
+            // Months run newest first; a month without entries scrolls to the next older one.
+            const row = Array.from(this.el.querySelectorAll("tr[data-month]"))
+              .find(row => row.dataset.month <= month);
+            // No month to scroll to: the picker names the chosen one, so name the one on screen.
+            if (!row) return this.sync();
+            // A separator comes to rest just under the column headings, which makes its month
+            // the one on top. The hidden one of the first month has no box, so its first row
+            // comes to rest a row gap (12px) below them.
+            const top = row.offsetHeight
+              ? row.getBoundingClientRect().top + window.scrollY - this.topEdge(row)
+              : row.nextElementSibling.getBoundingClientRect().top + window.scrollY - this.topEdge(row) - 12;
+            // Newer months loading above show the first month's separator below the headings,
+            // where the page cannot scroll it yet, so the scroll is repeated once they are in.
+            this.pending = !row.offsetHeight && this.el.firstElementChild.dataset.load ? month : null;
+            // Gliding across many months takes seconds, so a far month is shown at once.
+            const far = Math.abs(top - window.scrollY) > 3 * window.innerHeight;
+            window.scrollTo({top, behavior: far ? "instant" : "smooth"});
           },
           observe() {
             this.observer.disconnect();
@@ -270,14 +273,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             const before = anchor && pageTop(anchor);
             this.pushEvent(event, {}, () => {
               if (anchor?.isConnected) window.scrollBy({top: pageTop(anchor) - before, behavior: "instant"});
-              // `updated` ran before the scroll above, so the heading on top is found again.
+              // `updated` ran before the scroll above, so the month on top is found again.
               this.sync();
               this.loading = false;
+              if (this.pending) this.scrollToMonth(this.pending);
               // Observing again reports an indicator still in range, which loads the next months.
               this.observe();
             });
           },
-          // A patch resets the headings' classes and may replace the indicators.
+          // A patch may add months or replace the indicators.
           updated() {
             this.sync();
             this.observe();
@@ -360,10 +364,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     end
   end
 
-  # Heads each month of a list that spans all of them with the column headings,
-  # sticking until the next month's heading covers it. The month picker above names
-  # the month on top, so the month itself is written out only on phones, where the
-  # picker scrolls away.
+  # Separates the months of a list that spans all of them with a line naming the month.
+  # From md the first month needs none: the column headings start it, and the month
+  # picker above names the month on top. On phones the picker scrolls away, so there
+  # every month is named.
+  #
+  # The line takes one cell and spans the row from it: a cell spanning every column would
+  # make a column of its own while the project column is hidden, which takes room from
+  # the others.
   defp month_row(assigns) do
     assigns = assign(assigns, :label, month_label(assigns.month))
 
@@ -372,27 +380,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       id={"month-#{Date.to_iso8601(@month)}"}
       data-month={Date.to_iso8601(@month)}
       data-label={@label}
-      class="max-md:block"
+      class="relative max-md:block max-md:scroll-mt-navbar md:first:hidden"
     >
-      <th
-        :for={{column, index} <- Enum.with_index(@columns)}
-        scope="col"
-        class={
-          [
-            # sticks under the taller bar of the list of every month (`Index`), 1.25rem lower than
-            # under the plain page header
-            "sticky top-[calc(var(--spacing-navbar)+var(--page-header-height)+1.25rem)] z-1 h-[60px] bg-grey-100 py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase max-md:static max-md:block max-md:h-auto max-md:scroll-mt-navbar max-md:pt-4 max-md:pb-0 max-md:pl-1",
-            index > 0 && "max-md:hidden",
-            column == "party" && "pl-5",
-            column == "project" &&
-              "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
-          ]
-        }
-      >
-        <span :if={index == 0} class="text-base font-medium text-black normal-case md:hidden">
-          {@label}
-        </span>
-        <span class="max-md:hidden"><.column_label column={column} /></span>
+      <th scope="colgroup" class="h-[30px] p-0 font-medium max-md:block">
+        <div class="absolute inset-0 flex items-center gap-4 pt-3 pb-1">
+          <span class="h-px min-w-px flex-1 bg-grey-200"></span>
+          <span class="text-caps-sm leading-[normal] whitespace-nowrap text-grey-500 uppercase">{@label}</span>
+          <span class="h-px min-w-px flex-1 bg-grey-200"></span>
+        </div>
       </th>
     </tr>
     """
@@ -428,20 +423,27 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :for={column <- @columns}
         class={
           [
-            "bg-white py-2 transition-all duration-500",
+            "py-2 transition-all duration-500",
             mobile_cell_styles(column),
             column == "project" && "pr-6 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden",
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
-            column == "amount" && @is_income && "bg-teal-200! text-teal-800",
-            column == "amount" && !@is_income && "bg-rust-200! text-rust-700",
-            # Draft invoices get a dotted border
-            @is_draft && column == "party" && "border-y-2 border-l-2 border-dashed border-grey-700/50",
-            @is_draft && column == "amount" &&
-              "border-y-2 border-r-2 border-dashed border-grey-700/50",
-            @is_draft && column not in ["party", "amount"] &&
-              "border-y-2 border-dashed border-grey-700/50"
+            # A draft is not issued yet: from md it lies on the page, outlined with a dashed
+            # line, its amount on a faint grey. On phones it stays a white tile like the others.
+            # Issued entries are white, with the amount filled.
+            if(@is_draft,
+              do: [
+                "border-y border-dashed border-grey-300 max-md:bg-white",
+                column == "party" && "border-l",
+                column == "amount" && "border-r bg-grey-200/25 text-teal-600"
+              ],
+              else: [
+                "bg-white",
+                column == "amount" && @is_income && "bg-teal-200! text-teal-800",
+                column == "amount" && !@is_income && "bg-rust-200! text-rust-700"
+              ]
+            )
           ]
         }
       >
@@ -470,26 +472,27 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp party_width_styles(nil), do: "max-w-[50vw] max-md:max-w-none"
   defp party_width_styles(_projects), do: "max-w-[50vw] max-md:max-w-none xl:max-w-[30vw]"
 
-  # Below md each row becomes a tile: party and amount on top, the first date
-  # underneath. Statuses and skip actions are left to the detail pages.
+  # Below md each row becomes a tile: the party on the left, its description under it,
+  # and on the right the amount beside the party and the first date beside the
+  # description. Statuses and skip actions are left to the detail pages.
   defp mobile_row_styles(draft?) do
     [
-      "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:overflow-hidden max-md:rounded-lg",
-      draft? && "max-md:border-2 max-md:border-dashed max-md:border-grey-700/50"
+      "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:overflow-hidden max-md:rounded-lg max-md:bg-white",
+      draft? && "max-md:border max-md:border-dashed max-md:border-grey-300"
     ]
   end
 
   defp mobile_cell_styles("party"),
     do:
-      "max-md:col-start-1 max-md:row-start-1 max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-1"
+      "max-md:col-start-1 max-md:row-span-2 max-md:row-start-1 max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-4"
 
   defp mobile_cell_styles(column) when column in ["issue_date", "value_date", "issue_or_value_date"],
     do:
-      "max-md:col-span-2 max-md:row-start-2 max-md:border-0 max-md:px-5 max-md:pt-0 max-md:pb-4 max-md:text-sm max-md:text-grey-700"
+      "max-md:col-start-2 max-md:row-start-2 max-md:border-0 max-md:pt-0 max-md:pr-5 max-md:pb-4 max-md:pl-3 max-md:text-right max-md:text-sm max-md:text-grey-700"
 
   defp mobile_cell_styles("amount"),
     do:
-      "max-md:col-start-2 max-md:row-start-1 max-md:rounded-none max-md:border-0 max-md:bg-white! max-md:pt-2 max-md:pb-0 max-md:pl-3 max-md:font-semibold"
+      "max-md:col-start-2 max-md:row-start-1 max-md:-mb-2 max-md:rounded-none max-md:border-0 max-md:bg-transparent! max-md:pt-2 max-md:pb-0 max-md:pl-3 max-md:font-semibold"
 
   defp mobile_cell_styles(_status_or_second_date), do: "max-md:hidden"
 
@@ -585,13 +588,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       }
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
+      <%!-- The label and the undo button share the status width evenly. --%>
       <div
         id={"#{@invoicing_entry.id}-label"}
-        class={[
-          "flex h-6 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-xs text-moss-700 transition-all duration-500",
-          @can_write_invoicing && "w-20",
-          !@can_write_invoicing && "w-full"
-        ]}
+        class="flex h-6 flex-1 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-moss-700 transition-all duration-500"
       >
         <.icon
           name={
@@ -619,7 +619,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         }
         icon="hero-arrow-uturn-left-micro"
-        class="transition-all duration-500"
+        class="flex-1 transition-all duration-500"
       />
     </div>
     """
@@ -634,9 +634,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content={gettext("The invoice is being sent to KSeF. Please wait for confirmation.")}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs text-grey-700">
-        <div class="font-normal uppercase">{gettext("Sending...")}</div>
-        <.icon name="hero-arrow-path" class="size-4 animate-spin" />
+      <div class="flex h-6 w-full items-center justify-center px-2 text-caps-sm font-medium whitespace-nowrap text-grey-700 uppercase">
+        {gettext("Sending...")}
       </div>
     </div>
     """
@@ -655,9 +654,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       }
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="flex h-6 w-full animate-error-pulse flex-row items-center justify-center rounded-md p-2 text-xs">
-        <div class="font-normal uppercase">{gettext("Sending error")}</div>
-        <.icon name="hero-exclamation-triangle-mini" class="size-4" />
+      <div class="flex h-6 w-full items-center justify-center rounded-md bg-brick-700 px-2 text-caps-sm font-medium whitespace-nowrap text-brick-100 uppercase">
+        {gettext("Sending error")}
       </div>
     </div>
     """
@@ -685,11 +683,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content={@match_tooltip}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class={[
-        "flex h-6 w-full flex-row items-center justify-between rounded-md bg-moss-200 p-2 text-xs text-moss-700 transition-all duration-500"
-      ]}>
-        <div class="font-normal uppercase">{gettext("Complete")}</div>
-        <.icon name="hero-check-micro" class="size-5" />
+      <div class="flex h-6 w-full items-center justify-between rounded-md bg-moss-200 px-2 text-caps-sm font-medium text-moss-700 uppercase transition-all duration-500">
+        {gettext("Complete")}
+        <.icon name="hero-check-micro" class="size-4" />
       </div>
     </div>
     """
@@ -704,9 +700,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content={gettext("This is a draft invoice — the document has not been issued yet.")}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="flex h-6 w-full flex-row items-center justify-between rounded-md border-2 border-grey-200 bg-white p-2 text-xs text-grey-700 uppercase transition-all duration-500">
-        <p>{gettext("Draft")}</p>
-        <.icon name="hero-pencil-square-solid" class="size-4" />
+      <%!-- A neutral pill: a draft is on no side of the books yet. --%>
+      <div class="flex h-6 w-full items-center justify-center rounded-md bg-grey-200 px-2 text-caps-sm font-medium whitespace-nowrap text-grey-700 uppercase">
+        {gettext("Draft version")}
       </div>
     </div>
     """
@@ -736,7 +732,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <div
         id={"#{@invoicing_entry.id}-label"}
         class={[
-          "flex h-6 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
+          "flex h-6 flex-row items-center justify-center rounded-md p-2 transition-all duration-500",
           @can_write_invoicing && "w-10",
           !@can_write_invoicing && "w-full",
           case @invoicing_entry do
@@ -771,7 +767,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         }
         label={gettext("Skip")}
-        class="transition-all duration-500"
+        class="text-caps-sm! font-semibold transition-all duration-500"
       />
     </div>
     """
@@ -822,7 +818,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :value, invoice.effective_due_date)
 
     ~H"""
-    {@value}
+    <.date_value :if={@value} date={@value} />
     """
   end
 
@@ -836,7 +832,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :value, invoice.effective_due_date)
 
     ~H"""
-    {@value}
+    <.date_value :if={@value} date={@value} />
     """
   end
 
@@ -964,7 +960,23 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :value, value)
 
     ~H"""
-    {@value}
+    <%= if match?(%Date{}, @value) do %>
+      <.date_value date={@value} />
+    <% else %>
+      {@value}
+    <% end %>
+    """
+  end
+
+  attr :date, Date, required: true
+
+  # From md to xl the date columns are narrow and the month separators name the month and
+  # year, so a date shows only its day and short month, e.g. "9 lis". Wider, and on phones,
+  # where the date sits alone under the amount, it is written out whole.
+  defp date_value(assigns) do
+    ~H"""
+    <span class="max-md:hidden xl:hidden">{Firmowid.Cldr.Date.to_string!(@date, format: "d MMM")}</span>
+    <span class="md:max-xl:hidden">{@date}</span>
     """
   end
 
@@ -1130,7 +1142,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp render_group_cell(%{column: column, group: _group} = assigns)
        when column in ["issue_or_value_date", "value_date", "due_or_booking_date", "booking_date"] do
     ~H"""
-    {Date.to_iso8601(@group.date)}
+    <.date_value date={@group.date} />
     """
   end
 
@@ -1215,9 +1227,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         size="small"
         class="shrink-0"
       />
-      <span class="min-w-0 truncate">
-        {@party}
-        <span :if={@description not in [nil, ""]} class="text-sm text-grey-700 opacity-50">
+      <%!-- From xl one line, cut as a whole, which lets the column size to its full text, and
+           the ellipsis takes the line's colour: the description's when there is one, as the
+           line is cut within it, with the party kept black. Narrower, the description goes
+           under the party instead of being cut to a few letters, each line cut on its own. --%>
+      <span class={[
+        "min-w-0 truncate",
+        @description not in [nil, ""] && "text-grey-700/50"
+      ]}>
+        <span class="text-black max-xl:block max-xl:truncate">{@party}</span>
+        <span :if={@description not in [nil, ""]} class="text-sm max-xl:block max-xl:truncate">
           {@description}
         </span>
       </span>
