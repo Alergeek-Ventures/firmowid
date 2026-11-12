@@ -1,9 +1,7 @@
 defmodule FirmowidWeb.Feedback.Components.Form do
   @moduledoc """
-  LiveComponent rendering a feedback modal.
-
-  Captures user feedback and stores local UI state. Analytics submission
-  is handled by frontend telemetry hooks.
+  LiveComponent rendering the feedback modal. Sending only shows the thank-you
+  note: the text is neither stored nor sent anywhere.
   """
   use FirmowidWeb, :live_component
 
@@ -16,7 +14,6 @@ defmodule FirmowidWeb.Feedback.Components.Form do
     socket =
       socket
       |> assign(assigns)
-      |> assign(:content, "")
       |> assign(:submitted, false)
 
     {:ok, socket}
@@ -46,7 +43,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
                 required
                 placeholder={gettext("Describe your idea or suggestion, or report a problem")}
                 class="min-h-[120px] w-full resize-y rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-rust-700 focus:ring-rust-700"
-              ><%= @content %></textarea>
+              ></textarea>
             </div>
             <div class="flex justify-end gap-3">
               <.button type="button" variant="outline" phx-click={hide_modal("feedback-modal")}>
@@ -90,6 +87,6 @@ defmodule FirmowidWeb.Feedback.Components.Form do
   end
 
   def handle_event("reset", _params, socket) do
-    {:noreply, assign(socket, content: "", submitted: false)}
+    {:noreply, assign(socket, :submitted, false)}
   end
 end
