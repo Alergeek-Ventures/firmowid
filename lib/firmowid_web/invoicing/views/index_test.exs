@@ -71,6 +71,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert has_element?(skipped_dashboard, "p", "Brak nieopłaconych faktur.")
   end
 
+  test "opens when the month param is not a single value", %{conn: conn} do
+    conn = log_in_user(conn, admin_fixture())
+
+    assert {:ok, _dashboard, _html} = live(conn, "/fakturowanie?miesiac[]=2026-01-01")
+  end
+
   test "keeps the list open when a file unrelated to cost invoices is added and removed", %{
     conn: conn
   } do

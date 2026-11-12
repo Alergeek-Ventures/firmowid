@@ -20,15 +20,11 @@ defmodule FirmowidWeb.Infrastructure.Utilities.QueryParams do
   """
   @spec parse_date(map(), String.t(), Date.t() | nil) :: Date.t() | nil
   def parse_date(params, key, default) do
-    case Map.get(params, key) do
-      nil ->
-        default
-
-      date_string ->
-        case Date.from_iso8601(date_string) do
-          {:ok, parsed_date} -> parsed_date
-          _error -> default
-        end
+    with date_string when is_binary(date_string) <- Map.get(params, key),
+         {:ok, parsed_date} <- Date.from_iso8601(date_string) do
+      parsed_date
+    else
+      _absent_or_invalid -> default
     end
   end
 
