@@ -23,7 +23,6 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
      |> assign(:delete_org_id, nil)
      |> assign(:activity, nil)
      |> assign(:selected_month, nil)
-     |> assign(:selected_snapshot, nil)
      |> assign(:available_months, [])
      |> assign(:worksheet, nil)
      |> assign(:status, nil)
@@ -67,7 +66,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
        to:
          Navigation.settlement_path(
            socket.assigns.selected_org.id,
-           %{"miesiac" => parse_month(month) || current_month()}
+           %{"miesiac" => parse_month(month) || Month.current()}
          )
      )}
   end
@@ -220,7 +219,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   end
 
   defp load_page(socket, selected_org, params) do
-    current_month = current_month()
+    current_month = Month.current()
 
     snapshots = MonthContext.list_snapshots(selected_org.id, socket.assigns.current_user)
     available_months = available_months(snapshots, current_month)
@@ -244,7 +243,6 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
          OrganizationActivity.load!(selected_org.id, socket.assigns.current_user)
        )
        |> assign(:selected_month, billing_context.selected_month)
-       |> assign(:selected_snapshot, billing_context.selected_snapshot)
        |> assign(:available_months, available_months)
        |> assign(:worksheet, billing_context.worksheet)
        |> assign(:status, billing_context.status)
@@ -289,6 +287,4 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   end
 
   defp cast_plan(_plan), do: :error
-
-  defp current_month, do: Month.current()
 end

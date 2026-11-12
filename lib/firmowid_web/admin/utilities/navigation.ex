@@ -5,7 +5,6 @@ defmodule FirmowidWeb.Admin.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  alias Firmowid.Billing.Month
   alias Firmowid.Billing.PlanCatalog
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
 
@@ -17,12 +16,6 @@ defmodule FirmowidWeb.Admin.Utilities.Navigation do
     "szukaj" => :szukaj,
     "tylko_nadwyzki" => :tylko_nadwyzki
   }
-
-  @doc """
-  Returns the canonical current billing month.
-  """
-  @spec current_month() :: Date.t()
-  def current_month, do: Month.current()
 
   @doc """
   Filters query params for the organizations billing list.
@@ -63,16 +56,6 @@ defmodule FirmowidWeb.Admin.Utilities.Navigation do
   @spec parse_only_over_limit?(map()) :: boolean()
   def parse_only_over_limit?(params) when is_map(params) do
     Map.get(params, "tylko_nadwyzki") in ["1", "true", "tak"]
-  end
-
-  @doc """
-  Parses the selected billing month from detail query params.
-  """
-  @spec parse_month(map()) :: Date.t()
-  def parse_month(params) when is_map(params) do
-    params
-    |> QueryParams.parse_date("miesiac", current_month())
-    |> Date.beginning_of_month()
   end
 
   @doc """
