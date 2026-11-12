@@ -33,6 +33,19 @@ defmodule Firmowid.Core.Member do
 
   require Resource
 
+  # The system actors that read a member's personal fields for their job.
+  @personal_field_readers [
+    :actor_member_loader,
+    :organization_cleanup,
+    :ksef_digest,
+    :billing_snapshotter,
+    :leave_notifier,
+    :delegation_notifier,
+    :hours_record_change_notifier,
+    :document_blob_processor,
+    :employment_contract_notifier
+  ]
+
   # The name, avatar and profile details carry the readers they had on the account:
   # the person, an organization admin, a superuser and the system actors that read
   # accounts. Other member readers (e.g. analysis) see only the membership itself.
@@ -61,18 +74,7 @@ defmodule Firmowid.Core.Member do
       authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
-      authorize_if {SystemActorRole,
-                    roles: [
-                      :actor_member_loader,
-                      :organization_cleanup,
-                      :ksef_digest,
-                      :billing_snapshotter,
-                      :leave_notifier,
-                      :delegation_notifier,
-                      :hours_record_change_notifier,
-                      :document_blob_processor,
-                      :employment_contract_notifier
-                    ]}
+      authorize_if {SystemActorRole, roles: @personal_field_readers}
     end
 
     # The same as the other personal fields, plus the team presence, which shows
@@ -82,19 +84,7 @@ defmodule Firmowid.Core.Member do
       authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
-      authorize_if {SystemActorRole,
-                    roles: [
-                      :actor_member_loader,
-                      :organization_cleanup,
-                      :ksef_digest,
-                      :billing_snapshotter,
-                      :leave_notifier,
-                      :delegation_notifier,
-                      :hours_record_change_notifier,
-                      :document_blob_processor,
-                      :employment_contract_notifier,
-                      :presence_reader
-                    ]}
+      authorize_if {SystemActorRole, roles: [:presence_reader | @personal_field_readers]}
     end
 
     field_policy :* do
