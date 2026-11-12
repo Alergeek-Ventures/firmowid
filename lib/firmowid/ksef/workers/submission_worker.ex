@@ -9,7 +9,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
   Each invoice gets its own session (one session per invoice).
 
   A numbered invoice must not remain outside KSeF. When a submission finally fails,
-  a VAT invoice returns to an unnumbered draft and a correction is deleted.
+  a correction is deleted and any other invoice returns to an unnumbered draft.
   """
   use Oban.Worker,
     queue: :ksef_submissions,
@@ -454,15 +454,15 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
   defp withdraw_failed_submission(sales_invoice_id, reason, scope) do
     FailureReporter.report(reason, :ksef_submission, scope.tenant, sales_invoice_id)
 
-    case SalesInvoice.by_id(sales_invoice_id, scope: scope) do
-      {:ok, %{ksef_number: nil, ksef_invoice_kind: :vat} = invoice} ->
+    case SalesInvoice.by_id(sales_invoice_id, scope: scope, load: [:is_correction]) do
+      {:ok, %{ksef_number: nil, is_correction: false} = invoice} ->
         SalesInvoice.return_to_draft!(invoice, scope: scope)
 
         Logger.info("Returned invoice KSeF did not accept to a draft",
           invoice_id: sales_invoice_id
         )
 
-      {:ok, %{ksef_number: nil, ksef_invoice_kind: :kor} = invoice} ->
+      {:ok, %{ksef_number: nil, is_correction: true} = invoice} ->
         invoice
         |> unlock_invoice(scope)
         |> delete_failed_correction(scope)

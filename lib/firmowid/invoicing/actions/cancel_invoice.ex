@@ -50,9 +50,9 @@ defmodule Firmowid.Invoicing.Actions.CancelInvoice do
     invoice =
       SalesInvoice
       |> Ash.get!(input.arguments.invoice_id, opts)
-      |> Ash.load!([:effective_snapshot], opts)
+      |> Ash.load!([:effective_snapshot, :is_cancellable], opts)
 
-    if invoice.ksef_invoice_kind == :vat and invoice.ksef_number != nil do
+    if invoice.is_cancellable do
       latest = Ash.load!(invoice.effective_snapshot, @correction_snapshot_load, opts)
 
       issue_date = LocalDate.today()

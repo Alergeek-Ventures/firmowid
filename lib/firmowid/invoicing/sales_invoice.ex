@@ -11,7 +11,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     * `:read` — basic primary read for framework and relationship reads
     * `:list` — application listing with optional filters: `date_from`, `date_to`,
       `date_field` (`:issue_date` | `:sale_date` | `:due_date` | `:any`),
-      `kind` (`:vat` | `:kor`), `reconciliation` (`:pending` | `:matched` | `:skipped`),
+      `kind` (`:vat` | `:kor` | `:advance`), `reconciliation` (`:pending` | `:matched` | `:skipped`),
       `submission` (`:draft` | `:confirmed`), `ids`, `amount_from`/`amount_to` (absolute value,
       inclusive), `merge_corrections` (each invoice once, with its latest correction as its
       `effective_amount`), `inserted_from` (inclusive), `inserted_to` (exclusive)
@@ -22,8 +22,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
   Creates name where an invoice comes from, updates name a move between its states.
 
-    * `:draft` — save a complete, unnumbered VAT invoice
-    * `:issue` — issue a new invoice today and queue its KSeF submission atomically
+    * `:draft` — save a complete, unnumbered VAT or advance invoice
+    * `:issue` — issue a new VAT or advance invoice today and queue its KSeF submission atomically
     * `:correct` — issue a correction invoice (KOR) and queue its KSeF submission
     * `:import_from_ksef` — record an invoice issued outside Firmowid that KSeF already stores
     * `:revise` — revise a saved draft
@@ -99,7 +99,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                           :seller_nip,
                           :seller_display_name,
                           :seller_address,
-                          :ksef_invoice_kind,
                           :ksef_number,
                           :ksef_invoice_checksum,
                           :ksef_permanent_storage_date,
@@ -223,8 +222,10 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       end
 
       argument :kind, :atom do
-        constraints one_of: [:vat, :kor]
-        description "KSeF document kind: vat for a regular invoice, kor for a correction."
+        constraints one_of: [:vat, :kor, :advance]
+
+        description "Document kind: vat for a regular invoice, kor for a correction, " <>
+                      "advance for an advance invoice (KSeF ZAL)."
       end
 
       argument :overdue_on, :date,
@@ -234,7 +235,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         constraints one_of: [:pending, :matched, :skipped]
 
         description "Payment matching with bank transactions: pending has no matched payment yet, " <>
-                      "matched is linked to a transaction, skipped is excluded from matching."
+                      "matched is linked to a transaction or paid on issue (an advance invoice), " <>
+                      "skipped is excluded from matching."
       end
 
       argument :submission, :atom do
@@ -327,17 +329,18 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         where argument_equals(:reconciliation, :pending)
       end
 
-      # :matched — linked to at least one transaction
-      prepare build(filter: expr(exists(transactions, true))) do
+      # :matched — linked to at least one transaction, or paid on issue once issued
+      prepare build(filter: expr(exists(transactions, true) or (is_paid_on_issue and is_confirmed))) do
         where argument_equals(:reconciliation, :matched)
       end
 
-      # :skipped — no linked transactions, skipped
+      # :skipped — no linked transactions, skipped, not an issued invoice paid on issue
       prepare build(
                 filter:
                   expr(
                     not exists(transactions, true) and
-                      skip_invoicing == true
+                      skip_invoicing == true and
+                      not (is_paid_on_issue and is_confirmed)
                   )
               ) do
         where argument_equals(:reconciliation, :skipped)
@@ -588,7 +591,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       argument :sales_invoice_items, {:array, :map}
 
       change Changes.ApplyInvoiceInput
-      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change filter(expr(is_draft and not is_correction))
       pipe_through [:prepare_invoice_body]
 
       # A null list (agents send one for "unchanged") keeps the saved items.
@@ -624,7 +627,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       end
 
       change Changes.ApplyInvoiceInput
-      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change filter(expr(is_draft and not is_correction))
       pipe_through [:prepare_invoice_body, :apply_invoice_body]
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
@@ -645,12 +648,12 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     end
 
     update :return_to_draft do
-      description "Withdraw a VAT invoice that KSeF did not accept back to an unnumbered draft."
+      description "Withdraw a VAT or advance invoice that KSeF did not accept back to an unnumbered draft."
       public? false
       require_atomic? false
       accept []
 
-      change filter(expr(is_nil(ksef_number) and ksef_invoice_kind == :vat))
+      change filter(expr(is_nil(ksef_number) and not is_correction))
       change set_attribute(:invoice_number, nil)
       change set_attribute(:locked_at, nil)
       change set_attribute(:ksef_invoice_checksum, nil)
@@ -735,6 +738,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       description "Toggle whether this sales invoice is skipped during matching workflows."
       require_atomic? false
       accept []
+
+      # An invoice paid when issued awaits no transaction, so its skip cannot be undone.
+      change filter(expr(not is_paid_on_issue))
 
       change fn changeset, _context ->
         current = Ash.Changeset.get_data(changeset, :skip_invoicing)
@@ -1212,7 +1218,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
     # KSeF FA(3) fields
     attribute :ksef_invoice_kind, :atom,
-      constraints: [one_of: [:vat, :kor]],
+      constraints: [one_of: [:vat, :kor, :advance]],
       default: :vat,
       public?: true
 
@@ -1285,7 +1291,12 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
   pipelines do
     pipeline :prepare_invoice_body do
+      # Corrections are issued only by :correct, which links them to the invoice they correct.
+      validate attribute_does_not_equal(:ksef_invoice_kind, :kor),
+        message: gettext_noop("Choose a VAT or an advance invoice.")
+
       change Changes.PrepareInvoiceSeller
+      change Changes.PayOnIssue
       change Changes.PrepareInvoiceItems
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
@@ -1410,11 +1421,30 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
     calculate :is_deletable, :boolean, expr(is_nil(ksef_number) and is_nil(locked_at))
 
+    # Facts about the document kind. Callers load or filter by these instead of comparing kinds.
+    calculate :is_correction, :boolean, expr(ksef_invoice_kind == :kor) do
+      description "Corrects an issued invoice. Every other kind is issued as a new document."
+    end
+
+    calculate :is_paid_on_issue, :boolean, expr(ksef_invoice_kind == :advance) do
+      description "Documents a payment already received (an advance invoice), so nothing is due: " <>
+                    "it has no payment term, awaits no transaction and gets no reminder."
+    end
+
+    calculate :is_correctable, :boolean, expr(ksef_invoice_kind == :vat and is_confirmed) do
+      description "Firmowid can issue a correction of it: an issued VAT invoice. " <>
+                    "An advance invoice would need a KOR_ZAL, which Firmowid does not issue."
+    end
+
+    calculate :is_cancellable, :boolean, expr(is_correctable and not is_nil(ksef_number)) do
+      description "Can be cancelled with a zero-value correction: a correctable invoice KSeF accepted."
+    end
+
     calculate :reconciliation_status,
               :atom,
               expr(
                 cond do
-                  exists(transactions, true) ->
+                  exists(transactions, true) or (is_paid_on_issue and is_confirmed) ->
                     :matched
 
                   skip_invoicing == true ->
@@ -1424,7 +1454,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                     :pending
                 end
               ) do
-      description "Invoice reconciliation state derived from linked transactions and skip flag."
+      description "Invoice reconciliation state derived from linked transactions, payment on issue and skip flag."
       constraints one_of: [:pending, :matched, :skipped]
     end
 

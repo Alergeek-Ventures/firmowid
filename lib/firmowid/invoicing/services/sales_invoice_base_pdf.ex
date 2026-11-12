@@ -135,7 +135,14 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceBasePdf do
   end
 
   defp base_loads(invoice) do
-    loads = [:net_value, :vat_value, :gross_value, :amount, sales_invoice_items: @item_calcs]
+    loads = [
+      :net_value,
+      :vat_value,
+      :gross_value,
+      :amount,
+      :is_paid_on_issue,
+      sales_invoice_items: @item_calcs
+    ]
 
     if loaded?(invoice.corrections) do
       loads

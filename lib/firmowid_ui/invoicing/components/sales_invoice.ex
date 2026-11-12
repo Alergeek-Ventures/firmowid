@@ -2,7 +2,8 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
   @moduledoc """
   Renders the sales-invoice document shared by browser previews, MCP widgets and PDFs.
 
-  Preserves the Polish and bilingual document layouts for invoices and corrections.
+  Preserves the Polish and bilingual document layouts for invoices, corrections and
+  advance invoices.
   Callers supply loaded invoice calculations and items, correction references,
   currency rates and interface-appropriate logo URLs or embedded images.
   """
@@ -27,6 +28,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           case @sales_invoice.ksef_invoice_kind do
             :vat -> [(@show_vat && "Faktura VAT") || "Faktura"]
             :kor -> ["Faktura korygująca"]
+            :advance -> ["Faktura zaliczkowa"]
           end
 
         :foreign ->
@@ -36,6 +38,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
 
             :kor ->
               ["Faktura korygująca / Correction Invoice"]
+
+            :advance ->
+              ["Faktura zaliczkowa / Advance Invoice"]
           end
       end}
       <span class="font-bold">
@@ -152,9 +157,11 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
     </div>
     <div class="mt-1 text-[10px]">
       <span>
-        {case @sales_invoice.invoice_type do
-          :poland -> "Data sprzedaży:"
-          :foreign -> "Data sprzedaży / Sale date:"
+        {case {@sales_invoice.invoice_type, @sales_invoice.is_paid_on_issue} do
+          {:poland, true} -> "Data otrzymania zapłaty:"
+          {:foreign, true} -> "Data otrzymania zapłaty / Payment received:"
+          {:poland, _paid?} -> "Data sprzedaży:"
+          {:foreign, _paid?} -> "Data sprzedaży / Sale date:"
         end}
       </span>
       <span class="font-bold">
@@ -550,8 +557,20 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               )}
             </span>
           </div>
+          <%!-- An advance invoice states the order value beside the amount received (art. 106f). --%>
+          <div
+            :if={@sales_invoice.is_paid_on_issue == true}
+            class="flex items-center justify-between"
+          >
+            <span>Wartość zamówienia z VAT:</span>
+            <span>{@sales_invoice.amount}</span>
+          </div>
           <div class="flex items-center justify-between">
-            <span>Razem do zapłaty:</span>
+            <span>
+              {if @sales_invoice.is_paid_on_issue == true,
+                do: "Otrzymana zapłata:",
+                else: "Razem do zapłaty:"}
+            </span>
             <span class="text-sm/tight font-bold">
               {@sales_invoice.amount}
             </span>
@@ -565,8 +584,19 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
             nie dotyczy / not applicable
           </span>
         </div>
+        <div
+          :if={@sales_invoice.is_paid_on_issue == true}
+          class="flex items-center justify-between"
+        >
+          <span>Wartość zamówienia z VAT / Order value incl. VAT:</span>
+          <span>{@sales_invoice.amount}</span>
+        </div>
         <div class="flex items-center justify-between font-bold">
-          <span>Razem do zapłaty / Total:</span>
+          <span>
+            {if @sales_invoice.is_paid_on_issue == true,
+              do: "Otrzymana zapłata / Amount received:",
+              else: "Razem do zapłaty / Total:"}
+          </span>
           <span class="text-sm/snug">
             {@sales_invoice.amount}
           </span>
@@ -753,7 +783,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
             :credit -> "Kredyt"
             :transfer -> "Przelew"
             :mobile -> "Mobilna"
-          end} | nr konta: {@sales_invoice.seller_account_number}
+          end}<span :if={@sales_invoice.seller_account_number not in [nil, ""]}> | nr konta: {@sales_invoice.seller_account_number}</span>
         </div>
       <% end %>
       <%= if @sales_invoice.invoice_type == :foreign do %>
@@ -768,11 +798,21 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
             :mobile -> "Mobile"
           end}
         </div>
-        <div>
+        <div :if={@sales_invoice.seller_account_number not in [nil, ""]}>
           Nr konta / Bank account number: {@sales_invoice.seller_account_number}
         </div>
       <% end %>
-      <div>
+      <div :if={@sales_invoice.is_paid_on_issue == true}>
+        {case @sales_invoice.invoice_type do
+          :poland -> "Zapłacono:"
+          :foreign -> "Zapłacono / Paid:"
+        end}
+
+        <span class="font-bold">
+          {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
+        </span>
+      </div>
+      <div :if={@sales_invoice.is_paid_on_issue != true}>
         {case @sales_invoice.invoice_type do
           :poland -> "Termin płatności:"
           :foreign -> "Termin płatności / Payment deadline:"

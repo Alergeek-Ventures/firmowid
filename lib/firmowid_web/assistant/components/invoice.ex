@@ -322,13 +322,21 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
 
   defp dates(%{invoice: invoice}) do
     [
-      gettext("Sale %{date}", date: format_date(invoice.sale_date)),
-      gettext("due %{date}", date: format_date(invoice.due_date)),
+      payment_date(invoice),
       invoice.invoice_note not in [nil, ""] &&
         gettext("notes “%{note}”", note: invoice.invoice_note)
     ]
     |> Enum.filter(& &1)
     |> Enum.join(" · ")
+  end
+
+  # An invoice paid on issue has its payment date where others have a sale date and a term.
+  defp payment_date(%{is_paid_on_issue: true} = invoice),
+    do: gettext("paid %{date}", date: format_date(invoice.sale_date))
+
+  defp payment_date(invoice) do
+    gettext("Sale %{date}", date: format_date(invoice.sale_date)) <>
+      " · " <> gettext("due %{date}", date: format_date(invoice.due_date))
   end
 
   defp format_date(nil), do: "—"

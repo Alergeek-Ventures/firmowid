@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [
     :amount,
+    :is_paid_on_issue,
     :internal_note,
     :corrected_invoice,
     :net_value,

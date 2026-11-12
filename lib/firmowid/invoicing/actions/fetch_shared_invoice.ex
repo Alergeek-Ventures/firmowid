@@ -29,7 +29,7 @@ defmodule Firmowid.Invoicing.Actions.FetchSharedInvoice do
       SalesInvoice
       |> join(:inner, [i], o in Organization, on: o.id == i.organization_id)
       |> join(:left, [i, o], b in Blob, on: b.id == o.avatar_blob_id and b.organization_id == i.organization_id)
-      |> where([i], i.share_token == ^share_token and i.ksef_invoice_kind == :vat)
+      |> where([i], i.share_token == ^share_token and i.ksef_invoice_kind != :kor)
       |> select([i, o, b], {i.id, i.organization_id, o.is_vat_payer, b.blob_path})
       |> Firmowid.Repo.one(skip_organization_id: true)
 

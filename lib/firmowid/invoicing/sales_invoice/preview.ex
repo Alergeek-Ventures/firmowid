@@ -9,10 +9,12 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     :buyer_id_type,
     :buyer_display_name_label,
     :is_draft,
-    :is_confirmed
+    :is_confirmed,
+    :is_paid_on_issue
   ]
   @review_fields [
     :invoice_type,
+    :ksef_invoice_kind,
     :invoice_number,
     :issue_date,
     :sale_date,
@@ -133,17 +135,17 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     end)
   end
 
-  defp reference(_changeset, %{ksef_invoice_kind: :vat}, _opts), do: {:ok, nil}
-
-  defp reference(changeset, invoice, opts) do
+  defp reference(changeset, %{ksef_invoice_kind: :kor} = invoice, opts) do
     reference = Map.get(changeset.context, :invoice_reference, invoice.reference_invoice)
     Ash.load(reference, [:amount | @totals] ++ [sales_invoice_items: @totals], opts)
   end
 
-  defp corrected_invoice(_changeset, %{ksef_invoice_kind: :vat}), do: nil
+  defp reference(_changeset, _invoice, _opts), do: {:ok, nil}
 
-  defp corrected_invoice(changeset, invoice),
+  defp corrected_invoice(changeset, %{ksef_invoice_kind: :kor} = invoice),
     do: Map.get(changeset.context, :corrected_invoice, invoice.corrected_invoice)
+
+  defp corrected_invoice(_changeset, _invoice), do: nil
 
   defp apply_attributes(changeset) do
     case Ash.Changeset.apply_attributes(changeset) do

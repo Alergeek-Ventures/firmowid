@@ -26,7 +26,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @invoice_aggs [:net_value, :vat_value, :gross_value]
-  @invoice_calcs [:buyer_id_type]
+  @invoice_calcs [:buyer_id_type, :is_paid_on_issue]
 
   @doc """
   Renders the FA(3) XML template with the given sales invoice.
@@ -75,14 +75,14 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
       end
 
     reference_invoice = Map.get(invoice, :reference_invoice)
+    vat_summary = calculate_vat_summary(invoice, reference_invoice)
+    currency_rate = currency_rate(invoice, vat_summary)
 
     assigns = [
       invoice: xml_escape(invoice),
       reference_invoice: if(reference_invoice, do: xml_escape(reference_invoice)),
-      vat_summary:
-        invoice
-        |> calculate_vat_summary(reference_invoice)
-        |> add_vat_pln(invoice, reference_invoice)
+      vat_summary: add_vat_pln(vat_summary, currency_rate, invoice, reference_invoice),
+      currency_rate: currency_rate
     ]
 
     do_render(assigns)
@@ -222,26 +222,30 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
     |> Enum.sort_by(fn group -> Enum.find_index(@summary_order, &(&1 == group.rate)) end)
   end
 
-  # A correction's VAT in PLN is the difference of the converted states after and before it.
-  defp add_vat_pln(summary, %{currency: "PLN"}, _reference_invoice), do: summary
+  # The NBP rate converting a foreign-currency invoice's VAT to PLN, when it states any.
+  defp currency_rate(%{currency: "PLN"}, _summary), do: nil
 
-  defp add_vat_pln(summary, invoice, reference_invoice) do
+  defp currency_rate(invoice, summary) do
     if Enum.any?(summary, &(&1.rate in @pln_converted_rates)) do
       %{rate: rate} =
         Invoicing.get_currency_rate(invoice) ||
           raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
 
-      rate = Decimal.from_float(rate)
-      {after_items, before_items} = summary_states(invoice, reference_invoice)
-
-      Enum.map(summary, fn group ->
-        if group.rate in @pln_converted_rates,
-          do: Map.put(group, :vat_pln, pln_change(after_items, before_items, group.rates, rate)),
-          else: group
-      end)
-    else
-      summary
+      Decimal.from_float(rate)
     end
+  end
+
+  # A correction's VAT in PLN is the difference of the converted states after and before it.
+  defp add_vat_pln(summary, nil, _invoice, _reference_invoice), do: summary
+
+  defp add_vat_pln(summary, rate, invoice, reference_invoice) do
+    {after_items, before_items} = summary_states(invoice, reference_invoice)
+
+    Enum.map(summary, fn group ->
+      if group.rate in @pln_converted_rates,
+        do: Map.put(group, :vat_pln, pln_change(after_items, before_items, group.rates, rate)),
+        else: group
+    end)
   end
 
   defp summary_states(%{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %{sales_invoice_items: before_items}),

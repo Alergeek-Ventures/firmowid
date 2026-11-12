@@ -99,9 +99,9 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
     with {:ok, original_invoice} <-
            SalesInvoice.by_id(
              original_invoice_id,
-             Keyword.put(opts, :load, [:effective_snapshot])
+             Keyword.put(opts, :load, [:effective_snapshot, :is_correctable])
            ),
-         :ok <- validate_original(original_invoice),
+         :ok <- validate_correctable(original_invoice),
          {:ok, latest_snapshot} <-
            Ash.load(original_invoice.effective_snapshot, @latest_snapshot_load, opts),
          :ok <- validate_submission(original_invoice),
@@ -112,9 +112,9 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
     end
   end
 
-  defp validate_original(%SalesInvoice{ksef_invoice_kind: :vat, invoice_number: number}) when not is_nil(number), do: :ok
+  defp validate_correctable(%SalesInvoice{is_correctable: true}), do: :ok
 
-  defp validate_original(_original_invoice) do
+  defp validate_correctable(_original_invoice) do
     {:error, field: :original_invoice_id, message: gettext_noop("Choose an issued VAT invoice to correct.")}
   end
 

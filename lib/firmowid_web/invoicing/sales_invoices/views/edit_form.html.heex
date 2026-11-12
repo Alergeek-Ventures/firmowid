@@ -273,7 +273,7 @@
       </.button>
 
       <.button
-        :if={is_nil(@invoice.invoice_number) and @invoice.ksef_invoice_kind == :vat}
+        :if={is_nil(@invoice.invoice_number)}
         type="button"
         variant="secondary"
         phx-click="save_as_draft"

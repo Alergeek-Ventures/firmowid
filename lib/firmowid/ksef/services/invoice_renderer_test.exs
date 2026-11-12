@@ -353,6 +353,58 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
   end
 
   # ---------------------------------------------------------------------------
+  # Advance Invoices
+  # ---------------------------------------------------------------------------
+
+  describe "render_fa3/1 - advance invoices" do
+    # The NBP test stub returns a rate of 4.00.
+    test "ZAL in a foreign currency states the rate its VAT was converted at", %{org_id: org_id} do
+      invoice =
+        [org_id: org_id]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{ksef_invoice_kind: :advance, currency: "EUR"})
+
+      xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+      assert xml =~ ~r|</P_15>\s*<KursWalutyZ>4.0</KursWalutyZ>\s*<Adnotacje>|
+    end
+
+    test "ZAL for a payment of the whole order states the order instead of rows", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice =
+        [org_id: org_id, sale_date: ~D[2026-01-01]]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{
+          ksef_invoice_kind: :advance,
+          payment_method: :card,
+          due_date: ~D[2026-01-01]
+        })
+
+      xml = IO.iodata_to_binary(InvoiceRenderer.render_fa3(invoice))
+
+      paid =
+        ~r/<Platnosc>\s*<Zaplacono>1<\/Zaplacono>\s*<DataZaplaty>2026-01-01<\/DataZaplaty>\s*<FormaPlatnosci>/
+
+      # erlsom names both anonymous sequences of Platnosc SEQ1, so its model lacks the
+      # Zaplacono/DataZaplaty branch the schema allows; the rest of the document is validated.
+      assert xml =~ paid
+
+      assert :ok =
+               xml |> String.replace(paid, "<Platnosc><FormaPlatnosci>") |> validate_xml(model)
+
+      assert xml =~ ~r/<RodzajFaktury>\s*ZAL\s*<\/RodzajFaktury>/
+      refute xml =~ "<FaWiersz>"
+      refute xml =~ "<TerminPlatnosci>"
+      assert [_, p_15] = Regex.run(~r/<P_15>([^<]+)<\/P_15>/, xml)
+
+      assert xml =~
+               ~r/<Zamowienie>\s*<WartoscZamowienia>#{p_15}<\/WartoscZamowienia>\s*<ZamowienieWiersz>/
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Edge Cases
   # ---------------------------------------------------------------------------
 

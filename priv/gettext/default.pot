@@ -1061,6 +1061,11 @@ msgstr ""
 msgid "Advance"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#, elixir-autogen, elixir-format
+msgid "Advance invoice"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
@@ -2379,6 +2384,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Choose a PDF up to 32 MB for automatic compression. The saved order must fit within 8 MB."
+msgstr ""
+
+#: lib/firmowid/invoicing/sales_invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Choose a VAT or an advance invoice."
 msgstr ""
 
 #: lib/firmowid_ui/ksef/connection.ex
@@ -5196,6 +5206,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid assistant"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid cannot edit or correct an advance invoice."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/primitives.ex
@@ -8564,6 +8579,7 @@ msgstr ""
 msgid "Page not found"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgid "Paid"
@@ -8641,6 +8657,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Payment"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
+#, elixir-autogen, elixir-format
+msgid "Payment date"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex
@@ -11637,6 +11659,11 @@ msgstr ""
 msgid "The password reset link is invalid or has expired."
 msgstr ""
 
+#: lib/firmowid/invoicing/changes/pay_on_issue.ex
+#, elixir-autogen, elixir-format
+msgid "The payment date of an advance invoice cannot be after its issue date."
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "The payment was made much later than the invoice was issued"
@@ -14541,6 +14568,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "invoice payment status"
 msgid "paid"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "paid %{date}"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_details.ex

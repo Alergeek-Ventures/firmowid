@@ -15,6 +15,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ksef.Workers.SubmissionWorker
+  alias Firmowid.LocalDate
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
@@ -718,7 +719,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  end)
 
         assert issued.id == draft.id
-        assert issued.issue_date == Firmowid.LocalDate.today()
+        assert issued.issue_date == LocalDate.today()
         assert issued.ksef_submission_status == :submitting
 
         assert Invoicing.get_sales_invoice!(draft.id, scope: scope).invoice_number ==
@@ -863,6 +864,72 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       assert [_issued] = Invoicing.list_sales_invoices!(scope: scope_for(user))
     end
 
+    test "issues an advance invoice as paid for good and queues its KSeF submission" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+      payment_date = Date.add(LocalDate.today(), -2)
+
+      input =
+        Map.merge(issue_input(), %{
+          ksef_invoice_kind: :advance,
+          invoice_number: "FZ/#{System.unique_integer([:positive])}",
+          payment_method: :card,
+          sale_date: payment_date,
+          due_date: Date.add(payment_date, 30),
+          skip_invoicing: false
+        })
+
+      assert {:ok, invoice} =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 Invoicing.issue_sales_invoice(%{input: input}, scope: scope)
+               end)
+
+      assert %{ksef_invoice_kind: :advance, skip_invoicing: true, due_date: ^payment_date} =
+               invoice
+
+      # Paid, so it is listed with the matched invoices rather than the skipped ones.
+      invoice_id = invoice.id
+
+      assert [%{id: ^invoice_id, reconciliation_status: :matched}] =
+               Invoicing.list_sales_invoices!(%{reconciliation: :matched},
+                 load: [:reconciliation_status],
+                 scope: scope
+               )
+
+      assert [] = Invoicing.list_sales_invoices!(%{reconciliation: :skipped}, scope: scope)
+
+      # An unnumbered advance draft is not issued yet, so it stays skipped and out of the matched ones.
+      draft =
+        Invoicing.draft_sales_invoice!(
+          %{input: Map.put(issue_input(), :ksef_invoice_kind, :advance)},
+          scope: scope
+        )
+
+      assert [%{id: ^invoice_id}] =
+               Invoicing.list_sales_invoices!(%{reconciliation: :matched}, scope: scope)
+
+      assert [%{id: draft_id, reconciliation_status: :skipped}] =
+               Invoicing.list_sales_invoices!(%{reconciliation: :skipped},
+                 load: [:reconciliation_status],
+                 scope: scope
+               )
+
+      assert draft_id == draft.id
+
+      # Nothing is due, so it cannot be put back among the invoices awaiting a transaction.
+      assert {:error, _stale} = Invoicing.toggle_sales_invoice_skip(invoice, scope: scope)
+
+      assert_enqueued(
+        worker: SubmissionWorker,
+        args: %{
+          "action" => "submit",
+          "organization_id" => scope.tenant,
+          "sales_invoice_id" => invoice.id
+        }
+      )
+    end
+
     test "points to organization settings when seller details are missing" do
       user = admin_fixture()
 
@@ -922,6 +989,39 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
     |> Ash.Seed.update!(%{address: "ul. Testowa 1, 00-001 Warszawa"})
 
     user
+  end
+
+  describe "advance invoice payment" do
+    test "rejects a payment date after the issue date" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      input =
+        Map.merge(issue_input(), %{
+          ksef_invoice_kind: :advance,
+          invoice_number: "FZ/#{System.unique_integer([:positive])}",
+          sale_date: Date.add(LocalDate.today(), 1)
+        })
+
+      assert {:error, %Invalid{errors: [%InvalidAttribute{field: :sale_date}]}} =
+               Invoicing.issue_sales_invoice(%{input: input}, scope: scope_for(user))
+    end
+
+    test "a draft revised from an advance to a VAT invoice awaits a transaction again" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+
+      draft =
+        Invoicing.draft_sales_invoice!(
+          %{input: Map.put(issue_input(), :ksef_invoice_kind, :advance)},
+          scope: scope
+        )
+
+      assert draft.skip_invoicing
+
+      assert %{ksef_invoice_kind: :vat, skip_invoicing: false} =
+               Invoicing.revise_sales_invoice_draft!(draft, %{input: %{ksef_invoice_kind: :vat}}, scope: scope)
+    end
   end
 
   defp create_draft!(user, attrs) do

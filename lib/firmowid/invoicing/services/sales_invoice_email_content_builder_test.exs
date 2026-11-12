@@ -12,6 +12,8 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilderTest do
       seller_display_name: "Acme <sp. z o.o.>",
       amount: Money.new(:PLN, "12300.00"),
       ksef_invoice_kind: :vat,
+      is_paid_on_issue: false,
+      is_correction: false,
       payment_method: :transfer,
       seller_account_number: "61 1090 1014 0000 0712 1981 2874"
     }

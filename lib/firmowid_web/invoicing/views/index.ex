@@ -54,6 +54,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     :effective_due_date,
     :sales_invoice_items,
     :buyer_display_name_label,
+    :is_paid_on_issue,
     :transactions,
     corrections: :sales_invoice_items,
     latest_correction: :sales_invoice_items
@@ -1268,7 +1269,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         list_cost_invoices(from, to, args, scope)
 
       {:sales_invoices, args} ->
-        list_sales_invoices(from, to, Map.put(args, :kind, :vat), scope)
+        list_sales_invoices(from, to, args, scope)
 
       {:transactions, args} ->
         list_transactions(from, to, args, scope)
@@ -1323,7 +1324,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp list_sales_invoices(from, to, extra_args, scope) do
-    args = Map.merge(%{date_from: from, date_to: to}, extra_args)
+    args = Map.merge(%{date_from: from, date_to: to, merge_corrections: true}, extra_args)
 
     Invoicing.list_sales_invoices!(args,
       load: @sales_invoice_loads,

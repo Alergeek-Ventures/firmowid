@@ -81,7 +81,7 @@
                 navigate={
                   case invoice.ksef_invoice_kind do
                     :kor -> ~p"/faktura/#{@token <> "." <> invoice.id}/pdf"
-                    :vat -> ~p"/faktura/#{@token}/pdf"
+                    _regular_kind -> ~p"/faktura/#{@token}/pdf"
                   end
                 }
                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-rust-700"

@@ -112,6 +112,10 @@
 		<% else %>
 			<P_15><%= T.format_decimal(@invoice.gross_value) %></P_15>
 		<% end %>
+		<%!-- An advance invoice states the rate its VAT in PLN was converted at. --%>
+		<%= if @invoice.ksef_invoice_kind == :advance && @currency_rate do %>
+			<KursWalutyZ><%= T.format_quantity(@currency_rate) %></KursWalutyZ>
+		<% end %>
 		<Adnotacje>
 			<P_16><%= if @invoice.is_cash_account, do: 1, else: 2 %></P_16>
 			<%!-- P_17 to samofakturowanie --%>
@@ -146,6 +150,7 @@
 			<%= case @invoice.ksef_invoice_kind do %>
 				<% :vat -> %> VAT
 				<% :kor -> %> KOR
+				<% :advance -> %> ZAL
 			<% end %>
 		</RodzajFaktury>
 		<%= if @invoice.ksef_invoice_kind == :kor do %>
@@ -215,8 +220,9 @@
 					</FaWiersz>
 				<% end %>
 			<% end %>
-		<% else %>
-			<%!-- Regular VAT invoice - standard line items --%>
+		<% end %>
+		<%!-- Regular VAT invoice - standard line items. An advance invoice states them in Zamowienie instead. --%>
+		<%= if @invoice.ksef_invoice_kind == :vat do %>
 			<%= for item <- @invoice.sales_invoice_items do %>
 				<FaWiersz>
 					<NrWierszaFa><%= item.index + 1 %></NrWierszaFa>
@@ -232,10 +238,16 @@
 			<% end %>
 		<% end %>
 		<Platnosc>
-			<%= if @invoice.due_date do %>
-				<TerminPlatnosci>
-					<Termin><%= @invoice.due_date %></Termin>
-				</TerminPlatnosci>
+			<%= if @invoice.is_paid_on_issue do %>
+				<%!-- The payment was received before the invoice, on the date in P_6. --%>
+				<Zaplacono>1</Zaplacono>
+				<DataZaplaty><%= @invoice.sale_date %></DataZaplaty>
+			<% else %>
+				<%= if @invoice.due_date do %>
+					<TerminPlatnosci>
+						<Termin><%= @invoice.due_date %></Termin>
+					</TerminPlatnosci>
+				<% end %>
 			<% end %>
 			<FormaPlatnosci><%= T.payment_method_code(@invoice.payment_method) %></FormaPlatnosci>
 			<%= if @invoice.seller_account_number do %>
@@ -244,6 +256,26 @@
 				</RachunekBankowy>
 			<% end %>
 		</Platnosc>
+		<%= if @invoice.ksef_invoice_kind == :advance do %>
+			<%!-- A payment of the whole order: its value is the received amount, P_15. --%>
+			<Zamowienie>
+				<WartoscZamowienia><%= T.format_decimal(@invoice.gross_value) %></WartoscZamowienia>
+				<%= for item <- @invoice.sales_invoice_items do %>
+					<ZamowienieWiersz>
+						<NrWierszaZam><%= item.index + 1 %></NrWierszaZam>
+						<UU_IDZ><%= item.id %></UU_IDZ>
+						<P_7Z><%= item.name %></P_7Z>
+						<P_8AZ><%= item.unit %></P_8AZ>
+						<P_8BZ><%= T.format_quantity(item.quantity) %></P_8BZ>
+						<P_9AZ><%= T.format_decimal(item.unit_price) %></P_9AZ>
+						<P_11NettoZ><%= T.format_decimal(item.net_value) %></P_11NettoZ>
+						<P_11VatZ><%= T.format_decimal(item.vat_value) %></P_11VatZ>
+						<P_12Z><%= T.format_vat_rate(item.vat_rate) %></P_12Z>
+						<%= if item.gtu do %><GTUZ><%= item.gtu %></GTUZ><% end %>
+					</ZamowienieWiersz>
+				<% end %>
+			</Zamowienie>
+		<% end %>
 	</Fa>
 
 	<Stopka>

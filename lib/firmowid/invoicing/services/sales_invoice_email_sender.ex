@@ -28,7 +28,12 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
 
     case SalesInvoice.by_id(
            sales_invoice_id,
-           Keyword.put(ash_opts, :load, [:counterparty, :amount])
+           Keyword.put(ash_opts, :load, [
+             :counterparty,
+             :amount,
+             :is_paid_on_issue,
+             :is_correction
+           ])
          ) do
       {:ok, nil} ->
         {:cancel, :sales_invoice_not_found}

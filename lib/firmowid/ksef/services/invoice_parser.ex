@@ -54,6 +54,12 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
           name: tns_xpath(~x"./P_7/text()"os),
           quantity: tns_xpath(~x"./P_8B/text()"of),
           price: tns_xpath(~x"./P_9A/text()"of)
+        ],
+        order_items: [
+          tns_xpath(~x"/Faktura/Fa/Zamowienie/ZamowienieWiersz"l),
+          name: tns_xpath(~x"./P_7Z/text()"os),
+          quantity: tns_xpath(~x"./P_8BZ/text()"of),
+          price: tns_xpath(~x"./P_9AZ/text()"of)
         ]
       )
       |> trim_fields()
@@ -75,6 +81,7 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
         date -> date
       end)
       |> put_amount()
+      |> put_order_items()
 
     {:ok, attrs}
   rescue
@@ -102,6 +109,12 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
     |> Map.drop([:currency, :total_amount, :charges, :deductions])
     |> Map.put(:amount, Money.new!(currency, amount_due))
   end
+
+  # An advance invoice lists what was ordered in Zamowienie and has no invoice rows.
+  defp put_order_items(%{items_list: [], order_items: order_items} = attrs),
+    do: attrs |> Map.delete(:order_items) |> Map.put(:items_list, order_items)
+
+  defp put_order_items(attrs), do: Map.delete(attrs, :order_items)
 
   defp sum_amounts(entries), do: Enum.reduce(entries, Decimal.new(0), &Decimal.add(Decimal.new(&1.amount), &2))
 
