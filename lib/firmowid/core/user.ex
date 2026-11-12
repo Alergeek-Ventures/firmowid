@@ -421,34 +421,31 @@ defmodule Firmowid.Core.User do
       accept []
       require_atomic? false
 
-      change fn changeset, context ->
-        user_id = changeset.data.id
-        ash_opts = [actor: context.actor]
+      change before_action(fn changeset, context ->
+               opts = Ash.Context.to_opts(context)
 
-        # Find and destroy the Google UserIdentity
-        identity =
-          UserIdentity
-          |> Ash.read!(ash_opts)
-          |> Enum.find(&(&1.user_id == user_id and &1.strategy == "google"))
+               case Firmowid.Core.read_user_identity_for_strategy!(
+                      changeset.data.id,
+                      "google",
+                      opts
+                    ) do
+                 [] ->
+                   Ash.Changeset.add_error(changeset,
+                     message: gettext_noop("The Google account is not connected.")
+                   )
 
-        case identity do
-          nil ->
-            Ash.Changeset.add_error(changeset,
-              message: gettext_noop("The Google account is not connected.")
-            )
+                 [identity | _] ->
+                   case Ash.destroy(identity, opts) do
+                     :ok ->
+                       changeset
 
-          identity ->
-            case Ash.destroy(identity, ash_opts) do
-              :ok ->
-                changeset
-
-              {:error, _error} ->
-                Ash.Changeset.add_error(changeset,
-                  message: gettext_noop("Could not disconnect the Google account.")
-                )
-            end
-        end
-      end
+                     {:error, _error} ->
+                       Ash.Changeset.add_error(changeset,
+                         message: gettext_noop("Could not disconnect the Google account.")
+                       )
+                   end
+               end
+             end)
     end
   end
 
