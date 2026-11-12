@@ -23,7 +23,7 @@ Faktura może być w jednej z 33 walut. Każda waluta ma swoje domyślne konto: 
 
 ## Faktura w euro w KSeF
 
-Kwoty na fakturze w walucie obcej zostają w tej walucie, ale według art. 106e ust. 11 ustawy o VAT kwotę podatku podaje się także w złotych. Kurs: średni NBP z dnia roboczego przed obowiązkiem podatkowym, a gdy faktura powstała wcześniej, przed dniem jej wystawienia. Przy np II dla firmy z UE podatku nie ma, więc nie ma czego przeliczać.
+Kwoty na fakturze w walucie obcej zostają w tej walucie, ale według art. 106e ust. 11 ustawy o VAT kwotę podatku podaje się także w złotych. Kurs: średni NBP z dnia roboczego przed obowiązkiem podatkowym, a gdy faktura powstała wcześniej, przed dniem jej wystawienia. Przy np II dla firmy z UE na fakturze nie ma kwoty VAT do przeliczenia, ale przychód nadal przelicza się na złote.
 
 ## Konto z zagranicznym IBAN
 
