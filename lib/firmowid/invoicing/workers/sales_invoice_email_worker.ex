@@ -53,7 +53,7 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
 
       # Resend keeps a key only for an email it accepted, so this answer to a retry
       # means an earlier attempt of this job already sent the email.
-      {:error, attrs, %Resend.Error{name: "invalid_idempotent_request"}} when job.attempt > 1 ->
+      {:error, attrs, {409, %{"name" => "invalid_idempotent_request"}}} when job.attempt > 1 ->
         attrs
         |> Map.delete(:error_message)
         |> Map.merge(%{status: :sent, sent_at: DateTime.utc_now()})
