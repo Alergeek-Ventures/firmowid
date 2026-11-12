@@ -77,9 +77,9 @@ defmodule Firmowid.Core.OrganizationInvite do
         allow_nil?: false,
         description: "The joining person's name, stored on their member."
 
-      # The update only matches an unconsumed row, so concurrent joins with the same
-      # code cannot both consume it; the loser gets a stale-record error.
-      change filter(expr(is_nil(consumed_at)))
+      # The update only matches an unconsumed, unexpired row, so concurrent joins with
+      # the same code cannot both consume it; the loser gets a stale-record error.
+      change filter(expr(is_nil(consumed_at) and expires_at > now()))
       change Firmowid.Core.Changes.RequireNotActiveInOrganization
       change set_attribute(:consumed_by_id, actor(:id))
       change set_attribute(:consumed_at, &DateTime.utc_now/0)
