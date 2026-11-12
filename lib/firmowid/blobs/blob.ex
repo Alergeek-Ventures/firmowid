@@ -67,7 +67,6 @@ defmodule Firmowid.Blobs.Blob do
   end
 
   code_interface do
-    define :list, action: :list
     define :read_global, action: :read_global
     define :list_processing, action: :list_processing, args: [:processing_target]
     define :mark_processing, action: :mark_processing
