@@ -12,7 +12,7 @@ Za samo wystawianie i odbieranie faktur w KSeF nie trzeba płacić ani złotówk
 |---|---|---|
 | Wystawianie i odbiór faktur w KSeF | tak | tak |
 | UPO, uprawnienia, korekty | tak | zwykle tak |
-| Tryb offline24 i kody QR | Aplikacja Podatnika i aplikacja mobilna | zależy od programu |
+| Tryb offline24 i kody QR | aplikacja mobilna, z certyfikatem KSeF typu 2 | zależy od programu |
 | Przeniesienie faktur do ewidencji VAT | e-mikrofirma | w programach z księgowością |
 | Informacja, kto zapłacił | nie | w programach połączonych z bankiem |
 | Kilka osób wystawiających faktury | uprawnienia nadawane w Aplikacji Podatnika | osobne konta użytkowników |
