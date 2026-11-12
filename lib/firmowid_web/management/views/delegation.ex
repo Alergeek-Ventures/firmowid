@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.SettlementDocument
   alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
+  alias FirmowidWeb.Management.Components.DelegationOrderPdf
   alias FirmowidWeb.Management.Utilities.Navigation
 
   @impl true
@@ -546,7 +547,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     class="mt-2 flex w-fit max-w-full sm:mt-0 sm:ml-2 sm:inline-flex"
                   >
                     <Lucideicons.file_text class="size-4 shrink-0 text-grey-900" />
-                    <span class="truncate">{command_filename(@employee)}</span>
+                    <span class="truncate">{DelegationOrderPdf.filename(@employee)}</span>
                   </.link>
                 </li>
                 <li>
@@ -728,16 +729,6 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       {upload_error(error)}
     </p>
     """
-  end
-
-  defp command_filename(employee) do
-    initials =
-      (employee.member.name || employee.email)
-      |> String.split()
-      |> Enum.map_join(&String.first/1)
-      |> String.upcase()
-
-    "Polecenie_wyjazdu_#{initials}.pdf"
   end
 
   defp initial(name), do: name |> String.trim() |> String.first() |> String.upcase()
