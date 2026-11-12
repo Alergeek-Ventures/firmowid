@@ -9,6 +9,18 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
 
+  @doc "Returns the file name of an employee's business trip order, e.g. `Polecenie_wyjazdu_JK.pdf`."
+  @spec filename(map()) :: String.t()
+  def filename(employee) do
+    initials =
+      (employee.member.name || employee.email)
+      |> String.split()
+      |> Enum.map_join(&String.first/1)
+      |> String.upcase()
+
+    "Polecenie_wyjazdu_#{initials}.pdf"
+  end
+
   attr :employee, :map, required: true
   attr :employment_contract, :map, required: true
   attr :delegation, :map, required: true

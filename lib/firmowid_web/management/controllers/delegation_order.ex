@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
   alias Firmowid.Invoicing.Services.PdfUtils
   alias Firmowid.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
+  alias FirmowidWeb.Management.Components.DelegationOrderPdf
 
   # PDF downloads are Gotenberg-rendered binaries, not user-controlled HTML.
   # sobelow_skip ["XSS.SendResp"]
@@ -22,7 +23,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
          true <- delegation.member_id == employee.member.id,
          {:ok, pdf} <- render_pdf(employee, employment_contract, delegation) do
       send_download(conn, {:binary, pdf},
-        filename: filename(employee),
+        filename: DelegationOrderPdf.filename(employee),
         content_type: "application/pdf"
       )
     else
@@ -36,7 +37,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
   defp render_pdf(employee, employment_contract, delegation) do
     html =
       PdfHelpers.render_pdf_html(
-        FirmowidWeb.Management.Components.DelegationOrderPdf,
+        DelegationOrderPdf,
         :order,
         employee: employee,
         employment_contract: employment_contract,
@@ -46,15 +47,5 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
       )
 
     PdfUtils.render_html_to_pdf(html, scale: 1)
-  end
-
-  defp filename(employee) do
-    initials =
-      (employee.member.name || employee.email)
-      |> String.split()
-      |> Enum.map_join(&String.first/1)
-      |> String.upcase()
-
-    "Polecenie_wyjazdu_#{initials}.pdf"
   end
 end
