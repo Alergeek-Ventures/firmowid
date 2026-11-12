@@ -1029,6 +1029,7 @@ msgstr ""
 msgid "Additional information:"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/components/bank_transfer_modal.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
@@ -2088,11 +2089,13 @@ msgstr ""
 msgid "Cancelling..."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Card"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Cash"
@@ -3714,6 +3717,7 @@ msgstr ""
 msgid "Counterparty scope"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
@@ -4029,6 +4033,7 @@ msgstr ""
 msgid "Describe your idea or suggestion, or report a problem"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
@@ -4115,6 +4120,7 @@ msgstr ""
 msgid "Disconnecting will stop the current KSeF integration for this organization."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
@@ -4536,6 +4542,7 @@ msgstr ""
 msgid "Effective today"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/auth/views/forgot_password.ex
 #: lib/firmowid_web/auth/views/login.ex
 #: lib/firmowid_web/auth/views/registration.ex
@@ -4573,6 +4580,7 @@ msgstr ""
 msgid "Email sending error"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
@@ -4924,6 +4932,7 @@ msgstr ""
 msgid "Exempt from VAT"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Exemption basis"
@@ -5288,6 +5297,7 @@ msgstr ""
 msgid "Firmowid's source code is public under the AGPL-3.0 license. You can host it on your own server."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
@@ -5903,6 +5913,7 @@ msgstr ""
 msgid "INVITATION"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
@@ -6844,6 +6855,7 @@ msgstr ""
 msgid "Last invoice"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
@@ -8638,6 +8650,7 @@ msgstr ""
 msgid "Payment for invoice %{number}"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Payment method"
@@ -9492,6 +9505,7 @@ msgstr ""
 msgid "Revenue against team costs"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Reverse charge"
@@ -12419,6 +12433,7 @@ msgstr ""
 msgid "Transactions will appear automatically once the account is connected."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -12889,6 +12904,7 @@ msgstr ""
 msgid "Using the solution of our partner, GoCardless, we will connect your account to Firmowid."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "VAT"
@@ -12899,6 +12915,7 @@ msgstr ""
 msgid "VAT %{rate}%"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #: lib/firmowid_web/organization/views/index.ex
 #: lib/firmowid_web/settings/components/company_tab.ex

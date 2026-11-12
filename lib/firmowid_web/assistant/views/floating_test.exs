@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
 
   @moduletag capture_log: true
@@ -271,6 +272,73 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       assert [%{args: args}] = all_enqueued(worker: Respond)
       assert args["metadata"] == %{"run_id" => denied.run_id}
     end)
+  end
+
+  test "a draft update card shows the buyer's tax ID and address it changes", %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    scope.tenant
+    |> Firmowid.Core.get_organization!(scope: scope)
+    |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
+
+    draft =
+      Ash.Seed.seed!(SalesInvoice, %{
+        organization_id: scope.tenant,
+        issue_date: Date.utc_today(),
+        sale_date: Date.utc_today(),
+        due_date: Date.add(Date.utc_today(), 7),
+        payment_method: :cash,
+        currency: "PLN",
+        buyer_type: :company,
+        buyer_country: "PL",
+        buyer_id: "1111111111",
+        buyer_full_name: "Acme Sp. z o.o.",
+        buyer_address: "ul. Przykładowa 1, Warszawa",
+        sales_invoice_items: [
+          %{
+            organization_id: scope.tenant,
+            index: 0,
+            name: "Consulting",
+            quantity: Decimal.new(1),
+            unit: "szt",
+            unit_price: Decimal.new(100),
+            vat_rate: "23"
+          }
+        ]
+      })
+
+    arguments =
+      Jason.encode!(%{
+        id: draft.id,
+        input: %{buyer_id: "1234563218", buyer_address: "ul. Inna 2, Kraków"}
+      })
+
+    conversation =
+      seed_conversation(scope, owner, :awaiting_approval, [
+        {:user, [%{"type" => "text", "text" => "Zmień nabywcę."}]},
+        {:assistant,
+         [
+           %{
+             "type" => "tool_call",
+             "id" => "revise",
+             "name" => "update_sales_invoice_draft",
+             "arguments" => arguments
+           }
+         ]}
+      ])
+
+    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
+    assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    assistant |> element("#assistant-launcher") |> render_click()
+
+    plan = "#assistant-plan-#{conversation.version}"
+
+    assert has_element?(assistant, "#{plan} button[phx-click='approve']:not([disabled])")
+    assert has_element?(assistant, "#{plan} del", "1111111111")
+    assert has_element?(assistant, "#{plan} ins", "1234563218")
+    assert has_element?(assistant, "#{plan} del", "ul. Przykładowa 1, Warszawa")
+    assert has_element?(assistant, "#{plan} ins", "ul. Inna 2, Kraków")
   end
 
   defp seed_conversation(scope, owner, status, messages, version \\ 1) do
