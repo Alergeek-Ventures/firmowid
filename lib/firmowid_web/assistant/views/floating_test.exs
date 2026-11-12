@@ -386,6 +386,45 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(assistant, "#{plan} dt", "Praca zdalna")
   end
 
+  test "a profile card shows a bank account number the member does not have yet", %{conn: conn} do
+    owner = admin_fixture()
+
+    plan =
+      open_plan(conn, owner, "update_profile", %{
+        input: %{name: "Jan Kowalski", bank_account_number: "PL61109010140000071219812874"}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} ins", "Jan Kowalski")
+    assert has_element?(plan.view, "#{plan.id} dt", "Numer konta bankowego")
+    assert has_element?(plan.view, "#{plan.id} ins", "PL61109010140000071219812874")
+  end
+
+  # Opens the assistant on a conversation that waits for approval of one tool call.
+  defp open_plan(conn, owner, name, arguments) do
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    conversation =
+      seed_conversation(scope, owner, :awaiting_approval, [
+        {:user, [%{"type" => "text", "text" => "Zmień dane."}]},
+        {:assistant,
+         [
+           %{
+             "type" => "tool_call",
+             "id" => "call",
+             "name" => name,
+             "arguments" => Jason.encode!(arguments)
+           }
+         ]}
+      ])
+
+    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
+    view = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    view |> element("#assistant-launcher") |> render_click()
+
+    %{view: view, id: "#assistant-plan-#{conversation.version}"}
+  end
+
   defp seed_conversation(scope, owner, status, messages, version \\ 1) do
     [{:user, [%{"type" => "text", "text" => title} | _]} | _] = messages
 
