@@ -94,7 +94,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, {:unsupported, String.t()} | term()}
   def parse(xml) when is_binary(xml) do
-    doc = SweetXml.parse(xml, namespace_conformant: true)
+    doc = SweetXml.parse(xml, namespace_conformant: true, dtd: :none)
 
     with {:ok, kind} <- invoice_kind(text(doc, "/Faktura/Fa/RodzajFaktury")),
          :ok <- no_settlement(doc),
@@ -563,7 +563,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
   """
   @spec summary(binary()) :: map()
   def summary(xml) when is_binary(xml) do
-    doc = SweetXml.parse(xml, namespace_conformant: true)
+    doc = SweetXml.parse(xml, namespace_conformant: true, dtd: :none)
 
     %{
       invoice_number: text(doc, "/Faktura/Fa/P_2"),

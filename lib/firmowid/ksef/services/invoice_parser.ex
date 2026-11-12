@@ -23,7 +23,7 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
   def parse(xml) when is_binary(xml) do
     attrs =
       xml
-      |> SweetXml.parse(namespace_conformant: true)
+      |> SweetXml.parse(namespace_conformant: true, dtd: :none)
       |> xmap(
         seller_nip: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/NIP/text()"os),
         seller: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
