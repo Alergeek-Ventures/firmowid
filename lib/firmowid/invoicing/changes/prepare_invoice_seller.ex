@@ -2,7 +2,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
   @moduledoc """
   Snapshots the scoped organization's seller details while preparing a new invoice or saved draft.
 
-  An unnumbered document is issued on the day it is prepared, so its issue date is always today.
+  An unnumbered document is issued on the day it is prepared, so its issue date is always today in Poland.
   A saved draft's date is only the day it was saved and must not backdate its later issuance.
   A transfer without a seller account uses the organization's default bank account for the currency,
   as the invoice creator does.
@@ -12,6 +12,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
 
   alias Firmowid.Core
   alias Firmowid.Finances
+  alias Firmowid.LocalDate
   alias Firmowid.Scope
 
   @doc "Copies the current organization's details into a new or revised draft."
@@ -34,7 +35,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
           seller_name: nil,
           seller_surname: nil
         })
-        |> Ash.Changeset.force_change_attribute(:issue_date, Date.utc_today())
+        |> Ash.Changeset.force_change_attribute(:issue_date, LocalDate.today())
         |> new_invoice_defaults()
         |> default_if_nil(:vat_exemption_type, organization.vat_exemption_type)
         |> default_if_nil(:vat_exemption_basis, organization.vat_exemption_basis)

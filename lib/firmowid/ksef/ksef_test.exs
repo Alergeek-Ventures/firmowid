@@ -62,6 +62,18 @@ defmodule Firmowid.KsefTest do
     assert SalesInvoice.by_id!(invoice.id, scope: scope).ksef_invoice_checksum == checksum
   end
 
+  test "invoice_url! links the hash KSeF reported in standard Base64 as Base64URL" do
+    invoice = %{
+      seller_nip: "6161525811",
+      issue_date: ~D[2026-01-15],
+      ksef_number: "6161525811-20260115-ABCDEF-ABCDEF-AB",
+      ksef_invoice_checksum: "P1JKi8CTY08T+poVeR4JrOh9PIKEMAtgjSzm/q99+ak="
+    }
+
+    assert Ksef.invoice_url!(invoice) =~
+             ~r"/invoice/6161525811/15-01-2026/P1JKi8CTY08T-poVeR4JrOh9PIKEMAtgjSzm_q99-ak$"
+  end
+
   test "a KSeF session actor reaches only its own organization's credential" do
     organization_id = admin_fixture().member.organization_id
     other_organization_id = admin_fixture().member.organization_id

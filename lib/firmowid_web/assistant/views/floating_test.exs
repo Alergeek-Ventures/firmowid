@@ -657,7 +657,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     |> Ash.Seed.seed!(%{
       organization_id: scope.tenant,
       seller_display_name: organization.name,
-      issue_date: Date.utc_today(),
+      issue_date: Firmowid.LocalDate.today(),
       sale_date: Date.utc_today(),
       due_date: Date.add(Date.utc_today(), 7),
       payment_method: :cash,

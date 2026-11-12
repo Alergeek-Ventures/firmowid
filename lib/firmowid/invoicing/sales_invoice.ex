@@ -76,6 +76,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Invoicing.Types.InvoiceInput
   alias Firmowid.Invoicing.Validations
   alias Firmowid.Invoicing.VatExemption
+  alias Firmowid.LocalDate
   alias Firmowid.Resource
   alias Firmowid.Scope
   alias Firmowid.SystemActor
@@ -509,7 +510,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         description: "Repeat a corrected invoice's buyer VAT number that breaks its country's format."
 
       change Changes.ApplyInvoiceInput
-      change set_new_attribute(:issue_date, &Date.utc_today/0)
+      change set_new_attribute(:issue_date, &LocalDate.today/0)
 
       change set_attribute(:id, arg(:confirmation_id)) do
         where present(:confirmation_id)

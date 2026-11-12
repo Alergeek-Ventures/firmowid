@@ -25,6 +25,7 @@ defmodule Firmowid.Billing.PlanLimits do
   alias Firmowid.Core.Organization
   alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
+  alias Firmowid.LocalDate
   alias Firmowid.Scope
   alias Firmowid.SystemActor
   alias Firmowid.Timetracker
@@ -33,7 +34,6 @@ defmodule Firmowid.Billing.PlanLimits do
   require Ash.Query
 
   @decision_days 7
-  @warsaw_timezone "Europe/Warsaw"
 
   @typedoc "A bank the organization synchronizes, with its synchronized accounts, oldest first."
   @type bank :: %{id: String.t(), name: String.t(), accounts: [BankAccount.t(), ...]}
@@ -59,10 +59,6 @@ defmodule Firmowid.Billing.PlanLimits do
     }
   end
 
-  @doc "Returns today's date in Poland, where the decision days fall."
-  @spec today() :: Date.t()
-  def today, do: @warsaw_timezone |> DateTime.now!() |> DateTime.to_date()
-
   @doc "Returns how many days after the decision day the excess is switched off without a decision."
   @spec decision_days() :: pos_integer()
   def decision_days, do: @decision_days
@@ -71,7 +67,7 @@ defmodule Firmowid.Billing.PlanLimits do
   @spec decision_due?(Organization.t()) :: boolean()
   def decision_due?(%Organization{plan_limit_decision_on: nil}), do: false
 
-  def decision_due?(%Organization{plan_limit_decision_on: day}), do: Date.compare(day, today()) != :gt
+  def decision_due?(%Organization{plan_limit_decision_on: day}), do: Date.compare(day, LocalDate.today()) != :gt
 
   @doc "Returns the day the excess is switched off without a decision."
   @spec switch_off_on(Organization.t()) :: Date.t()
@@ -81,7 +77,7 @@ defmodule Firmowid.Billing.PlanLimits do
   @spec usage(Organization.t()) :: PlanCatalog.usage()
   def usage(%Organization{} = organization) do
     organization
-    |> SnapshotCalculator.build_snapshot_attrs!(today())
+    |> SnapshotCalculator.build_snapshot_attrs!(LocalDate.today())
     |> PlanCatalog.usage()
   end
 
@@ -133,7 +129,7 @@ defmodule Firmowid.Billing.PlanLimits do
   Organizations without a plan are blocked and skipped.
   """
   @spec check(Organization.t(), Date.t()) :: {:ok, Organization.t()} | {:error, term()}
-  def check(organization, today \\ today())
+  def check(organization, today \\ LocalDate.today())
 
   def check(%Organization{billing_plan: :no_plan} = organization, _today), do: {:ok, organization}
 

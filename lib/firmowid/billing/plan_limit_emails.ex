@@ -18,6 +18,7 @@ defmodule Firmowid.Billing.PlanLimitEmails do
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Core.Organization
   alias Firmowid.Core.User
+  alias Firmowid.LocalDate
   alias Firmowid.Mailer
 
   @doc """
@@ -38,7 +39,7 @@ defmodule Firmowid.Billing.PlanLimitEmails do
       company: organization.display_name,
       plan: plan_name(organization.billing_plan),
       rows: Enum.map(exceeded, &{label(&1), "#{usage[&1]}, plan obejmuje #{limits[&1]}"}),
-      decision_today?: Date.compare(decision_on, PlanLimits.today()) != :gt,
+      decision_today?: Date.compare(decision_on, LocalDate.today()) != :gt,
       decision_on: format_date(decision_on),
       switch_off_on: format_date(Date.add(decision_on, PlanLimits.decision_days())),
       url: url(~p"/limit-planu")

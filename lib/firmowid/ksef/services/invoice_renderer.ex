@@ -193,6 +193,9 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
   # FA(3) sums 23% with 22% (P_13_1) and 8% with 7% (P_13_2); every other rate has its own field.
   @rate_groups [["23", "22"], ["8", "7"]]
 
+  # The schema's order of the totals, P_13_1 to P_13_10, by the first rate of each.
+  @summary_order ["23", "8", "5", "4", "3", "0 KR", "0 WDT", "0 EX", "zw", "np I", "np II", "oo"]
+
   # P_14_xW: a foreign-currency invoice's VAT in PLN at the NBP rate, for the groups FA(3)
   # converts (23/22%, 8/7%, 5%, 4%).
   @pln_converted_rates ["23", "22", "8", "7", "5", "4"]
@@ -216,7 +219,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
       }
     end)
     |> Enum.reject(&(before_items && Decimal.eq?(&1.net, 0) && Decimal.eq?(&1.vat, 0)))
-    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
+    |> Enum.sort_by(fn group -> Enum.find_index(@summary_order, &(&1 == group.rate)) end)
   end
 
   # A correction's VAT in PLN is the difference of the converted states after and before it.

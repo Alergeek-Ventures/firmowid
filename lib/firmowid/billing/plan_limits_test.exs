@@ -89,7 +89,7 @@ defmodule Firmowid.Billing.PlanLimitsTest do
   describe "keep/3" do
     test "refuses a selection above the plan, then keeps the owner and switches a bank off with all its accounts" do
       %{admin: admin, org_id: org_id} = above_free = above_free_plan()
-      deciding = decide_on(org_id, PlanLimits.today())
+      deciding = decide_on(org_id, Firmowid.LocalDate.today())
       scope = Scope.new!(admin, org_id)
       [older_bank_account | _rest] = above_free.older_bank
       projects = Enum.map(above_free.older_projects, & &1.id)

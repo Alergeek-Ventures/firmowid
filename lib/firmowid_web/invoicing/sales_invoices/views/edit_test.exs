@@ -323,7 +323,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     |> render_click()
 
     # A draft is issued today, so payment suggestions count from today.
-    assert render(view) =~ ~s(value="#{Date.add(Date.utc_today(), 7)}")
+    assert render(view) =~ ~s(value="#{Date.add(Firmowid.LocalDate.today(), 7)}")
   end
 
   test "a draft opens the edit form, but an invoice issued outside KSeF cannot be edited", %{

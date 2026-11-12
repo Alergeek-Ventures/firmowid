@@ -168,7 +168,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     |> element("button[phx-click='suggest_payment_date'][phx-value-field='due_date'][phx-value-suggestion='days_7']")
     |> render_click()
 
-    assert render(view) =~ ~s(value="#{Date.to_iso8601(Date.add(Date.utc_today(), 7))}")
+    assert render(view) =~
+             ~s(value="#{Date.to_iso8601(Date.add(Firmowid.LocalDate.today(), 7))}")
   end
 
   test "items step shows one empty row by default", %{conn: conn} do

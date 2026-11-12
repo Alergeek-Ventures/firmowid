@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Invoicing.Services.CorrectionReason
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
+  alias Firmowid.LocalDate
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -291,8 +292,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       maybe_put_exemption_params(
         %{
           "original_invoice_id" => original_invoice.id,
-          "issue_date" => Date.to_iso8601(Date.utc_today()),
-          "invoice_number" => SalesInvoice.get_next_number!(Date.utc_today(), "FK", nil, nil, scope: scope),
+          "issue_date" => Date.to_iso8601(LocalDate.today()),
+          "invoice_number" => SalesInvoice.get_next_number!(LocalDate.today(), "FK", nil, nil, scope: scope),
           "ksef_invoice_kind" => "kor",
           "sale_date" => if(latest.sale_date, do: Date.to_iso8601(latest.sale_date)),
           "due_date" => if(latest.due_date, do: Date.to_iso8601(latest.due_date)),
@@ -425,7 +426,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           target,
           suggestion_key,
           issue_date,
-          Date.utc_today()
+          LocalDate.today()
         )
 
       ash_form = AshPhoenix.Form.validate(socket.assigns.form.source, updated_params)
@@ -547,7 +548,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     socket = assign(socket, :gross_item_price_inputs, gross_item_price_inputs)
     form_params = normalize_price_input_params(form_params)
     scope = socket.assigns.ash_scope
-    issue_date = Date.utc_today()
+    issue_date = LocalDate.today()
 
     number =
       case form_params["invoice_number"] do
@@ -789,7 +790,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp current_issue_date(socket) do
     form_value_date(socket.assigns.form.source, :issue_date) ||
       socket.assigns.invoice.issue_date ||
-      Date.utc_today()
+      LocalDate.today()
   end
 
   # --- Correction reason auto-generation ---
