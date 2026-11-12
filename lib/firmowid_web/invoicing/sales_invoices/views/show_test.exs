@@ -52,6 +52,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     assert url =~ shared_invoice.share_token
   end
 
+  test "shows the KSeF submission result while the invoice is open", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = sales_invoice_fixture!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    send(view.pid, {:ksef_invoice_status, %{invoice_id: invoice.id, status: :submitted}})
+
+    assert render(view) =~ "Faktura została wysłana do KSeF"
+    assert has_element?(view, "#inv-id", invoice.invoice_number)
+  end
+
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
     admin = admin_fixture()
     invoice = sales_invoice_fixture!(admin)
