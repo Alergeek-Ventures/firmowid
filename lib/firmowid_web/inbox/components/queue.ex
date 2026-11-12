@@ -284,20 +284,19 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       data-fit-to={@fit_to}
       data-absent-labels={JSON.encode!(@absent_labels)}
       data-more-labels={JSON.encode!(@more_labels)}
+      data-collapse-label={gettext("Collapse")}
       class="flex flex-col gap-4 rounded-sm bg-white px-5 pt-5 pb-4"
     >
       <div class="flex items-center justify-between gap-2 text-grey-600">
         <h2 class="text-caps-sm font-medium uppercase">{gettext("Today at the company")}</h2>
-        <span
-          class="text-sm tabular-nums"
-          aria-label={
-            gettext("%{working} of %{count} working",
+        <span class="text-sm tabular-nums">
+          <span aria-hidden="true">{length(@working)}/{length(@presence)}</span>
+          <span class="sr-only">
+            {gettext("%{working} of %{count} working",
               working: length(@working),
               count: length(@presence)
-            )
-          }
-        >
-          {length(@working)}/{length(@presence)}
+            )}
+          </span>
         </span>
       </div>
       <div class="flex flex-col gap-3">
@@ -381,6 +380,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             const fold = this.el.querySelector("[data-fold]")
             if (!fold) return
             const working = rows.filter((row) => !row.hasAttribute("data-absent")).length
+            // Works out the fold as if folded, then unfolds everyone again when expanded.
+            const expanded = this.expanded
+            this.expanded = false
             const stacked = this.el.closest("aside").getBoundingClientRect().top >
               this.el.closest("aside").previousElementSibling.getBoundingClientRect().bottom
             this.show(rows, fold, rows.length)
@@ -395,6 +397,14 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 this.show(rows, fold, --visible)
               }
             }
+            // With nobody left to fold there is nothing to collapse either.
+            this.expanded = expanded && !fold.hidden
+            if (this.expanded) {
+              rows.forEach((row) => { row.hidden = false })
+              fold.setAttribute("aria-expanded", "true")
+              fold.querySelector("[data-fold-label]").textContent = this.el.dataset.collapseLabel
+              fold.querySelector("[data-fold-dot]").hidden = true
+            }
           },
           // Slides the list from its old height and fades the unfolded people in.
           animate(list, from, unfolded) {
@@ -405,13 +415,12 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             list.animate([{ height: `${from}px`, overflow: "hidden" }, { height: `${to}px`, overflow: "hidden" }], timing)
             unfolded.forEach((row) => row.animate([{ opacity: 0 }, { opacity: 1 }], timing))
           },
-          // Shows the first `visible` people (all of them once unfolded) and
-          // names the folded ones on the toggle.
+          // Shows the first `visible` people and names the folded ones on the toggle.
           show(rows, fold, visible) {
             const folded = rows.slice(visible)
-            rows.forEach((row, i) => { row.hidden = !this.expanded && i >= visible })
+            rows.forEach((row, i) => { row.hidden = i >= visible })
             fold.hidden = folded.length === 0
-            fold.setAttribute("aria-expanded", String(this.expanded))
+            fold.setAttribute("aria-expanded", "false")
             if (!folded.length) return
             const onlyAbsent = folded.every((row) => row.hasAttribute("data-absent"))
             const labels = JSON.parse(this.el.dataset[onlyAbsent ? "absentLabels" : "moreLabels"])

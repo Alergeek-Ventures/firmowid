@@ -42,7 +42,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        page_title: "Skrzynka: scenariusze",
        scenarios: @scenarios,
        path: @path,
-       no_padding: true
+       no_padding: true,
+       hide_floating_assistant: true
      )}
   end
 

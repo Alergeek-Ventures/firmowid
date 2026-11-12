@@ -6,8 +6,9 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
 
   It lives in the layout of every page, so the numbers load after the page
   connects instead of delaying it. Until they arrive it shows the last numbers
-  this member saw (kept in the `:sidebar_status` cache), so a company badge
-  stays put across pages and only fades out once its items are resolved. The
+  this member saw (kept in the `:sidebar_status` cache), so the company badge
+  stays put across pages of the company layer and only fades out once its
+  items are resolved; the personal layer shows none. The
   inbox asks for a refresh after starting or stopping the session.
   """
 
