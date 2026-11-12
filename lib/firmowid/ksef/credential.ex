@@ -376,7 +376,7 @@ defmodule Firmowid.Ksef.Credential do
 
     # cross_tenant_reader: enumerate org ids only
     bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
-      authorize_if action([:all_organization_ids, :refreshable_certificates])
+      authorize_if action(:all_organization_ids)
     end
 
     # All other human access remains implicitly denied, including credential reads.
