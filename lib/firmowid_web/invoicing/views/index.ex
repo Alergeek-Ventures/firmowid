@@ -32,6 +32,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
@@ -355,16 +356,22 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_params(params, _url, socket) do
     parsed = Navigation.parse_invoicing_index_params(params)
 
-    socket =
-      socket
-      |> assign(:params, parsed)
-      |> then(&assign(&1, :all_months?, all_months_list?(&1.assigns)))
-      |> assign(:month_window, {0, @window_months})
-      # Kept across patches, like the hook's own record of the month it last reported.
-      |> assign_new(:visible_month, fn -> nil end)
-      |> refetch_invoicing_entries()
+    # The inbox replaces the column dashboard, which goes away with it; only the
+    # lists of invoices and transactions stay here.
+    if flag_enabled?(:inbox, socket.assigns) and parsed.view_mode == :dashboard do
+      {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company), replace: true)}
+    else
+      socket =
+        socket
+        |> assign(:params, parsed)
+        |> then(&assign(&1, :all_months?, all_months_list?(&1.assigns)))
+        |> assign(:month_window, {0, @window_months})
+        # Kept across patches, like the hook's own record of the month it last reported.
+        |> assign_new(:visible_month, fn -> nil end)
+        |> refetch_invoicing_entries()
 
-    {:noreply, socket}
+      {:noreply, socket}
+    end
   end
 
   @impl true
