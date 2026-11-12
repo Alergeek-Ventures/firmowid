@@ -132,5 +132,42 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       assert requisition.id == requisition_id
       assert :counters.get(stub_calls, 1) == 2
     end
+
+    test "shows an error when GoCardless cannot create the requisition", %{conn: conn} do
+      Req.Test.stub(:bank_data_requisition, fn conn ->
+        Plug.Conn.send_resp(conn, 500, "")
+      end)
+
+      {:ok, view, _html} = live(conn, ~p"/ustawienia/bank/dodaj")
+
+      rendered =
+        fn ->
+          view
+          |> element("#institution-N26")
+          |> render_submit()
+        end
+        |> ExUnit.CaptureLog.with_log()
+        |> elem(0)
+
+      assert rendered =~ "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."
+    end
+  end
+
+  describe "access" do
+    test "redirects a member who is not an admin", %{conn: conn} do
+      admin = Firmowid.AccountsFixtures.admin_fixture()
+
+      invoicing_user =
+        Firmowid.AccountsFixtures.user_in_org_fixture(admin.member.organization_id, %{
+          role: :invoicing
+        })
+
+      Req.Test.stub(:bank_data_institutions, fn conn -> Req.Test.json(conn, []) end)
+
+      assert {:error, {:redirect, %{flash: flash}}} =
+               conn |> log_in_user(invoicing_user) |> live(~p"/ustawienia/bank/dodaj")
+
+      assert flash["error"] =~ "Nie masz dostępu do sekcji zarządzania."
+    end
   end
 end
