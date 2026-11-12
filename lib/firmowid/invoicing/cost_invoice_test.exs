@@ -7,6 +7,7 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
   alias Ash.Error.Invalid
+  alias Firmowid.Blobs
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
@@ -33,20 +34,33 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
     on_exit(fn -> restore_env(:openai_enrichment, original_openai_enrichment) end)
   end
 
-  describe "delete_cost_invoice/1" do
+  describe "destroy_cost_invoice/2" do
     test "returns error for KSeF-imported invoice and does not delete it" do
       user = admin_fixture()
       invoice = insert_ksef_cost_invoice!(user.member.organization_id)
 
       scope = %Scope{actor: user, tenant: user.member.organization_id}
 
-      assert_raise RuntimeError,
-                   ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/,
-                   fn ->
-                     Invoicing.delete_cost_invoice(invoice.id, scope)
-                   end
+      assert {:error, %Invalid{}} = Invoicing.destroy_cost_invoice(invoice, scope: scope)
 
       assert {:ok, _} = Invoicing.get_cost_invoice(invoice.id, scope: scope)
+    end
+
+    test "deletes a document invoice together with its stored file" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+      {:ok, path} = Briefly.create(extname: ".pdf")
+      File.write!(path, "%PDF-1.4 cost invoice")
+      {:ok, blob} = Blobs.create_blob(path, "application/pdf", "faktura.pdf", scope: scope)
+      invoice = insert_cost_invoice!(scope.tenant, %{blob_id: blob.id})
+
+      assert :ok = Invoicing.destroy_cost_invoice(invoice, scope: scope)
+
+      assert {:ok, nil} =
+               Invoicing.get_cost_invoice(invoice.id, scope: scope, not_found_error?: false)
+
+      assert {:ok, nil} = Blobs.get_blob(blob.id, scope: scope, not_found_error?: false)
     end
   end
 

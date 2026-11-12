@@ -381,6 +381,7 @@ defmodule Firmowid.Invoicing do
       define :get_cost_invoice, action: :by_id, args: [:id]
       define :get_cost_invoice_by_blob_id, action: :read, get_by: [:blob_id]
       define :toggle_cost_invoice_skip, action: :toggle_skip
+      define :destroy_cost_invoice, action: :destroy
 
       define :connect_cost_invoice_transactions,
         action: :connect_transactions,
@@ -685,32 +686,6 @@ defmodule Firmowid.Invoicing do
   end
 
   # ── Cost invoice orchestration ──────────────────────────────────────
-
-  @doc """
-  Deletes a cost invoice by ID.
-
-  Destroys the associated blob (SQL cascade deletes the invoice row).
-
-  Note: The billing counter decrement happens outside the delete transaction.
-  This is intentional — billing limits are soft limits (informational only),
-  so we prioritize successful invoice deletion over counter accuracy.
-  """
-  @spec delete_cost_invoice(Ash.UUID.t(), Scope.t()) :: :ok
-  def delete_cost_invoice(cost_invoice_id, scope) do
-    opts = [scope: scope]
-
-    cost_invoice =
-      CostInvoice
-      |> Ash.Query.filter_input(%{id: %{eq: cost_invoice_id}})
-      |> Ash.Query.load([:blob, :is_ksef_imported])
-      |> Ash.read_one!(opts)
-
-    if cost_invoice.is_ksef_imported do
-      raise "Cost invoice #{cost_invoice_id} is imported from KSeF and cannot be deleted"
-    end
-
-    Blobs.destroy_blob!(cost_invoice.blob, opts)
-  end
 
   @doc """
   Returns the most recent KSeF permanent storage date across the organization's cost
