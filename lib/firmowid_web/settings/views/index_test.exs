@@ -259,6 +259,33 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert has_element?(view, "section", "Trwa odnawianie certyfikatu KSeF")
   end
 
+  test "an admin's certificate and key with uppercase extensions reach the KSeF sign-in", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/firma")
+    view |> element("#ksef-auth-tab-certificate") |> render_click()
+
+    upload =
+      file_input(view, "#ksef-certificate-form", :ksef_credentials, [
+        %{name: "CERTYFIKAT.CRT", content: "not a certificate", type: "application/pkix-cert"},
+        %{name: "KLUCZ.KEY", content: "not a key", type: "application/pkcs8"}
+      ])
+
+    render_upload(upload, "CERTYFIKAT.CRT")
+    render_upload(upload, "KLUCZ.KEY")
+
+    view
+    |> form("#ksef-certificate-form")
+    |> render_submit()
+
+    rendered = render(view)
+    refute rendered =~ "Wybierz certyfikat i klucz prywatny"
+    assert rendered =~ "Nie udało się zalogować do KSeF"
+  end
+
   defp iban_position(html, iban) do
     case :binary.match(html, iban) do
       {position, _length} -> position

@@ -162,7 +162,8 @@ defmodule FirmowidUI.Ksef.Connection do
     files =
       consume_uploaded_entries(socket, :ksef_credentials, fn %{path: path}, entry ->
         with {:ok, contents} <- File.read(path) do
-          {:ok, {Path.extname(entry.client_name), contents}}
+          # The upload accepts the extensions in any case, as LiveView compares them lowercased.
+          {:ok, {String.downcase(Path.extname(entry.client_name), :ascii), contents}}
         end
       end)
 
