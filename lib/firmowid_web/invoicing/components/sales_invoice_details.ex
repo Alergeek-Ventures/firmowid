@@ -400,8 +400,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.modal>
               </div>
 
+              <%!-- Only a writer can create the link; anyone can copy an existing one. --%>
               <span
-                :if={@invoice.invoice_number}
+                :if={@invoice.invoice_number && (@can_write_invoicing? or @invoice.share_token)}
                 id="share-invoice-button-container"
                 phx-hook="Tippy"
                 data-tippy-content={pgettext("share invoice tooltip", "Copy invoice link")}
