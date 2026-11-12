@@ -23,15 +23,16 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModalTest do
       })
 
     document = LazyHTML.from_fragment(html)
-    buttons = LazyHTML.query(document, "[data-copy-value]")
+    buttons = LazyHTML.query(document, "[data-copy-text]")
     assert Enum.empty?(LazyHTML.query(document, "img, script"))
 
     assert [^value, ^value, ^value, title, "123.45", "PLN"] =
-             LazyHTML.attribute(buttons, "data-copy-value")
+             LazyHTML.attribute(buttons, "data-copy-text")
 
     assert title =~ value
 
-    assert LazyHTML.attribute(buttons, "onclick") ==
-             List.duplicate("navigator.clipboard.writeText(this.dataset.copyValue)", 6)
+    # The clipboard hook copies the attribute; no inline handler is rendered.
+    assert LazyHTML.attribute(buttons, "phx-hook") == List.duplicate("CopyToClipboard", 6)
+    assert LazyHTML.attribute(buttons, "onclick") == []
   end
 end
