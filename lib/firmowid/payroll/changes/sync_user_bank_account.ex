@@ -50,8 +50,7 @@ defmodule Firmowid.Payroll.Changes.SyncUserBankAccount do
   end
 
   defp blank?(nil), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_), do: true
+  defp blank?(value), do: String.trim(value) == ""
 
   defp update_opts(context, contract) do
     context
