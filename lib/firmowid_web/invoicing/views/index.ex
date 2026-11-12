@@ -1357,7 +1357,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         :groupable?,
         :reconciliation_status
       ],
-      query: [sort: [booking_date: :desc]],
+      # Grouped transactions keep this order, so same-day ones need the tie broken.
+      query: [sort: [booking_date: :desc, id: :asc]],
       scope: scope
     )
   end
