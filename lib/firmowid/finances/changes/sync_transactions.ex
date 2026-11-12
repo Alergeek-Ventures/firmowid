@@ -200,8 +200,6 @@ defmodule Firmowid.Finances.Changes.SyncTransactions do
       Finances.upsert_transaction_from_sync(
         transactions,
         scope: scope,
-        upsert?: true,
-        actor: %SystemActor{org_id: bank_account.organization_id, role: :bank_sync},
         bulk_options: [
           return_errors?: true,
           stop_on_error?: false,
