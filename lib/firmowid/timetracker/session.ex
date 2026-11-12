@@ -274,7 +274,6 @@ defmodule Firmowid.Timetracker.Session do
       change filter(expr(is_nil(end_datetime)))
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
-      change NormalizeSessionBoundaries
     end
 
     update :auto_stop do
@@ -297,7 +296,6 @@ defmodule Firmowid.Timetracker.Session do
 
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
-      change NormalizeSessionBoundaries
     end
 
     action :stop_current, :struct do

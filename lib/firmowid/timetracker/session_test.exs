@@ -641,6 +641,56 @@ defmodule Firmowid.Timetracker.SessionTest do
       assert updated.end_datetime == ~U[2026-08-31 23:59:00Z]
     end
 
+    test "ends a session stored with seconds that began in the minute the previous one ended", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      seed = fn boundaries ->
+        Ash.Seed.seed!(
+          Session,
+          Map.merge(
+            %{
+              title: "Recorded before minute precision",
+              project_id: project.id,
+              member_id: user.member.id,
+              organization_id: scope.tenant
+            },
+            boundaries
+          )
+        )
+      end
+
+      seed.(%{start_datetime: ~U[2025-02-12 13:00:00Z], end_datetime: ~U[2025-02-12 13:43:20Z]})
+      running = seed.(%{start_datetime: ~U[2025-02-12 13:43:37Z]})
+
+      AshOban.schedule_and_run_triggers({Session, :auto_stop})
+
+      stopped = Ash.reload!(running, scope: scope)
+
+      assert stopped.start_datetime == ~U[2025-02-12 13:43:37Z]
+      assert stopped.end_datetime == ~U[2025-02-13 01:43:00Z]
+    end
+
+    test "ends a session stored with seconds in the last minute of its month at its start", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      running =
+        Ash.Seed.seed!(Session, %{
+          title: "Recorded before minute precision",
+          project_id: project.id,
+          member_id: user.member.id,
+          organization_id: scope.tenant,
+          start_datetime: ~U[2025-03-31 23:59:30Z]
+        })
+
+      AshOban.schedule_and_run_triggers({Session, :auto_stop})
+
+      assert Ash.reload!(running, scope: scope).end_datetime == ~U[2025-03-31 23:59:30Z]
+    end
+
     test "no-ops when session is already stopped", %{project: project, scope: scope} do
       {:ok, session} =
         Session.start(%{title: "Running", project_id: project.id}, scope: scope)

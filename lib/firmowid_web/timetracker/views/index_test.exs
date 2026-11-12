@@ -170,9 +170,10 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       |> form("#session_form", %{session_form: %{}})
       |> render_submit()
 
+      # Stopping sets the end only: moving the start to its minute could run into
+      # the session that ended just before it.
       ended_session = Repo.get!(Session, session.id)
-      assert ended_session.end_datetime
-      assert ended_session.start_datetime.second == 0
+      assert ended_session.start_datetime == ~U[2025-04-01 09:00:42Z]
       assert ended_session.end_datetime.second == 0
     end
 
