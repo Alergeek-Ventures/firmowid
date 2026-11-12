@@ -233,4 +233,28 @@ defmodule Firmowid.Core.UserTest do
                scope: %Scope{actor: user, tenant: user.member.organization_id}
              )
   end
+
+  test "the organization setup actor only reads and assigns its own user" do
+    user = user_fixture()
+    other_user = user_fixture()
+    organization_id = user.member.organization_id
+
+    actor = %SystemActor{
+      org_id: organization_id,
+      role: :organization_owner_setup,
+      user_id: user.id
+    }
+
+    assert Ash.can?(
+             {user, :set_organization, %{organization_id: organization_id, role: :admin}},
+             actor
+           )
+
+    refute Ash.can?(
+             {other_user, :set_organization, %{organization_id: organization_id, role: :admin}},
+             actor
+           )
+
+    refute Ash.can?({user, :destroy}, actor)
+  end
 end
