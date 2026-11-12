@@ -14,9 +14,6 @@ defmodule Firmowid.Timetracker.Changes.CleanupProjectTag do
   alias Firmowid.Timetracker.Project
 
   @impl true
-  def init(opts), do: {:ok, opts}
-
-  @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
       with :ok <- delete_orphaned_tag_definition(project.tag_definition_id, context) do

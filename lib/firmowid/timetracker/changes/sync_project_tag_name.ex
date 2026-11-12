@@ -13,9 +13,6 @@ defmodule Firmowid.Timetracker.Changes.SyncProjectTagName do
   alias Firmowid.SystemActor
 
   @impl true
-  def init(opts), do: {:ok, opts}
-
-  @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
       case sync_tag_name(project.tag_definition_id, project.name, context) do
