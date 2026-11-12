@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: ksef-w-praktyce
 ---
 
-Kary pieniężne za błędy w KSeF zostały w ustawie o VAT odroczone do 1 stycznia 2027 r. i taki termin nadal podaje Ministerstwo Finansów w odpowiedziach na pytania podatników. 16 września 2026 r. resort zapowiedział przesunięcie go o kolejny rok, a z doniesień prasowych wynika, że sejmowa Komisja Finansów Publicznych przyjęła rządowy projekt 4 listopada bez poprawek, zaś Sejm uchwalił nowelizację kilka dni później. Nowe przepisy mają wejść w życie 31 grudnia 2026 r., ale 11 listopada, gdy powstaje ten tekst, ustawy nie było jeszcze w Dzienniku Ustaw, więc do jej ogłoszenia wiąże stary termin.
+Kary pieniężne za błędy w KSeF zostały w ustawie o VAT odroczone do 1 stycznia 2027 r. i taki termin nadal podaje Ministerstwo Finansów w odpowiedziach na pytania podatników. 16 września 2026 r. resort zapowiedział przesunięcie go o kolejny rok. Sejm uchwalił nowelizację 6 listopada, a 9 listopada przekazał ją prezydentowi i Senatowi. Nowe przepisy mają wejść w życie 31 grudnia 2026 r., ale 12 listopada, gdy aktualizujemy ten tekst, ustawy nie było jeszcze w Dzienniku Ustaw, więc do jej ogłoszenia wiąże stary termin.
 
 ## Za co i w jakiej wysokości
 
@@ -19,6 +19,7 @@ Odroczenie obejmuje tylko kary pieniężne, natomiast obowiązek wystawiania fak
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.
+- [Sejm: druk nr 3245, przebieg prac](https://www.sejm.gov.pl/Sejm10.nsf/PrzebiegProc.xsp?nr=3245), dostęp 12.11.2026.
 - Art. 106ni ustawy z 11 marca 2004 r. o podatku od towarów i usług.
 - [Prawo.pl: MF: Nie będzie kar za błędy w KSeF do końca 2027 roku](https://www.prawo.pl/podatki/mf-nie-bedzie-kar-za-bledy-w-ksef-do-konca-2027-roku,1552882.html), dostęp 10.11.2026.
 - [PIT.pl: KSeF bez kar za błędy przez kolejny rok](https://www.pit.pl/aktualnosci/ksef-bez-kar-za-bledy-przez-kolejny-rok-ministerstwo-finansow-zapowiada-zmiane), dostęp 10.11.2026.
