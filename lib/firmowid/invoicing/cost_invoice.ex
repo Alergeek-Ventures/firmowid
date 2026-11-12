@@ -590,6 +590,12 @@ defmodule Firmowid.Invoicing.CostInvoice do
       authorize_if expr(blob_id == ^actor(:blob_id))
     end
 
+    # Declared before the admin bypass so it binds admins too: only document
+    # processing attaches the KSeF source document.
+    policy action(:update_blob_id) do
+      authorize_if {SystemActorRole, roles: [:cost_invoice_processor]}
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
