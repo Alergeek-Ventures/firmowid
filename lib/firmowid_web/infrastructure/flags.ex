@@ -2,9 +2,11 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   @moduledoc """
   Server-side feature flag helpers backed by PostHog.
 
-  Feature flags are evaluated once per authenticated LiveView mount and assigned
-  under `:feature_flags`. Templates then call `flag_enabled?/2` against assigns,
-  which keeps render-time checks fast and side-effect free.
+  Feature flags are assigned under `:feature_flags` on every authenticated
+  LiveView mount; their evaluation by PostHog is kept for a few minutes per user,
+  organization and role, so a mount does not wait for it each time. Templates then
+  call `flag_enabled?/2` against assigns, which keeps render-time checks fast and
+  side-effect free.
 
   Imported automatically via `html_helpers/0`, so every LiveView,
   LiveComponent and HTML module can call `flag_enabled?/2` directly.
@@ -34,6 +36,11 @@ defmodule FirmowidWeb.Infrastructure.Flags do
     inbox: "inbox"
   }
 
+  @cache :feature_flags
+
+  # Flags change rarely, and a mount must not wait for PostHog every time.
+  @cache_expire to_timeout(minute: 5)
+
   @doc """
   Evaluates all supported feature flags for the given user.
 
@@ -53,23 +60,39 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   end
 
   defp evaluate_posthog_flags(user) do
-    if posthog_enabled?() do
-      user
-      |> evaluation_payload()
-      |> FeatureFlags.evaluate_flags()
-      |> case do
-        {:ok, snapshot} ->
-          resolve_flags(snapshot, impersonated?(user))
+    if posthog_enabled?(), do: cached_flags(user), else: offline_flags()
+  end
 
-        {:error, error} ->
-          Logger.warning("PostHog feature flag evaluation failed",
-            error_kind: ErrorKind.classify(error)
-          )
+  # What the evaluation sends about the user identifies its result. A failed
+  # evaluation is not kept; the next mount asks again.
+  defp cached_flags(user) do
+    payload = evaluation_payload(user)
+    key = {payload.distinct_id, payload.person_properties}
 
-          empty_flags()
-      end
-    else
-      offline_flags()
+    case Cachex.get(@cache, key) do
+      {:ok, nil} -> request_flags(payload, key, impersonated?(user))
+      {:ok, flags} -> flags
+    end
+  end
+
+  defp request_flags(payload, key, impersonated?) do
+    case FeatureFlags.evaluate_flags(payload) do
+      {:ok, snapshot} ->
+        flags = resolve_flags(snapshot, impersonated?)
+
+        # PostHog also answers when it could compute only some of the flags.
+        if not snapshot.errors_while_computing do
+          Cachex.put(@cache, key, flags, expire: @cache_expire)
+        end
+
+        flags
+
+      {:error, error} ->
+        Logger.warning("PostHog feature flag evaluation failed",
+          error_kind: ErrorKind.classify(error)
+        )
+
+        empty_flags()
     end
   end
 
