@@ -100,8 +100,6 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     )
   end
 
-  # sobelow_skip ["XSS.SendResp"]
-  # This is safe because this gets downloaded not executed by browser
   def download(conn, %{"id" => id}) do
     scope = conn.assigns.ash_scope
 
