@@ -255,12 +255,8 @@ defmodule Firmowid.Finances.Transaction do
     module FirmowidWeb.Core.Endpoint
     prefix "transaction"
 
-    publish :upsert_from_sync, ["updated", :_tenant]
-    publish :set_skip_invoicing, ["updated", :_tenant]
-    publish :update_internal_note, ["updated", :_tenant]
-    publish :restore_for_matching, ["updated", :_tenant]
-    publish :connect_salary, ["updated", :_tenant]
-    publish :disconnect_salary, ["updated", :_tenant]
+    publish_all :create, ["updated", :_tenant]
+    publish_all :update, ["updated", :_tenant]
   end
 
   multitenancy do
