@@ -3,6 +3,7 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
   use Firmowid.DataCase, async: true
 
   import Firmowid.AccountsFixtures
+  import Firmowid.TimetrackerFixtures
 
   alias Firmowid.Core
   alias Firmowid.Core.Member
@@ -44,6 +45,24 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
 
     assert Exception.message(rollback_error) =~ "rollback"
     refute_received %Broadcast{topic: ^topic, event: "disconnect"}
+  end
+
+  test "an organization with a project and another member's recorded time can be deleted" do
+    owner = admin_fixture()
+    organization_id = owner.member.organization_id
+    employee = user_in_org_fixture(organization_id)
+    project = project_fixture(%{organization_id: organization_id})
+
+    session_fixture(%{
+      user_id: employee.id,
+      project_id: project.id,
+      organization_id: organization_id
+    })
+
+    scope = %Scope{actor: owner, tenant: organization_id}
+    organization = Core.get_organization!(organization_id, scope: scope)
+
+    assert :ok = Core.destroy_organization(organization, scope: scope)
   end
 
   test "account cleanup lists and deletes only its user's OAuth records" do
