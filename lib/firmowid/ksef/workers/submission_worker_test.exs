@@ -174,6 +174,27 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
              "KSEF-CONFIRMED"
   end
 
+  test "retries a submission whose invoice cannot be read instead of cancelling it" do
+    admin = admin_fixture()
+
+    invoice =
+      submitted_invoice!(admin, %{
+        locked_at: nil,
+        ksef_session_reference_number: nil,
+        ksef_invoice_checksum: nil
+      })
+
+    # Hides the application tables from the rest of this test's sandbox transaction.
+    Firmowid.Repo.query!("SET LOCAL search_path TO pg_catalog")
+
+    assert {:error, %Ash.Error.Unknown{}} =
+             perform_job(SubmissionWorker, %{
+               "action" => "submit",
+               "organization_id" => invoice.organization_id,
+               "sales_invoice_id" => invoice.id
+             })
+  end
+
   defp schedule_refresh_token!(organization_id) do
     refresh_token = 7200 |> jwt() |> Firmowid.Vault.encrypt!() |> Base.encode64()
 

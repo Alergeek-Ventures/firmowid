@@ -127,20 +127,14 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
   end
 
   defp load_invoice(sales_invoice_id, scope) do
-    opts = [scope: scope]
-
-    case SalesInvoice.by_id(
-           sales_invoice_id,
-           Keyword.put(opts, :load, sales_invoice_items: [:net_value, :vat_value, :gross_value])
+    case SalesInvoice.by_id(sales_invoice_id,
+           scope: scope,
+           load: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+           not_found_error?: false
          ) do
-      {:ok, nil} ->
-        {:error, :invoice_not_found}
-
-      {:ok, invoice} ->
-        load_invoice_state(invoice)
-
-      {:error, _} ->
-        {:error, :invoice_not_found}
+      {:ok, nil} -> {:error, :invoice_not_found}
+      {:ok, invoice} -> load_invoice_state(invoice)
+      {:error, _error} = error -> error
     end
   end
 
