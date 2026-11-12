@@ -11,8 +11,6 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
   alias Firmowid.Repo
   alias FirmowidMcp.Utilities.AccessToken
 
-  require Ash.Query
-
   @auth_context %{private: %{ash_authentication?: true}}
 
   @doc false
@@ -75,13 +73,13 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
 
   defp lock_user(user_id) do
     # Lock by the stored token's owner, even if blocked or concurrently deleted.
-    # Authentication filtering here would bypass the native protocol response.
-    User
-    |> Ash.Query.filter(id == ^user_id)
-    |> Ash.Query.select([:id])
-    |> Ash.Query.lock(:for_update)
-    # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
-    |> Ash.read_one!(action: :read, authorize?: false)
+    # Authentication filtering here would bypass the native protocol response,
+    # so the owner reads their own row instead of authenticating.
+    Core.get_user!(user_id,
+      actor: %User{id: user_id, member: nil},
+      query: User |> Ash.Query.select([:id]) |> Ash.Query.lock(:for_update),
+      not_found_error?: false
+    )
   end
 
   defp grant(%{method: "POST", path_info: path, params: params} = conn) do
