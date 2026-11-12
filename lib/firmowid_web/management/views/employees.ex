@@ -303,9 +303,10 @@ defmodule FirmowidWeb.Management.Views.Employees do
   def handle_event("delete_organization_invite", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
 
-    id
-    |> Core.get_invite!(scope: scope)
-    |> Core.destroy_invite!(scope: scope)
+    # Deleted or used in another tab: already gone, so only the list refreshes.
+    if invite = Core.get_invite!(id, scope: scope, not_found_error?: false) do
+      Core.destroy_invite!(invite, scope: scope)
+    end
 
     {:noreply,
      socket

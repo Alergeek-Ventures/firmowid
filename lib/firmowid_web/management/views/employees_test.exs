@@ -19,6 +19,26 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   alias Firmowid.Scope
   alias Firmowid.Timetracker.HoursRecord
 
+  test "deleting an invite already deleted in another tab refreshes the list", %{conn: conn} do
+    # Invites are listed on this page only with the team page of the inbox layout.
+    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
+    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
+
+    admin = admin_fixture()
+    scope = %Scope{actor: admin, tenant: admin.member.organization_id}
+    invite = Core.create_invite!(%{issued_by_id: admin.id}, scope: scope)
+
+    conn = log_in_user(conn, admin)
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy")
+    delete_button = "button[phx-click='delete_organization_invite'][phx-value-id='#{invite.id}']"
+    assert has_element?(lv, delete_button)
+
+    Core.destroy_invite!(invite, scope: scope)
+    lv |> element(delete_button) |> render_click()
+
+    refute has_element?(lv, delete_button)
+  end
+
   test "employee list updates without refresh after invite consumption", %{conn: conn} do
     admin = admin_fixture()
     email = unique_user_email()

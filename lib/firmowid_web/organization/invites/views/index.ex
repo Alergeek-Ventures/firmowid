@@ -61,10 +61,10 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
       raise ForbiddenError, gettext("Only an administrator can delete invitations.")
     end
 
-    invite =
-      Core.get_invite!(id, scope: scope)
-
-    Core.destroy_invite!(invite, scope: scope)
+    # Deleted or used in another tab: already gone, so only the list refreshes.
+    if invite = Core.get_invite!(id, scope: scope, not_found_error?: false) do
+      Core.destroy_invite!(invite, scope: scope)
+    end
 
     invites =
       Core.list_invites!(load: @invite_load, scope: scope)
