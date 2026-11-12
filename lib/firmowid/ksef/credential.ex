@@ -7,9 +7,8 @@ defmodule Firmowid.Ksef.Credential do
   Credentials are stored encrypted and support token-based, uploaded-certificate,
   and Firmowid-generated certificate authentication methods.
 
-  Table: `ksef_credentials` (already exists, `migrate?: false`).
-  No multitenancy — queried by explicit `organization_id` filter, not tenant.
-  Added to `@unscoped_tables` in Repo.
+  Not multitenant: creates set `organization_id` from the tenant, and `:get` and
+  `:internal` read the tenant's credential.
   """
 
   use Ash.Resource,
@@ -80,8 +79,7 @@ defmodule Firmowid.Ksef.Credential do
   end
 
   code_interface do
-    define :connection_status
-    define :read, action: :read
+    define :read
     define :destroy
     define :prepare_enrollment
     define :wait_for_certificate
@@ -91,11 +89,10 @@ defmodule Firmowid.Ksef.Credential do
     define :supersede_certificate, args: [:credentials]
     define :recover_certificate_refresh
     define :delete_failed, args: [:reason]
-    define :get, get?: true, not_found_error?: false
     define :get_internal, action: :internal, get?: true, not_found_error?: false
-    define :all_organization_ids, action: :all_organization_ids
-    define :refreshable_certificates, action: :refreshable_certificates
-    define :backfill_expiration_metadata, action: :backfill_expiration_metadata
+    define :all_organization_ids
+    define :refreshable_certificates
+    define :backfill_expiration_metadata
     define :authenticate_with_token, args: [:ksef_token]
 
     define :authenticate_with_uploaded_certificate,
