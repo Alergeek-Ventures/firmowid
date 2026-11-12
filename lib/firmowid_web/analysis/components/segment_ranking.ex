@@ -11,7 +11,9 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
   """
   use FirmowidWeb, :html
 
-  alias Firmowid.Cldr.Number
+  import FirmowidWeb.Analysis.Utilities.Amounts,
+    only: [ratio: 2, share_percent: 2, whole_money: 1]
+
   alias FirmowidWeb.Analysis.Components.PeriodDetails
   alias FirmowidWeb.Analysis.Utilities.Navigation
 
@@ -126,7 +128,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
                   amount: Decimal.negate(@shared_all),
                   caption: gettext("%{share} of income", share: ratio(@shared_all, @income)),
                   patch: nil,
-                  bar: min(percent_width(@shared_all, @income), 100.0),
+                  bar: min(share_percent(@shared_all, @income), 100.0),
                   neutral: true
                 }
               }
@@ -239,7 +241,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
     <span class="h-1 rounded-full bg-grey-200" aria-hidden="true">
       <span
         class={bar_styles(@row.amount)}
-        style={"inline-size: #{@row[:bar] || percent_width(Decimal.abs(@row.amount), @widest)}%"}
+        style={"inline-size: #{@row[:bar] || share_percent(Decimal.abs(@row.amount), @widest)}%"}
       />
     </span>
     """
@@ -263,7 +265,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
         <span class="h-1 rounded-full bg-grey-200" aria-hidden="true">
           <span
             class="block h-full rounded-full bg-teal-500"
-            style={"inline-size: #{percent_width(row.amount, @total)}%"}
+            style={"inline-size: #{share_percent(row.amount, @total)}%"}
           />
         </span>
       </li>
@@ -425,23 +427,4 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
       do: "block h-full rounded-full bg-brick-700",
       else: "block h-full rounded-full bg-teal-500"
   end
-
-  defp percent_width(amount, total) do
-    if Decimal.positive?(total),
-      do:
-        amount
-        |> Decimal.div(total)
-        |> Decimal.mult(100)
-        |> Decimal.round(1)
-        |> Decimal.to_float(),
-      else: 0.0
-  end
-
-  defp ratio(amount, total) do
-    if Decimal.positive?(total),
-      do: amount |> Decimal.div(total) |> Number.to_string!(format: :percent),
-      else: ""
-  end
-
-  defp whole_money(amount), do: Number.to_string!(amount, currency: :PLN, fractional_digits: 0)
 end

@@ -12,6 +12,9 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.Analysis.Utilities.Amounts,
+    only: [ratio: 2, share_percent: 2, whole_money: 1]
+
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Cldr.Number
 
@@ -476,26 +479,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
       else: "text-2xl font-semibold text-grey-900 tabular-nums"
   end
 
-  defp share_percent(amount, total) do
-    if Decimal.positive?(total),
-      do:
-        amount
-        |> Decimal.div(total)
-        |> Decimal.mult(100)
-        |> Decimal.round(1)
-        |> Decimal.to_float(),
-      else: 0.0
-  end
-
-  defp ratio(amount, total) do
-    if Decimal.positive?(total),
-      do: amount |> Decimal.div(total) |> Number.to_string!(format: :percent),
-      else: ""
-  end
-
   defp sum(rows, fun), do: Enum.reduce(rows, Decimal.new(0), &Decimal.add(fun.(&1), &2))
-
-  defp whole_money(amount), do: Number.to_string!(amount, currency: :PLN, fractional_digits: 0)
 
   @doc "Names a template category."
   @spec category_label(IndustryTemplate.category()) :: String.t()
