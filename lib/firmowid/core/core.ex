@@ -350,17 +350,12 @@ defmodule Firmowid.Core do
   @spec destroy_organization_in_transaction(Organization.t(), Keyword.t()) ::
           :ok | {:error, term()}
   def destroy_organization_in_transaction(%Organization{} = organization, opts \\ []) do
-    case authorize_destroy(organization, opts) do
-      :ok ->
-        scope = organization_cleanup_scope(organization)
+    scope = organization_cleanup_scope(organization)
 
-        with :ok <- OrganizationCleanup.remove_dependents(scope),
-             :ok <- OrganizationCleanup.detach_users(scope) do
-          Organization.destroy(organization, opts)
-        end
-
-      {:error, error} ->
-        {:error, error}
+    with :ok <- authorize_destroy(organization, opts),
+         :ok <- OrganizationCleanup.remove_dependents(scope),
+         :ok <- OrganizationCleanup.detach_users(scope) do
+      Organization.destroy(organization, opts)
     end
   end
 
@@ -426,34 +421,13 @@ defmodule Firmowid.Core do
   end
 
   defp prepare_organization_deletion(organization, opts) do
-    case authorize_destroy(organization, opts) do
-      :ok ->
-        scope = organization_cleanup_scope(organization)
-
-        case requisition_ids(scope) do
-          {:ok, requisitions} -> OrganizationExternalCleanup.run(organization.id, requisitions)
-          {:error, error} -> {:error, error}
-        end
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp requisition_ids(scope) do
-    case Requisition.list(%{remote_deleted?: false}, scope: scope, query: [select: [:id]]) do
-      {:ok, requisitions} when is_list(requisitions) ->
-        if Enum.all?(requisitions, &is_binary(&1.id)) do
-          {:ok, Enum.map(requisitions, & &1.id)}
-        else
-          {:error, :invalid_cleanup_requisition_id}
-        end
-
-      {:ok, _invalid_result} ->
-        {:error, :invalid_cleanup_requisitions}
-
-      {:error, error} ->
-        {:error, error}
+    with :ok <- authorize_destroy(organization, opts),
+         {:ok, requisitions} <-
+           Requisition.list(%{remote_deleted?: false},
+             scope: organization_cleanup_scope(organization),
+             query: [select: [:id]]
+           ) do
+      OrganizationExternalCleanup.run(organization.id, Enum.map(requisitions, & &1.id))
     end
   end
 
