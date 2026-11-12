@@ -153,11 +153,9 @@ defmodule Firmowid.Ksef.Credential do
       accept [:credentials]
       change transition_state(:authenticating)
 
-      change after_action(fn changeset, credential, _context ->
-               case SessionWorker.enqueue(credential.organization_id) do
-                 {:ok, _job} -> {:ok, credential}
-                 {:error, _reason} = error -> error
-               end
+      change after_action(fn _changeset, credential, _context ->
+               with {:ok, _job} <- SessionWorker.enqueue(credential.organization_id),
+                    do: {:ok, credential}
              end)
     end
 
@@ -178,10 +176,8 @@ defmodule Firmowid.Ksef.Credential do
       change transition_state(:refreshing)
 
       change after_action(fn _changeset, credential, _context ->
-               case CertificateEnrollmentWorker.enqueue_refresh(credential) do
-                 {:ok, _job} -> {:ok, credential}
-                 {:error, _reason} = error -> error
-               end
+               with {:ok, _job} <- CertificateEnrollmentWorker.enqueue_refresh(credential),
+                    do: {:ok, credential}
              end)
     end
 
@@ -265,11 +261,9 @@ defmodule Firmowid.Ksef.Credential do
       change set_attribute(:organization_id, tenant())
       change set_attribute(:credentials, arg(:ksef_token))
 
-      change after_action(fn changeset, credential, _context ->
-               case SessionWorker.enqueue(credential.organization_id) do
-                 {:ok, _job} -> {:ok, credential}
-                 {:error, _reason} = error -> error
-               end
+      change after_action(fn _changeset, credential, _context ->
+               with {:ok, _job} <- SessionWorker.enqueue(credential.organization_id),
+                    do: {:ok, credential}
              end)
     end
 
@@ -297,11 +291,9 @@ defmodule Firmowid.Ksef.Credential do
         Ash.Changeset.force_change_attribute(changeset, :credentials, credentials)
       end
 
-      change after_action(fn changeset, credential, _context ->
-               case SessionWorker.enqueue(credential.organization_id) do
-                 {:ok, _job} -> {:ok, credential}
-                 {:error, _reason} = error -> error
-               end
+      change after_action(fn _changeset, credential, _context ->
+               with {:ok, _job} <- SessionWorker.enqueue(credential.organization_id),
+                    do: {:ok, credential}
              end)
     end
 
@@ -318,12 +310,10 @@ defmodule Firmowid.Ksef.Credential do
 
       change after_action(fn changeset, credential, _context ->
                signed_xml = Ash.Changeset.get_argument(changeset, :signed_auth_token_request)
-               org_id = credential.organization_id
 
-               case CertificateEnrollmentWorker.enqueue(signed_xml, org_id) do
-                 {:ok, _job} -> {:ok, credential}
-                 {:error, _reason} = error -> error
-               end
+               with {:ok, _job} <-
+                      CertificateEnrollmentWorker.enqueue(signed_xml, credential.organization_id),
+                    do: {:ok, credential}
              end)
     end
   end
