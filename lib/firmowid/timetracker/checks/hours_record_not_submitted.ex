@@ -7,9 +7,8 @@ defmodule Firmowid.Timetracker.Checks.HoursRecordNotSubmitted do
   For **update/destroy** actions both the existing record's month and, when the
   update moves the session, the new month must be unlocked.
 
-  The `:stop` action is excluded at the policy level — stopping a running
-  session is always allowed, matching the old Bodyguard behaviour where
-  `end_datetime == nil` bypassed the lockdown.
+  Stopping a running session (`:stop`) always passes, so a timer left running
+  can be ended after its month was submitted.
   """
   use Ash.Policy.SimpleCheck
 
@@ -21,6 +20,9 @@ defmodule Firmowid.Timetracker.Checks.HoursRecordNotSubmitted do
   def describe(_opts), do: "hours record has not been submitted for the session's month"
 
   @impl true
+  def match?(_actor, %{subject: %Ash.Changeset{action: %{name: :stop}, data: %{end_datetime: nil}}}, _opts),
+    do: {:ok, true}
+
   def match?(actor, %{subject: %Ash.Changeset{} = changeset}, _opts) do
     # A missing start_datetime means the month is unknown — allow the action and
     # let normal validation catch missing required fields.
