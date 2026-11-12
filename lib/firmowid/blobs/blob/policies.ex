@@ -4,7 +4,6 @@ defmodule Firmowid.Blobs.Blob.Policies do
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Blobs.Checks.CanReadHolder
-  alias Firmowid.Checks.ActorBlobIdMatches
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
@@ -27,22 +26,25 @@ defmodule Firmowid.Blobs.Blob.Policies do
       authorize_if always()
     end
 
-    # Invoice processors and ksef_session: read + create
     bypass {SystemActorRole,
             roles: [
               :cost_invoice_processor,
               :document_blob_processor,
-              :sales_invoice_processor
+              :sales_invoice_processor,
+              :ksef_session,
+              :leave_notifier
             ]} do
       authorize_if action(:read)
     end
 
-    bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]} do
+    bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor, :ksef_session]} do
       authorize_if action(:create_blob)
     end
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor]} do
       authorize_if action([
+                     :read_global,
+                     :list_processing,
                      :mark_processing,
                      :mark_processing_pending,
                      :mark_processing_succeeded,
@@ -51,47 +53,11 @@ defmodule Firmowid.Blobs.Blob.Policies do
                    ])
     end
 
-    # Invoice and employment contract processors can destroy blobs only if they own them (e.g., cleanup after processing failures)
-    # Both conditions must be true: action is :destroy AND the actor's blob_id matches.
-    policy [
-      action(:destroy),
-      {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor, :sales_invoice_processor]}
-    ] do
-      authorize_if ActorBlobIdMatches
-    end
-
-    policy action(:cleanup_failed_cost_invoice) do
-      forbid_if always()
-    end
-
-    # ksef_session: create blobs, read all, and destroy only blobs assigned via actor.blob_id
-    bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action(:create_blob)
-      authorize_if action(:read)
-    end
-
-    bypass {SystemActorRole, roles: [:leave_notifier]} do
-      authorize_if action(:read)
-    end
-
-    policy [action(:destroy), {SystemActorRole, roles: [:ksef_session]}] do
-      authorize_if ActorBlobIdMatches
-    end
-
-    bypass {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor]} do
-      authorize_if action(:read_global)
-      authorize_if action(:list_processing)
-    end
-
     bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action([:read, :destroy])] do
       authorize_if expr(id == ^actor(:blob_id))
     end
 
-    policy action(:read_global) do
-      forbid_if always()
-    end
-
-    policy action(:list_processing) do
+    policy action([:read_global, :list_processing]) do
       forbid_if always()
     end
 
