@@ -156,9 +156,7 @@ defmodule Firmowid.Delegations.Delegation do
                type: :direct_control,
                on_match: {:update, :update},
                on_no_match: :error,
-               on_missing: :ignore,
-               # The parent authorizes the owner and limits updates to this delegation's expenses.
-               authorize?: false
+               on_missing: :ignore
              )
     end
 
@@ -176,7 +174,8 @@ defmodule Firmowid.Delegations.Delegation do
                on_match: {:update, :complete},
                on_no_match: :error,
                on_missing: :ignore,
-               # The parent completion action authorizes the employee and owns this transaction.
+               # Runs after the delegation left :in_progress, which the expense policy requires;
+               # the parent already authorized the owner, and on_no_match limits it to own expenses.
                authorize?: false
              )
 
