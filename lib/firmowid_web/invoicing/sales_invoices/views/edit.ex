@@ -353,12 +353,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   # Seed exemption only when the latest snapshot already has values.
   defp maybe_put_exemption_params(params, latest) do
     params
-    |> maybe_put_present(
-      "vat_exemption_type",
-      loaded_attr(latest, :vat_exemption_type),
-      &to_string/1
-    )
-    |> maybe_put_present("vat_exemption_basis", loaded_attr(latest, :vat_exemption_basis), & &1)
+    |> maybe_put_present("vat_exemption_type", latest.vat_exemption_type, &to_string/1)
+    |> maybe_put_present("vat_exemption_basis", latest.vat_exemption_basis, & &1)
   end
 
   defp maybe_put_present(params, _key, nil, _transform), do: params
@@ -366,13 +362,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp maybe_put_present(params, key, value, transform) do
     Map.put(params, key, transform.(value))
-  end
-
-  defp loaded_attr(record, field) do
-    case Map.get(record, field) do
-      %Ash.NotLoaded{} -> nil
-      value -> value
-    end
   end
 
   @impl true
@@ -391,8 +380,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   def handle_event("validate", params, socket) do
-    # AshPhoenix.Form uses "form" as default form name
-    form_params = params["form"] || params["sales_invoice"] || %{}
+    form_params = params["form"] || %{}
 
     gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
@@ -548,7 +536,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp prepare_draft_review(params, socket) do
     form_params =
-      params["form"] || params["sales_invoice"] || socket.assigns.form.source.params || %{}
+      params["form"] || socket.assigns.form.source.params || %{}
 
     gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
@@ -625,7 +613,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     form_params =
       if socket.assigns.step == :review,
         do: review_params(params, socket),
-        else: params["form"] || params["sales_invoice"] || %{}
+        else: params["form"] || %{}
 
     gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
