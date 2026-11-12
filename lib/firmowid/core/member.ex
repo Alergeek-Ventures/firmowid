@@ -193,7 +193,7 @@ defmodule Firmowid.Core.Member do
       accept [:avatar_blob_id]
       require_atomic? false
 
-      validate Firmowid.Core.Validations.AvatarBlobInOrganization
+      validate Firmowid.Blobs.Validations.ReadableBlob
 
       change Firmowid.Core.Changes.CleanupOldAvatarBlob
     end
