@@ -116,10 +116,11 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
               const collapsed = root.dataset.sidebar !== "collapsed";
               if (collapsed) root.dataset.sidebar = "collapsed";
               else delete root.dataset.sidebar;
-              // Marks the width animation, for parts that wait until it ends.
+              // Marks the first, fastest part of the width animation, for parts
+              // that hide while it lasts; they come back with the labels (delay-100).
               root.dataset.sidebarMoving = "";
               clearTimeout(this.moving);
-              this.moving = setTimeout(() => delete root.dataset.sidebarMoving, 250);
+              this.moving = setTimeout(() => delete root.dataset.sidebarMoving, 100);
               try {
                 localStorage.setItem("sidebar", collapsed ? "collapsed" : "expanded");
               } catch {}
