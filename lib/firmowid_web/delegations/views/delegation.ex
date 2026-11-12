@@ -284,8 +284,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       accept: ~w(.pdf),
       max_entries: 1,
       max_file_size: 10 * 1024 * 1024,
-      auto_upload: true,
-      progress: &handle_signed_upload_progress/3
+      auto_upload: true
     )
     |> assign(
       delegation: delegation,
@@ -554,8 +553,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket = consume_document(name, entry, socket)
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
-
-  defp handle_signed_upload_progress(_kind, _entry, socket), do: {:noreply, socket}
 
   defp consume_document(:related_document, entry, socket) do
     attach_document(
