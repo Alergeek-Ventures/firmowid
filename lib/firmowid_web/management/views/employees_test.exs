@@ -690,6 +690,31 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Ada Lovelace"
   end
 
+  test "rejecting an hours record change request confirms the decision", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+    record = seed_hours_record!(employee.member.id, admin.member.organization_id, 4, 2026, 3)
+
+    record
+    |> Ecto.Changeset.change(
+      change_request_kind: :correction,
+      change_request_reason: "Wrong hours on the 3rd",
+      change_requested_at: DateTime.utc_now()
+    )
+    |> Repo.update!()
+
+    {:ok, lv, _html} =
+      live(
+        log_in_user(conn, admin),
+        ~p"/zarzadzanie/pracownicy/#{employee.id}?miesiac=2026-04-01"
+      )
+
+    lv |> element("#reject-hours-record-change-#{record.id}") |> render_click()
+
+    assert render(lv) =~ "Decyzja dotycząca prośby została zapisana."
+    refute has_element?(lv, "#reject-hours-record-change-#{record.id}")
+  end
+
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.member.organization_id}
   end

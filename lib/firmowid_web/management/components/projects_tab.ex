@@ -136,19 +136,16 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     with {:ok, record} <- HoursRecord.get(id, scope: scope),
          true <- record.member_id == socket.assigns.user.member.id,
          {:ok, _record} <- review_request(record, decision, scope) do
-      {:noreply,
-       socket
-       |> assign_hours_records()
-       |> put_flash(:info, gettext("The request decision has been saved."))}
+      LiveToast.send_toast(:info, gettext("The request decision has been saved."))
+      {:noreply, assign_hours_records(socket)}
     else
       _error ->
-        {:noreply,
-         socket
-         |> assign_hours_records()
-         |> put_flash(
-           :error,
-           gettext("Could not save the decision. The request may already have been reviewed.")
-         )}
+        LiveToast.send_toast(
+          :error,
+          gettext("Could not save the decision. The request may already have been reviewed.")
+        )
+
+        {:noreply, assign_hours_records(socket)}
     end
   end
 

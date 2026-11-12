@@ -439,7 +439,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
          )}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to save the comment"))}
+        LiveToast.send_toast(:error, gettext("Failed to save the comment"))
+        {:noreply, socket}
     end
   end
 end
