@@ -29,7 +29,7 @@ Dane w tabeli pochodzą z cenników i stron producentów; działania KSeF w tych
 | **KsefInvoice** | program na komputer | brak opublikowanego limitu i opłat za dokument | wysyłka i odbiór | nie jest open source; import z banku: brak informacji |
 | **Fakturoza Darmowy** | 0 zł bez limitu czasu | 5 faktur sprzedaży / mies.; koszty z KSeF bez limitu | wysyłka, tryb offline i automatyczny odbiór kosztów | 1 użytkownik, 1 wyciąg MT940 / mies., stopka Fakturozy |
 
-Spośród ofert bez limitu i bez opłat zostały w listopadzie aplikacja ministerstwa, ProFak i KsefInvoice. Faktura.pl, która przy poprzednim sprawdzeniu 26 października dawała w planie DARMOWY faktury bez limitu, 11 listopada miała w nim już tylko pobieranie i podgląd dokumentów z KSeF, a wysyłkę w płatnym planie BASIC. W tym samym okresie Fakturoza obniżyła darmowy limit z 30 do 5 faktur sprzedaży miesięcznie.
+Spośród ofert bez limitu i bez opłat zostały w listopadzie aplikacja ministerstwa, ProFak, KsefInvoice i nasz Firmowid. Faktura.pl, która przy poprzednim sprawdzeniu 26 października dawała w planie DARMOWY faktury bez limitu, 11 listopada miała w nim już tylko pobieranie i podgląd dokumentów z KSeF, a wysyłkę w płatnym planie BASIC. W tym samym okresie Fakturoza obniżyła darmowy limit z 30 do 5 faktur sprzedaży miesięcznie.
 
 ## Narzędzia ministerstwa
 
