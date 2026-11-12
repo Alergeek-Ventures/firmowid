@@ -375,7 +375,7 @@ defmodule Firmowid.Ksef do
   end
 
   def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice, opts) do
-    invoice = Ash.load!(invoice, [:blob], invoice_url_opts(invoice, opts))
+    invoice = Ash.load!(invoice, [:blob], opts)
 
     checksum =
       invoice.blob.blob_checksum
@@ -389,25 +389,6 @@ defmodule Firmowid.Ksef do
       when not is_nil(ksef_number) do
     checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
     invoice_url(seller_nip, issue_date, checksum)
-  end
-
-  defp invoice_url_opts(invoice, opts) do
-    cond do
-      Keyword.has_key?(opts, :scope) ->
-        opts
-
-      Keyword.has_key?(opts, :actor) ->
-        opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, invoice.organization_id)
-
-      true ->
-        actor = %SystemActor{org_id: invoice.organization_id, role: :cost_invoice_processor}
-        scope = %Scope{actor: actor, tenant: invoice.organization_id}
-
-        opts
-        |> Keyword.delete(:actor)
-        |> Keyword.delete(:tenant)
-        |> Keyword.put(:scope, scope)
-    end
   end
 
   defp invoice_url(seller_nip, issue_date, checksum) do
