@@ -113,9 +113,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         id="invoicing-entries"
         class={
           [
-            # the full width lets the party take only what the fixed columns leave, so a
-            # long description cannot push the amount off the screen
-            "w-full table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block",
+            # from xl the full width lets the party take only what the fixed columns leave,
+            # so a long description cannot push the amount off the screen; narrower tables
+            # keep sizing their columns to the content, which keeps the party readable
+            "table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block xl:w-full",
             # month headings start where they stick, so nothing moves as scrolling begins
             if(@by_month?, do: "-mt-6", else: "-mt-8")
           ]
