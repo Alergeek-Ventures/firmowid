@@ -56,12 +56,6 @@ defmodule Firmowid.Ksef do
   resources do
     resource Credential do
       define :connection_status
-      define :authenticate_with_token, args: [:ksef_token]
-
-      define :authenticate_with_uploaded_certificate,
-        args: [:certificate, :private_key, :private_key_password]
-
-      define :enroll_ksef_certificate, args: [:signed_auth_token_request, :challenge]
       define :get_credential, action: :get, get?: true, not_found_error?: false
     end
   end
