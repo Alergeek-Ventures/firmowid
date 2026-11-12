@@ -1208,64 +1208,27 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp group_cost_transactions_by_party(entries) do
-    # Separate transactions from other entries (invoices)
-    {transactions, other_entries} =
-      Enum.split_with(entries, &match?(%Transaction{}, &1))
+    {transactions, other_entries} = Enum.split_with(entries, &match?(%Transaction{}, &1))
 
-    # Split transactions according to the direction used by the display layer.
-    {cost_transactions, income_transactions} =
-      Enum.split_with(transactions, &(&1.direction == :expense))
-
-    # Group by the raw counterparty for each direction. The display fallback is
+    # Group by the raw counterparty within each direction. The display fallback is
     # intentionally not used here, as unrelated transactions must not share a group.
-    cost_by_party = Enum.group_by(cost_transactions, & &1.counterparty_name)
-    income_by_party = Enum.group_by(income_transactions, & &1.counterparty_name)
-
-    # Process cost transaction groups
-    {cost_groups, ungrouped_cost} =
-      Enum.split_with(cost_by_party, fn {_party, txns} ->
-        length(txns) >= 2 &&
-          Enum.all?(txns, & &1.groupable?) &&
+    {groups, ungrouped} =
+      transactions
+      |> Enum.group_by(&{if(&1.direction == :expense, do: :cost, else: :income), &1.counterparty_name})
+      |> Enum.split_with(fn {_kind_and_party, txns} ->
+        length(txns) >= 2 and Enum.all?(txns, & &1.groupable?) and
           same_currency_transactions?(txns)
       end)
 
-    # Process income transaction groups
-    {income_groups, ungrouped_income} =
-      Enum.split_with(income_by_party, fn {_party, txns} ->
-        length(txns) >= 2 &&
-          Enum.all?(txns, & &1.groupable?) &&
-          same_currency_transactions?(txns)
-      end)
+    group_structs =
+      Enum.map(groups, fn {{kind, party}, txns} -> build_transaction_group(kind, party, txns) end)
 
-    # Build group structs
-    cost_group_structs =
-      Enum.map(cost_groups, fn {party, txns} ->
-        build_transaction_group(:cost, party, txns)
-      end)
-
-    income_group_structs =
-      Enum.map(income_groups, fn {party, txns} ->
-        build_transaction_group(:income, party, txns)
-      end)
-
-    # Flatten ungrouped transactions
-    ungrouped_cost_flat = Enum.flat_map(ungrouped_cost, fn {_party, txns} -> txns end)
-    ungrouped_income_flat = Enum.flat_map(ungrouped_income, fn {_party, txns} -> txns end)
-
-    [
-      cost_group_structs,
-      income_group_structs,
-      ungrouped_cost_flat,
-      ungrouped_income_flat,
-      other_entries
-    ]
-    |> Enum.concat()
-    |> order_entries_for_display()
+    order_entries_for_display(group_structs ++ Enum.flat_map(ungrouped, &elem(&1, 1)) ++ other_entries)
   end
 
   defp same_currency_transactions?([first | rest]) do
-    currency = first.amount |> Money.to_currency_code() |> Atom.to_string()
-    Enum.all?(rest, &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == currency))
+    currency = Money.to_currency_code(first.amount)
+    Enum.all?(rest, &(Money.to_currency_code(&1.amount) == currency))
   end
 
   defp build_transaction_group(kind, party, transactions) do
