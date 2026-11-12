@@ -303,30 +303,17 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   end
 
   def handle_event("suggestion", %{"key" => key, "conversation-id" => id}, socket) do
-    if id == client_conversation_id(socket.assigns.conversation) do
-      message =
-        socket.assigns.subject |> Presentation.suggestions() |> Map.new() |> Map.fetch!(key)
-
-      send_message(message, socket)
-    else
-      {:noreply, changed_conversation(socket)}
-    end
+    in_rendered(socket, id, fn ->
+      socket.assigns.subject |> Presentation.suggestions() |> Map.new() |> Map.fetch!(key)
+    end)
   end
 
   def handle_event("pick", %{"choice" => choice, "conversation-id" => id}, socket) do
-    if id == client_conversation_id(socket.assigns.conversation) do
-      send_message(gettext("This one: %{choice}", choice: choice), socket)
-    else
-      {:noreply, changed_conversation(socket)}
-    end
+    in_rendered(socket, id, fn -> gettext("This one: %{choice}", choice: choice) end)
   end
 
   def handle_event("send", %{"message" => message, "conversation_id" => id}, socket) do
-    if id == client_conversation_id(socket.assigns.conversation) do
-      send_message(String.trim(message), socket)
-    else
-      {:noreply, changed_conversation(socket)}
-    end
+    in_rendered(socket, id, fn -> String.trim(message) end)
   end
 
   def handle_event(decision, %{"version" => version, "conversation-id" => id}, socket)
@@ -416,6 +403,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   # Messages already in the mailbox can outlive the previous subscription.
   def handle_info({:assistant_updated, _id}, socket), do: {:noreply, socket}
   def handle_info({:assistant_delta, _id, _text}, socket), do: {:noreply, socket}
+
+  # A message sent from a conversation the tab no longer shows is not sent anywhere.
+  defp in_rendered(socket, id, message) do
+    if id == client_conversation_id(socket.assigns.conversation),
+      do: send_message(message.(), socket),
+      else: {:noreply, changed_conversation(socket)}
+  end
 
   defp send_message("", socket) do
     {:noreply, assign(socket, :form_error, gettext("Write a message first."))}
