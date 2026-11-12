@@ -256,8 +256,31 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
            ) == []
 
     assert Core.load_member(employee).member.bank_account_number == nil
-    assert render(lv) =~ "Nie udało się zapisać numeru konta. Spróbuj ponownie."
+    # The validation's message shows under the field, inside the form.
+    assert lv |> element("#payout-form") |> render() =~
+             "musi być poprawnym numerem konta bankowego (IBAN)"
+
     assert has_element?(lv, "#payout-form")
+  end
+
+  test "a bank account number typed as 26 digits is saved with the PL prefix", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+
+    {:ok, lv, _html} =
+      live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}/profil")
+
+    lv |> element("[phx-click=toggle_payout_editor]") |> render_click()
+
+    lv
+    |> form("#payout-form", %{
+      "hourly_rate" => "100",
+      "bank_account_number" => "23 1140 2004 0000 3002 0135 5362"
+    })
+    |> render_submit()
+
+    assert Core.load_member(employee).member.bank_account_number ==
+             "PL23 1140 2004 0000 3002 0135 5362"
   end
 
   test "an admin's bank account edit lands on the employee's member", %{conn: conn} do

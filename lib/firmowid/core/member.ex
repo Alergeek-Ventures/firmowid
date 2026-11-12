@@ -155,16 +155,14 @@ defmodule Firmowid.Core.Member do
 
       validate present(:name), where: [changing(:name)]
 
-      change update_change(:bank_account_number, fn
-               nil ->
-                 nil
-
-               value ->
-                 case String.trim(value) do
-                   "" -> nil
-                   trimmed -> trimmed
-                 end
-             end),
+      # Applied while the changeset is built (the builtin `update_change` runs in
+      # `before_action`), so the validation below sees the number with its `PL` prefix.
+      change fn changeset, _context ->
+               Ash.Changeset.update_change(changeset, :bank_account_number, fn
+                 nil -> nil
+                 value -> ValidateIban.with_polish_prefix(value)
+               end)
+             end,
              where: [changing(:bank_account_number)]
 
       validate ValidateIban, where: [changing(:bank_account_number)]

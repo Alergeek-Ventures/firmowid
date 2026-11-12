@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   alias Ash.Resource.Info
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Core
+  alias Firmowid.Core.Validations.ValidateIban
   alias Firmowid.Finances
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.SalesInvoice
@@ -413,6 +414,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp profile_value(:birthday, %Date{} = birthday), do: date(birthday)
   defp profile_value(:birthday, birthday), do: birthday
   defp profile_value(:is_same_correspondence_address, value), do: yes_no(value)
+  # The number as the profile action stores it.
+  defp profile_value(:bank_account_number, value), do: ValidateIban.with_polish_prefix(value)
 
   defp profile_value(:birthday_visibility, value) do
     case to_string(value) do

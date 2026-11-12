@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Management.Components.Card
 
+  alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
 
@@ -64,7 +65,10 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
                 {@user.member.bank_account_number || gettext("No data")}
               <% end %>
             </.user_card_info>
-            <div class="flex items-end justify-between gap-4">
+            <div class={[
+              "flex justify-between gap-4",
+              if(@editing, do: "items-start", else: "items-end")
+            ]}>
               <%= if @editing do %>
                 <.user_card_info
                   label={gettext("New rate")}
@@ -172,9 +176,21 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
          |> assign_form()}
 
       {:error, error} ->
-        LiveToast.send_toast(:error, refusal_message(error))
-        {:noreply, assign(socket, :form, to_form(params))}
+        {:noreply, refuse(socket, params, error)}
     end
+  end
+
+  # A refused account number says why under its field, with the validation's own message.
+  defp refuse(socket, params, %{
+         errors: [%InvalidAttribute{path: [:member | _], field: :bank_account_number} = invalid | _]
+       }) do
+    errors = [bank_account_number: {invalid.message, invalid.vars}]
+    assign(socket, :form, to_form(params, errors: errors))
+  end
+
+  defp refuse(socket, params, error) do
+    LiveToast.send_toast(:error, refusal_message(error))
+    assign(socket, :form, to_form(params))
   end
 
   defp assign_salaries(socket) do

@@ -34,6 +34,24 @@ defmodule Firmowid.Core.Validations.ValidateIban do
     validate(changeset, opts, context)
   end
 
+  @doc """
+  Adds the `PL` prefix to a Polish account number typed as 26 digits.
+
+  The prefix is added only when `PL` plus the digits passes the checksum, so the
+  result is the IBAN the person meant. Any other value is returned unchanged for
+  the validation to judge.
+  """
+  @spec with_polish_prefix(String.t()) :: String.t()
+  def with_polish_prefix(value) do
+    with stripped when is_binary(stripped) <- normalize(value),
+         true <- Regex.match?(~r/\A\d{26}\z/, stripped),
+         true <- valid?("PL" <> stripped) do
+      "PL" <> value
+    else
+      _ -> value
+    end
+  end
+
   defp valid?(value) do
     with iban when is_binary(iban) <- normalize(value),
          true <- Regex.match?(~r/\A[A-Z]{2}\d{2}[A-Z0-9]{1,30}\z/, iban),
