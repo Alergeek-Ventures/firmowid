@@ -9,7 +9,6 @@ defmodule Firmowid.Invoicing.KsefInvoiceDigestItem do
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
-  alias Firmowid.Invoicing.Changes.SetOrganizationIdFromTenant
   alias Firmowid.Resource
 
   require Resource
@@ -32,7 +31,6 @@ defmodule Firmowid.Invoicing.KsefInvoiceDigestItem do
       description "Create a digest item linking a cost invoice to a KSeF digest."
       primary? true
       accept [:digest_id, :cost_invoice_id]
-      change SetOrganizationIdFromTenant
     end
   end
 
