@@ -267,19 +267,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   def subject(_conversation, _scope), do: nil
 
-  defp subject_record(%{"type" => "employee", "id" => id}, scope) do
-    %{id: id}
-    |> Core.get_org_user(scope: scope, load: [member: :display_name])
-    |> subject_result(:employee)
-  end
-
-  defp subject_record(%{"type" => "project", "id" => id}, scope) do
-    id |> Project.get(scope: scope) |> subject_result(:project)
-  end
-
   defp subject_record(%{"type" => type, "id" => id}, scope) do
     kind =
       case type do
+        "employee" -> :employee
+        "project" -> :project
         "transaction" -> :transaction
         "sales_invoice" -> :sales
         "cost_invoice" -> :cost
@@ -290,11 +282,6 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       [] -> nil
     end
   end
-
-  defp subject_result({:ok, record}, kind), do: record(kind, record)
-  defp subject_result({:error, %Forbidden{}}, _kind), do: nil
-  defp subject_result({:error, %Invalid{}}, _kind), do: nil
-  defp subject_result({:error, error}, _kind), do: raise(Ash.Error.to_error_class(error))
 
   # A list longer than this shows its first @visible_records rows and expands in place.
   @collapsed_after 10
@@ -535,16 +522,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp read_records(:counterparty, ids, scope) do
     query = Ash.Query.filter(Firmowid.Invoicing.Counterparty, id in ^ids)
 
-    case Invoicing.list_counterparties(%{status: :all},
-           scope: scope,
-           query: query,
-           load: [:display_label]
-         ) do
-      {:ok, records} -> records
-      {:error, %Forbidden{}} -> []
-      {:error, %Invalid{}} -> []
-      {:error, error} -> raise Ash.Error.to_error_class(error)
-    end
+    found(
+      Invoicing.list_counterparties(%{status: :all},
+        scope: scope,
+        query: query,
+        load: [:display_label]
+      )
+    )
+  end
+
+  defp read_records(:employee, [id], scope) do
+    found(Core.get_org_user(%{id: id}, scope: scope, load: [member: :display_name]))
   end
 
   defp read_records(:project, ids, scope) do
@@ -571,14 +559,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
           {&Finances.list_transactions/2, [:counterparty_display_name, :direction]}
       end
 
-    case read.(%{ids: ids}, scope: scope, page: false, load: loads) do
-      {:ok, records} -> records
-      {:error, %Forbidden{}} -> []
-      {:error, %Invalid{}} -> []
-      {:error, error} -> raise Ash.Error.to_error_class(error)
-    end
+    found(read.(%{ids: ids}, scope: scope, page: false, load: loads))
   end
 
+  # A record the user cannot read, or no longer exists, is left out; other failures are bugs.
+  defp found({:ok, records}) when is_list(records), do: records
   defp found({:ok, record}), do: [record]
   defp found({:error, %Forbidden{}}), do: []
   defp found({:error, %Invalid{}}), do: []
