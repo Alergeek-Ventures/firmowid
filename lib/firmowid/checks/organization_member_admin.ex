@@ -4,40 +4,24 @@ defmodule Firmowid.Checks.OrganizationMemberAdmin do
   the actor is an admin of it.
 
   Users are not multitenant; their `member` ties them to an organization, so this
-  keeps matching users whose member is archived. Pass `active: true` to match only
-  users whose member there is not archived.
+  keeps matching users whose member is archived.
   """
   use Ash.Policy.FilterCheck
 
   alias Firmowid.Checks.ActorRole
 
   @impl true
-  def describe(opts) do
-    if opts[:active],
-      do: "actor is an admin of the user's active organization",
-      else: "actor is an admin of the user's organization"
-  end
+  def describe(_opts), do: "actor is an admin of the user's organization"
 
   @impl true
-  def filter(actor, context, opts) do
-    cond do
-      ActorRole.role(actor, context) != :admin ->
-        false
-
-      opts[:active] ->
-        expr(
-          not is_nil(^actor([:member, :organization_id])) and
-            exists(
-              member,
-              organization_id == ^actor([:member, :organization_id]) and is_nil(archived_at)
-            )
-        )
-
-      true ->
-        expr(
-          not is_nil(^actor([:member, :organization_id])) and
-            exists(member, organization_id == ^actor([:member, :organization_id]))
-        )
+  def filter(actor, context, _opts) do
+    if ActorRole.role(actor, context) == :admin do
+      expr(
+        not is_nil(^actor([:member, :organization_id])) and
+          exists(member, organization_id == ^actor([:member, :organization_id]))
+      )
+    else
+      false
     end
   end
 end
