@@ -2,6 +2,7 @@ defmodule Firmowid.Finances.RequisitionTest do
   @moduledoc false
   use Firmowid.DataCase
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
@@ -31,6 +32,37 @@ defmodule Firmowid.Finances.RequisitionTest do
                )
 
       assert refreshed.status == :rejected
+    end
+
+    test "keeps the requisition pending when GoCardless fails to list its accounts" do
+      user = admin_fixture()
+
+      Req.Test.stub(:bank_data_requisition, fn conn ->
+        Req.Test.json(conn, %{"status" => "LN", "accounts" => ["account-1"]})
+      end)
+
+      Req.Test.stub(:bank_data_account, fn conn ->
+        Plug.Conn.send_resp(conn, 500, "")
+      end)
+
+      {:ok, requisition} = create_requisition(user)
+
+      capture_log(fn ->
+        assert {:error, _} =
+                 requisition
+                 |> Ash.Changeset.for_update(:check_status, %{}, ash_oban_opts(user))
+                 |> Ash.update(ash_oban_opts(user))
+      end)
+
+      assert {:ok, refreshed} =
+               Firmowid.Finances.get_requisition(requisition.id,
+                 tenant: user.member.organization_id,
+                 actor: user,
+                 load: [:bank_accounts]
+               )
+
+      assert refreshed.status == :pending
+      assert refreshed.bank_accounts == []
     end
   end
 

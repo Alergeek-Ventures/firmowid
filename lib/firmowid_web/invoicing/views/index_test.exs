@@ -388,11 +388,15 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
 
       # Accept the requisition - triggers Ash.Notifier.PubSub broadcast
-      # This will call GoCardless API (stubbed above) and broadcast :linked
+      # This will call GoCardless API (stubbed above) and broadcast :linked.
+      # Manual mode queues the account sync jobs, as in production, instead of
+      # running them inside the accept transaction.
       {:ok, _accepted} =
-        requisition
-        |> Ash.Changeset.for_update(:accept, %{}, bank_sync_opts(user))
-        |> Ash.update(bank_sync_opts(user))
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          requisition
+          |> Ash.Changeset.for_update(:accept, %{}, bank_sync_opts(user))
+          |> Ash.update(bank_sync_opts(user))
+        end)
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
