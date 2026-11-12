@@ -16,6 +16,7 @@ defmodule Firmowid.Blobs do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   require Ash.Query
 
@@ -101,7 +102,7 @@ defmodule Firmowid.Blobs do
         if blob_checksum_conflict?(error) do
           checksum = UploadFingerprint.normalized_checksum(path, content_type)
 
-          case find_blob_by_checksum(checksum, opts) do
+          case find_blob_by_checksum(checksum, stored_file_opts(opts)) do
             {:ok, blob} -> {:ok, blob}
             {:error, :not_found} -> {:error, error}
           end
@@ -112,6 +113,19 @@ defmodule Firmowid.Blobs do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  # The uploader holds these bytes, so handing back the stored file reveals
+  # nothing, even when another member's record holds it. The record the
+  # uploader attaches it to is what lets them read it afterwards.
+  defp stored_file_opts(opts) do
+    tenant =
+      case Keyword.fetch(opts, :scope) do
+        {:ok, scope} -> Keyword.get(Ash.Scope.to_opts(scope), :tenant)
+        :error -> Keyword.get(opts, :tenant)
+      end
+
+    [actor: %SystemActor{org_id: tenant, role: :document_blob_processor}, tenant: tenant]
   end
 
   @doc """
