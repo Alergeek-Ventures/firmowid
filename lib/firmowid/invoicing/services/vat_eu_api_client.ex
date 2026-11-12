@@ -1,6 +1,6 @@
 defmodule Firmowid.Invoicing.Services.VatEuApiClient do
   @moduledoc """
-  Client for the EU VIES VAT API using Req HTTP client and Ecto embedded schemas.
+  Client for the EU VIES VAT API; validates the answer with an Ecto embedded schema.
   """
 
   alias Firmowid.Invoicing.Services.VatEuResponse
@@ -43,10 +43,10 @@ defmodule Firmowid.Invoicing.Services.VatEuApiClient do
     end
   end
 
+  # Keys stay strings, so a response never creates atoms; the changeset casts the known ones.
   defp normalize_response(body) when is_map(body) do
     body
     |> Recase.Enumerable.convert_keys(&Recase.to_snake/1)
-    |> Recase.Enumerable.atomize_keys()
     |> validate_response()
   end
 
