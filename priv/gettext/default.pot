@@ -4085,6 +4085,7 @@ msgstr ""
 msgid "Difference from transfer: %{amount}"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Different correspondence address"
