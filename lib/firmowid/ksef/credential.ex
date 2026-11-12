@@ -373,17 +373,9 @@ defmodule Firmowid.Ksef.Credential do
     module FirmowidWeb.Core.Endpoint
     prefix "credential"
 
-    publish :authenticate_with_token, ["authenticating", :organization_id]
-    publish :authenticate_with_uploaded_certificate, ["authenticating", :organization_id]
-    publish :enroll_ksef_certificate, ["authenticating_epuap", :organization_id]
-
-    publish :prepare_enrollment, ["preparing_enrollment", :organization_id]
-    publish :wait_for_certificate, ["wait_for_certificate", :organization_id]
-    publish :complete_certificate_enrollment, ["authenticating", :organization_id]
-    publish :mark_working, ["working", :organization_id]
-    publish :refresh_certificate, ["refreshing", :organization_id]
-    publish :supersede_certificate, ["working", :organization_id]
-    publish :recover_certificate_refresh, ["working", :organization_id]
+    # Each create and transition publishes to the state the credential enters.
+    publish_all :create, [:status, :organization_id]
+    publish_all :update, [:status, :organization_id], except: [:backfill_expiration_metadata]
     publish :delete_failed, ["failed", :organization_id]
   end
 
