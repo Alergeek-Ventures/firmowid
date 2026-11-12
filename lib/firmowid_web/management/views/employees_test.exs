@@ -95,6 +95,28 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert Decimal.eq?(salary.hourly_rate, Decimal.new("123.45"))
   end
 
+  test "a cleared rate is rejected with a message and saves nothing", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+
+    {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy")
+
+    lv |> element("input[phx-click='toggle_wages_view']") |> render_click()
+    lv |> element("button[phx-click='toggle_wage_editor']") |> render_click()
+
+    html =
+      lv
+      |> form("form[phx-submit='save_wages']", %{
+        "employee" => %{admin.id => %{"wage" => "40"}, employee.id => %{"wage" => ""}}
+      })
+      |> render_submit()
+
+    assert html =~ "Nie udało się zaktualizować stawek: jest wymagane"
+
+    assert Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: current_scope(admin)) ==
+             []
+  end
+
   test "archived employee is hidden from active list and visible in archive", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
