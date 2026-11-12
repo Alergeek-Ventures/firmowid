@@ -4,9 +4,9 @@ defmodule Firmowid.Events.Event do
   @moduledoc """
   Centralized event log resource for AshEvents.
 
-  Stores action events for resources that opt into event tracking.
-  Currently used by BankAccount to derive sync status (broken?, has_successful_sync?)
-  without querying Oban jobs directly.
+  Stores action events for resources that opt into event tracking: bank
+  account synchronizations, from which their sync status is derived, and
+  invoice to transaction matches.
 
   This resource uses AshEvents for derivation only — not for replay.
   """
