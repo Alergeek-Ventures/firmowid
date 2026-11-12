@@ -96,30 +96,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def mount(_params, _session, socket) do
-    current_user = socket.assigns.current_user
-    current_org = socket.assigns.current_org
+    %{current_user: current_user, current_org: current_org, ash_scope: scope} = socket.assigns
     admin? = current_user.member.role == :admin
-    scope = socket.assigns.ash_scope
-    current_year = Date.utc_today().year
-
-    organization_users = if(admin?, do: list_organization_users(scope), else: [])
-    organization_invites = if(admin?, do: list_organization_invites(scope), else: [])
-
-    leave_requests =
-      Timetracker.list_leave_requests!(%{member_id: current_user.member.id},
-        scope: scope,
-        query: [sort: [inserted_at: :desc]]
-      )
-
-    delegations = Delegations.list_delegations_for_member!(current_user.member.id, scope: scope)
-
-    leave_days =
-      current_user.member
-      |> Ash.load!([accepted_leave_days_for_year: %{year: current_year}], scope: scope)
-      |> Map.fetch!(:accepted_leave_days_for_year)
-
-    {profile_projects, profile_projects_total, profile_projects_date} =
-      load_profile_projects(current_user.member.id, scope)
 
     subscribe_to_admin_updates(socket, current_org.id, admin?)
 
@@ -132,9 +110,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket =
       if admin? do
         socket
-        |> assign_bank_accounts()
-        |> Connection.init(scope)
-        |> assign(:company_form, form_basic_info_form(current_org, scope))
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -148,25 +123,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
           progress: guard_upload_progress(&handle_progress/3, :ash_scope)
         )
       else
-        assign(socket, bank_accounts: [], bank_institutions: %{}, pending_requisitions: [])
+        socket
       end
-
-    socket = assign(socket, :member_form, form_member_form(current_user.member, scope))
-
-    org_with_avatar =
-      Ash.load!(current_org, [avatar_blob: [:url]], scope: scope)
-
-    {:ok, google_identities} =
-      Core.read_user_identity_for_strategy(
-        current_user.id,
-        "google",
-        scope: scope
-      )
-
-    google_connected? = google_identities != []
-
-    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.member.id, scope: scope)
-    {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
 
     {:ok,
      socket
@@ -179,15 +137,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
-     |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
-     |> assign(:owned_organizations, Core.list_owned_organizations(current_user))
-     |> assign(:current_password, nil)
-     |> assign(:password_form, form_password_form(current_user))
-     |> assign(:email_form, form_email_form(current_user, scope))
-     |> assign(:organization_users, organization_users)
-     |> assign(:organization_invites, organization_invites)
      |> assign(:selected_user, nil)
-     |> assign(:google_connected?, google_connected?)
+     |> assign(:member_form, form_member_form(current_user.member, scope))
      |> assign(:no_padding, true)
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -195,12 +146,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
        auto_upload: true,
        progress: guard_upload_progress(&handle_progress/3, :ash_scope)
      )
-     |> assign(:leave_requests, leave_requests)
-     |> assign(:delegations, delegations)
-     |> assign(:leave_days, leave_days || 0)
-     |> assign(:leave_search, "")
-     |> assign(:leave_request_form, leave_request_form(current_user, scope))
-     |> assign(:selected_leave_reason, default_leave_reason())
      |> allow_upload(:leave_request_attachment,
        accept: ~w(.pdf .jpg .jpeg .png),
        max_entries: 1,
@@ -213,14 +158,78 @@ defmodule FirmowidWeb.Settings.Views.Index do
        max_file_size: 10_000_000,
        auto_upload: true
      )
-     |> assign(:projects, profile_projects)
-     |> assign(:projects_total, profile_projects_total)
-     |> assign(:projects_date, profile_projects_date)
-     |> assign(:current_org, org_with_avatar)
-     |> assign(:current_contract, current_contract)
-     |> assign(:pending_contract, pending_contract)
-     |> assign(:contract_form, form_contract_form(current_contract, scope))
+     |> assign(:current_org, Ash.load!(current_org, [avatar_blob: [:url]], scope: scope))
      |> assign(:main_class, "bg-white")}
+  end
+
+  # A page loads what it shows when it first opens; the combined page of the old UI
+  # keeps what it loaded while switching between its tabs.
+  defp assign_tab_data(socket, tab) when tab in [:organization, :ksef, :bank_accounts],
+    do: load_once(socket, :company_form, &assign_company/1)
+
+  defp assign_tab_data(socket, :account), do: load_once(socket, :email_form, &assign_account/1)
+
+  defp assign_tab_data(socket, tab) when tab in [:profile, :documents, :delegations],
+    do: load_once(socket, :leave_requests, &assign_profile/1)
+
+  defp assign_tab_data(socket, :subscription), do: socket
+
+  defp load_once(socket, loaded_key, load) do
+    if Map.has_key?(socket.assigns, loaded_key), do: socket, else: load.(socket)
+  end
+
+  defp assign_company(socket) do
+    %{current_org: current_org, ash_scope: scope} = socket.assigns
+
+    socket
+    |> assign_bank_accounts()
+    |> Connection.init(scope)
+    |> assign(:company_form, form_basic_info_form(current_org, scope))
+    |> assign(:organization_users, list_organization_users(scope))
+    |> assign(:organization_invites, list_organization_invites(scope))
+  end
+
+  defp assign_account(socket) do
+    %{current_user: current_user, ash_scope: scope} = socket.assigns
+
+    {:ok, google_identities} =
+      Core.read_user_identity_for_strategy(
+        current_user.id,
+        "google",
+        scope: scope
+      )
+
+    socket
+    |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
+    |> assign(:owned_organizations, Core.list_owned_organizations(current_user))
+    |> assign(:current_password, nil)
+    |> assign(:password_form, form_password_form(current_user))
+    |> assign(:email_form, form_email_form(current_user, scope))
+    |> assign(:google_connected?, google_identities != [])
+  end
+
+  defp assign_profile(socket) do
+    %{current_user: current_user, ash_scope: scope} = socket.assigns
+    member_id = current_user.member.id
+
+    leave_days =
+      current_user.member
+      |> Ash.load!([accepted_leave_days_for_year: %{year: Date.utc_today().year}], scope: scope)
+      |> Map.fetch!(:accepted_leave_days_for_year)
+
+    {profile_projects, profile_projects_total, profile_projects_date} =
+      load_profile_projects(member_id, scope)
+
+    socket
+    |> assign(:leave_requests, list_leave_requests(member_id, scope))
+    |> assign(:delegations, Delegations.list_delegations_for_member!(member_id, scope: scope))
+    |> assign(:leave_days, leave_days || 0)
+    |> assign(:leave_search, "")
+    |> assign(:leave_request_form, leave_request_form(current_user, scope))
+    |> assign(:projects, profile_projects)
+    |> assign(:projects_total, profile_projects_total)
+    |> assign(:projects_date, profile_projects_date)
+    |> assign_contracts()
   end
 
   defp subscribe_to_admin_updates(socket, organization_id, true) do
@@ -828,15 +837,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case result do
       {:ok, _request} ->
-        leave_requests =
-          Timetracker.list_leave_requests!(%{member_id: socket.assigns.current_user.member.id},
-            scope: scope,
-            query: [sort: [inserted_at: :desc]]
-          )
-
         {:noreply,
          socket
-         |> assign(:leave_requests, leave_requests)
+         |> assign(
+           :leave_requests,
+           list_leave_requests(socket.assigns.current_user.member.id, scope)
+         )
          |> assign(:leave_request_form, leave_request_form(socket.assigns.current_user, scope))
          |> PosthogBusinessEvents.capture(:leave_request_created)
          |> push_event("js-exec", %{to: "#leave-request-modal", attr: "data-cancel"})}
@@ -1303,6 +1309,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       true ->
         {:noreply,
          socket
+         |> assign_tab_data(tab)
          |> assign(:settings_tab, tab)
          |> assign(:no_padding, if(flag_enabled?(:inbox, socket.assigns), do: nil, else: true))
          |> assign(:main_class, main_class(tab, flag_enabled?(:inbox, socket.assigns)))
@@ -1374,15 +1381,30 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
     current_user = %{user | member: Ash.load!(user.member, [avatar_blob: [:url]], scope: scope)}
 
-    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.member.id, scope: scope)
-    {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
-
     socket
     |> assign(:current_user, current_user)
     |> assign(:member_form, form_member_form(current_user.member, scope))
+    |> assign_contracts()
+  end
+
+  defp assign_contracts(socket) do
+    scope = socket.assigns.ash_scope
+    member_id = socket.assigns.current_user.member.id
+
+    {:ok, pending_contract} = Payroll.load_pending_contract(member_id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(member_id, scope: scope)
+
+    socket
     |> assign(:pending_contract, pending_contract)
     |> assign(:current_contract, current_contract)
     |> assign(:contract_form, form_contract_form(current_contract, scope))
+  end
+
+  defp list_leave_requests(member_id, scope) do
+    Timetracker.list_leave_requests!(%{member_id: member_id},
+      scope: scope,
+      query: [sort: [inserted_at: :desc]]
+    )
   end
 
   defp profile_section_assign("employment"), do: :editing_profile_employment
