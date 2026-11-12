@@ -21,6 +21,8 @@ Według harmonogramu Ministerstwa Finansów wyjątek dla firm, których sprzeda�
 
 Czynny podatnik VAT, który płaci innemu czynnemu podatnikowi, podaje od 1 stycznia 2027 r. w tytule przelewu numer KSeF faktury. Firma zwolniona z VAT tych numerów w przelewach nie zobaczy i sama ich nie wpisuje.
 
+![Firma założona w 2027 roku: fakturę dla firmy wystawia tylko w KSeF, dla osoby prywatnej w KSeF dobrowolnie albo poza nim, dla klienta z zagranicy w KSeF z kodem QR. Właściciel JDG ma uprawnienia od razu, numer KSeF w przelewie dotyczy tylko czynnych podatników VAT, a zwolnienie z VAT nie zwalnia z KSeF.](/images/guides/firma-zalozona-w-2027-ksef.webp)
+
 ## Źródła
 
 - [MF: Etapy wdrożenia KSeF 2.0](https://ksef.podatki.gov.pl/etapy-wdrozenia-ksef/), dostęp 10.11.2026.

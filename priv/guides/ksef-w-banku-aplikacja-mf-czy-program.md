@@ -27,6 +27,8 @@ Strony dwóch dużych banków opisywały 10 listopada KSeF na zupełnie innym et
 
 Osobny program do faktur działa niezależnie od banku i bywa płatny, ale łączy KSeF z tym, czego brakuje narzędziom ministerstwa, czyli z przypomnieniami o płatnościach, kontami dla księgowej albo wspólnika czy dopasowaniem przelewów. U części producentów darmowy plan kończy się po trzech fakturach w miesiącu, jak w planie Micro Fakturowni, a w inFakcie najtańszy plan z KSeF kosztował na początku listopada 9,90 zł miesięcznie przy płatności rocznej. Nasz Firmowid w planie za 0 zł wysyła faktury do KSeF bez limitu, pobiera koszty i dopasowuje przelewy z jednego konta podłączonego przez Open Banking, za to nie prowadzi księgowości. Przy dwóch fakturach w miesiącu i klientach, którzy płacą na czas, przesiadka z aplikacji ministerstwa na cokolwiek innego niewiele zmieni.
 
+![Porównanie: Aplikacja Podatnika KSeF, aplikacja mobilna i e-mikrofirma są bezpłatne, ale nie widzą wpłat od klientów. Moduł Pekao jest w promocji za 0 zł do 24 miesięcy, PKO BP nie podaje ceny. Firmowid w planie Darmowym kosztuje 0 zł i dopasowuje wpłaty z jednego konta przez Open Banking.](/images/guides/ksef-bank-aplikacja-mf-program-porownanie.webp)
+
 ## Źródła
 
 - [MF: Aplikacja Podatnika KSeF i inne narzędzia](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-i-inne-narzedzia/), dostęp 10.11.2026.

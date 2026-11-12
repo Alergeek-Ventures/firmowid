@@ -29,6 +29,8 @@ Kwoty na fakturze w walucie obcej zostają w tej walucie, ale według art. 106e 
 
 Konta w euro z Wise mają belgijski IBAN, z BE na początku, a takich numerów nie ma w wykazie podatników VAT. Klient z Polski, który płaci na taki rachunek ponad 15 000 zł, nie zaliczy wydatku w koszty, chyba że w 7 dni złoży ZAW-NR. Do faktur z obowiązkowym split paymentem potrzebny jest rachunek VAT, a ten prowadzą banki i SKOK-i.
 
+![Revolut i Wise łączą się z Firmowidem przez Open Banking jak polskie banki, tylko do odczytu. Każda z 33 walut może mieć domyślne konto. Konto Wise w euro ma belgijski IBAN, którego nie ma w wykazie podatników VAT, więc przy płatności powyżej 15 000 zł klient składa ZAW-NR.](/images/guides/revolut-wise-konto-w-programie-do-faktur.webp)
+
 ## Źródła
 
 - Art. 31a, art. 106e ust. 11 i art. 108a ustawy o VAT; art. 22p ustawy o PIT; art. 117ba Ordynacji podatkowej (ZAW-NR).

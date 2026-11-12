@@ -25,6 +25,8 @@ Małe firmy żyją z miesiąca na miesiąc. Takie dane pozwalają mądrzej plano
 
 W iFirmie projekt też zbiera przychody i koszty, ale wynagrodzenia pracowników dodaje się do niego ręcznie.
 
+![Rentowność projektu w Firmowidzie: przychód to opłacone faktury przypisane do projektu, koszty bezpośrednie to faktury oznaczone projektem, wynagrodzenia oraz koszty firmy i podatki dzieli się według godzin, projekty wewnętrzne są osobno, a nieopłacone faktury poza wynikiem.](/images/guides/rentownosc-projektu-jak-liczymy.webp)
+
 ## Źródła
 
 - Firmowid: kod źródłowy (AGPL-3.0), moduł analizy i rentowności projektów, stan 11.11.2026.

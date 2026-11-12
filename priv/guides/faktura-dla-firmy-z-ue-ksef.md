@@ -25,6 +25,8 @@ Fakturę można wystawić w euro, a do ewidencji kwotę przelicza się na złote
 
 W [Firmowidzie](/cennik), naszym programie, stawka np II ustawia się sama, kiedy klient z UE ma numer VAT-UE.
 
+![Firma z UE z numerem VAT-UE: stawka np II i adnotacja odwrotne obciążenie. Osoba prywatna z UE: polska stawka VAT. Firma spoza UE: np I. Krajowe odwrotne obciążenie: oo. Przed pierwszą usługą dla firmy z UE trzeba zarejestrować się jako podatnik VAT-UE.](/images/guides/faktura-ue-ksef-stawka-np-ii.webp)
+
 ## Źródła
 
 - Art. 28b, art. 31a, art. 97 ust. 3 i art. 106e ust. 1 pkt 18 ustawy z 11 marca 2004 r. o podatku od towarów i usług.

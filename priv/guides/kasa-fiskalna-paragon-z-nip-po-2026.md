@@ -16,6 +16,8 @@ Zmiana nie dotyczy sprzedaży dla osób prywatnych, bo faktury dla konsumentów,
 
 Firma, która dotąd wydawała klientom firmowym paragony z NIP albo faktury z kasy, od stycznia wystawi im fakturę w KSeF, czyli w Aplikacji Podatnika KSeF, w aplikacji mobilnej albo w programie do faktur połączonym z systemem. Według MF pracownik dokonujący zakupu w imieniu pracodawcy otrzymuje fakturę poza systemem, oznaczoną kodem QR, po nadaniu jej numeru KSeF, a przed jego nadaniem sprzedawca może wydać tak zwane potwierdzenie transakcji z dwoma kodami QR. Sposób, w jaki konkretny model kasy online współpracuje z programem do faktur, zależy już od producenta kasy i jej serwisu.
 
+![Do 31 grudnia 2026 r. faktury można wystawiać z kasy fiskalnej, a paragon z NIP do 450 zł jest fakturą uproszczoną. Od 1 stycznia 2027 r. fakturę dla firmy wystawia się tylko w KSeF. Sprzedaży dla osób prywatnych ta zmiana nie dotyczy.](/images/guides/kasa-fiskalna-paragon-z-nip-2026-2027.webp)
+
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.

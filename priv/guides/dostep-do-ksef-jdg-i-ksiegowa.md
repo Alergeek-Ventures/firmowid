@@ -16,6 +16,8 @@ Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, kt
 
 Na pytanie przedsiębiorczyni, czy może przekazać księgowej pobrany certyfikat, ministerstwo odpowiada przecząco, bo certyfikat jest osobistym poświadczeniem tożsamości i korzysta z niego tylko osoba, na którą go wydano. Księgowej albo pracownikowi nadaje się zamiast tego uprawnienie do wystawiania lub przeglądania faktur, w Aplikacji Podatnika KSeF albo w programie połączonym z systemem przez API. Biuru rachunkowemu można nadać uprawnienie jako całemu podmiotowi i zaznaczyć, że wolno mu przekazywać je swoim pracownikom, dzięki czemu przedsiębiorca nie musi wskazywać każdej osoby z biura z osobna.
 
+![Właściciel JDG ma uprawnienia w KSeF automatycznie i loguje się Podpisem Zaufanym albo kwalifikowanym. Program do faktur łączy się tokenem albo certyfikatem z Aplikacji Podatnika KSeF. Księgowej albo biuru właściciel nadaje uprawnienia, nie przekazuje certyfikatu.](/images/guides/dostep-do-ksef-wlasciciel-program-ksiegowa.webp)
+
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.

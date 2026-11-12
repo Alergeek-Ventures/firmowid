@@ -16,6 +16,8 @@ Do płatności dokonywanych od tego dnia stosuje się także nowy art. 108g usta
 
 Odbierania faktur kosztowych styczeń nie zmienia, bo przez KSeF odbiera się je od 1 lutego 2026 r., a gdy w biurze zabraknie internetu, nadal można skorzystać z [trybu offline24](/poradnik/tryb-offline-ksef) i dosłać fakturę najpóźniej w następnym dniu roboczym. Bezpłatnie MF udostępnia Aplikację Podatnika KSeF w przeglądarce, aplikację mobilną oraz e-mikrofirmę w e-Urzędzie Skarbowym, która odebrane faktury przenosi od razu do ewidencji VAT. Na jednoosobowej działalności wejście do nich umożliwia profil zaufany albo podpis kwalifikowany, natomiast program do faktur wymaga tokenu lub certyfikatu, który generuje się w Aplikacji Podatnika KSeF.
 
+![Oś czasu KSeF dla małych firm: od 1 lutego 2026 r. faktury kosztowe odbiera się przez KSeF, 31 grudnia 2026 r. kończy się limit 10 000 zł i faktury z kas, od 1 stycznia 2027 r. fakturę dla firmy wystawia się tylko w KSeF, a czynni podatnicy VAT podają numer KSeF w przelewie.](/images/guides/ksef-od-1-stycznia-2027-terminy.webp)
+
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.
