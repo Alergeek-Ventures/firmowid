@@ -4,6 +4,7 @@ defmodule Firmowid.Finances.RequisitionTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Firmowid.Finances.Requisition
   alias Firmowid.SystemActor
 
@@ -20,11 +21,8 @@ defmodule Firmowid.Finances.RequisitionTest do
 
       assert {:ok, _} =
                requisition
-               |> Ash.Changeset.for_update(:check_status, %{},
-                 tenant: user.member.organization_id,
-                 actor: user
-               )
-               |> Ash.update(tenant: user.member.organization_id, actor: user)
+               |> Ash.Changeset.for_update(:check_status, %{}, ash_oban_opts(user))
+               |> Ash.update(ash_oban_opts(user))
 
       assert {:ok, refreshed} =
                Firmowid.Finances.get_requisition(requisition.id,
@@ -45,11 +43,8 @@ defmodule Firmowid.Finances.RequisitionTest do
 
       assert {:ok, rejected} =
                requisition
-               |> Ash.Changeset.for_update(:auto_reject, %{},
-                 tenant: user.member.organization_id,
-                 actor: user
-               )
-               |> Ash.update(tenant: user.member.organization_id, actor: user)
+               |> Ash.Changeset.for_update(:auto_reject, %{}, ash_oban_opts(user))
+               |> Ash.update(ash_oban_opts(user))
 
       assert rejected.status == :rejected
     end
@@ -80,6 +75,22 @@ defmodule Firmowid.Finances.RequisitionTest do
     end
   end
 
+  describe "organization admin" do
+    test "cannot read other organizations' requisitions or run internal actions" do
+      admin = admin_fixture()
+      other_organization_id = admin_fixture().member.organization_id
+      opts = [actor: admin, tenant: admin.member.organization_id]
+
+      Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate()}, tenant: other_organization_id)
+      {:ok, requisition} = create_requisition(admin)
+
+      assert {:ok, %{results: []}} = Requisition.read_global(actor: admin, page: [limit: 10])
+      assert {:error, %Forbidden{}} = Requisition.persist(%{id: Ecto.UUID.generate()}, opts)
+      assert {:error, %Forbidden{}} = Requisition.accept(requisition, opts)
+      assert {:error, %Forbidden{}} = Requisition.destroy(requisition, opts)
+    end
+  end
+
   describe "AshOban queue routing" do
     test "routes requisition triggers to requisition_checks queue" do
       assert :requisition_checks ==
@@ -94,6 +105,11 @@ defmodule Firmowid.Finances.RequisitionTest do
       assert :requisition_checks ==
                AshOban.Info.oban_trigger(Requisition, :delete_remote).queue
     end
+  end
+
+  # The options AshOban runs trigger actions with.
+  defp ash_oban_opts(user) do
+    [actor: user, tenant: user.member.organization_id, context: %{private: %{ash_oban?: true}}]
   end
 
   defp create_requisition(user) do

@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias Firmowid.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
@@ -173,7 +174,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute has_element?(view, "#bank-connection-alert-#{account.id}")
 
       assert {:ok, _} =
-               Requisition.expire(requisition, actor: user, tenant: user.member.organization_id)
+               Requisition.expire(requisition, bank_sync_opts(user))
 
       assert has_element?(
                view,
@@ -399,11 +400,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       # This will call GoCardless API (stubbed above) and broadcast :linked
       {:ok, _accepted} =
         requisition
-        |> Ash.Changeset.for_update(:accept, %{},
-          tenant: user.member.organization_id,
-          actor: user
-        )
-        |> Ash.update(tenant: user.member.organization_id, actor: user)
+        |> Ash.Changeset.for_update(:accept, %{}, bank_sync_opts(user))
+        |> Ash.update(bank_sync_opts(user))
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
@@ -423,11 +421,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       # Reject the requisition - triggers Ash.Notifier.PubSub broadcast
       {:ok, _rejected} =
         requisition
-        |> Ash.Changeset.for_update(:reject, %{},
-          tenant: user.member.organization_id,
-          actor: user
-        )
-        |> Ash.update(tenant: user.member.organization_id, actor: user)
+        |> Ash.Changeset.for_update(:reject, %{}, bank_sync_opts(user))
+        |> Ash.update(bank_sync_opts(user))
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
@@ -766,6 +761,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       assert length(invoices) == 1
     end
+  end
+
+  # Requisition transitions run as the bank sync system actor of the organization.
+  defp bank_sync_opts(user) do
+    organization_id = user.member.organization_id
+    [actor: %SystemActor{org_id: organization_id, role: :bank_sync}, tenant: organization_id]
   end
 
   defp create_requisition(user, requisition_id) do

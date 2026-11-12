@@ -219,10 +219,6 @@ defmodule Firmowid.Finances.Requisition do
       authorize_if always()
     end
 
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
-    end
-
     # bank_sync: status transitions delegated from :check_status and expiry
     # detected during transaction sync.
     bypass {SystemActorRole, roles: [:bank_sync]} do
