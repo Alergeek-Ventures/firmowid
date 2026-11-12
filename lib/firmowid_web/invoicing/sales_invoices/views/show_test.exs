@@ -33,6 +33,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     refute has_element?(view, "#inv-id")
   end
 
+  test "invoicing role sees an invoice without a share link it cannot create", %{conn: conn} do
+    admin = admin_fixture()
+    invoicing_user = user_in_org_fixture(admin.member.organization_id, %{role: :invoicing})
+    invoice = sales_invoice_fixture!(admin)
+    conn = log_in_user(conn, invoicing_user)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    refute has_element?(view, "#share-invoice-button")
+
+    shared_invoice = SalesInvoice.generate_share_token!(invoice, scope: scope_for(admin))
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    view |> element("#share-invoice-button") |> render_click()
+
+    assert_push_event(view, "copy-to-clipboard", %{text: url})
+    assert url =~ shared_invoice.share_token
+  end
+
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
     admin = admin_fixture()
     invoice = sales_invoice_fixture!(admin)
