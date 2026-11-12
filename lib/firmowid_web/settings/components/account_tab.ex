@@ -443,6 +443,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp account_closure_section(assigns) do
     assigns =
       assign(assigns,
+        can_close?: Ash.can?({assigns.current_user, :destroy}, assigns.current_user),
         closure_parts:
           split_bold(
             gettext("Are you sure you want to close your account? %{warning}",
@@ -459,7 +460,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       )
 
     ~H"""
-    <.settings_section title={gettext("Closing the account")}>
+    <.settings_section :if={@can_close?} title={gettext("Closing the account")}>
       <div class="flex flex-col gap-4">
         <.detail_row label={gettext("Account name")}>{@current_user.email}</.detail_row>
         <Helpers.settings_display_field>
