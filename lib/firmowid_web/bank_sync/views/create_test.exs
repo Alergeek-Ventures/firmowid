@@ -153,6 +153,20 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
     end
   end
 
+  describe "mount" do
+    test "shows the page without banks when GoCardless cannot list them", %{conn: conn} do
+      Req.Test.stub(:bank_data_institutions, &Plug.Conn.send_resp(&1, 500, ""))
+
+      conn = log_in_user(conn, Firmowid.AccountsFixtures.admin_fixture())
+
+      {{:ok, view, _html}, _log} =
+        ExUnit.CaptureLog.with_log(fn -> live(conn, ~p"/ustawienia/bank/dodaj") end)
+
+      assert has_element?(view, "#institutions-failed")
+      assert has_element?(view, "#instiution-SANDBOXFINANCE_SFIN0000")
+    end
+  end
+
   describe "access" do
     test "redirects a member who is not an admin", %{conn: conn} do
       admin = Firmowid.AccountsFixtures.admin_fixture()

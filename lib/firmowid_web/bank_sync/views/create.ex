@@ -43,6 +43,9 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       </div>
 
       <%= if is_nil(@requisition_link) do %>
+        <p :if={@institutions_failed?} id="institutions-failed" class="m-0 text-grey-600">
+          {gettext("We cannot load the banks right now. Try again in a moment.")}
+        </p>
         <div class="grid grid-cols-1 items-center gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           <form
             :for={institution <- @available_institutions}
@@ -101,7 +104,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     socket =
       socket
       |> assign(:institution_refresh_attempts, 0)
-      |> assign(:available_institutions, fetch_available_institutions(socket))
+      |> assign_institutions()
       |> assign(:requisition_link, nil)
       |> assign(:page_title, gettext("Add bank account"))
 
@@ -115,7 +118,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     socket =
       socket
       |> update(:institution_refresh_attempts, &(&1 + 1))
-      |> assign(:available_institutions, fetch_available_institutions(socket))
+      |> assign_institutions()
 
     maybe_schedule_institution_refresh(socket)
 
@@ -228,8 +231,15 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     ]
   end
 
-  defp fetch_available_institutions(socket) do
-    Finances.list_institutions!("pl", actor: socket.assigns.current_user)
+  defp assign_institutions(socket) do
+    case Finances.list_institutions("pl", actor: socket.assigns.current_user) do
+      {:ok, institutions} ->
+        assign(socket, available_institutions: institutions, institutions_failed?: false)
+
+      {:error, error} ->
+        Logger.warning("Failed to load bank institutions", error_kind: ErrorKind.classify(error))
+        assign(socket, available_institutions: [], institutions_failed?: true)
+    end
   end
 
   defp maybe_schedule_institution_refresh(socket) do

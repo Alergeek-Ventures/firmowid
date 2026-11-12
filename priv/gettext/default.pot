@@ -13041,6 +13041,11 @@ msgstr ""
 msgid "We cannot load the banks right now. Try again in a moment or skip this step."
 msgstr ""
 
+#: lib/firmowid_web/bank_sync/views/create.ex
+#, elixir-autogen, elixir-format
+msgid "We cannot load the banks right now. Try again in a moment."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "We could not create the company."
