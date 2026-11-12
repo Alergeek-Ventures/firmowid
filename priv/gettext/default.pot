@@ -3586,6 +3586,7 @@ msgstr ""
 msgid "Could not send the settlement. Try again."
 msgstr ""
 
+#: lib/firmowid/ksef/credential.ex
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Could not sign in to KSeF. Check the files and the key password."

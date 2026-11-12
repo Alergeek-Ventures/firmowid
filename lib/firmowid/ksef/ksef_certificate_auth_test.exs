@@ -139,6 +139,21 @@ defmodule Firmowid.Ksef.CertificateAuthTest do
     assert Ksef.get_credential!(scope: scope) == nil
   end
 
+  test "rejects an uploaded certificate that is not a PEM certificate", %{
+    scope: scope,
+    credentials: credentials
+  } do
+    assert {:error, %Ash.Error.Invalid{errors: [%{field: :certificate}]}} =
+             Credential.authenticate_with_uploaded_certificate(
+               "not a certificate",
+               credentials.private_key,
+               credentials.password,
+               scope: scope
+             )
+
+    assert Credential.get_internal!(scope: scope) == nil
+  end
+
   defp certificate_credentials do
     password = "certificate-password"
     private_key = X509.PrivateKey.new_ec(:secp256r1)
