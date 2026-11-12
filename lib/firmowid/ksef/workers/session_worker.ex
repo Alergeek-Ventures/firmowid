@@ -165,7 +165,6 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
   end
 
   # Oban.Job is not an Ash resource — raw Ecto query is required here.
-  # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
   defp get_refresh_token(organization_id) do
     refresh_token =
       Repo.one(
