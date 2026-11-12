@@ -1188,8 +1188,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Finances.list_requisitions!()
       |> Enum.any?(&(&1.status == :accepted))
 
+    # Only an admin can connect a bank.
     suggestions =
-      if has_bank or bank_alerts != [] do
+      if has_bank or bank_alerts != [] or scope.actor.member.role != :admin do
         suggestions
       else
         [%{type: :connect_bank} | suggestions]
