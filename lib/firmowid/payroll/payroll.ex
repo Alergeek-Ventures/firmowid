@@ -2,10 +2,8 @@ defmodule Firmowid.Payroll do
   @moduledoc """
   Ash domain for payroll and compensation.
 
-  Manages employee salary records and payroll reporting. Separated from
-  Timetracker because salary is an HR/payroll concern — not time-tracking.
-  Cost calculations that combine salary with session data reference this
-  domain's resources via cross-domain Ecto joins.
+  Owns hourly rates, employment contracts, tax declarations and monthly
+  payroll facts, and calculates payouts from them.
   """
   use Ash.Domain
 
