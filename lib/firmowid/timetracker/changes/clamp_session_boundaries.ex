@@ -6,7 +6,8 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
   Used by `:stop` and `:auto_stop`, which derive `end_datetime` from the clock
   and must never be rejected — a user must always be able to stop a timer. The
   effective ceiling is whichever limit binds first: the end of the calendar
-  month the session started in, or the maximum session duration.
+  month the session started in, or the maximum running time, after which the
+  `:auto_stop` trigger ends a forgotten session.
 
   Only ever shortens the session, so it cannot introduce an overlap. A running
   session already extends to `infinity` in the database overlap trigger, so no
@@ -15,7 +16,11 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
 
   use Ash.Resource.Change
 
-  alias Firmowid.Timetracker.Validations.SessionMonthBoundaries
+  @max_running_seconds 12 * 3600
+
+  @doc "The longest a session can run before it is stopped, in seconds."
+  @spec max_running_seconds() :: pos_integer()
+  def max_running_seconds, do: @max_running_seconds
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -36,12 +41,12 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
   end
 
   # Clamps end_datetime down to the first limit that binds: the end of the month
-  # the session started in, or the maximum session duration.
+  # the session started in, or the maximum running time.
   defp clamp(%DateTime{} = start_datetime, %DateTime{} = end_datetime) do
     ceiling =
       min_datetime(
         end_of_start_month(start_datetime),
-        DateTime.shift(start_datetime, second: SessionMonthBoundaries.max_session_seconds())
+        DateTime.shift(start_datetime, second: @max_running_seconds)
       )
 
     if DateTime.after?(end_datetime, ceiling), do: ceiling, else: end_datetime

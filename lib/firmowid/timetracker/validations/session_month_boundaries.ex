@@ -20,15 +20,6 @@ defmodule Firmowid.Timetracker.Validations.SessionMonthBoundaries do
 
   @max_session_seconds 24 * 3600
 
-  @doc """
-  The longest session a user may author by hand, in seconds.
-
-  Read by `Firmowid.Timetracker.Changes.ClampSessionBoundaries`, which must
-  clamp to the same ceiling this validation enforces.
-  """
-  @spec max_session_seconds() :: pos_integer()
-  def max_session_seconds, do: @max_session_seconds
-
   @impl true
   def init(opts), do: {:ok, opts}
 
@@ -66,7 +57,7 @@ defmodule Firmowid.Timetracker.Validations.SessionMonthBoundaries do
   end
 
   defp too_long?(%DateTime{} = start_datetime, %DateTime{} = end_datetime) do
-    DateTime.diff(end_datetime, start_datetime) > max_session_seconds()
+    DateTime.diff(end_datetime, start_datetime) > @max_session_seconds
   end
 
   # Actions that derive end_datetime from the clock instead of accepting it from

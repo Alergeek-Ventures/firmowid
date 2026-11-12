@@ -15,7 +15,7 @@ defmodule Firmowid.Timetracker.Session do
     domain: Firmowid.Timetracker,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
@@ -29,9 +29,7 @@ defmodule Firmowid.Timetracker.Session do
   alias Firmowid.Timetracker.Session.Calculations
   alias Firmowid.Timetracker.Validations.ProjectAccess
   alias Firmowid.Timetracker.Validations.SessionMonthBoundaries
-  alias Firmowid.Timetracker.Workers.StopSessionWorker
 
-  require Logger
   require Resource
 
   postgres do
@@ -234,8 +232,33 @@ defmodule Firmowid.Timetracker.Session do
     default_fields([:title, :start_datetime, :end_datetime, :is_remote, :lockdown, :project])
   end
 
+  oban do
+    use_tenant_from_record? true
+
+    triggers do
+      trigger :auto_stop do
+        action :auto_stop
+        read_action :read_global
+
+        where expr(
+                is_nil(end_datetime) and
+                  start_datetime <= ago(^ClampSessionBoundaries.max_running_seconds(), :second)
+              )
+
+        scheduler_cron "*/5 * * * *"
+        default_actor %Firmowid.SystemActor{org_id: nil, role: :session_auto_stopper}
+        max_attempts 3
+        queue :default
+
+        worker_module_name Firmowid.Timetracker.Session.Worker.AutoStop
+        scheduler_module_name Firmowid.Timetracker.Session.Scheduler.AutoStop
+      end
+    end
+  end
+
   code_interface do
     define :read, action: :read
+    define :read_global
     define :list_user_sessions
     define :get_current, not_found_error?: false
     define :current_session, args: [:id]
@@ -310,6 +333,12 @@ defmodule Firmowid.Timetracker.Session do
       prepare build(filter: expr(start_datetime < ^arg(:started_to))) do
         where present(:started_to)
       end
+    end
+
+    read :read_global do
+      description "Every organization's sessions, for the auto-stop trigger."
+      multitenancy :allow_global
+      pagination keyset?: true, required?: false
     end
 
     read :list_user_sessions do
@@ -421,14 +450,6 @@ defmodule Firmowid.Timetracker.Session do
           end
         end)
       end
-
-      change after_action(fn _changeset, session, _context ->
-               with {:ok, _job} <- StopSessionWorker.enqueue(session) do
-                 Logger.info("Enqueued session auto-stop session_id=#{session.id} org=#{session.organization_id}")
-
-                 {:ok, session}
-               end
-             end)
     end
 
     create :create do
@@ -448,42 +469,21 @@ defmodule Firmowid.Timetracker.Session do
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
       change NormalizeSessionBoundaries
-
-      change after_action(fn _changeset, session, _context ->
-               StopSessionWorker.cancel(session.id)
-               {:ok, session}
-             end)
     end
 
     update :auto_stop do
       description """
-      Cap a forgotten running session at start_datetime + 12 hours.
-
-      Used by StopSessionWorker. Does not accept client input. The result is
-      additionally clamped to the end of the start month, so a session left
-      running across a month boundary still lands wholly in one month.
+      End a session left running past the maximum running time, run by the
+      `:auto_stop` trigger. The clamp caps it at the maximum running time or the
+      end of its start month, whichever comes first.
       """
 
       accept []
       require_atomic? false
 
-      change fn changeset, _context ->
-        start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
-
-        Ash.Changeset.force_change_attribute(
-          changeset,
-          :end_datetime,
-          DateTime.shift(start_datetime, second: StopSessionWorker.max_running_seconds())
-        )
-      end
-
+      change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
       change NormalizeSessionBoundaries
-
-      change after_action(fn _changeset, session, _context ->
-               StopSessionWorker.cancel(session.id)
-               {:ok, session}
-             end)
     end
 
     action :stop_current, :struct do
@@ -604,26 +604,13 @@ defmodule Firmowid.Timetracker.Session do
 
       change NormalizeSessionBoundaries
       change SynchronizeSubmittedMonth
-
-      change after_action(fn _changeset, session, _context ->
-               if session.end_datetime do
-                 StopSessionWorker.cancel(session.id)
-               end
-
-               {:ok, session}
-             end)
     end
 
     destroy :destroy do
-      description "Delete a session and cancel auto-stop worker."
+      description "Delete a session."
       primary? true
       require_atomic? false
       change SynchronizeSubmittedMonth
-
-      change after_action(fn _changeset, session, _context ->
-               StopSessionWorker.cancel(session.id)
-               {:ok, session}
-             end)
     end
   end
 
@@ -636,8 +623,7 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     bypass {SystemActorRole, roles: [:session_auto_stopper]} do
-      authorize_if action_type(:read)
-      authorize_if action(:auto_stop)
+      authorize_if action([:read_global, :auto_stop])
     end
 
     # Pinned salaries are split between the projects the employee logged time on.
@@ -651,6 +637,10 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     policy Firmowid.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    policy action(:read_global) do
       forbid_if always()
     end
 
