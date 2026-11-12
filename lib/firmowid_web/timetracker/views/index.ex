@@ -22,8 +22,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
-  require Ash.Query
-
   defp day_name(1), do: pgettext("weekday name", "Monday")
   defp day_name(2), do: pgettext("weekday name", "Tuesday")
   defp day_name(3), do: pgettext("weekday name", "Wednesday")
@@ -85,27 +83,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
-    scope = socket.assigns.ash_scope
     member_id = socket.assigns.current_user.member.id
-    timezone = socket.assigns.timezone
-
-    weeks =
-      %{member_id: member_id}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.distinct(:week_start)
-      |> Ash.Query.distinct_sort(week_start: :desc)
-      |> Ash.Query.sort(week_start: :desc)
-      |> Ash.Query.load(:week_start)
-      |> Ash.Query.limit(4)
-      |> Ash.read!(scope: scope)
-      |> Enum.map(fn s ->
-        s.week_start
-        |> DateTime.from_naive!("Etc/UTC")
-        |> DateTime.shift_zone!(timezone)
-        |> DateTime.to_date()
-      end)
-
-    last_four_weeks = List.last(weeks, Date.utc_today())
+    last_four_weeks = List.last(week_starts(socket, %{member_id: member_id}, 4), Date.utc_today())
 
     socket
     |> assign(:sessions_after, last_four_weeks)
@@ -132,24 +111,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     before_dt = DateTime.new!(after_date, ~T[00:00:00])
 
-    next_weeks =
-      %{member_id: member_id}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.filter(start_datetime < ^before_dt)
-      |> Ash.Query.distinct(:week_start)
-      |> Ash.Query.distinct_sort(week_start: :desc)
-      |> Ash.Query.sort(week_start: :desc)
-      |> Ash.Query.load(:week_start)
-      |> Ash.Query.limit(1)
-      |> Ash.read!(scope: scope)
-      |> Enum.map(fn s ->
-        s.week_start
-        |> DateTime.from_naive!("Etc/UTC")
-        |> DateTime.shift_zone!(timezone)
-        |> DateTime.to_date()
-      end)
-
-    next_sessions_after = List.first(next_weeks)
+    next_sessions_after =
+      socket
+      |> week_starts(%{member_id: member_id, started_to: before_dt}, 1)
+      |> List.first()
 
     {today_sessions, rest_sessions} =
       Enum.split_with(sessions, fn session ->
@@ -213,6 +178,27 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end)
     |> assign_page_title()
     |> assign_month_stats()
+  end
+
+  # Mondays of the newest weeks with matching sessions, as dates in the user's timezone.
+  defp week_starts(socket, filters, limit) do
+    filters
+    |> Timetracker.list_sessions!(
+      scope: socket.assigns.ash_scope,
+      query: [
+        distinct: [:week_start],
+        distinct_sort: [week_start: :desc],
+        sort: [week_start: :desc],
+        load: [:week_start],
+        limit: limit
+      ]
+    )
+    |> Enum.map(fn session ->
+      session.week_start
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.shift_zone!(socket.assigns.timezone)
+      |> DateTime.to_date()
+    end)
   end
 
   def group_nearby(sessions) do

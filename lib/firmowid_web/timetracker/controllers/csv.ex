@@ -125,11 +125,10 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
   defp build_project_tasks_csv(project_id, month, year, scope) do
     %{project_id: project_id, month: month, year: year}
-    |> Timetracker.query_to_list_sessions(scope: scope)
-    |> Ash.Query.load(:duration)
-    |> Ash.Query.load(member: :user)
-    |> Ash.Query.sort(start_datetime: :asc)
-    |> Ash.read!(scope: scope)
+    |> Timetracker.list_sessions!(
+      scope: scope,
+      query: [load: [member: :user], sort: [start_datetime: :asc]]
+    )
     |> Enum.map(fn session ->
       %{
         user: session.member.name || session.member.user.email,
