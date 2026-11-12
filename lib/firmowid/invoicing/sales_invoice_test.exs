@@ -1069,6 +1069,34 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       assert Firmowid.Core.get_organization!(scope.tenant, scope: scope).is_cash_account
     end
+
+    test "a correction of a foreign invoice cannot turn cash accounting on" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      invoice =
+        user
+        |> create_sales_invoice!(Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})]))
+        |> Ash.Seed.update!(%{ksef_number: "5261040828-20260110-ABCDEF123456-AB"})
+
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+
+      correction =
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          SalesInvoice.correct!(
+            %{
+              original_invoice_id: invoice.id,
+              invoice_number: "FK/#{System.unique_integer([:positive])}",
+              is_cash_account: true,
+              sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("50")})]
+            },
+            scope: scope
+          )
+        end)
+
+      refute invoice.is_cash_account
+      refute correction.is_cash_account
+    end
   end
 
   defp invoicing_admin_fixture do

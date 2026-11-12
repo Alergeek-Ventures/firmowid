@@ -11,7 +11,8 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
 
   Omitted fields and Ash defaults inherit the latest snapshot, including sale
   and due dates. Explicit values (also nil and false) are preserved, except for
-  buyer tax identity fields, which always come from the snapshot.
+  buyer tax identity fields, which always come from the snapshot, and cash
+  accounting where the invoice has no such choice.
 
   Stores the loaded original as `context.corrected_invoice` and the effective
   snapshot as `context.invoice_reference` for read-only preview assembly.
@@ -20,6 +21,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   use Ash.Resource.Change
   use Gettext, backend: Firmowid.Gettext
 
+  alias Firmowid.Core
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Ksef.SubmissionInfo
 
@@ -105,10 +107,27 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
          {:ok, latest_snapshot} <-
            Ash.load(original_invoice.effective_snapshot, @latest_snapshot_load, opts),
          :ok <- validate_submission(original_invoice),
-         :ok <- validate_submission(latest_snapshot) do
-      prepare_from_snapshot(changeset, original_invoice, latest_snapshot)
+         :ok <- validate_submission(latest_snapshot),
+         {:ok, organization} <- Core.get_organization(original_invoice.organization_id, opts) do
+      changeset
+      |> prepare_from_snapshot(original_invoice, latest_snapshot)
+      |> keep_cash_accounting_without_choice(organization, latest_snapshot)
     else
       {:error, error} -> Ash.Changeset.add_error(changeset, error)
+    end
+  end
+
+  # Cash accounting is a choice only on a VAT payer's domestic invoice, as in
+  # `PrepareInvoiceSeller`. Elsewhere a correction keeps the corrected invoice's value.
+  defp keep_cash_accounting_without_choice(changeset, organization, latest_snapshot) do
+    if organization.is_vat_payer and latest_snapshot.invoice_type == :poland do
+      changeset
+    else
+      Ash.Changeset.force_change_attribute(
+        changeset,
+        :is_cash_account,
+        latest_snapshot.is_cash_account
+      )
     end
   end
 
