@@ -36,9 +36,6 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   end
 
   @impl true
-  def handle_params(_params, _uri, socket), do: {:noreply, socket}
-
-  @impl true
   def handle_async(:registry, {:ok, {:ok, registry}}, socket) do
     groups = Enum.map(socket.assigns.groups, &%{&1 | registry: registry[&1.key]})
     {:noreply, socket |> assign(:groups, groups) |> assign(:registry_state, :loaded)}

@@ -21,11 +21,6 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
-  end
-
-  @impl true
   def handle_params(%{"id" => project_id} = params, _url, socket) do
     scope = socket.assigns.ash_scope
     params = Navigation.project_params(params)
@@ -236,11 +231,6 @@ defmodule FirmowidWeb.Management.Views.Project do
     |> assign(:hours_delta, percent_delta(current_total_time, prev_total_time))
     |> assign(:cost_delta, percent_delta(current_total_cost, prev_total_cost))
   end
-
-  # TODO: add unit tests for cost calculation helpers (build_users_with_cost/5,
-  # compute_total_cost/2) — they encode business rules (ceiling hours, salary
-  # lookups, removed-from-project flag) that were previously covered by the
-  # now-deleted ProjectCosts generic action tests.
 
   # Build per-user cost maps. `project.members` gives current members; sessions
   # may include users no longer in the project.
