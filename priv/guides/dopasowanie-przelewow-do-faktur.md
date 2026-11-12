@@ -17,15 +17,15 @@ Można to zrobić wyciągiem MT940, CSV lub XML, wgrywanym ręcznie po pobraniu 
 
 ## Porównanie programów
 
-![Osiem programów do faktur w kolejności alfabetycznej, z podziałem na połączenie z bankiem i import pliku. Open Banking przez GoCardless mają Firmowid (29 banków i fintechów) i Mobilna Faktura (2300+ banków UE). Afaktury i Fakturoza importują MT940, a wFirma CSV, MT940 i XML.](/images/guides/jak-transakcje-trafiaja-do-programu-do-faktur.webp)
-*Według tabeli w artykule. Źródła: strony producentów, dostęp 22.10–5.11.2026.*
+![Osiem programów do faktur w kolejności alfabetycznej, z podziałem na połączenie z bankiem i import pliku. Open Banking przez GoCardless mają Firmowid (29 banków i fintechów) i Mobilna Faktura (2300+ banków UE). Afaktury i Fakturoza importują MT940 (Fakturoza w planie Darmowym 1 wyciąg miesięcznie), a wFirma CSV, MT940 i XML.](/images/guides/jak-transakcje-trafiaja-do-programu-do-faktur.webp)
+*Źródła: strony producentów, dostęp 22.10–5.11.2026.*
 
 | Program | Jak wchodzą transakcje | Jak łączy z fakturą | Tani albo darmowy próg | Główne ograniczenie |
 |---|---|---|---|---|
 | Firmowid | Open Banking (GoCardless); strona podaje 29 banków i fintechów | automatyczne parowanie przelewów | Darmowy: 1 konto bankowe, faktury i KSeF bez limitu | brak księgowości i magazynu |
 | wFirma | integracja z bankiem oraz import CSV, MT940 i XML | automatyczne parowanie i sugestie, ręcznie albo nocą | stały plan 0 zł niepotwierdzony; test 30 dni | odbiór KSeF dopiero w pakiecie księgowym; cena dynamiczna |
-| Fakturownia | Kontomatik albo import pliku | automatyczne łączenie płatności z fakturami | Micro: 3 faktury sprzedażowe / mies. | powyżej 3 faktur plan płatny; odbiór KSeF opisany niespójnie |
-| Mobilna Faktura | Open Banking PSD2 przez GoCardless, 2300+ banków UE; także CSV/MT940 | automatyczne dopasowanie transakcji do faktur | aktualny próg cenowy: brak danych w odczytanej tabeli | oficjalny cennik opisuje znacznie szerszy system niż samo fakturowanie |
+| Fakturownia | Kontomatik albo import pliku | automatyczne łączenie płatności z fakturami | Micro: 3 faktury sprzedażowe / mies. | powyżej 3 faktur plan płatny |
+| Mobilna Faktura | Open Banking PSD2 przez GoCardless, 2300+ banków UE; także CSV/MT940 | automatyczne dopasowanie transakcji do faktur | darmowy plan niepotwierdzony | oficjalny cennik opisuje znacznie szerszy system niż samo fakturowanie |
 | Afaktury | import MT940 | automatyczne przypisanie wpłat i aktualizacja statusów | Free: 3 dokumenty i 10 PDF / mies. | Open Banking niepotwierdzony |
 | ING Księgowość | historia transakcji z kont ING | podpowiada pasujące przelewy; łączenie bywa ręczne | fakturowanie 0 zł dla klientów ING | poza ING cena i limit niepodane |
 | SaldeoSMART | automatyczne pobieranie przez Banqup | łączenie transakcji z fakturami, także kilku faktur jedną wpłatą | cennik niepubliczny | narzędzie raczej dla większych firm i biur |
