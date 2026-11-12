@@ -255,6 +255,11 @@ defmodule Firmowid.Core.UserTest do
              actor
            )
 
+    refute Ash.can?(
+             {user, :set_organization, %{organization_id: other_user.member.organization_id, role: :admin}},
+             actor
+           )
+
     refute Ash.can?({user, :destroy}, actor)
   end
 
