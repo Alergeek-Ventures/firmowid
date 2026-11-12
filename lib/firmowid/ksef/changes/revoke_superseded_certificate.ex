@@ -16,10 +16,8 @@ defmodule Firmowid.Ksef.Changes.RevokeSupersededCertificate do
         access_token = SessionWorker.get_access_token!(credential.organization_id)
         serial_number = CredentialMetadata.certificate_serial_number(changeset.data)
 
-        case ApiClient.revoke_certificate(access_token, serial_number, :superseded) do
-          :ok -> {:ok, credential}
-          {:error, _reason} = error -> error
-        end
+        with :ok <- ApiClient.revoke_certificate(access_token, serial_number, :superseded),
+             do: {:ok, credential}
       end)
     else
       changeset
