@@ -8,9 +8,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
   attr :next_numbers_by_series, :map, default: %{}
   attr :warnings, :list, default: [], doc: "Results of `SalesInvoice.validate_number/4`."
   attr :errors, :list, default: []
-  attr :disabled, :boolean, default: false
   attr :submit_event, :string, default: "update_invoice_number"
-  slot :actions
 
   @doc "Renders a standalone number-change form with numbering warnings or series suggestions."
   @spec invoice_number(map()) :: Phoenix.LiveView.Rendered.t()
@@ -30,7 +28,6 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           type="text"
           name="invoice_number"
           value={@invoice_number}
-          disabled={@disabled}
           required
           aria-invalid={@errors != []}
           class="rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 disabled:opacity-60"
@@ -45,7 +42,6 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           type="button"
           phx-click="select_invoice_series"
           phx-value-number={next_number}
-          disabled={@disabled}
           variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
           accent="teal"
           size="small"
@@ -80,7 +76,6 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
               type="button"
               phx-click="select_invoice_series"
               phx-value-number={suggestion}
-              disabled={@disabled}
               variant="secondary"
               accent="teal"
               size="small"
@@ -91,7 +86,6 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           </div>
         </div>
       </div>
-      {render_slot(@actions)}
     </div>
     """
   end
