@@ -2,7 +2,6 @@ defmodule Firmowid.Delegations.Changes.PrepareDelegationCompletion do
   @moduledoc "Validates final expense data and derives evidence dates before completion."
 
   use Ash.Resource.Change
-  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
@@ -45,7 +44,6 @@ defmodule Firmowid.Delegations.Changes.PrepareDelegationCompletion do
         changeset
         |> Ash.Changeset.change_attribute(:detected_start_date, detected_start_date)
         |> Ash.Changeset.change_attribute(:detected_end_date, detected_end_date)
-        |> require_date_change_reason(detected_start_date, detected_end_date)
 
       invalid_changeset ->
         Ash.Changeset.add_error(changeset, invalid_changeset.errors)
@@ -81,21 +79,4 @@ defmodule Firmowid.Delegations.Changes.PrepareDelegationCompletion do
     date = Enum.max_by(dates, &Date.to_iso8601/1)
     if Date.after?(date, end_date), do: date
   end
-
-  defp require_date_change_reason(changeset, nil, nil), do: changeset
-
-  defp require_date_change_reason(changeset, _detected_start_date, _detected_end_date) do
-    if blank?(Ash.Changeset.get_attribute(changeset, :date_change_reason)) do
-      Ash.Changeset.add_error(changeset,
-        field: :date_change_reason,
-        message: gettext_noop("This field is required")
-      )
-    else
-      changeset
-    end
-  end
-
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(nil), do: true
-  defp blank?(_value), do: false
 end

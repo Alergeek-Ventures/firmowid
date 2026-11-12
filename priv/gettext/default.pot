@@ -11932,9 +11932,8 @@ msgstr ""
 msgid "This feature lets you add an account without a bank integration. Transaction synchronization will be disabled."
 msgstr ""
 
-#: lib/firmowid/delegations/changes/prepare_delegation_completion.ex
 #: lib/firmowid/delegations/changes/update_detected_delegation_dates.ex
-#: lib/firmowid/delegations/validations/has_date_change_reason.ex
+#: lib/firmowid/delegations/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "This field is required"
