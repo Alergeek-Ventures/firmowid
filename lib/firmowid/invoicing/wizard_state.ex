@@ -25,14 +25,12 @@ defmodule Firmowid.Invoicing.WizardState do
 
   alias AshMoney.Types.Money
   alias Firmowid.Invoicing.Actions.IssueWizardState
+  alias Firmowid.Invoicing.Calculations
   alias Firmowid.Invoicing.Changes
-  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Validations
   alias Firmowid.Invoicing.VatExemption
   alias Firmowid.Invoicing.WizardState
-
-  @eu_countries CountryCodes.eu_countries_with_aliases()
 
   ets do
     private? false
@@ -142,7 +140,13 @@ defmodule Firmowid.Invoicing.WizardState do
       description "Update draft items and move the wizard to the payment step."
       require_atomic? false
 
-      accept [:currency, :is_reverse_charge, :vat_exemption_type, :vat_exemption_basis]
+      accept [
+        :ksef_invoice_kind,
+        :currency,
+        :is_reverse_charge,
+        :vat_exemption_type,
+        :vat_exemption_basis
+      ]
 
       argument :items, {:array, :map}
 
@@ -164,7 +168,11 @@ defmodule Firmowid.Invoicing.WizardState do
       change set_attribute(:step, :preview)
 
       validate present([:sale_date]), message: gettext_noop("Sale date is required")
-      validate present([:due_date]), message: gettext_noop("Payment due date is required")
+      # An advance invoice is paid on issue, so issuing it sets its due date to the sale date.
+      validate present([:due_date]),
+        message: gettext_noop("Payment due date is required"),
+        where: attribute_equals(:ksef_invoice_kind, :vat)
+
       validate present([:payment_method]), message: gettext_noop("Payment method is required")
 
       validate {Validations.ValidateSellerAccountForTransfer,
@@ -205,6 +213,7 @@ defmodule Firmowid.Invoicing.WizardState do
         :buyer_phone,
         :buyer_description,
         :invoice_type,
+        :ksef_invoice_kind,
         :is_reverse_charge,
         :currency,
         :seller_account_number,
@@ -310,6 +319,12 @@ defmodule Firmowid.Invoicing.WizardState do
       default: :poland,
       public?: true
 
+    attribute :ksef_invoice_kind, :atom,
+      constraints: [one_of: [:vat, :advance]],
+      default: :vat,
+      allow_nil?: false,
+      public?: true
+
     attribute :is_reverse_charge, :boolean, default: false, public?: true
     attribute :currency, :string, default: "PLN", public?: true
     attribute :seller_account_number, :string, public?: true
@@ -348,34 +363,17 @@ defmodule Firmowid.Invoicing.WizardState do
                 end
               )
 
-    # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
-    # WizardState, and Counterparty (as :tax_id_type) because Ash expr()
-    # calculations run in the DB and cannot call Elixir functions.
-    # Runtime equivalent: CountryCodes.tax_id_type/3
-    calculate :buyer_id_type,
-              :atom,
-              expr(
-                cond do
-                  not is_nil(buyer_pesel) and buyer_pesel != "" ->
-                    :no_id
-
-                  buyer_type == :individual and buyer_country == "PL" ->
-                    :no_id
-
-                  buyer_country == "PL" ->
-                    :nip
-
-                  buyer_country in ^@eu_countries ->
-                    :eu_vat
-
-                  buyer_country == "US" ->
-                    :optional_id
-
-                  true ->
-                    :other_id
-                end
-              ) do
+    calculate :buyer_id_type, :atom, Calculations.TaxIdType do
       description "Tax ID type for the buyer based on country, PESEL, and buyer type."
+    end
+
+    calculate :is_payment_complete,
+              :boolean,
+              expr(
+                not is_nil(sale_date) and not is_nil(payment_method) and
+                  (ksef_invoice_kind == :advance or not is_nil(due_date))
+              ) do
+      description "Whether the payment step holds everything the preview needs; advance invoices take no due date."
     end
 
     # Display name calculation — mirrors SalesInvoice.buyer_display_name_label

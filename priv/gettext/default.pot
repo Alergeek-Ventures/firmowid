@@ -1093,6 +1093,7 @@ msgid "Advance"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #, elixir-autogen, elixir-format
 msgid "Advance invoice"
 msgstr ""
@@ -3977,6 +3978,11 @@ msgstr ""
 msgid "Date of birth"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
+#, elixir-autogen, elixir-format
+msgid "Date payment received"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/delegations_list.ex
 #, elixir-autogen, elixir-format
 msgctxt "business trips table"
@@ -6362,6 +6368,11 @@ msgstr ""
 msgid "Invite a new employee"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
+#, elixir-autogen, elixir-format
+msgid "Invoice"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Invoice %{number}"
@@ -6498,6 +6509,7 @@ msgid "Invoice status"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #, elixir-autogen, elixir-format
 msgid "Invoice type"
 msgstr ""
@@ -8708,6 +8720,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Paid features free until the end of next month. No card required."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
+#, elixir-autogen, elixir-format
+msgid "Paid in advance: in the next step you enter the date the payment was received, with no due date."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -13139,6 +13156,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "VAT exemption"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
+#, elixir-autogen, elixir-format
+msgid "VAT invoice"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex

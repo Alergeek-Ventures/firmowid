@@ -38,7 +38,8 @@
     </div>
 
     <div class="col-span-full grid grid-cols-subgrid gap-y-14 py-14">
-      <div class="col-span-full grid grid-cols-subgrid">
+      <%!-- Leaves the last column to the remove buttons, which hang outside the items. --%>
+      <div class="col-start-2 -col-end-2">
         <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems.invoice_items
           invoice={@invoice}
           invoice_changeset={@form.source}
@@ -126,6 +127,7 @@
 
           <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
             invoice={@invoice}
+            advance?={@invoice.is_paid_on_issue}
             bank_accounts={@bank_accounts}
             selected_bank_account={@selected_bank_account}
             payment_form={@form}

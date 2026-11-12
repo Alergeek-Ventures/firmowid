@@ -220,6 +220,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :focused_item_price_input_index, :any, default: nil
   attr :show_vat, :boolean, default: true
 
+  slot :rubric,
+    doc: "rows put before the currency's, numbered from 1; the content is the row's answer, a single element" do
+    attr :label, :string, required: true
+    attr :id, :string, doc: "the label's id, for an answer that names itself after it"
+  end
+
   def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
     items = extract_items_as_structs(source, items_field)
 
@@ -238,6 +244,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
     currency = get_currency(source) || "PLN"
     items_form = build_form(source)
+    show_exemption? = show_vat and Enum.any?(items, &(&1.vat_rate == "zw"))
 
     # Get nested item forms for error extraction
     item_forms = get_nested_item_forms(source, items_field)
@@ -258,7 +265,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       currency: currency,
       summary: invoice_summary(items, currency),
       single_item?: single_item?,
-      show_exemption?: show_vat and Enum.any?(items, &(&1.vat_rate == "zw")),
+      show_exemption?: show_exemption?,
+      # Reverse charge and non-VAT payers show one value per item instead of VAT and gross prices.
+      unit_vat?: show_vat and not to_boolean(items_form[:is_reverse_charge].value),
+      rubric: input_assigns.rubric,
+      number: numbering(length(input_assigns.rubric), show_exemption?),
       vat_options: vat_options,
       vat_disabled?: vat_disabled?,
       name_error: name_error,
@@ -275,13 +286,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     }
 
     ~H"""
-    <div class={[
-      "mb-8",
-      if(@show_vat, do: "col-start-2 col-end-9", else: "col-start-2 col-end-8")
-    ]}>
-      <div class="mb-2 flex flex-row items-center gap-5">
-        <label class="mr-auto flex flex-row items-center gap-5 text-grey-700">
-          <span><strong>1.</strong> {gettext("Selected currency")}</span>
+    <div class="@container flex flex-col">
+      <div class="grid grid-cols-[2.25rem_max-content_minmax(0,1fr)] items-baseline gap-y-12">
+        <%= for {row, number} <- Enum.with_index(@rubric, 1) do %>
+          <.rubric_label id={row[:id]} number={number} class="col-span-2">
+            {row.label}
+          </.rubric_label>
+          {render_slot(row)}
+        <% end %>
+
+        <.rubric_label for={@items_form[:currency].id} number={@number.currency} class="col-span-2">
+          {gettext("Selected currency")}
+        </.rubric_label>
+        <div class="flex flex-row flex-wrap items-center gap-x-8 gap-y-3">
           <.input
             :if={@invoice.buyer_id_type == :nip}
             type="hidden"
@@ -294,9 +311,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             options={currency_options()}
             disabled={@invoice.buyer_id_type == :nip}
           />
-        </label>
-
-        <div class="flex flex-row">
           <.switch
             :if={@invoice.buyer_country != "PL"}
             field={@items_form[:is_reverse_charge]}
@@ -318,320 +332,357 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </:label_slot>
           </.switch>
         </div>
-      </div>
 
-      <div
-        :if={@show_exemption?}
-        class="mb-4 flex flex-col items-start gap-4"
-      >
-        <div class="text-grey-700">
-          <strong>2.</strong> {gettext("VAT exemption")}
-        </div>
-
-        <div class="flex w-full gap-3 space-y-2">
-          <.input
-            type="select"
-            field={@items_form[:vat_exemption_type]}
-            label={gettext("Exemption basis")}
-            options={VatExemption.options()}
-            input_class="w-full"
-          />
-
-          <%= if to_string(@items_form[:vat_exemption_type].value) == "other" do %>
-            <.input
-              type="text"
-              field={@items_form[:vat_exemption_basis]}
-              label={gettext("Legal basis for the VAT exemption")}
-              input_class="w-full"
-              class="text-grey-700"
-            />
-          <% else %>
-            <input type="hidden" name={@items_form[:vat_exemption_basis].name} value="" />
-          <% end %>
-        </div>
-      </div>
-
-      <div class="items-star flex flex-row gap-4">
-        <p class="mr-auto text-grey-700">
-          <strong>{if @show_exemption?, do: "3.", else: "2."}</strong> {gettext("Invoice items")}
-        </p>
-      </div>
-    </div>
-    <div class="col-start-2 col-end-9 mb-1 grid grid-cols-subgrid py-1 pl-2 text-sm/snug text-grey-700">
-      <.error :if={@name_error} is_tooltip={true} target="name">
-        {@name_error}
-      </.error>
-      <.error :if={@quantity_error} is_tooltip={true} target="quantity">
-        {@quantity_error}
-      </.error>
-      <.error
-        :if={@unit_price_error}
-        is_tooltip={true}
-        target={
-          price_error_target(
-            @item_price_input_modes,
-            to_boolean(@items_form[:is_reverse_charge].value)
-          )
-        }
-      >
-        {@unit_price_error}
-      </.error>
-      <p id="name">
-        {gettext("Product/service")}
-      </p>
-      <p id="quantity">
-        {gettext("Quantity")}
-      </p>
-      <p :if={@show_vat}>VAT</p>
-      <p>{pgettext("sales invoice items", "Unit")}</p>
-      <.button
-        id="price"
-        type="button"
-        variant="unstyled"
-        class="cursor-pointer text-left"
-        phx-click="set_price_input_mode"
-        phx-value-index="all"
-        phx-value-mode="net"
-      >
-        {gettext("Net price")}
-      </.button>
-
-      <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
-        <p class="col-span-2 text-end">{pgettext("sales invoice items", "Value")}</p>
-      <% else %>
-        <p class="text-end">{gettext("VAT per unit")}</p>
-        <.button
-          id="gross-price"
-          type="button"
-          variant="unstyled"
-          class="cursor-pointer text-right"
-          phx-click="set_price_input_mode"
-          phx-value-index="all"
-          phx-value-mode="gross"
-        >
-          {gettext("Gross price")}
-        </.button>
-      <% end %>
-    </div>
-
-    <div class="col-span-full grid grid-cols-subgrid gap-y-2" id="items_list" phx-hook=".Sortable">
-      <.inputs_for :let={item} field={@items_form[@items_field]}>
-        <% gross_value_input_name =
-          String.replace(item[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]") %>
-        <% gross_value_input_id =
-          String.replace(item[:unit_price].id, ~r/_unit_price$/, "_gross_value") %>
-        <% focus_price_input? = to_string(@focused_item_price_input_index) == to_string(item.index) %>
-        <div class="col-span-full grid grid-cols-subgrid items-center">
-          <input type="hidden" name={@sort_param} value={item.index} />
-          <input type="hidden" name={item[:index].name} value={item.index} />
-          <input :if={item[:gtu].value} type="hidden" name={item[:gtu].name} value={item[:gtu].value} />
-          <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
-          <.input
-            field={item[:name]}
-            placeholder={gettext("Enter a name")}
-            aria-label={gettext("Item %{number}: product or service", number: item.index + 1)}
-            phx-debounce
-            class="w-full"
-            input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
-            show_error={false}
-          />
-          <.input
-            field={item[:quantity]}
-            placeholder="0"
-            aria-label={gettext("Item %{number}: quantity", number: item.index + 1)}
-            phx-debounce
-            type="number"
-            step=".000001"
-            min="0"
-            class="w-16"
-            input_class={["text-center", if(invalid_field?(item[:quantity]), do: "border-brick-700")]}
-            show_error={false}
-          />
-          <.hidden_input show={@show_vat} field={item[:vat_rate]} value="zw">
-            <:input>
+        <%= if @show_exemption? do %>
+          <.rubric_label number={@number.exemption} class="col-span-2">
+            {gettext("VAT exemption")}
+          </.rubric_label>
+          <div class="flex flex-row flex-wrap gap-x-3 gap-y-4 justify-self-start">
+            <div class="flex flex-col gap-2">
+              <label for={@items_form[:vat_exemption_type].id} class="text-sm/snug text-grey-600">
+                {gettext("Exemption basis")}
+              </label>
               <.input
-                field={item[:vat_rate]}
                 type="select"
-                options={@vat_options}
-                aria-label={gettext("Item %{number}: VAT rate", number: item.index + 1)}
-                phx-debounce
-                container_class="w-24"
-                readonly={@vat_disabled?}
+                field={@items_form[:vat_exemption_type]}
+                options={VatExemption.options()}
+                input_class="w-full"
               />
-            </:input>
-          </.hidden_input>
-          <.input
-            field={item[:unit]}
-            type="select"
-            placeholder="0,00"
-            aria-label={gettext("Item %{number}: unit", number: item.index + 1)}
-            phx-debounce
-            container_class="w-24"
-            options={["szt.", "godz."]}
-          />
-          <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
-          <.hidden_input show={price_input_mode == :net} field={item[:unit_price]}>
-            <:input>
-              <div class="flex w-30 flex-row items-center gap-1">
-                <.input
-                  field={item[:unit_price]}
-                  type="number"
-                  value={item[:unit_price].value}
-                  aria-label={gettext("Item %{number}: net price", number: item.index + 1)}
-                  phx-mounted={focus_price_input? && JS.focus()}
-                  phx-debounce
-                  step=".01"
-                  min="0"
-                  placeholder="0,00"
-                  class="w-30"
-                  input_class={[
-                    "text-center",
-                    if(invalid_field?(item[:unit_price]), do: "border-brick-700")
-                  ]}
-                  show_error={false}
-                />
-                <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
+            </div>
+
+            <%= if to_string(@items_form[:vat_exemption_type].value) == "other" do %>
+              <div class="flex flex-col gap-2">
+                <label
+                  for={@items_form[:vat_exemption_basis].id}
+                  class="text-sm/snug text-grey-600"
+                >
+                  {gettext("Legal basis for the VAT exemption")}
+                </label>
+                <.input type="text" field={@items_form[:vat_exemption_basis]} input_class="w-full" />
               </div>
-            </:input>
-            <:fallback>
-              <div class="flex w-30 flex-row items-center justify-center gap-1">
+            <% else %>
+              <input type="hidden" name={@items_form[:vat_exemption_basis].name} value="" />
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="col-span-full grid grid-cols-subgrid items-baseline gap-y-3">
+          <.rubric_label number={@number.items} class="col-span-full">
+            {gettext("Invoice items")}
+          </.rubric_label>
+
+          <%!-- `-me-8` hangs the remove buttons outside the content's right edge; the drag
+          handles stand in the numerals' column, so the names share the labels' left edge. --%>
+          <div class={[
+            "col-span-full -me-8 grid gap-x-2",
+            cond do
+              @unit_vat? ->
+                "grid-cols-[min-content_1fr_repeat(7,min-content)] @max-[60rem]:grid-cols-[min-content_1fr_repeat(6,min-content)]"
+
+              @show_vat ->
+                "grid-cols-[min-content_1fr_repeat(7,min-content)]"
+
+              true ->
+                "grid-cols-[min-content_1fr_repeat(6,min-content)]"
+            end
+          ]}>
+            <div class="col-start-2 -col-end-2 mb-1 grid grid-cols-subgrid py-1 text-sm/snug text-grey-600">
+              <.error :if={@name_error} is_tooltip={true} target="name">
+                {@name_error}
+              </.error>
+              <.error :if={@quantity_error} is_tooltip={true} target="quantity">
+                {@quantity_error}
+              </.error>
+              <.error
+                :if={@unit_price_error}
+                is_tooltip={true}
+                target={
+                  price_error_target(
+                    @item_price_input_modes,
+                    to_boolean(@items_form[:is_reverse_charge].value)
+                  )
+                }
+              >
+                {@unit_price_error}
+              </.error>
+              <p id="name">
+                {gettext("Product/service")}
+              </p>
+              <p id="quantity">
+                {gettext("Quantity")}
+              </p>
+              <p :if={@show_vat}>VAT</p>
+              <p>{pgettext("sales invoice items", "Unit")}</p>
+              <.button
+                id="price"
+                type="button"
+                variant="unstyled"
+                class="cursor-pointer text-left"
+                phx-click="set_price_input_mode"
+                phx-value-index="all"
+                phx-value-mode="net"
+              >
+                {gettext("Net price")}
+              </.button>
+
+              <%= if @unit_vat? do %>
+                <%!-- The column gives way where the names would otherwise be too narrow. --%>
+                <p class="text-end @max-[60rem]:hidden">{gettext("VAT per unit")}</p>
                 <.button
+                  id="gross-price"
                   type="button"
                   variant="unstyled"
-                  class="w-24 rounded p-1 text-center transition hover:bg-grey-200"
+                  class="cursor-pointer text-right"
                   phx-click="set_price_input_mode"
-                  phx-value-index={item.index}
-                  phx-value-mode="net"
+                  phx-value-index="all"
+                  phx-value-mode="gross"
                 >
-                  {displayed_item_unit_price_text(item, @currency)}
+                  {gettext("Gross price")}
                 </.button>
-                <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
-              </div>
-            </:fallback>
-          </.hidden_input>
+              <% else %>
+                <p class="col-span-2 text-end">{pgettext("sales invoice items", "Value")}</p>
+              <% end %>
+            </div>
 
-          <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
-            <% gross_value =
-              Money.new(@currency, item_gross_value(item)) %>
-
-            <p class={[
-              "col-span-2 w-58 truncate text-end",
-              if(Money.zero?(gross_value), do: "text-grey-500")
-            ]}>
-              {Money.to_string!(gross_value, currency_symbol: "")}
-            </p>
-          <% else %>
-            <% vat_value =
-              Money.new(@currency, item_unit_vat_value(item)) %>
-            <% gross_unit_price =
-              displayed_item_gross_price_text(item, @gross_item_price_inputs, @currency) %>
-
-            <p class={[
-              "w-28 truncate text-end",
-              if(Money.zero?(vat_value), do: "text-grey-500")
-            ]}>
-              {Money.to_string!(vat_value, currency_symbol: "")}
-            </p>
-            <.hidden_input show={price_input_mode == :gross}>
-              <:input>
-                <div class="flex w-28 flex-row items-center justify-end">
+            <div
+              class="col-span-full grid grid-cols-subgrid gap-y-2"
+              id="items_list"
+              phx-hook=".Sortable"
+            >
+              <.inputs_for :let={item} field={@items_form[@items_field]}>
+                <% gross_value_input_name =
+                  String.replace(item[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]") %>
+                <% gross_value_input_id =
+                  String.replace(item[:unit_price].id, ~r/_unit_price$/, "_gross_value") %>
+                <% focus_price_input? =
+                  to_string(@focused_item_price_input_index) == to_string(item.index) %>
+                <div class="col-span-full grid grid-cols-subgrid items-center">
+                  <input type="hidden" name={@sort_param} value={item.index} />
+                  <input type="hidden" name={item[:index].name} value={item.index} />
+                  <input
+                    :if={item[:gtu].value}
+                    type="hidden"
+                    name={item[:gtu].name}
+                    value={item[:gtu].value}
+                  />
+                  <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
                   <.input
-                    type="number"
-                    id={gross_value_input_id}
-                    name={gross_value_input_name}
-                    value={displayed_item_gross_value(item, @gross_item_price_inputs)}
-                    aria-label={gettext("Item %{number}: gross price", number: item.index + 1)}
-                    phx-mounted={focus_price_input? && JS.focus()}
+                    field={item[:name]}
+                    placeholder={gettext("Enter a name")}
+                    aria-label={gettext("Item %{number}: product or service", number: item.index + 1)}
                     phx-debounce
-                    step=".01"
+                    class="w-full"
+                    input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
+                    show_error={false}
+                  />
+                  <.input
+                    field={item[:quantity]}
+                    placeholder="0"
+                    aria-label={gettext("Item %{number}: quantity", number: item.index + 1)}
+                    phx-debounce
+                    type="number"
+                    step=".000001"
                     min="0"
-                    placeholder="0,00"
-                    class="w-28"
+                    class="w-16"
                     input_class={[
-                      "text-right",
-                      if(invalid_field?(item[:unit_price]), do: "border-brick-700")
+                      "text-center",
+                      if(invalid_field?(item[:quantity]), do: "border-brick-700")
                     ]}
                     show_error={false}
                   />
+                  <.hidden_input show={@show_vat} field={item[:vat_rate]} value="zw">
+                    <:input>
+                      <.input
+                        field={item[:vat_rate]}
+                        type="select"
+                        options={@vat_options}
+                        aria-label={gettext("Item %{number}: VAT rate", number: item.index + 1)}
+                        phx-debounce
+                        container_class="w-24"
+                        readonly={@vat_disabled?}
+                      />
+                    </:input>
+                  </.hidden_input>
+                  <.input
+                    field={item[:unit]}
+                    type="select"
+                    placeholder="0,00"
+                    aria-label={gettext("Item %{number}: unit", number: item.index + 1)}
+                    phx-debounce
+                    container_class="w-24"
+                    options={["szt.", "godz."]}
+                  />
+                  <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
+                  <.hidden_input show={price_input_mode == :net} field={item[:unit_price]}>
+                    <:input>
+                      <div class="flex w-30 flex-row items-center gap-1">
+                        <.input
+                          field={item[:unit_price]}
+                          type="number"
+                          value={item[:unit_price].value}
+                          aria-label={gettext("Item %{number}: net price", number: item.index + 1)}
+                          phx-mounted={focus_price_input? && JS.focus()}
+                          phx-debounce
+                          step=".01"
+                          min="0"
+                          placeholder="0,00"
+                          class="w-30"
+                          input_class={[
+                            "text-center",
+                            if(invalid_field?(item[:unit_price]), do: "border-brick-700")
+                          ]}
+                          show_error={false}
+                        />
+                        <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
+                      </div>
+                    </:input>
+                    <:fallback>
+                      <div class="flex w-30 flex-row items-center justify-center gap-1">
+                        <.button
+                          type="button"
+                          variant="unstyled"
+                          class="w-24 rounded p-1 text-center transition hover:bg-grey-200"
+                          phx-click="set_price_input_mode"
+                          phx-value-index={item.index}
+                          phx-value-mode="net"
+                        >
+                          {displayed_item_unit_price_text(item, @currency)}
+                        </.button>
+                        <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
+                      </div>
+                    </:fallback>
+                  </.hidden_input>
+
+                  <%= if @unit_vat? do %>
+                    <% vat_value =
+                      Money.new(@currency, item_unit_vat_value(item)) %>
+                    <% gross_unit_price =
+                      displayed_item_gross_price_text(item, @gross_item_price_inputs, @currency) %>
+
+                    <p class={[
+                      "w-28 truncate text-end @max-[60rem]:hidden",
+                      if(Money.zero?(vat_value), do: "text-grey-500")
+                    ]}>
+                      {Money.to_string!(vat_value, currency_symbol: "")}
+                    </p>
+                    <.hidden_input show={price_input_mode == :gross}>
+                      <:input>
+                        <div class="flex w-28 flex-row items-center justify-end">
+                          <.input
+                            type="number"
+                            id={gross_value_input_id}
+                            name={gross_value_input_name}
+                            value={displayed_item_gross_value(item, @gross_item_price_inputs)}
+                            aria-label={
+                              gettext("Item %{number}: gross price", number: item.index + 1)
+                            }
+                            phx-mounted={focus_price_input? && JS.focus()}
+                            phx-debounce
+                            step=".01"
+                            min="0"
+                            placeholder="0,00"
+                            class="w-28"
+                            input_class={[
+                              "text-right",
+                              if(invalid_field?(item[:unit_price]), do: "border-brick-700")
+                            ]}
+                            show_error={false}
+                          />
+                        </div>
+                      </:input>
+                      <:fallback>
+                        <.button
+                          type="button"
+                          variant="unstyled"
+                          class={[
+                            "w-28 truncate rounded p-1 text-right transition hover:bg-grey-200",
+                            gross_unit_price == "" && "text-grey-500"
+                          ]}
+                          phx-click="set_price_input_mode"
+                          phx-value-index={item.index}
+                          phx-value-mode="gross"
+                        >
+                          {gross_unit_price}
+                        </.button>
+                      </:fallback>
+                    </.hidden_input>
+                  <% else %>
+                    <% gross_value =
+                      Money.new(@currency, item_gross_value(item)) %>
+
+                    <%!-- Narrows with the "VAT / jedn." column of the VAT layout. --%>
+                    <p class={[
+                      "col-span-2 w-58 truncate text-end @max-[60rem]:w-28",
+                      if(Money.zero?(gross_value), do: "text-grey-500")
+                    ]}>
+                      {Money.to_string!(gross_value, currency_symbol: "")}
+                    </p>
+                  <% end %>
+
+                  <.button
+                    type="button"
+                    name={@drop_param}
+                    value={item.index}
+                    phx-click={JS.dispatch("change")}
+                    disabled={@single_item?}
+                    variant="unstyled"
+                    aria-label={gettext("Remove item")}
+                    class="ml-1 cursor-pointer text-grey-300 transition-colors duration-200 ease-out hover:text-grey-700 disabled:cursor-default disabled:text-transparent"
+                  >
+                    <Lucideicons.x class="size-4" />
+                  </.button>
                 </div>
-              </:input>
-              <:fallback>
-                <.button
-                  type="button"
-                  variant="unstyled"
-                  class={[
-                    "w-28 truncate rounded p-1 text-right transition hover:bg-grey-200",
-                    gross_unit_price == "" && "text-grey-500"
-                  ]}
-                  phx-click="set_price_input_mode"
-                  phx-value-index={item.index}
-                  phx-value-mode="gross"
-                >
-                  {gross_unit_price}
-                </.button>
-              </:fallback>
-            </.hidden_input>
-          <% end %>
+              </.inputs_for>
 
-          <.button
-            type="button"
-            name={@drop_param}
-            value={item.index}
-            phx-click={JS.dispatch("change")}
-            disabled={@single_item?}
-            variant="unstyled"
-            aria-label={gettext("Remove item")}
-            class="ml-1 cursor-pointer text-grey-300 transition-colors duration-200 ease-out hover:text-grey-700 disabled:cursor-default disabled:text-transparent"
-          >
-            <Lucideicons.x class="size-4" />
-          </.button>
+              <input type="hidden" name={@drop_param} />
+            </div>
+
+            <%!-- todo: add loading state --%>
+            <.button
+              type="button"
+              phx-click="add_item"
+              class="col-span-1 col-start-2 mt-3"
+              size="small"
+              variant="secondary"
+            >
+              <Lucideicons.plus /> {gettext("Add item")}
+            </.button>
+          </div>
         </div>
-      </.inputs_for>
+      </div>
 
-      <input type="hidden" name={@drop_param} />
-    </div>
+      <div class={[
+        "mt-10 ml-auto grid w-72 min-w-min grid-cols-[1fr_repeat(2,min-content)] items-center gap-2 border-t border-grey-200 pt-4 leading-snug whitespace-nowrap",
+        if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
+      ]}>
+        <%= if @unit_vat? do %>
+          <p class="text-left text-sm/snug text-grey-600">{gettext("Net total")}</p>
+          <p class="text-right">
+            {Money.to_string!(@summary.net_value, currency_symbol: "")}
+          </p>
+          <p class="text-right">{@items_form[:currency].value}</p>
 
-    <%!-- todo: add loading state --%>
-    <.button
-      type="button"
-      phx-click="add_item"
-      class="col-span-1 col-start-2 mt-3"
-      size="small"
-      variant="secondary"
-    >
-      <Lucideicons.plus /> {gettext("Add item")}
-    </.button>
+          <p class="text-left text-sm/snug text-grey-600">{gettext("VAT total")}</p>
+          <p class="text-right">
+            {Money.to_string!(@summary.vat_value, currency_symbol: "")}
+          </p>
+          <p class="text-right">{@items_form[:currency].value}</p>
 
-    <div class={[
-      "mt-3 ml-auto grid w-72 min-w-min grid-cols-[1fr_repeat(2,min-content)] items-center gap-2 leading-snug whitespace-nowrap",
-      if(@show_vat, do: "col-start-1 col-end-9", else: "col-start-1 col-end-8"),
-      if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
-    ]}>
-      <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
-        <p class="text-left text-sm text-grey-500">{pgettext("sales invoice items", "Total")}</p>
-        <p class="text-right text-2xl/tight font-medium">
-          {Money.to_string!(@summary.gross_value, currency_symbol: "")}
-        </p>
-        <p class="text-right">{@items_form[:currency].value}</p>
-      <% else %>
-        <p class="text-left text-sm text-grey-500">{gettext("Net total")}</p>
-        <p class="text-right">
-          {Money.to_string!(@summary.net_value, currency_symbol: "")}
-        </p>
-        <p class="text-right">{@items_form[:currency].value}</p>
-
-        <p class="text-left text-sm text-grey-500">{gettext("VAT total")}</p>
-        <p class="text-right">
-          {Money.to_string!(@summary.vat_value, currency_symbol: "")}
-        </p>
-        <p class="text-right">{@items_form[:currency].value}</p>
-
-        <p class="text-left text-sm text-grey-500">{gettext("Gross total")}</p>
-        <p class="text-right text-2xl/tight font-medium">
-          {Money.to_string!(@summary.gross_value, currency_symbol: "")}
-        </p>
-        <p class="text-right">{@items_form[:currency].value}</p>
-      <% end %>
+          <p class="text-left text-sm/snug text-grey-600">{gettext("Gross total")}</p>
+          <p class="text-right text-2xl/tight font-medium">
+            {Money.to_string!(@summary.gross_value, currency_symbol: "")}
+          </p>
+          <p class="text-right">{@items_form[:currency].value}</p>
+        <% else %>
+          <p class="text-left text-sm/snug text-grey-600">
+            {pgettext("sales invoice items", "Total")}
+          </p>
+          <p class="text-right text-2xl/tight font-medium">
+            {Money.to_string!(@summary.gross_value, currency_symbol: "")}
+          </p>
+          <p class="text-right">{@items_form[:currency].value}</p>
+        <% end %>
+      </div>
     </div>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".Sortable">
@@ -650,6 +701,45 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       }
       }
     </script>
+    """
+  end
+
+  # The rows follow the `rubric` rows; the exemption row exists only while an item uses
+  # the "zw" rate and pushes the items one number down.
+  defp numbering(rubric_rows, show_exemption?) do
+    currency = rubric_rows + 1
+
+    if show_exemption?,
+      do: %{currency: currency, exemption: currency + 1, items: currency + 2},
+      else: %{currency: currency, exemption: nil, items: currency + 1}
+  end
+
+  attr :number, :integer, required: true
+  attr :class, :string, required: true
+  attr :for, :string, default: nil
+  attr :id, :string, default: nil
+
+  slot :inner_block, required: true
+
+  # The numeral has a column of its own, as wide as a drag handle's, so the label texts
+  # share a left edge with the item names and the handles stand under the numerals.
+  defp rubric_label(assigns) do
+    ~H"""
+    <%= if @for do %>
+      <label for={@for} id={@id} class={["grid grid-cols-subgrid", @class]}>
+        <span class="text-sm/snug font-medium text-grey-900 tabular-nums">{@number}.</span>
+        <span class="col-start-2 -col-end-1 pe-12 text-sm/snug text-grey-600">
+          {render_slot(@inner_block)}
+        </span>
+      </label>
+    <% else %>
+      <p id={@id} class={["grid grid-cols-subgrid", @class]}>
+        <span class="text-sm/snug font-medium text-grey-900 tabular-nums">{@number}.</span>
+        <span class="col-start-2 -col-end-1 pe-12 text-sm/snug text-grey-600">
+          {render_slot(@inner_block)}
+        </span>
+      </p>
+    <% end %>
     """
   end
 

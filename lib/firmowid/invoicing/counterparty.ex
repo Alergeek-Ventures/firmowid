@@ -26,20 +26,18 @@ defmodule Firmowid.Invoicing.Counterparty do
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Invoicing.Calculations.TaxIdType
   alias Firmowid.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Invoicing.Changes.EnqueueVatIdCheck
   alias Firmowid.Invoicing.Changes.NormalizeBlankCounterpartyFields
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
-  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.Validations.ValidateEuVatNumber
   alias Firmowid.Invoicing.Validations.ValidateNameFields
   alias Firmowid.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Resource
 
   require Resource
-
-  @eu_countries CountryCodes.eu_countries_with_aliases()
 
   postgres do
     table "counterparties"
@@ -355,32 +353,9 @@ defmodule Firmowid.Invoicing.Counterparty do
                 end
               )
 
-    # NOTE: This expr() logic is intentionally duplicated across Counterparty,
-    # SalesInvoice (as :buyer_id_type), and WizardState (as :buyer_id_type)
-    # because Ash expr() runs in the DB. Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :tax_id_type,
               :atom,
-              expr(
-                cond do
-                  not is_nil(pesel) and pesel != "" ->
-                    :no_id
-
-                  type == :individual and country == "PL" ->
-                    :no_id
-
-                  country == "PL" ->
-                    :nip
-
-                  country in ^@eu_countries ->
-                    :eu_vat
-
-                  country == "US" ->
-                    :optional_id
-
-                  true ->
-                    :other_id
-                end
-              )
+              {TaxIdType, pesel: :pesel, type: :type, country: :country}
 
     calculate :cooperation_value, :map, calculation: Firmowid.Invoicing.Calculations.CooperationValue
   end
