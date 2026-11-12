@@ -263,6 +263,14 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/projekty/csv", Csv, :salaries
     get "/czasosledz/projekty/:id/csv", Csv, :project
     get "/zarzadzanie/umowy/:id", EmploymentContract, :download
+    get "/czasosledz/ewidencja/:date/pdf", HoursRecord.Controllers.Record, :pdf
+    get "/czasosledz/ewidencja/:date/podglad", HoursRecord.Controllers.Record, :preview
+    get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
+    get "/delegacje/:reference/rozliczenie/pobierz", Delegations.Controllers.Settlement, :download
+
+    get "/zarzadzanie/pracownicy/:employee_id/delegacje/:reference/pdf",
+        Management.Controllers.DelegationOrder,
+        :pdf
 
     if Mix.env() == :dev do
       get "/development/mcp", Development.Controllers.Mcp, :index
@@ -292,6 +300,14 @@ defmodule FirmowidWeb.Core.Router do
       live "/zaproszenia", Organization.Invites.Views.Index, :index
 
       live "/analiza", Analysis.Views.Dashboard, :index
+
+      live "/czasosledz", Timetracker.Views.Index, :index
+      live "/czasosledz/ewidencja", HoursRecord.Views.Index, :index
+      live "/ustawienia", Settings.Views.Index, :index
+      live "/ustawienia/:section", Settings.Views.Index, :index
+      live "/delegacje/dodaj", DelegationForm, :new
+      live "/delegacje/:reference/edycja", DelegationForm, :edit
+      live "/delegacje/:reference", Delegations.Views.Delegation, :show
 
       if Mix.env() == :dev do
         live "/development", Development.Views.Index, :index
@@ -340,43 +356,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/projekty/dodaj", ProjectForm, :new
       live "/zarzadzanie/projekty/:id", Management.Views.Project, :show
       live "/zarzadzanie/projekty/:id/edycja", ProjectForm, :edit
-    end
-  end
-
-  scope "/", FirmowidWeb do
-    pipe_through [:browser, :require_authenticated_user_with_organization]
-    get "/czasosledz/ewidencja/:date/pdf", HoursRecord.Controllers.Record, :pdf
-
-    get "/delegacje/:reference/rozliczenie/pobierz",
-        Delegations.Controllers.Settlement,
-        :download
-
-    get "/czasosledz/ewidencja/:date/podglad", HoursRecord.Controllers.Record, :preview
-    get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
-
-    get "/zarzadzanie/pracownicy/:employee_id/delegacje/:reference/pdf",
-        Management.Controllers.DelegationOrder,
-        :pdf
-
-    ash_authentication_live_session :with_org_extended,
-      on_mount: [
-        Locale,
-        {RequireOrganization, :default},
-        {FeatureFlags, :default},
-        {RequireOrganization, :first_steps},
-        {RequireOrganization, :plan_limit},
-        {CurrentPath, :save_request_uri},
-        Timezone
-      ] do
-      live "/czasosledz", Timetracker.Views.Index, :index
-
-      live "/czasosledz/ewidencja", HoursRecord.Views.Index, :index
-
-      live "/ustawienia", Settings.Views.Index, :index
-      live "/ustawienia/:section", Settings.Views.Index, :index
-      live "/delegacje/dodaj", DelegationForm, :new
-      live "/delegacje/:reference/edycja", DelegationForm, :edit
-      live "/delegacje/:reference", Delegations.Views.Delegation, :show
     end
   end
 
