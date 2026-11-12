@@ -3,32 +3,24 @@ defmodule Firmowid.Finances.Changes.CreateBankAccounts do
   After-action change that creates BankAccount records from GoCardless data.
 
   Called by the :accept action. Enqueues sync triggers for each created account.
-  Failures are logged but don't fail the changeset - the requisition is already
-  accepted, and bank accounts can be created on next sync.
+  A GoCardless failure fails the action, so the requisition stays pending and
+  the :check_status trigger retries the acceptance.
   """
   use Ash.Resource.Change
 
-  alias Firmowid.ErrorKind
   alias Firmowid.Finances
   alias Firmowid.Finances.GoCardless.ApiClient
-
-  require Logger
 
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      case create_accounts(record, context) do
-        {:ok, accounts} ->
-          Enum.each(accounts, &enqueue_sync/1)
-          {:ok, record}
+      with {:ok, accounts} <- create_accounts(record, context) do
+        Enum.each(
+          accounts,
+          &AshOban.run_trigger(&1, :sync_transactions, tenant: &1.organization_id)
+        )
 
-        {:error, reason} ->
-          Logger.warning("Failed to create bank accounts for requisition",
-            requisition_id: record.id,
-            error_kind: ErrorKind.classify(reason)
-          )
-
-          {:ok, record}
+        {:ok, record}
       end
     end)
   end
@@ -52,15 +44,5 @@ defmodule Firmowid.Finances.Changes.CreateBankAccounts do
       name: account["name"],
       requisition_id: requisition_id
     }
-  end
-
-  defp enqueue_sync(account) do
-    AshOban.run_trigger(account, :sync_transactions, tenant: account.organization_id)
-  rescue
-    error ->
-      Logger.warning("Failed to enqueue sync for account",
-        account_id: account.id,
-        error_kind: ErrorKind.classify(error)
-      )
   end
 end
