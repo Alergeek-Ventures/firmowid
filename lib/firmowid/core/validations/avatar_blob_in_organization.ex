@@ -19,10 +19,15 @@ defmodule Firmowid.Core.Validations.AvatarBlobInOrganization do
       blob_id ->
         opts = Ash.Context.to_opts(context, tenant: changeset.data.organization_id)
 
-        if Blob |> Ash.Query.filter(id == ^blob_id) |> Ash.exists?(opts) do
-          :ok
-        else
-          {:error, field: :avatar_blob_id, message: gettext_noop("must belong to the organization")}
+        case Blob |> Ash.Query.filter(id == ^blob_id) |> Ash.exists(opts) do
+          {:ok, true} ->
+            :ok
+
+          {:ok, false} ->
+            {:error, field: :avatar_blob_id, message: gettext_noop("must belong to the organization")}
+
+          {:error, error} ->
+            {:error, error}
         end
     end
   end

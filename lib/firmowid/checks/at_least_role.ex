@@ -35,8 +35,8 @@ defmodule Firmowid.Checks.AtLeastRole do
   end
 
   @impl true
-  def match?(actor, _context, opts) do
-    case {role_index(ActorRole.role(actor)), role_index(Keyword.get(opts, :role))} do
+  def match?(actor, context, opts) do
+    case {role_index(ActorRole.role(actor, context)), role_index(Keyword.get(opts, :role))} do
       {nil, _} -> {:ok, false}
       {_, nil} -> {:ok, false}
       {actor_index, minimum_index} -> {:ok, actor_index >= minimum_index}

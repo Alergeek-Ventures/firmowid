@@ -27,7 +27,7 @@ defmodule Firmowid.Timetracker.Changes.SynchronizeSubmittedMonth do
           else: GetAndLockForUpdate.change(changeset, [], context)
 
       Ash.Changeset.before_action(changeset, fn changeset ->
-        if ActorRole.role(context.actor) == :admin do
+        if ActorRole.role(context.actor, %{subject: changeset}) == :admin do
           changeset
         else
           case HoursRecordNotSubmitted.match?(context.actor, %{subject: changeset}, []) do
