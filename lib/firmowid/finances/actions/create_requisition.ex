@@ -11,25 +11,23 @@ defmodule Firmowid.Finances.Actions.CreateRequisition do
   use Ash.Resource.Actions.Implementation
 
   alias Firmowid.Finances.GoCardless.ApiClient
+  alias Firmowid.Finances.Requisition
 
   @impl true
   def run(input, _opts, context) do
-    institution_id = input.arguments.institution_id
-    max_days = input.arguments.max_transaction_days
-    redirect_url = input.arguments.redirect_url
-    tenant = context.tenant
-    ash_opts = Ash.Context.to_opts(context)
+    %{institution_id: institution_id, max_transaction_days: max_days, redirect_url: redirect_url} =
+      input.arguments
 
+    # This action is authorized for the organization admin; the internal
+    # `:persist` action is forbidden to every actor, so it runs unauthorized
+    # here and only an id that GoCardless returned can become a requisition.
     with {:ok, gc_requisition} <-
            ApiClient.create_requisition(institution_id, max_days, redirect_url),
          {:ok, _record} <-
-           input.resource
-           |> Ash.Changeset.for_create(
-             :persist,
+           Requisition.persist(
              %{id: gc_requisition["id"]},
-             ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)
-           )
-           |> Ash.create(ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)) do
+             context |> Ash.Context.to_opts() |> Keyword.put(:authorize?, false)
+           ) do
       {:ok, gc_requisition["link"]}
     end
   end
