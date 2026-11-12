@@ -24,18 +24,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   @spec get_available_institutions_for_country(String.t()) ::
           {:ok, list(map())} | {:error, term()}
   def get_available_institutions_for_country(country) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/institutions/?country=#{country}",
-          auth: {:bearer, get_access_token!()}
-        ],
-        mock_data(:bank_data_institutions)
-      )
-
-    options
-    |> Req.get()
-    |> handle_response()
+    request(:get, "/institutions/?country=#{country}", :bank_data_institutions)
   end
 
   @doc """
@@ -43,18 +32,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   """
   @spec get_requisition(String.t()) :: {:ok, map()} | {:error, term()}
   def get_requisition(requisition_id) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/requisitions/#{requisition_id}",
-          auth: {:bearer, get_access_token!()}
-        ],
-        mock_data(:bank_data_requisition)
-      )
-
-    options
-    |> Req.get()
-    |> handle_response()
+    request(:get, "/requisitions/#{requisition_id}", :bank_data_requisition)
   end
 
   @doc """
@@ -64,39 +42,23 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   @spec create_requisition(String.t(), integer(), String.t()) ::
           {:ok, map()} | {:error, term()}
   def create_requisition(institution_id, max_transaction_days, redirect_url) do
-    access_token = get_access_token!()
-
-    agreement_opts =
-      Keyword.merge(
-        [url: "#{@base_url}/agreements/enduser/", auth: {:bearer, access_token}],
-        mock_data(:bank_data_requisition)
-      )
-
-    requisition_opts =
-      Keyword.merge(
-        [url: "#{@base_url}/requisitions/", auth: {:bearer, access_token}],
-        mock_data(:bank_data_requisition)
-      )
+    agreement = %{
+      institution_id: institution_id,
+      max_historical_days: min(max_transaction_days, 90),
+      access_valid_for_days: 90,
+      access_scope: ["balances", "details", "transactions"]
+    }
 
     with {:ok, %{"id" => agreement_id}} <-
-           agreement_opts
-           |> Keyword.put(:json, %{
-             institution_id: institution_id,
-             max_historical_days: min(max_transaction_days, 90),
-             access_valid_for_days: 90,
-             access_scope: ["balances", "details", "transactions"]
-           })
-           |> Req.post()
-           |> handle_response() do
-      requisition_opts
-      |> Keyword.put(:json, %{
+           request(:post, "/agreements/enduser/", :bank_data_requisition, json: agreement) do
+      requisition = %{
         redirect: redirect_url,
         institution_id: institution_id,
         agreement: agreement_id,
         user_language: "PL"
-      })
-      |> Req.post()
-      |> handle_response()
+      }
+
+      request(:post, "/requisitions/", :bank_data_requisition, json: requisition)
     end
   end
 
@@ -105,18 +67,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   """
   @spec get_institution(String.t()) :: {:ok, map()} | {:error, term()}
   def get_institution(go_cardless_institution_id) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/institutions/#{go_cardless_institution_id}",
-          auth: {:bearer, get_access_token!()}
-        ],
-        mock_data(:bank_data_institution)
-      )
-
-    options
-    |> Req.get()
-    |> handle_response()
+    request(:get, "/institutions/#{go_cardless_institution_id}", :bank_data_institution)
   end
 
   @doc """
@@ -125,16 +76,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   """
   @spec get_account_details(String.t()) :: {:ok, map()} | {:error, term()}
   def get_account_details(gocardless_account_id) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/accounts/#{gocardless_account_id}/details",
-          auth: {:bearer, get_access_token!()}
-        ],
-        mock_data(:bank_data_requisition)
-      )
-
-    case options |> Req.get() |> handle_response() do
+    case request(:get, "/accounts/#{gocardless_account_id}/details", :bank_data_requisition) do
       {:ok, %{"account" => account}} -> {:ok, account}
       {:ok, body} -> {:ok, body}
       error -> error
@@ -146,18 +88,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   """
   @spec get_account_status(String.t()) :: {:ok, map()} | {:error, term()}
   def get_account_status(gocardless_account_id) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/accounts/#{gocardless_account_id}",
-          auth: {:bearer, get_access_token!()}
-        ],
-        mock_data(:bank_data_account)
-      )
-
-    options
-    |> Req.get()
-    |> handle_response()
+    request(:get, "/accounts/#{gocardless_account_id}", :bank_data_account)
   end
 
   @doc """
@@ -197,19 +128,13 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   @spec get_booked_transactions_for_account(String.t()) ::
           {:ok, list(map())} | {:error, term()}
   def get_booked_transactions_for_account(account_id) do
-    options =
-      Keyword.merge(
-        [
-          url: "#{@base_url}/accounts/#{account_id}/transactions",
-          auth: {:bearer, get_access_token!()},
-          receive_timeout: @bank_sync_timeout,
-          connect_options: [timeout: @bank_sync_timeout],
-          max_retries: 1
-        ],
-        mock_data(:bank_data_transactions)
-      )
+    options = [
+      receive_timeout: @bank_sync_timeout,
+      connect_options: [timeout: @bank_sync_timeout],
+      max_retries: 1
+    ]
 
-    case options |> Req.get() |> handle_response() do
+    case request(:get, "/accounts/#{account_id}/transactions", :bank_data_transactions, options) do
       {:ok, %{"transactions" => %{"booked" => booked}}} ->
         {:ok, booked}
 
@@ -267,13 +192,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   end
 
   defp delete_remote(resource, id) do
-    options =
-      Keyword.merge([auth: {:bearer, get_access_token!()}], mock_data(:bank_data_requisition))
-
-    options
-    |> Keyword.put(:url, "#{@base_url}/#{resource}/#{id}")
-    |> Req.delete()
-    |> handle_response()
+    request(:delete, "/#{resource}/#{id}", :bank_data_requisition)
   end
 
   defp maybe_refresh(operation, true), do: with_token_refresh(operation)
@@ -305,6 +224,15 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
       other ->
         other
     end
+  end
+
+  # Sends an authorized request; in tests the Req.Test stub named by `stub`
+  # (config :firmowid, :bank_data_api_client) answers it.
+  defp request(method, path, stub, options \\ []) do
+    [method: method, url: @base_url <> path, auth: {:bearer, get_access_token!()}]
+    |> Keyword.merge(options)
+    |> Req.request(mock_data(stub))
+    |> handle_response()
   end
 
   # --- Shared response handler ---
