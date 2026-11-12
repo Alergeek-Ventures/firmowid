@@ -59,8 +59,8 @@ defmodule Firmowid.SystemActor do
   - `:vat_id_checker` — lists an organization's counterparties and records the
     result of the periodic EU VAT number check on them.
 
-  - `:cross_tenant_reader` — reads every organization and the KSeF credentials that
-    need fetching or renewal. Schedulers use it to enumerate organizations and hand
+  - `:cross_tenant_reader` — reads every organization and lists the organizations
+    connected to KSeF. Schedulers use it to enumerate organizations and hand
     each one to work under an actor bound to that organization.
 
   - `:ksef_digest` — builds and delivers scheduled KSeF cost-invoice digests.
