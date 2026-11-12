@@ -21,8 +21,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
-  require Ash.Query
-
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     # VatIdCheckWorker checks a saved number right away; show its result when it lands.
@@ -689,13 +687,13 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   defp list_counterparty_invoices(counterparty_id, invoice_filter, scope) do
-    args = maybe_put_reconciliation(%{submission: :confirmed}, invoice_filter)
-
-    args
-    |> Invoicing.query_to_list_sales_invoices(scope: scope)
-    |> Ash.Query.filter(counterparty_id == ^counterparty_id)
-    |> Ash.Query.load([:amount, :reconciliation_status])
-    |> then(&Invoicing.list_sales_invoices!(args, scope: scope, query: &1))
+    %{submission: :confirmed}
+    |> maybe_put_reconciliation(invoice_filter)
+    |> Invoicing.list_sales_invoices!(
+      scope: scope,
+      query: [filter: [counterparty_id: counterparty_id]],
+      load: [:amount, :reconciliation_status]
+    )
   end
 
   defp maybe_put_reconciliation(args, :unpaid), do: Map.put(args, :reconciliation, :pending)
