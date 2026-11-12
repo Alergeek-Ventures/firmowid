@@ -509,7 +509,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(plan.view, "#{plan.id} del", "Acme Sp. z o.o.")
   end
 
-  test "a draft card that changes only a field it has no row for cannot be approved", %{
+  test "a draft card shows the buyer type, PESEL, cash accounting, GTU code and mail country", %{
     conn: conn
   } do
     owner = admin_fixture()
@@ -518,11 +518,79 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     plan =
       open_plan(conn, owner, "update_sales_invoice_draft", %{
         id: draft.id,
-        input: %{is_cash_account: true}
+        input: %{
+          buyer_type: "individual",
+          buyer_given_name: "Jan",
+          buyer_surname: "Kowalski",
+          buyer_pesel: "44051401359",
+          buyer_is_different_mail_address: true,
+          buyer_mail_address: "Musterstrasse 1, 10115 Berlin",
+          buyer_mail_country: "DE",
+          is_cash_account: true,
+          sales_invoice_items: [
+            %{
+              index: 0,
+              name: "Consulting",
+              quantity: 1,
+              unit: "szt",
+              unit_price: 100,
+              vat_rate: "23",
+              gtu: "GTU_12"
+            }
+          ]
+        }
       })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+
+    for label <- ["Rodzaj nabywcy", "PESEL", "Kraj adresu korespondencyjnego", "Metoda kasowa"] do
+      assert has_element?(plan.view, "#{plan.id} dt", label)
+    end
+
+    assert has_element?(plan.view, "#{plan.id} del", "Firma")
+    assert has_element?(plan.view, "#{plan.id} ins", "Osoba fizyczna")
+    assert has_element?(plan.view, "#{plan.id} ins", "44051401359")
+    assert has_element?(plan.view, "#{plan.id} ins", "DE")
+    assert has_element?(plan.view, "#{plan.id} ins", "GTU_12")
+  end
+
+  test "a draft card shows the invoice type it changes", %{conn: conn} do
+    owner = admin_fixture()
+    draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
+
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{
+          invoice_type: "foreign",
+          currency: "EUR",
+          buyer_id: "123456789",
+          buyer_country: "DE",
+          buyer_address: "Teststrasse 1, 10115 Berlin"
+        }
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} dt", "Rodzaj faktury")
+    assert has_element?(plan.view, "#{plan.id} del", "Faktura krajowa")
+    assert has_element?(plan.view, "#{plan.id} ins", "Faktura zagraniczna")
+  end
+
+  test "a draft card that changes only a field it has no row for cannot be approved", %{
+    conn: conn
+  } do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    # The revision refreshes the seller's address from the organization; the card has no row for it.
+    # The draft is paid in cash, which the invoice actions store as cash accounting too.
+    draft = seed_draft(scope, %{seller_address: "ul. Dawna 9, Gdańsk", is_cash_account: true})
+
+    plan = open_plan(conn, owner, "update_sales_invoice_draft", %{id: draft.id, input: %{}})
 
     assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
     refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    refute has_element?(plan.view, plan.id, "To niczego nie zmienia")
   end
 
   test "a draft card linking a counterparty of another organization cannot be approved", %{

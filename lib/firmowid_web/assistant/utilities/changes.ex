@@ -446,15 +446,19 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # they pay.
   defp invoice_changes(saved, revised) do
     [
+      {gettext("Invoice type"), &invoice_type(&1.invoice_type)},
       {gettext("Seller"), & &1.seller_display_name},
+      {gettext("Buyer type"), &buyer_type(&1.buyer_type)},
       {gettext("Buyer"), & &1.buyer_full_name},
       {gettext("First name"), & &1.buyer_given_name},
       {gettext("Last name"), & &1.buyer_surname},
       {gettext("Display name"), & &1.buyer_display_name},
       {pgettext("sales invoice creator", "Identifier"), & &1.buyer_id},
+      {gettext("PESEL"), & &1.buyer_pesel},
       {gettext("Address"), & &1.buyer_address},
       {pgettext("sales invoice creator", "Country"), & &1.buyer_country},
       {gettext("Correspondence address"), & &1.buyer_mail_address},
+      {gettext("Correspondence country"), & &1.buyer_mail_country},
       {gettext("Different correspondence address"), &flag(&1.buyer_is_different_mail_address)},
       {gettext("Email"), & &1.buyer_email},
       {gettext("Phone"), & &1.buyer_phone},
@@ -464,6 +468,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
       {gettext("Payment method"), &payment_method(&1.payment_method)},
       {gettext("Bank account number"), & &1.seller_account_number},
+      {gettext("Cash accounting"), &flag(&1.is_cash_account)},
       {gettext("Reverse charge"), &flag(&1.is_reverse_charge)},
       {gettext("VAT exemption"), &(&1.vat_exemption_type && VatExemption.label(&1.vat_exemption_type))},
       {gettext("Exemption basis"), & &1.vat_exemption_basis},
@@ -515,6 +520,15 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp payment_method(:card), do: gettext("Card")
   defp payment_method(method), do: Atom.to_string(method)
 
+  # Both types allow nil, like the payment method above.
+  defp invoice_type(nil), do: nil
+  defp invoice_type(:poland), do: gettext("Domestic invoice")
+  defp invoice_type(:foreign), do: gettext("Foreign invoice")
+
+  defp buyer_type(nil), do: nil
+  defp buyer_type(:company), do: gettext("Company")
+  defp buyer_type(:individual), do: gettext("Individual")
+
   defp flag(true), do: gettext("Yes")
   defp flag(_value), do: nil
 
@@ -540,7 +554,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       Enum.all?(Enum.zip(saved.sales_invoice_items, revised.sales_invoice_items), fn {before, later} ->
         before.name == later.name and before.unit == later.unit and
           Decimal.eq?(before.quantity, later.quantity) and
-          Decimal.eq?(before.unit_price, later.unit_price) and before.vat_rate == later.vat_rate
+          Decimal.eq?(before.unit_price, later.unit_price) and before.vat_rate == later.vat_rate and
+          before.gtu == later.gtu
       end) and saved.currency == revised.currency
   end
 
@@ -548,12 +563,16 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   defp items(invoice) do
     Enum.map_join(invoice.sales_invoice_items, "; ", fn item ->
-      gettext("%{name} · %{quantity} %{unit} × %{price} net",
-        name: item.name,
-        quantity: item.quantity,
-        unit: item.unit,
-        price: Money.new(invoice.currency, item.unit_price)
-      )
+      line =
+        gettext("%{name} · %{quantity} %{unit} × %{price} net",
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          price: Money.new(invoice.currency, item.unit_price)
+        )
+
+      # The goods and services group is a KSeF code (GTU_01 to GTU_13), shown as it is sent.
+      if item.gtu, do: "#{line} · #{item.gtu}", else: line
     end)
   end
 end
