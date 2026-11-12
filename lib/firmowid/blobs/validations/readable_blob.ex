@@ -1,4 +1,4 @@
-defmodule Firmowid.Core.Validations.AvatarBlobInOrganization do
+defmodule Firmowid.Blobs.Validations.ReadableBlob do
   @moduledoc """
   Ash validation that the member's new avatar blob belongs to the member's
   organization.

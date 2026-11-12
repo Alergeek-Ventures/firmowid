@@ -14449,7 +14449,7 @@ msgstr ""
 msgid "must be today or later"
 msgstr ""
 
-#: lib/firmowid/core/validations/avatar_blob_in_organization.ex
+#: lib/firmowid/blobs/validations/readable_blob.ex
 #, elixir-autogen, elixir-format
 msgid "must belong to the organization"
 msgstr ""
