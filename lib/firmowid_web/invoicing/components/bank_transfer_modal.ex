@@ -52,8 +52,8 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
               <code id={"transfer-#{label}"} class="text-right text-black">{value}</code>
               <.button
                 id={"copy-#{label}"}
-                data-copy-value={to_string(value)}
-                onclick="navigator.clipboard.writeText(this.dataset.copyValue)"
+                phx-hook="CopyToClipboard"
+                data-copy-text={to_string(value)}
                 type="button"
                 class="size-6"
                 variant="secondary"
