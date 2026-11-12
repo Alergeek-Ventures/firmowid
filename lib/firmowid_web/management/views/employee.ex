@@ -1,6 +1,3 @@
-# credo:disable-for-this-file ExDNA.Credo
-# Employee detail view duplicates monthly aggregation/cost assembly paths; resolving this
-# cleanly requires extracting shared timetracker/payroll query helpers across LiveViews.
 defmodule FirmowidWeb.Management.Views.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
@@ -54,19 +51,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
     selected_date = Navigation.parse_month(params)
 
     user =
-      %{id: id}
-      |> Core.get_org_user!(scope: scope, not_found_error?: false)
-      |> case do
-        nil ->
-          nil
-
-        loaded_user ->
-          Ash.load!(
-            loaded_user,
-            @employee_load,
-            scope: scope
-          )
-      end
+      Core.get_org_user!(%{id: id}, scope: scope, load: @employee_load, not_found_error?: false)
 
     socket =
       if is_nil(user) do
