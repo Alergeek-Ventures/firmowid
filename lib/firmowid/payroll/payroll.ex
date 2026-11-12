@@ -12,9 +12,7 @@ defmodule Firmowid.Payroll do
   alias Firmowid.Payroll.UserEmploymentContract
 
   resources do
-    resource Firmowid.Payroll.MemberPayrollInput do
-      define :list_payroll_inputs, action: :list
-    end
+    resource Firmowid.Payroll.MemberPayrollInput
 
     resource Firmowid.Payroll.MemberTaxDeclaration do
       define :create_tax_declaration, action: :create
