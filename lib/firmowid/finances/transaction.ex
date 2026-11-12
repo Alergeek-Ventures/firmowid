@@ -298,7 +298,6 @@ defmodule Firmowid.Finances.Transaction do
       relationship_context %{data_layer: %{table: "transaction_entity_tags"}}
       source_attribute :id
       destination_attribute :resource_id
-      read_action :for_transactions
     end
 
     belongs_to :bank_account, Firmowid.Finances.BankAccount do

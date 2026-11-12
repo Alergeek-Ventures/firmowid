@@ -26,15 +26,10 @@ defmodule Firmowid.Analysis.EntityTag do
   code_interface do
     define :read
     define :destroy
-    define :for_sales_invoices
-    define :for_cost_invoices
-    define :for_transactions
     define :set_entity_category
     define :set_entity_project_tags
     define :clear_entity_tags
-    define :tag_sales_invoice
-    define :tag_cost_invoice
-    define :tag_transaction
+    define :tag
     define :create_classified
     define :list
     define :assign_if_unassigned
@@ -125,38 +120,19 @@ defmodule Firmowid.Analysis.EntityTag do
       end
     end
 
-    read :for_sales_invoices do
-      description "Read entity tags from the sales_invoice_entity_tags table."
-      prepare set_context(%{data_layer: %{table: "sales_invoice_entity_tags"}})
-    end
-
-    read :for_cost_invoices do
-      description "Read entity tags from the cost_invoice_entity_tags table."
-      prepare set_context(%{data_layer: %{table: "cost_invoice_entity_tags"}})
-    end
-
-    read :for_transactions do
-      description "Read entity tags from the transaction_entity_tags table."
-      prepare set_context(%{data_layer: %{table: "transaction_entity_tags"}})
-    end
-
-    create :tag_sales_invoice do
-      description "Create an entity tag in the sales_invoice_entity_tags table."
+    create :tag do
+      description "Create an entity tag in the tag table of its entity type."
       primary? true
       accept [:kind, :resource_id, :tag_definition_id]
-      change set_context(%{data_layer: %{table: "sales_invoice_entity_tags"}})
-    end
 
-    create :tag_cost_invoice do
-      description "Create an entity tag in the cost_invoice_entity_tags table."
-      accept [:kind, :resource_id, :tag_definition_id]
-      change set_context(%{data_layer: %{table: "cost_invoice_entity_tags"}})
-    end
+      argument :entity_type, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:sales_invoice, :cost_invoice, :transaction]]
 
-    create :tag_transaction do
-      description "Create an entity tag in the transaction_entity_tags table."
-      accept [:kind, :resource_id, :tag_definition_id]
-      change set_context(%{data_layer: %{table: "transaction_entity_tags"}})
+      change fn changeset, _context ->
+        type = Ash.Changeset.get_argument(changeset, :entity_type)
+        Ash.Changeset.set_context(changeset, %{data_layer: %{table: table_for_entity_type(type)}})
+      end
     end
 
     action :set_entity_category, {:array, :struct} do
@@ -189,13 +165,14 @@ defmodule Firmowid.Analysis.EntityTag do
             clear_tags_for_resources(table, [input.arguments.resource_id], scope)
 
             result =
-              __MODULE__
-              |> Ash.Changeset.for_create(
-                create_action_for_entity_type(input.arguments.entity_type),
-                %{kind: input.arguments.kind, resource_id: input.arguments.resource_id},
+              tag!(
+                %{
+                  entity_type: input.arguments.entity_type,
+                  kind: input.arguments.kind,
+                  resource_id: input.arguments.resource_id
+                },
                 scope: scope
               )
-              |> Ash.create!()
 
             {:ok, [result]}
           end
@@ -228,23 +205,20 @@ defmodule Firmowid.Analysis.EntityTag do
           fn ->
             table = table_for_entity_type(input.arguments.entity_type)
             scope = build_scope(context)
-            action = create_action_for_entity_type(input.arguments.entity_type)
 
             clear_tags_for_resources(table, [input.arguments.resource_id], scope)
 
             tags =
               Enum.map(input.arguments.tag_definition_ids, fn tag_def_id ->
-                __MODULE__
-                |> Ash.Changeset.for_create(
-                  action,
+                tag!(
                   %{
+                    entity_type: input.arguments.entity_type,
                     kind: :project,
                     resource_id: input.arguments.resource_id,
                     tag_definition_id: tag_def_id
                   },
                   scope: scope
                 )
-                |> Ash.create!()
               end)
 
             {:ok, tags}
@@ -284,17 +258,9 @@ defmodule Firmowid.Analysis.EntityTag do
     transaction: "transaction_entity_tags"
   }
 
-  @entity_type_create_actions %{
-    sales_invoice: :tag_sales_invoice,
-    cost_invoice: :tag_cost_invoice,
-    transaction: :tag_transaction
-  }
-
   @doc "Returns the tag table backing an entity type."
   @spec table_for_entity_type(atom()) :: String.t()
   def table_for_entity_type(entity_type), do: Map.fetch!(@entity_type_tables, entity_type)
-
-  defp create_action_for_entity_type(entity_type), do: Map.fetch!(@entity_type_create_actions, entity_type)
 
   defp build_scope(context) do
     %Scope{
