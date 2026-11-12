@@ -19,15 +19,6 @@ defmodule Firmowid.Currencies.NbpApiClient do
   def supported_currencies, do: @supported_currencies
 
   @doc """
-  Checks if a currency code is supported by NBP.
-  """
-  def supported_currency?(currency) when is_binary(currency) do
-    currency in @supported_currencies
-  end
-
-  def supported_currency?(_), do: false
-
-  @doc """
   Fetches the exchange rate for a given currency and date from the NBP API.
 
   Queries a 20-day range ending at (date - 1 day) to account for weekends/holidays.
