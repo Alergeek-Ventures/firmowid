@@ -4,6 +4,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
 
   import FirmowidUI.Components.Button
 
+  alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
+
+  @doc """
+  Tells whether the invoice can be emailed to the counterparty, for the `counterparty_check`
+  attribute: `valid` enables the email checkbox, `tooltip` says why it is disabled.
+  """
+  @spec counterparty_check(String.t() | nil, Firmowid.Scope.t()) :: %{
+          valid: boolean(),
+          tooltip: String.t() | nil
+        }
+  def counterparty_check(counterparty_id, scope) do
+    case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
+      {:ok, _email} ->
+        %{valid: true, tooltip: nil}
+
+      {:error, reason, _email} ->
+        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
+    end
+  end
+
   attr :invoice, :map, required: true
   attr :preview_invoice, :map, required: true
   attr :invoice_number, :string, required: true
