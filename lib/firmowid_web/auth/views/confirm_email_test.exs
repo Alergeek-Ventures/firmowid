@@ -54,6 +54,44 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert confirmed_user.confirmed_at
   end
 
+  test "a signed-out visitor confirms a password account only after logging in to it", %{
+    conn: conn
+  } do
+    drain_sent_emails()
+    user = Core.register_with_password!(valid_user_attributes(), authorize?: false, actor: %{})
+    token = extract_token_from_email!("/potwierdz-email/")
+
+    {:ok, view, _html} = live(conn, ~p"/potwierdz-email/#{token}")
+
+    refused_conn =
+      view
+      |> form("#confirm_email_form", user: %{"confirm" => token})
+      |> submit_form(conn)
+
+    assert redirected_to(refused_conn) == ~p"/zaloguj"
+
+    assert Phoenix.Flash.get(refused_conn.assigns.flash, :error)
+
+    assert is_nil(Core.get_user_by_email!(user.email, authorize?: false).confirmed_at)
+
+    {:ok, login, _html} = live(recycle(refused_conn), ~p"/zaloguj")
+
+    signed_in_conn =
+      login
+      |> form("#login_form", user: %{email: user.email, password: valid_user_password()})
+      |> submit_form(recycle(refused_conn))
+
+    assert redirected_to(signed_in_conn) == ~p"/potwierdz-email/#{token}"
+
+    {:ok, view, _html} = live(recycle(signed_in_conn), ~p"/potwierdz-email/#{token}")
+
+    view
+    |> form("#confirm_email_form", user: %{"confirm" => token})
+    |> submit_form(recycle(signed_in_conn))
+
+    assert Core.get_user_by_email!(user.email, authorize?: false).confirmed_at
+  end
+
   test "user without an organization confirms email without loading another tenant's avatar", %{
     conn: conn
   } do

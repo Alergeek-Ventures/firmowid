@@ -7040,6 +7040,11 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
+#: lib/firmowid_web/auth/controllers/auth_controller.ex
+#, elixir-autogen, elixir-format
+msgid "Log in to confirm your account."
+msgstr ""
+
 #: lib/firmowid_web/auth/views/login.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
@@ -11056,11 +11061,6 @@ msgstr ""
 msgid "The account will appear on the list after authorization and the first synchronization finish."
 msgstr ""
 
-#: lib/firmowid_web/auth/controllers/auth_controller.ex
-#, elixir-autogen, elixir-format
-msgid "The account with this email address is awaiting confirmation. Confirm your email or log in with your password."
-msgstr ""
-
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "The annual request not to withhold advances is recorded but not calculated."
@@ -11916,6 +11916,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "This document has just been added!"
+msgstr ""
+
+#: lib/firmowid_web/auth/controllers/auth_controller.ex
+#, elixir-autogen, elixir-format
+msgid "This email address already has an account with a password. To log in with Google, reset the password first."
 msgstr ""
 
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
