@@ -9,6 +9,8 @@ defmodule FirmowidWeb.Organization.Views.FirstStepsTest do
     Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
     on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
 
+    Cachex.clear!(:institutions)
+
     Req.Test.stub(:bank_data_institutions, fn conn ->
       Req.Test.json(conn, [
         %{
