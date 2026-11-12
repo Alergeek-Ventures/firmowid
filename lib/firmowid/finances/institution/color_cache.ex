@@ -2,8 +2,9 @@ defmodule Firmowid.Finances.Institution.ColorCache do
   @moduledoc """
   Caches derived dominant colors for institution logos.
 
-  Reads stay cheap during requests: callers can return the cached value
-  immediately and schedule a background warm-up when the color is missing.
+  Reads stay cheap during requests: they return the cached color, and a
+  missing one is extracted in the background. The `:institutions` cache is
+  started by the application supervisor.
   """
 
   @cache_name :institutions
@@ -16,62 +17,29 @@ defmodule Firmowid.Finances.Institution.ColorCache do
   def get_dominant_color_rgb(nil), do: nil
 
   def get_dominant_color_rgb(logo_url) do
-    with {:ok, _pid} <- ensure_cache_started(),
-         {:ok, color_rgb} <- Cachex.get(@cache_name, cache_key(logo_url)) do
-      color_rgb
-    else
-      _error -> nil
-    end
+    {:ok, color_rgb} = Cachex.get(@cache_name, logo_url)
+    color_rgb
   end
 
   @doc """
-  Warms the dominant color cache asynchronously for a single logo URL.
-  """
-  @spec warm_dominant_color_rgb(String.t() | nil) :: :ok
-  def warm_dominant_color_rgb(nil), do: :ok
-
-  def warm_dominant_color_rgb(logo_url) do
-    if is_nil(get_dominant_color_rgb(logo_url)) do
-      Task.start(fn -> persist_dominant_color_rgb(logo_url) end)
-    end
-
-    :ok
-  end
-
-  @doc """
-  Warms the dominant color cache asynchronously for many logo URLs.
+  Extracts the missing dominant colors of the logo URLs in the background.
   """
   @spec warm_dominant_color_rgbs([String.t() | nil]) :: :ok
   def warm_dominant_color_rgbs(logo_urls) do
     logo_urls
-    |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
-    |> Enum.each(&warm_dominant_color_rgb/1)
-
-    :ok
+    |> Enum.reject(&(is_nil(&1) or get_dominant_color_rgb(&1)))
+    |> Enum.each(fn logo_url -> Task.start(fn -> cache_dominant_color_rgb(logo_url) end) end)
   end
 
-  @doc """
-  Extracts and persists a dominant RGB color for a logo URL.
-  """
-  @spec persist_dominant_color_rgb(String.t()) :: String.t() | nil
-  def persist_dominant_color_rgb(logo_url) do
-    with {:ok, _pid} <- ensure_cache_started(),
-         {:ok, color_rgb} <-
-           Cachex.fetch(@cache_name, cache_key(logo_url), fn _key ->
-             {:commit, extract_dominant_color_rgb(logo_url), expire: @dominant_color_expire}
-           end) do
-      color_rgb
-    else
-      _error -> nil
-    end
+  defp cache_dominant_color_rgb(logo_url) do
+    Cachex.fetch(@cache_name, logo_url, fn _key ->
+      {:commit, extract_dominant_color_rgb(logo_url), expire: @dominant_color_expire}
+    end)
   end
 
-  @doc """
-  Extracts the best brand-like dominant RGB color from a logo URL.
-  """
-  @spec extract_dominant_color_rgb(String.t()) :: String.t() | nil
-  def extract_dominant_color_rgb(logo_url) do
+  # Picks the best brand-like dominant RGB color of the logo.
+  defp extract_dominant_color_rgb(logo_url) do
     with {:ok, %{body: image_binary}} <- Req.get(logo_url),
          {:ok, image} <- Image.open(image_binary),
          {:ok, palette} <- Image.dominant_color(image, method: :imagequant, top_n: 6) do
@@ -82,27 +50,6 @@ defmodule Firmowid.Finances.Institution.ColorCache do
       _error -> nil
     end
   end
-
-  defp ensure_cache_started do
-    case Process.whereis(@cache_name) do
-      nil ->
-        case Cachex.start_link(name: @cache_name) do
-          {:ok, pid} ->
-            {:ok, pid}
-
-          {:error, _reason} ->
-            case Process.whereis(@cache_name) do
-              nil -> {:error, :invalid_name}
-              pid -> {:ok, pid}
-            end
-        end
-
-      pid ->
-        {:ok, pid}
-    end
-  end
-
-  defp cache_key(logo_url), do: {:dominant_color_rgb_v3, logo_url}
 
   defp pick_brand_color(palette) when is_list(palette) do
     palette
