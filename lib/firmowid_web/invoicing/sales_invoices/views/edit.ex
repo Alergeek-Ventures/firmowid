@@ -365,11 +365,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   @impl true
-  def handle_event("add_item", %{"field" => field}, socket) do
+  def handle_event("add_item", _params, socket) do
     ash_form =
-      AshPhoenix.Form.add_form(
-        socket.assigns.form.source,
-        String.to_existing_atom(field),
+      AshPhoenix.Form.add_form(socket.assigns.form.source, :sales_invoice_items,
         params: %{"vat_rate" => "23", "quantity" => "1", "unit" => "szt."}
       )
 

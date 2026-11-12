@@ -691,10 +691,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   @impl true
-  def handle_event("add_item", %{"field" => field}, socket) do
+  def handle_event("add_item", _params, socket) do
     form =
       socket.assigns.items_form.source
-      |> AshPhoenix.Form.add_form(String.to_existing_atom(field), params: %{"quantity" => "1"})
+      |> AshPhoenix.Form.add_form(socket.assigns.items_field, params: %{"quantity" => "1"})
       |> to_form()
 
     {:noreply, assign(socket, :items_form, form)}

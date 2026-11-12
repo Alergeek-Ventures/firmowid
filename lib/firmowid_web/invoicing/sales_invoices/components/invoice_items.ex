@@ -595,7 +595,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     <.button
       type="button"
       phx-click="add_item"
-      phx-value-field={@items_field}
       class="col-span-1 col-start-2 mt-3"
       size="small"
       variant="secondary"
