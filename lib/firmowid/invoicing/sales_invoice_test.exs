@@ -876,6 +876,29 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       assert preview.is_reverse_charge == false
       assert [%{vat_rate: "23"}] = preview.sales_invoice_items
     end
+
+    test "a null beside the input keeps a field's default on a new draft and its value on a revised one" do
+      user = invoicing_admin_fixture()
+      attrs = Map.put(draft_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+
+      draft = create_draft!(user, Map.merge(attrs, %{payment_method: nil, is_cash_account: nil}))
+
+      assert draft.payment_method == :transfer
+      assert draft.is_cash_account == false
+
+      saved = update_sales_invoice!(user, draft, %{payment_method: :cash, is_cash_account: true})
+
+      revised =
+        update_sales_invoice!(user, saved, %{
+          payment_method: nil,
+          is_cash_account: nil,
+          buyer_full_name: "Other GmbH"
+        })
+
+      assert revised.buyer_full_name == "Other GmbH"
+      assert revised.payment_method == :cash
+      assert revised.is_cash_account == true
+    end
   end
 
   defp invoicing_admin_fixture do
