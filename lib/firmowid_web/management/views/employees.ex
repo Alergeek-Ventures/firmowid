@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidWeb.Management.Components.Roles
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
@@ -222,15 +223,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
   def handle_event("save_wages", %{"employee" => employees_params}, %{assigns: %{view: :wage_editor}} = socket) do
     scope = socket.assigns.ash_scope
 
+    # The rate goes to the action as typed, so a cleared field fails its validation.
     entries =
       Enum.flat_map(socket.assigns.employees, fn employee ->
-        hourly_rate = Decimal.new(employees_params[employee.user.id]["wage"])
+        hourly_rate = employees_params[employee.user.id]["wage"]
 
-        if employee.hourly_rate != nil and Decimal.equal?(employee.hourly_rate, hourly_rate) do
-          []
-        else
-          [%{member_id: employee.user.member.id, hourly_rate: hourly_rate}]
-        end
+        if same_rate?(employee.hourly_rate, hourly_rate),
+          do: [],
+          else: [%{member_id: employee.user.member.id, hourly_rate: hourly_rate}]
       end)
 
     case Payroll.bulk_create_salaries(entries, scope: scope) do
@@ -250,7 +250,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
          put_flash(
            socket,
            :error,
-           gettext("Could not update the rates: %{error}", error: inspect(error))
+           gettext("Could not update the rates: %{error}", error: error_message(error))
          )}
     end
   end
@@ -275,7 +275,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
          {:ok, _member} <- Core.unarchive_member(user.member, scope: scope) do
       {:noreply, assign_employees(socket)}
     else
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _]}}
+      {:error, %Invalid{errors: [%{message: message} = error | _]}}
       when is_binary(message) ->
         {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
@@ -378,4 +378,22 @@ defmodule FirmowidWeb.Management.Views.Employees do
      |> push_event("copy-to-clipboard", %{text: number})
      |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
   end
+
+  defp same_rate?(nil, _typed), do: false
+
+  defp same_rate?(current, typed) do
+    case Decimal.parse(typed) do
+      {rate, ""} -> Decimal.equal?(current, rate)
+      _invalid -> false
+    end
+  end
+
+  defp error_message(%Invalid{errors: [error | _]}) do
+    [{_field, message, vars} | _] =
+      error |> AshPhoenix.FormData.Error.to_form_error() |> List.wrap()
+
+    Inputs.translate_error({message, vars})
+  end
+
+  defp error_message(error), do: Exception.message(error)
 end
