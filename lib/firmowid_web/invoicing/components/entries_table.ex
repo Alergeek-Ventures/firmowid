@@ -376,8 +376,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         scope="col"
         class={
           [
-            # sticks under the taller bar of the list of every month (`Index`)
-            "sticky top-[calc(var(--spacing-navbar)+96px)] z-1 h-[60px] bg-grey-100 py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase max-md:static max-md:block max-md:h-auto max-md:scroll-mt-navbar max-md:pt-4 max-md:pb-0 max-md:pl-1",
+            # sticks under the taller bar of the list of every month (`Index`), 1.25rem lower than
+            # under the plain page header
+            "sticky top-[calc(var(--spacing-navbar)+var(--page-header-height)+1.25rem)] z-1 h-[60px] bg-grey-100 py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase max-md:static max-md:block max-md:h-auto max-md:scroll-mt-navbar max-md:pt-4 max-md:pb-0 max-md:pl-1",
             index > 0 && "max-md:hidden",
             column == "party" && "pl-5",
             column == "project" &&

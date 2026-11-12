@@ -166,8 +166,8 @@ html {
   --navbar-height-management: 108px;
   /* What stays of the management navbar once it collapses on scroll. */
   --navbar-height-collapsed: 42px;
-  /* Sticky page header: py-4 around one row of big (h-11) buttons; layers that stick below it add this. */
-  --page-header-height: 4.75rem;
+  /* Sticky page header: py-4 around one row of big (h-9) buttons; layers that stick below it add this. */
+  --page-header-height: 4.25rem;
   /* The same header with a row of tabs and filters (gap-6, h-8) below the buttons. */
   --page-header-with-tabs-height: calc(var(--page-header-height) + 3.5rem);
   --digit-dur: 500ms;
