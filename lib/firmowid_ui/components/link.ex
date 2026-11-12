@@ -123,19 +123,14 @@ defmodule FirmowidUI.Components.Link do
     ]
   end
 
-  defp link_classes(%{kind: "button", size: size, variant: variant} = assigns) do
-    variant = variant || "primary"
-
+  defp link_classes(%{kind: "button", size: size, variant: variant, accent: accent}) do
     [
       "inline-flex items-center justify-center whitespace-nowrap select-none border transition duration-100 ease-out cursor-pointer disabled:pointer-events-none disabled:cursor-default phx-click-loading:opacity-75 phx-click-loading:cursor-default",
       ButtonStyles.size_classes(size),
-      ButtonStyles.variant_classes(variant, resolved_accent(assigns.accent, variant))
+      ButtonStyles.variant_classes(variant || "primary", accent)
     ]
   end
 
   defp text_size_classes("big"), do: "text-base/tight"
   defp text_size_classes("small"), do: "text-sm/tight"
-
-  defp resolved_accent(nil, "primary"), do: "rust"
-  defp resolved_accent(accent, _variant), do: accent
 end

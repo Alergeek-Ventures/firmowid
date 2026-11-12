@@ -11,7 +11,11 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     "h-8 rounded-md px-2 py-1.5 text-sm/tight font-normal gap-1.5 [&>svg]:size-4"
   end
 
-  @doc "Returns the shared design-system variant classes for button-like controls."
+  @doc """
+  Returns the shared design-system variant classes for button-like controls.
+
+  The primary variant defaults to the rust accent.
+  """
   @spec variant_classes(String.t(), String.t() | nil) :: [String.t()]
   def variant_classes("special", _accent) do
     [
@@ -38,7 +42,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     ]
   end
 
-  def variant_classes("primary", "rust") do
+  def variant_classes("primary", accent) when accent in [nil, "rust"] do
     [
       "border-transparent",
       "bg-rust-700 text-white",
