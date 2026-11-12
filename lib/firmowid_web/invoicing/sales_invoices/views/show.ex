@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   alias Ash.Notifier.Notification
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.SalesInvoice
@@ -56,8 +57,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
       {:ok, redirect(socket, to: redirect_path)}
     else
-      alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
-
       potential_transactions =
         InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice, scope)
 
@@ -180,18 +179,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
     case Invoicing.connect_sales_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope) do
       {:ok, _connected_invoice} ->
-        invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
-
-        potential_transactions =
-          InvoiceMatching.get_potential_transactions_for_invoice(
-            invoice,
-            socket.assigns.ash_scope
-          )
-
-        {:noreply,
-         socket
-         |> assign(:invoice, invoice)
-         |> assign(:potential_transactions, potential_transactions)}
+        {:noreply, assign_refreshed_invoice(socket)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, gettext("Could not link the transaction."))}
@@ -204,18 +192,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
            scope: socket.assigns.ash_scope
          ) do
       {:ok, _invoice} ->
-        invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
-
-        potential_transactions =
-          InvoiceMatching.get_potential_transactions_for_invoice(
-            invoice,
-            socket.assigns.ash_scope
-          )
-
-        {:noreply,
-         socket
-         |> assign(:invoice, invoice)
-         |> assign(:potential_transactions, potential_transactions)}
+        {:noreply, assign_refreshed_invoice(socket)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, gettext("Could not unlink the transaction."))}
@@ -237,9 +214,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
      |> put_flash(:info, gettext("Link copied to the clipboard."))}
   end
 
-  defp refresh_invoice(id, scope) do
-    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
+  defp assign_refreshed_invoice(socket) do
+    scope = socket.assigns.ash_scope
+    invoice = refresh_invoice(socket.assigns.invoice.id, scope)
 
+    assign(socket,
+      invoice: invoice,
+      potential_transactions: InvoiceMatching.get_potential_transactions_for_invoice(invoice, scope)
+    )
+  end
+
+  defp refresh_invoice(id, scope) do
     invoice = Invoicing.get_sales_invoice!(id, load: @detail_loads, scope: scope)
     %{invoice | corrections: AnnotatedCorrections.annotate(invoice)}
   end
@@ -250,12 +235,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         %{assigns: %{invoice: %{id: id}}} = socket
       )
       when action in [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions] do
-    invoice = refresh_invoice(id, socket.assigns.ash_scope)
-
-    potential_transactions =
-      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
-
-    {:noreply, assign(socket, invoice: invoice, potential_transactions: potential_transactions)}
+    {:noreply, assign_refreshed_invoice(socket)}
   end
 
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
@@ -274,10 +254,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     end
   end
 
-  def handle_info(event, socket) do
-    _ = event
-    {:noreply, socket}
-  end
+  def handle_info(_event, socket), do: {:noreply, socket}
 
   defp ksef_status_flash(socket, :submitted), do: put_flash(socket, :info, gettext("The invoice was sent to KSeF."))
 
