@@ -161,7 +161,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   defp preview("add_sessions", %{"input" => %{"sessions" => [_ | _] = sessions}}, scope) do
     with {:ok, changes} <- all(sessions, &added_session(&1, scope)) do
-      {:ok, [], changes}
+      {:ok, [], List.flatten(changes)}
     end
   end
 
@@ -310,16 +310,19 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
          {:ok, to} <- datetime(to),
          {:ok, project} <- result(Project.get(project_id, scope: scope)) do
       {:ok,
-       change(
-         project.name,
-         nil,
-         gettext("%{date}, %{from}–%{to} · %{title}",
-           date: Calendar.strftime(local(from), "%d.%m.%Y"),
-           from: Calendar.strftime(local(from), "%H:%M"),
-           to: Calendar.strftime(local(to), "%H:%M"),
-           title: session["title"]
-         )
-       )}
+       [
+         change(
+           project.name,
+           nil,
+           gettext("%{date}, %{from}–%{to} · %{title}",
+             date: Calendar.strftime(local(from), "%d.%m.%Y"),
+             from: Calendar.strftime(local(from), "%H:%M"),
+             to: Calendar.strftime(local(to), "%H:%M"),
+             title: session["title"]
+           )
+         ),
+         session["is_remote"] == true && change(gettext("Remote work"), nil, gettext("Yes"))
+       ]}
     else
       _invalid -> :error
     end
