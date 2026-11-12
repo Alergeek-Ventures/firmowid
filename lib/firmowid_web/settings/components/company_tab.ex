@@ -40,7 +40,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :organization_invites, :list, required: true
   attr :show_active_invites, :boolean, required: true
   attr :selected_user, :any, default: nil
-  attr :bank_account_statuses, :map, required: true
   attr :uploads, :map, required: true
   attr :ksef_fetching?, :boolean, required: true
 
@@ -95,7 +94,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         bank_accounts={@bank_accounts}
         bank_institutions={@bank_institutions}
         pending_requisitions={@pending_requisitions}
-        bank_account_statuses={@bank_account_statuses}
         class={[if(@section == :all, do: "col-span-2")]}
       />
 
@@ -475,7 +473,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
-  attr :bank_account_statuses, :map, required: true
   attr :standalone, :boolean, default: false
   attr :class, :any, default: nil
 
@@ -526,7 +523,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           standalone={@standalone}
           account={account}
           bank_institutions={@bank_institutions}
-          status={Map.get(@bank_account_statuses, account.id)}
+          status={bank_account_status(account, account.requisition && account.requisition.status)}
         />
       </div>
 
@@ -1047,6 +1044,22 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp menu_item_styles do
     "hover:text-teal-800 hover:bg-teal-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
   end
+
+  defp bank_account_status(%{institution_name: "Manual"}, _requisition_status), do: :manual
+
+  defp bank_account_status(account, _requisition_status) when is_nil(account.gocardless_id), do: :disconnected
+
+  defp bank_account_status(account, requisition_status)
+       when requisition_status in [:rejected, :expired] or account.broken?, do: :broken
+
+  defp bank_account_status(account, requisition_status)
+       when requisition_status == :accepted and not account.has_successful_sync?, do: :processing
+
+  defp bank_account_status(_account, :pending), do: :processing
+
+  defp bank_account_status(account, _requisition_status) when account.has_successful_sync?, do: :connected
+
+  defp bank_account_status(_account, _requisition_status), do: :disconnected
 
   defp format_last_sync_info(:manual, _datetime), do: gettext("account added manually")
   defp format_last_sync_info(_status, nil), do: gettext("not synchronized yet")

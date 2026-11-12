@@ -102,14 +102,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
     current_year = Date.utc_today().year
 
-    # Use Ash native code interface for listing bank accounts
-    bank_accounts = if(admin?, do: list_bank_accounts(scope), else: [])
-    pending_requisitions = if(admin?, do: list_pending_requisitions(scope), else: [])
     organization_users = if(admin?, do: list_organization_users(scope), else: [])
     organization_invites = if(admin?, do: list_organization_invites(scope), else: [])
-
-    bank_institutions =
-      if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
     leave_requests =
       Timetracker.list_leave_requests!(%{member_id: current_user.member.id},
@@ -138,6 +132,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket =
       if admin? do
         socket
+        |> assign_bank_accounts()
         |> Connection.init(scope)
         |> assign(:company_form, form_basic_info_form(current_org, scope))
         |> allow_upload(:organization_avatar,
@@ -153,7 +148,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           progress: guard_upload_progress(&handle_progress/3, :ash_scope)
         )
       else
-        socket
+        assign(socket, bank_accounts: [], bank_institutions: %{}, pending_requisitions: [])
       end
 
     socket = assign(socket, :member_form, form_member_form(current_user.member, scope))
@@ -191,13 +186,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:current_password, nil)
      |> assign(:password_form, form_password_form(current_user))
      |> assign(:email_form, form_email_form(current_user, scope))
-     |> assign(:bank_accounts, bank_accounts)
-     |> assign(:bank_institutions, bank_institutions)
-     |> assign(:pending_requisitions, pending_requisitions)
      |> assign(:organization_users, organization_users)
      |> assign(:organization_invites, organization_invites)
      |> assign(:selected_user, nil)
-     |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:google_connected?, google_connected?)
      |> assign(:uploaded_files, [])
      |> assign(:no_padding, true)
@@ -404,18 +395,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       :ok ->
         LiveToast.send_toast(:info, gettext("The bank account has been deleted."))
 
-        bank_accounts = list_bank_accounts(scope)
-
-        {:noreply,
-         socket
-         |> assign(:bank_accounts, bank_accounts)
-         |> assign(
-           :bank_institutions,
-           list_bank_institutions(socket.assigns.current_user, bank_accounts)
-         )
-         |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
-         |> assign_subscription_preview_if_visible()}
+        {:noreply, assign_bank_accounts(socket)}
 
       {:error, _} ->
         LiveToast.send_toast(
@@ -434,18 +414,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.update_bank_account(bank_account, %{is_default: true}, scope: scope) do
       {:ok, _} ->
-        bank_accounts = list_bank_accounts(scope)
-
-        {:noreply,
-         socket
-         |> assign(:bank_accounts, bank_accounts)
-         |> assign(
-           :bank_institutions,
-           list_bank_institutions(socket.assigns.current_user, bank_accounts)
-         )
-         |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
-         |> assign_subscription_preview_if_visible()}
+        {:noreply, assign_bank_accounts(socket)}
 
       {:error, _} ->
         LiveToast.send_toast(
@@ -661,18 +630,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, _} ->
         LiveToast.send_toast(:info, gettext("The account has been added."))
 
-        accounts = list_bank_accounts(scope)
-
-        {:noreply,
-         socket
-         |> assign(:bank_accounts, accounts)
-         |> assign(
-           :bank_institutions,
-           list_bank_institutions(socket.assigns.current_user, accounts)
-         )
-         |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(accounts))
-         |> assign_subscription_preview_if_visible()}
+        {:noreply, assign_bank_accounts(socket)}
 
       {:error, _} ->
         LiveToast.send_toast(:error, gettext("Could not add the account."))
@@ -1007,18 +965,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, _} ->
         LiveToast.send_toast(:info, gettext("The account name has been changed."))
 
-        accounts = list_bank_accounts(scope)
-
         {:noreply,
          socket
-         |> assign(:bank_accounts, accounts)
-         |> assign(
-           :bank_institutions,
-           list_bank_institutions(socket.assigns.current_user, accounts)
-         )
-         |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(accounts))
-         |> assign_subscription_preview_if_visible()
+         |> assign_bank_accounts()
          |> push_event("js-exec", %{
            to: "#manual_bank_account_modal_company",
            attr: "data-cancel"
@@ -1043,23 +992,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
         %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
         socket
       ) do
-    # Refresh bank accounts list
-    scope = socket.assigns.ash_scope
-
-    bank_accounts = list_bank_accounts(scope)
-
-    socket =
-      socket
-      |> assign(:bank_accounts, bank_accounts)
-      |> assign(
-        :bank_institutions,
-        list_bank_institutions(socket.assigns.current_user, bank_accounts)
-      )
-      |> assign(:pending_requisitions, list_pending_requisitions(scope))
-      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
-      |> assign_subscription_preview_if_visible()
-
-    # Show toast notification
     {toast_type, message} =
       case action do
         :accept ->
@@ -1077,7 +1009,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     LiveToast.send_toast(toast_type, message)
 
-    {:noreply, socket}
+    {:noreply, assign_bank_accounts(socket)}
   end
 
   def handle_info(
@@ -1243,7 +1175,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             organization_invites={@organization_invites}
             show_active_invites={@show_active_invites}
             selected_user={@selected_user}
-            bank_account_statuses={@bank_account_statuses}
             uploads={@uploads}
           />
         <% :subscription -> %>
@@ -1307,31 +1238,21 @@ defmodule FirmowidWeb.Settings.Views.Index do
     """
   end
 
-  defp derive_statuses(bank_accounts) do
-    Map.new(bank_accounts, fn account ->
-      requisition_status = account.requisition && account.requisition.status
+  # Every change to the bank accounts refreshes the list, the banks behind it, the
+  # connection being set up and the usage the subscription tab shows.
+  defp assign_bank_accounts(socket) do
+    scope = socket.assigns.ash_scope
+    bank_accounts = list_bank_accounts(scope)
 
-      status = derive_bank_account_status(account, requisition_status)
-
-      {account.id, status}
-    end)
+    socket
+    |> assign(:bank_accounts, bank_accounts)
+    |> assign(
+      :bank_institutions,
+      list_bank_institutions(socket.assigns.current_user, bank_accounts)
+    )
+    |> assign(:pending_requisitions, list_pending_requisitions(scope))
+    |> assign_subscription_preview_if_visible()
   end
-
-  defp derive_bank_account_status(%{institution_name: "Manual"}, _requisition_status), do: :manual
-
-  defp derive_bank_account_status(account, _requisition_status) when is_nil(account.gocardless_id), do: :disconnected
-
-  defp derive_bank_account_status(account, requisition_status)
-       when requisition_status in [:rejected, :expired] or account.broken?, do: :broken
-
-  defp derive_bank_account_status(account, requisition_status)
-       when requisition_status == :accepted and not account.has_successful_sync?, do: :processing
-
-  defp derive_bank_account_status(_account, :pending), do: :processing
-
-  defp derive_bank_account_status(account, _requisition_status) when account.has_successful_sync?, do: :connected
-
-  defp derive_bank_account_status(_account, _requisition_status), do: :disconnected
 
   defp list_bank_accounts(scope) do
     accounts =
