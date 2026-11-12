@@ -275,4 +275,18 @@ defmodule Firmowid.Core.UserTest do
       assert {:error, _} = Core.get_user(outsider.id, actor: actor)
     end
   end
+
+  test "an organization admin revokes a member's access only to their own organization" do
+    admin = admin_fixture()
+    other_organization_id = admin_fixture().member.organization_id
+    employee = user_in_org_fixture(admin.member.organization_id)
+    Core.add_to_organization!(employee.id, other_organization_id, :employee, nil)
+    scope = Scope.new!(admin, admin.member.organization_id)
+
+    assert {:error, %Ash.Error.Forbidden{}} =
+             Core.leave_organization(employee, other_organization_id, scope: scope)
+
+    assert {:ok, _} =
+             Core.leave_organization(employee, admin.member.organization_id, scope: scope)
+  end
 end
