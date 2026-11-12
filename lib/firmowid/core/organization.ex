@@ -17,6 +17,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
@@ -177,6 +178,11 @@ defmodule Firmowid.Core.Organization do
       change set_attribute(:onboarding_completed_at, &DateTime.utc_now/0)
     end
 
+    update :remember_cash_accounting do
+      description "Remember whether the last domestic invoice used cash accounting, for the next one to start with."
+      accept [:is_cash_account]
+    end
+
     update :update_billing_plan do
       description "Update the billing plan assigned to an organization."
       accept [:billing_plan]
@@ -264,6 +270,11 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
+    # Whoever issues an invoice records its cash accounting for the next one.
+    policy [action(:remember_cash_accounting), {AtLeastRole, role: :accountant}] do
+      authorize_if expr(id == ^actor([:member, :organization_id]))
+    end
+
     policy action(:update_billing_plan) do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
@@ -341,6 +352,12 @@ defmodule Firmowid.Core.Organization do
       public?: true,
       allow_nil?: true,
       constraints: [max_length: 256, trim?: true, allow_empty?: false]
+
+    attribute :is_cash_account, :boolean,
+      public?: true,
+      allow_nil?: false,
+      default: false,
+      description: "Whether the last domestic invoice used cash accounting (metoda kasowa); a new one starts with it."
 
     Resource.firmowid_timestamps()
   end

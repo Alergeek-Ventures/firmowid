@@ -5,14 +5,12 @@ defmodule Firmowid.Invoicing.Changes.CastBasedOnInvoiceType do
   When `invoice_type` changes to `:poland`, forces `currency` to `"PLN"`
   and `is_reverse_charge` to `false`.
 
-  When `invoice_type` changes to `:foreign`, forces `is_cash_account` to `false`
-  (only if the resource has that attribute — WizardState does not).
+  When `invoice_type` changes to `:foreign`, clears the cash accounting choice
+  (`is_cash_account` back to not chosen): a foreign invoice never uses it.
 
   Only acts on actual `invoice_type` changes, not on every update.
   """
   use Ash.Resource.Change
-
-  alias Ash.Resource.Info
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -31,18 +29,10 @@ defmodule Firmowid.Invoicing.Changes.CastBasedOnInvoiceType do
         |> Ash.Changeset.force_change_attribute(:is_reverse_charge, false)
 
       :foreign ->
-        maybe_clear_cash_account(changeset)
+        Ash.Changeset.force_change_attribute(changeset, :is_cash_account, nil)
 
       _ ->
         changeset
-    end
-  end
-
-  defp maybe_clear_cash_account(changeset) do
-    if Info.attribute(changeset.resource, :is_cash_account) do
-      Ash.Changeset.force_change_attribute(changeset, :is_cash_account, false)
-    else
-      changeset
     end
   end
 end

@@ -24,6 +24,7 @@ defmodule Firmowid.Invoicing.Actions.IssueWizardState do
     :invoice_type,
     :ksef_invoice_kind,
     :is_reverse_charge,
+    :is_cash_account,
     :currency,
     :seller_account_number,
     :sale_date,

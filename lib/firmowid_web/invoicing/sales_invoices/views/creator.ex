@@ -432,6 +432,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       "ksef_invoice_kind" => draft.ksef_invoice_kind,
       "currency" => draft.currency,
       "is_reverse_charge" => draft.is_reverse_charge,
+      "is_cash_account" =>
+        if(is_nil(draft.is_cash_account),
+          do: organization.is_cash_account,
+          else: draft.is_cash_account
+        ),
       "vat_exemption_type" => draft.vat_exemption_type || organization.vat_exemption_type,
       "vat_exemption_basis" => draft.vat_exemption_basis || organization.vat_exemption_basis,
       "items" => initial_item_params(draft.items || [])

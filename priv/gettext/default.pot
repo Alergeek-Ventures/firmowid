@@ -2184,6 +2184,7 @@ msgid "Cash"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Cash accounting"
 msgstr ""
@@ -13573,6 +13574,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "With a Trusted Profile"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
+#, elixir-autogen, elixir-format
+msgid "With cash accounting, VAT is due when the buyer pays the invoice, not when it is issued."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex

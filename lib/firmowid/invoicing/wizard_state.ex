@@ -1,6 +1,8 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 # credo:disable-for-this-file ExDNA.Credo
-# Wizard step actions intentionally repeat field lists/validations per step; extracting this
-# would require broader action DSL redesign across WizardState and related changes/validations.
+# Wizard step actions intentionally repeat field lists/validations per step, which also makes the
+# resource long; extracting this would require broader action DSL redesign across WizardState and
+# related changes/validations.
 defmodule Firmowid.Invoicing.WizardState do
   @moduledoc """
   Ephemeral ETS-backed browser invoice wizard state, distinct from saved drafts; actions describe each step.
@@ -144,6 +146,7 @@ defmodule Firmowid.Invoicing.WizardState do
         :ksef_invoice_kind,
         :currency,
         :is_reverse_charge,
+        :is_cash_account,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
@@ -326,6 +329,8 @@ defmodule Firmowid.Invoicing.WizardState do
       public?: true
 
     attribute :is_reverse_charge, :boolean, default: false, public?: true
+    # Nil until chosen: the issued invoice then starts with the organization's last choice.
+    attribute :is_cash_account, :boolean, public?: true
     attribute :currency, :string, default: "PLN", public?: true
     attribute :seller_account_number, :string, public?: true
 

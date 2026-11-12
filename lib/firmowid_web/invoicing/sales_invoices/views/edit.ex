@@ -281,6 +281,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           :buyer_phone,
           :buyer_description,
           :is_reverse_charge,
+          :is_cash_account,
           :vat_exemption_type,
           :vat_exemption_basis,
           :sales_invoice_items
@@ -319,6 +320,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           "buyer_description" => latest.buyer_description,
           "should_send_emails" => to_string(latest.should_send_emails || false),
           "is_reverse_charge" => to_string(latest.is_reverse_charge || false),
+          "is_cash_account" => to_string(latest.is_cash_account || false),
           "sales_invoice_items" =>
             latest.sales_invoice_items
             |> Enum.sort_by(& &1.index)

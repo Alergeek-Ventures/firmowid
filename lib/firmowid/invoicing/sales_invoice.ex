@@ -457,6 +457,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       end
 
       pipe_through [:prepare_invoice_body, :apply_invoice_body]
+      change Changes.RememberCashAccounting
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -499,7 +500,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         :buyer_phone,
         :buyer_description,
         :should_send_emails,
-        :is_reverse_charge
+        :is_reverse_charge,
+        :is_cash_account
       ]
 
       argument :original_invoice_id, :uuid_v7, allow_nil?: false
@@ -523,17 +525,13 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.InheritItemGtu
       change Changes.PrepareInvoiceItems
 
-      # An imported invoice's own rates and cash accounting stay unless the correction changes them.
+      # An imported invoice's own rates stay unless the correction changes its reverse charge.
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items} do
         where Validations.CorrectedRatesNormalized
       end
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change Changes.SetItemNames
-
-      change Changes.SetIsCashAccount do
-        where {Validations.DiffersFromCorrectedState, field: :payment_method}
-      end
 
       change {Changes.ValidateCountryCode, field: :buyer_country}
 
@@ -629,6 +627,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.ApplyInvoiceInput
       change filter(expr(is_draft and not is_correction))
       pipe_through [:prepare_invoice_body, :apply_invoice_body]
+      change Changes.RememberCashAccounting
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -1191,10 +1190,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     attribute :buyer_phone, :string, public?: true
     attribute :buyer_description, :string, public?: true
 
-    # Stored (not a calculation) because two independent change hooks collaborate
-    # to maintain it: SetIsCashAccount (payment_method == :cash) and
-    # CastBasedOnInvoiceType (forces false for foreign invoices). A calculation
-    # would need to encode both rules and complicate the snapshot system.
+    # Cash accounting of VAT (metoda kasowa, KSeF P_16), chosen on the invoice and independent of
+    # the payment method. A new domestic invoice starts with the organization's last choice.
     attribute :is_cash_account, :boolean, default: false, public?: true
     attribute :is_reverse_charge, :boolean, default: false, public?: true
     # KSeF markers: a transaction between related parties (TP) and an invoice for a receipt (FP).
@@ -1305,7 +1302,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     pipeline :apply_invoice_body do
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change Changes.SetItemNames
-      change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
       change Changes.BindInvoiceCounterparty
     end
