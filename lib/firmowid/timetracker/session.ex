@@ -466,23 +466,14 @@ defmodule Firmowid.Timetracker.Session do
       authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
-    policy action(:stop_current) do
-      authorize_if actor_present()
-    end
-
-    policy action(:edit_current_user_session) do
-      authorize_if actor_present()
-    end
-
-    policy action(:add_completed_sessions) do
-      authorize_if actor_present()
-    end
-
-    policy action(:team_presence) do
-      authorize_if {AtLeastRole, role: :employee}
-    end
-
-    policy action(:month_duration) do
+    # Each runs on the acting member's own sessions or their organization.
+    policy action([
+             :stop_current,
+             :edit_current_user_session,
+             :add_completed_sessions,
+             :team_presence,
+             :month_duration
+           ]) do
       authorize_if {AtLeastRole, role: :employee}
     end
   end
