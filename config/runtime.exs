@@ -329,8 +329,7 @@ if config_env() == :prod do
         ]
     end
 
-  # configures Swoosh SMTP client
-  # SendGrid is only used in production and requires an API key
+  # Production e-mail goes through Resend and requires an API key
   config :firmowid, Firmowid.Mailer,
     adapter: Swoosh.Adapters.Resend,
     api_key: System.get_env("RESEND_API_KEY")
