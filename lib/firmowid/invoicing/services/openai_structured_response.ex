@@ -12,7 +12,7 @@ defmodule Firmowid.Invoicing.Services.OpenAIStructuredResponse do
   to make the model search the web first.
   """
   @spec request!(String.t(), String.t(), map(), keyword()) :: map()
-  def request!(instructions, input, format, opts \\ []) do
+  def request!(instructions, input, format, opts) do
     request = %{
       model: "gpt-6-luna",
       reasoning: %{effort: "none"},
