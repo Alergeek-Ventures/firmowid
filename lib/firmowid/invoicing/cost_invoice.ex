@@ -817,8 +817,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
     # Effective fields — coalesce latest correction snapshot with original.
     # DB-pushable, filterable, sortable.
-    calculate :has_corrections, :boolean, expr(not is_nil(corrections_amount))
-
     calculate :effective_amount,
               MoneyType,
               expr(
@@ -847,18 +845,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
               expr(latest_correction_seller_display_name || seller_display_name)
 
     calculate :effective_seller_nip, :string, expr(latest_correction_seller_nip || seller_nip)
-
-    calculate :effective_seller_country_code,
-              :string,
-              expr(latest_correction_seller_country_code || seller_country_code)
-
-    calculate :effective_seller_email,
-              :string,
-              expr(latest_correction_seller_email || seller_email)
-
-    calculate :effective_seller_phone,
-              :string,
-              expr(latest_correction_seller_phone || seller_phone)
 
     calculate :effective_payment_method,
               :atom,
@@ -899,18 +885,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
     end
 
     first :latest_correction_seller_nip, :correction_invoices, :seller_nip do
-      sort ksef_permanent_storage_date: :desc
-    end
-
-    first :latest_correction_seller_country_code, :correction_invoices, :seller_country_code do
-      sort ksef_permanent_storage_date: :desc
-    end
-
-    first :latest_correction_seller_email, :correction_invoices, :seller_email do
-      sort ksef_permanent_storage_date: :desc
-    end
-
-    first :latest_correction_seller_phone, :correction_invoices, :seller_phone do
       sort ksef_permanent_storage_date: :desc
     end
 
