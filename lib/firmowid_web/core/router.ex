@@ -191,6 +191,7 @@ defmodule FirmowidWeb.Core.Router do
         metrics: Telemetry
 
       oban_dashboard("/oban", oban_name: Oban)
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     else
       pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
 
@@ -211,8 +212,6 @@ defmodule FirmowidWeb.Core.Router do
         ]
       )
     end
-
-    forward "/mailbox", Plug.Swoosh.MailboxPreview
 
     ash_authentication_live_session :admin,
       on_mount: [
