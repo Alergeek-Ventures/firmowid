@@ -202,11 +202,11 @@ defmodule Firmowid.Finances.Requisition do
       authorize_if always()
     end
 
-    # bank_sync: status transitions delegated from :check_status and expiry
-    # detected during transaction sync.
+    # bank_sync: storing the requisition GoCardless created, status transitions
+    # delegated from :check_status and expiry detected during transaction sync.
     bypass {SystemActorRole, roles: [:bank_sync]} do
       authorize_if action([:read, :list])
-      authorize_if action([:accept, :reject, :expire])
+      authorize_if action([:persist, :accept, :reject, :expire])
     end
 
     policy action(:read_global) do
