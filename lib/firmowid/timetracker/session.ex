@@ -287,8 +287,14 @@ defmodule Firmowid.Timetracker.Session do
       accept []
       require_atomic? false
 
-      # The member may have stopped it between the trigger's read and this update.
+      # The member may have stopped it or moved its start between the trigger's
+      # read and this update; the end below is computed from the start read then.
       change filter(expr(is_nil(end_datetime)))
+
+      change fn changeset, _context ->
+        Ash.Changeset.filter(changeset, expr(start_datetime == ^changeset.data.start_datetime))
+      end
+
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
       change NormalizeSessionBoundaries
