@@ -420,6 +420,24 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     |> Phoenix.HTML.raw()
   end
 
+  defp breadcrumb_data(nil, url, base_url) when url == base_url <> "/poradnik" do
+    [
+      %{
+        "@type" => "BreadcrumbList",
+        "@id" => url <> "#breadcrumb",
+        "itemListElement" => [
+          %{
+            "@type" => "ListItem",
+            "position" => 1,
+            "name" => "Firmowid",
+            "item" => base_url <> "/"
+          },
+          %{"@type" => "ListItem", "position" => 2, "name" => gettext("Guides")}
+        ]
+      }
+    ]
+  end
+
   defp breadcrumb_data(nil, _url, _base_url), do: []
 
   defp breadcrumb_data(article, url, base_url) do
