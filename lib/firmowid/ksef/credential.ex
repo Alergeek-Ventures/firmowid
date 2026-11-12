@@ -209,7 +209,6 @@ defmodule Firmowid.Ksef.Credential do
         Ash.Changeset.filter(changeset, updated_at: changeset.data.updated_at)
       end
 
-      # maybe send a email?
       # refresh can fail if KSeF limit of certificates is reached
     end
 

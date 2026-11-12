@@ -211,7 +211,6 @@ defmodule Firmowid.Ksef.SubmissionInfo do
   end
 
   # Oban.Job is not an Ash resource — raw Ecto query is required here.
-  # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
   defp get_latest_submission_jobs(sales_invoice_ids) do
     sales_invoice_ids = Enum.map(sales_invoice_ids, &to_string/1)
 

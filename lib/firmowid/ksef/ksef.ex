@@ -138,7 +138,6 @@ defmodule Firmowid.Ksef do
              {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
           Repo.transact(fn ->
             # Oban.Job is not an Ash resource — raw Ecto query is required here.
-            # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
             Firmowid.Oban.cancel_all_jobs(
               from(j in Oban.Job,
                 where:
