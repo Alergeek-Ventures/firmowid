@@ -184,14 +184,13 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           id="inbox-session-timer"
           phx-hook="Timer"
           data-start_time={DateTime.to_iso8601(@session.start_datetime)}
-          data-format="short"
           class="text-3xl font-semibold text-grey-900 tabular-nums"
         >
-          00:00
+          00:00:00
         </span>
         <p class="truncate text-xs text-grey-500">{session_summary(@session)}</p>
       <% else %>
-        <span class="text-3xl font-semibold text-grey-400 tabular-nums">00:00</span>
+        <span class="text-3xl font-semibold text-grey-400 tabular-nums">00:00:00</span>
         <p :if={@last_session} class="truncate text-xs text-grey-500">
           {gettext("Continue: %{session}", session: session_summary(@last_session))}
         </p>
