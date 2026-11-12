@@ -97,7 +97,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
         process_downloaded_package(package, args, scope, job)
 
       :pending ->
-        handle_pending_poll(job, scope)
+        handle_pending_poll(job)
 
       {:error, :expired} ->
         handle_expired_export(args, scope)
@@ -108,7 +108,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
   end
 
   # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
-  defp handle_pending_poll(job, _scope) do
+  defp handle_pending_poll(job) do
     snooze_count = Map.get(job.meta, "snoozed", 0)
 
     if snooze_count >= @max_snooze_count do
@@ -175,7 +175,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     files =
       package["parts"]
       |> download_and_decrypt_parts!(encryption_key, encryption_iv)
-      |> concatenate_parts()
+      |> IO.iodata_to_binary()
       |> unzip_package!()
 
     metadata =
@@ -249,8 +249,6 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     end)
     |> Enum.to_list()
   end
-
-  defp concatenate_parts(parts), do: IO.iodata_to_binary(parts)
 
   defp unzip_package!(zip_binary) when is_binary(zip_binary) do
     case :zip.unzip(zip_binary, [:memory]) do
@@ -413,11 +411,9 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
          attrs =
            enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata, scope.tenant),
          {:ok, path} <- write_to_temp_file(xml_content, "#{ksef_number}.xml") do
-      blob_opts = [scope: scope]
-
       path
-      |> Blobs.create_blob("application/xml", "#{ksef_number}.xml", blob_opts)
-      |> handle_blob_upload_result(ksef_number, attrs, blob_opts, path)
+      |> Blobs.create_blob("application/xml", "#{ksef_number}.xml", scope: scope)
+      |> handle_blob_upload_result(ksef_number, attrs, scope, path)
     else
       {:error, reason} ->
         {:error, "Failed to create cost invoice from XML: stage=parse error_kind=#{ErrorKind.classify(reason)}"}
@@ -478,25 +474,24 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp handle_blob_upload_result({:ok, blob}, ksef_number, attrs, blob_opts, _path) do
-    create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts)
+  defp handle_blob_upload_result({:ok, blob}, _ksef_number, attrs, _scope, _path) do
+    create_cost_invoice_for_blob(blob, attrs)
   end
 
-  defp handle_blob_upload_result({:error, error}, ksef_number, attrs, blob_opts, path)
+  defp handle_blob_upload_result({:error, error}, ksef_number, attrs, scope, path)
        when is_struct(error, Invalid) or is_struct(error, Ecto.Changeset) do
     if blob_checksum_conflict?(error) do
-      handle_duplicate_blob(ksef_number, attrs, blob_opts, path)
+      handle_duplicate_blob(ksef_number, attrs, scope, path)
     else
       {:error, "Failed to upload cost invoice from XML: stage=upload error_kind=#{ErrorKind.classify(error)}"}
     end
   end
 
-  defp handle_blob_upload_result({:error, reason}, _ksef_number, _attrs, _blob_opts, _path) do
+  defp handle_blob_upload_result({:error, reason}, _ksef_number, _attrs, _scope, _path) do
     {:error, "Failed to upload cost invoice from XML: stage=upload error_kind=#{ErrorKind.classify(reason)}"}
   end
 
-  defp handle_duplicate_blob(ksef_number, attrs, blob_opts, path) do
-    scope = Keyword.fetch!(blob_opts, :scope)
+  defp handle_duplicate_blob(ksef_number, attrs, scope, path) do
     checksum = compute_checksum(path)
 
     case Blobs.find_blob_with_cost_invoice(checksum, scope: scope) do
@@ -511,14 +506,14 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
 
       {:ok, blob, nil} ->
         Logger.info("Found orphan KSeF blob, creating cost invoice")
-        create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts)
+        create_cost_invoice_for_blob(blob, attrs)
 
       {:error, :not_found} ->
         {:error, "Duplicate blob conflict but blob not found by checksum"}
     end
   end
 
-  defp create_cost_invoice_for_blob(blob, _ksef_number, attrs, _blob_opts) do
+  defp create_cost_invoice_for_blob(blob, attrs) do
     Logger.info("Creating cost invoice from KSeF XML")
 
     case attrs |> Map.put(:blob_id, blob.id) |> Invoicing.create_cost_invoice_from_ksef() do
