@@ -132,14 +132,12 @@ defmodule Firmowid.Assistant.Conversation do
       require_atomic? false
       argument :text, :string, allow_nil?: false, constraints: [min_length: 1, max_length: 20_000]
       argument :expected_version, :integer, allow_nil?: false
-      # Check the rendered version before optimistic_lock increments the row version.
       validate compare(:expected_version, is_equal: :version), message: "stale_conversation"
       change transition_state(:running)
       change AppendMessage, only_when_valid?: true
       change set_attribute(:approvals, %{})
       change set_attribute(:error, nil)
       change set_attribute(:run_id, &Ash.UUID.generate/0)
-      change optimistic_lock(:version)
       change run_oban_trigger(:respond)
     end
 
@@ -154,7 +152,6 @@ defmodule Firmowid.Assistant.Conversation do
       change RecordApproval, only_when_valid?: true
       change set_attribute(:error, nil)
       change set_attribute(:run_id, &Ash.UUID.generate/0)
-      change optimistic_lock(:version)
       change run_oban_trigger(:respond)
     end
 
@@ -186,8 +183,6 @@ defmodule Firmowid.Assistant.Conversation do
                )
              end,
              only_when_valid?: true
-
-      change optimistic_lock(:version)
     end
 
     update :await_approval do
@@ -196,7 +191,6 @@ defmodule Firmowid.Assistant.Conversation do
       require_atomic? false
       change transition_state(:awaiting_approval)
       change set_attribute(:approvals, %{})
-      change optimistic_lock(:version)
     end
 
     update :complete do
@@ -205,7 +199,6 @@ defmodule Firmowid.Assistant.Conversation do
       require_atomic? false
       change transition_state(:idle)
       change set_attribute(:approvals, %{})
-      change optimistic_lock(:version)
     end
 
     update :fail do
@@ -234,8 +227,6 @@ defmodule Firmowid.Assistant.Conversation do
                )
              end,
              only_when_valid?: true
-
-      change optimistic_lock(:version)
     end
   end
 
@@ -266,6 +257,12 @@ defmodule Firmowid.Assistant.Conversation do
     transform fn notification -> {:assistant_updated, notification.data.id} end
     publish_all :create, [:id]
     publish_all :update, [:id], except: [:respond]
+  end
+
+  changes do
+    # Every write of the conversation is bound to the version it was made from. The manual
+    # run writes through these actions instead.
+    change optimistic_lock(:version), on: [:update], where: [negate(action_is(:respond))]
   end
 
   multitenancy do
