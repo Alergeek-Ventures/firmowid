@@ -2438,7 +2438,7 @@ msgstr ""
 msgid "Choose an account"
 msgstr ""
 
-#: lib/firmowid/invoicing/validations/invoice_number_required.ex
+#: lib/firmowid/invoicing/sales_invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Choose an invoice number before issuing the invoice."
 msgstr ""
