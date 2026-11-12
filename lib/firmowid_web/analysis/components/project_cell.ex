@@ -52,7 +52,8 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
           {:noreply, socket}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
+          LiveToast.send_toast(:error, gettext("Could not update categories."))
+          {:noreply, socket}
       end
     else
       {:noreply, socket}
