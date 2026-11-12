@@ -457,8 +457,10 @@ defmodule Firmowid.Core.User do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:organization_owner_setup]} do
-      authorize_if action(:set_organization)
+    bypass [
+      {SystemActorRole, roles: [:organization_owner_setup]},
+      action([:read, :set_organization])
+    ] do
       authorize_if expr(id == ^actor(:user_id))
     end
 
