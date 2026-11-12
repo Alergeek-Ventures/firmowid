@@ -33,9 +33,9 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   def parse_layer("ty"), do: :me
   def parse_layer(_value), do: :company
 
-  @doc "Where a member reviews the leave requests of an employee."
+  @doc "Where an admin reviews the leave requests of the employee with `user_id`."
   @spec employee_leaves_path(String.t()) :: String.t()
-  def employee_leaves_path(member_id), do: ~p"/zarzadzanie/pracownicy/#{member_id}/urlopy"
+  def employee_leaves_path(user_id), do: ~p"/zarzadzanie/pracownicy/#{user_id}/urlopy"
 
   @doc "Company details settings."
   @spec company_settings_path() :: String.t()
