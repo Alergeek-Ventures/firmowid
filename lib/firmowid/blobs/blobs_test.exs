@@ -122,6 +122,38 @@ defmodule Firmowid.Blobs.BlobsTest do
       assert {:ok, %Blob{}} = read.(admin)
       assert {:ok, nil} = read.(colleague)
     end
+
+    test "a member uploading a file held by a record they cannot read reuses it", %{user: admin} do
+      org_id = admin.member.organization_id
+      owner = user_in_org_fixture(org_id)
+      colleague_scope = Firmowid.Scope.new!(user_in_org_fixture(org_id), org_id)
+
+      {:ok, path} = Briefly.create()
+      File.write!(path, "the same receipt")
+
+      {:ok, blob} =
+        Blobs.create_blob(path, "text/plain", "receipt.txt", scope: Firmowid.Scope.new!(owner, org_id))
+
+      Repo.insert!(
+        %HoursRecord{
+          id: Ash.UUIDv7.generate(),
+          member_id: owner.member.id,
+          blob_id: blob.id,
+          month: 4,
+          year: 2025,
+          number_of_hours: 160,
+          organization_id: org_id
+        },
+        skip_organization_id: true
+      )
+
+      assert {:ok, nil} = Blobs.get_blob(blob.id, scope: colleague_scope, not_found_error?: false)
+
+      assert {:ok, %Blob{id: reused_id}} =
+               Blobs.create_or_reuse_blob(path, "text/plain", "receipt.txt", scope: colleague_scope)
+
+      assert reused_id == blob.id
+    end
   end
 
   describe "create_or_retry_cost_invoice_blob" do
