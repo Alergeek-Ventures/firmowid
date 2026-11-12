@@ -404,6 +404,19 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
     end
   end
 
+  test "the sales invoice processor runs only the actions of its jobs" do
+    organization_id = admin_fixture().member.organization_id
+    invoice = locked_sales_invoice_fixture(organization_id)
+    actor = %SystemActor{org_id: organization_id, role: :sales_invoice_processor}
+    opts = [tenant: organization_id]
+
+    assert Ash.can?({invoice, :record_ksef_submission}, actor, opts)
+    assert Ash.can?({invoice, :generate_share_token}, actor, opts)
+    refute Ash.can?({invoice, :toggle_skip}, actor, opts)
+    refute Ash.can?({invoice, :update_internal_note}, actor, opts)
+    refute Ash.can?({SalesInvoice, :draft, %{}}, actor, opts)
+  end
+
   describe "persisted KSeF lock" do
     test "rejects updates and item changes from a record read before locking" do
       user = invoicing_admin_fixture()
