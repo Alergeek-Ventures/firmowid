@@ -15,6 +15,7 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.Entry
   alias Firmowid.Analysis.EntryCategory
+  alias Firmowid.Analysis.OwnAccounts
   alias Firmowid.Analysis.Services.ClientProjects
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Analysis.Workers.CategoryWorker
@@ -563,7 +564,7 @@ defmodule Firmowid.Analysis do
   @spec get_organization_entries(Date.t(), Date.t(), Scope.t()) :: map()
   def get_organization_entries(date_from, date_to, scope) do
     analysis_scope = analysis_scope(scope)
-    own_accounts = own_accounts(scope)
+    own_accounts = OwnAccounts.load(scope)
 
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date, merge_corrections: true}
@@ -590,7 +591,7 @@ defmodule Firmowid.Analysis do
     skipped_transactions =
       %{date_from: date_from, date_to: date_to, reconciliation: :skipped}
       |> Finances.list_transactions!(scope: analysis_scope)
-      |> Enum.reject(&own_account_transfer?(&1, own_accounts))
+      |> Enum.reject(&OwnAccounts.transfer?(&1, own_accounts))
 
     salary_transactions =
       %{salary_assigned: true}
@@ -651,94 +652,10 @@ defmodule Firmowid.Analysis do
   defp analysis_relevant_invoice?(%{skip_invoicing: true}, _own_accounts), do: true
 
   defp analysis_relevant_invoice?(%{transactions: transactions}, own_accounts) when is_list(transactions) do
-    Enum.any?(transactions, &(not own_account_transfer?(&1, own_accounts)))
+    Enum.any?(transactions, &(not OwnAccounts.transfer?(&1, own_accounts)))
   end
 
   defp analysis_relevant_invoice?(_, _own_accounts), do: false
-
-  defp own_accounts(scope) do
-    ibans =
-      %{}
-      |> Finances.list_bank_accounts!(scope: scope)
-      |> MapSet.new(&AccountNumber.key(&1.iban))
-      |> MapSet.delete(nil)
-
-    %{ibans: ibans, name: own_name(Core.get_organization!(scope.tenant, scope: scope).name)}
-  end
-
-  # Spellings of the same legal form, as words joined without Polish letters.
-  @legal_form_spellings [
-    ~w(spolkazograniczonaodpowiedzialnoscia spzoo spolkazoo),
-    ~w(spolkakomandytowa spk),
-    ~w(spolkajawna spj),
-    ~w(spolkaakcyjna sa),
-    ~w(spolkakomandytowoakcyjna ska)
-  ]
-
-  # The organization's name split into the words before its legal form and the spellings of
-  # that legal form, for comparing with names banks write on transfers. Without a legal form
-  # at its end, the whole name must match. A name that ends with another legal form ("Acme
-  # Sp. z o.o. Sp. k.") must keep its own, so the general partner does not match.
-  defp own_name(organization_name) do
-    {short_words, legal_form} = split_legal_form(words(organization_name))
-
-    if short_words != [] do
-      %{
-        short_words: short_words,
-        legal_forms: Enum.find(@legal_form_spellings, [legal_form], &(legal_form in &1)),
-        bare?: legal_form == "" or elem(split_legal_form(short_words), 1) == ""
-      }
-    end
-  end
-
-  # The longest legal form at the end of the words, in any of its spellings; all of them for a
-  # name that is only a legal form, which leaves no name to match.
-  defp split_legal_form(words) do
-    Enum.find_value(0..(length(words) - 1)//1, {words, ""}, fn size ->
-      {short_words, legal_form} = Enum.split(words, size)
-      legal_form = Enum.join(legal_form)
-      if Enum.any?(@legal_form_spellings, &(legal_form in &1)), do: {short_words, legal_form}
-    end)
-  end
-
-  # The company's other accounts are not always connected (a VAT account, another bank),
-  # so a transfer to or from the company's own name counts as one between its accounts.
-  defp own_account_transfer?(%Transaction{amount: amount} = transaction, own_accounts) do
-    {account, name} =
-      cond do
-        Money.positive?(amount) -> {transaction.debtor_account, transaction.debtor_name}
-        Money.negative?(amount) -> {transaction.creditor_account, transaction.creditor_name}
-        true -> {nil, nil}
-      end
-
-    MapSet.member?(own_accounts.ibans, AccountNumber.key(account)) or
-      own_name?(name, own_accounts.name)
-  end
-
-  defp own_name?(name, own_name) when is_nil(name) or is_nil(own_name), do: false
-
-  # Banks write the legal form in many ways and cut long names short, even mid-word and
-  # joining lines ("ACME SPÓŁKA ZOGRANICZ"), so the name matches as the organization's name
-  # without a legal form or followed by the start of any spelling of its own legal form.
-  # Another legal form is another company of the same name ("ACME Sp. k." for "ACME Sp. z o.o.").
-  defp own_name?(name, %{short_words: short_words, legal_forms: legal_forms, bare?: bare?}) do
-    words = words(name)
-    rest = Enum.join(Enum.drop(words, length(short_words)))
-
-    List.starts_with?(words, short_words) and (bare? or rest != "") and
-      Enum.any?(legal_forms, &String.starts_with?(&1, rest))
-  end
-
-  # Bank transfers often drop Polish letters ("SPOLKA Z OGRANICZONA"), so words are compared without them.
-  defp words(name) do
-    name
-    |> String.downcase()
-    # "ł" has no decomposition to drop.
-    |> String.replace("ł", "l")
-    |> :unicode.characters_to_nfd_binary()
-    |> String.replace(~r/\p{Mn}/u, "")
-    |> String.split(~r/[^\p{L}\p{N}]+/u, trim: true)
-  end
 
   defp build_entity_id_list(sales_invoices, cost_invoices, transactions) do
     si = Enum.map(sales_invoices, &{:sales_invoice, &1.id})
