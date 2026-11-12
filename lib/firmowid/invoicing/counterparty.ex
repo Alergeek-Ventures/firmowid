@@ -50,10 +50,6 @@ defmodule Firmowid.Invoicing.Counterparty do
     define :read, action: :read
     define :list, action: :list
     define :get, args: [:id], action: :by_id
-    define :create
-    define :update
-    define :archive
-    define :unarchive
     define :destroy
   end
 

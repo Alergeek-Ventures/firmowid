@@ -44,7 +44,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     * `:wait_for_ksef_submissions` — wait for KSeF to accept or reject issued invoices
     * `:get_next_number` — get next available invoice number for date/format/series
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
-    * `:list_series` — list distinct invoice number series
 
   ## Public functions
 
@@ -165,20 +164,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
     # Writes
     define :draft, action: :draft
-    define :issue, action: :issue
     define :correct, action: :correct
     define :import_from_ksef, action: :import_from_ksef
     define :revise, action: :revise
-    define :finalize, action: :finalize
     define :return_to_draft, action: :return_to_draft
-    define :preview_invoice, action: :preview_invoice
     define :wait_for_ksef_submissions, args: [:invoice_ids]
-    define :preview_correction, action: :preview_correction
-
-    define :attach_suggested_counterparty,
-      args: [:counterparty_id],
-      action: :attach_suggested_counterparty
-
     define :destroy, action: :destroy
     define :cancel, args: [:invoice_id], action: :cancel
     define :toggle_skip, action: :toggle_skip
@@ -195,7 +185,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     # Invoice numbering
     define :get_next_number, args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
     define :validate_number, args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
-    define :list_series, args: []
 
     define :dispatch_overdue_sales_invoice_reminders,
       action: :dispatch_overdue_sales_invoice_reminders
@@ -1131,28 +1120,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
           end
 
         {:ok, Enum.reverse(warnings)}
-      end
-    end
-
-    action :list_series, {:array, :string} do
-      description "List all detected invoice number series visible in the current scope."
-
-      run fn _input, context ->
-        opts = Ash.Context.to_opts(context)
-
-        result =
-          opts
-          |> read_all_invoice_numbers()
-          |> Enum.map(&parse_invoice_number/1)
-          |> Enum.filter(&match?({:ok, _}, &1))
-          |> Enum.map(fn {:ok, %{series: s}} -> s end)
-          |> Enum.uniq()
-          |> Enum.sort_by(fn
-            nil -> ""
-            s -> s
-          end)
-
-        {:ok, result}
       end
     end
 

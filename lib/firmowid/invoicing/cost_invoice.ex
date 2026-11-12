@@ -137,15 +137,11 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
   code_interface do
     define :by_id, args: [:id], action: :by_id
-    define :get, args: [:id], action: :by_id
-    define :read, action: :read
     define :list, action: :list
     define :read_global, action: :read_global
-    define :read_missing_description, action: :read_missing_description
     define :by_checksum, args: [:blob_checksum]
     define :create, action: :create
     define :create_from_ksef, action: :create_from_ksef
-    define :toggle_skip, action: :toggle_skip
     define :update_internal_note, args: [:internal_note], action: :update_internal_note
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
     define :refresh_seller_display_name, action: :refresh_seller_display_name
@@ -356,15 +352,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
       description "Unscoped read for AshOban schedulers — reads across all organizations."
       multitenancy :allow_global
       pagination keyset?: true
-    end
-
-    read :read_missing_description do
-      description "Scoped scheduler read for cost invoices missing generated descriptions."
-
-      pagination do
-        required? false
-        keyset? true
-      end
     end
 
     # -- Write actions --------------------------------------------------------
