@@ -117,12 +117,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         socket
       end
 
-    connected_bank_accounts =
-      [scope: socket.assigns.ash_scope]
-      |> Finances.list_requisitions!()
-      |> Enum.count(&(&1.status == :accepted))
-
-    socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
     socket = assign(socket, :projects_column, nil)
 
     active_months =
@@ -132,9 +126,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket = assign(socket, :active_months, active_months)
 
     skipped_ksef_sales_invoices =
-      if can_view_invoicing?(user),
-        do: Invoicing.list_skipped_ksef_sales_invoices!(scope: socket.assigns.ash_scope),
-        else: []
+      Invoicing.list_skipped_ksef_sales_invoices!(scope: socket.assigns.ash_scope)
 
     socket = assign(socket, :skipped_ksef_sales_invoices, skipped_ksef_sales_invoices)
 
@@ -299,10 +291,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       is_month_closed={@is_month_closed}
       is_month_touched={@is_month_touched}
     />
-    <div
-      :if={can_view_invoicing?(@current_user)}
-      class="relative mt-2 flex flex-col gap-4"
-    >
+    <div class="relative mt-2 flex flex-col gap-4">
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
           <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
@@ -384,8 +373,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_event("skipped-ksef-sales-invoices-viewed", _params, socket) do
-    if can_view_invoicing?(socket.assigns.current_user) and
-         socket.assigns.skipped_ksef_sales_invoices != [] do
+    if socket.assigns.skipped_ksef_sales_invoices != [] do
       PosthogBusinessEvents.capture(socket, :ksef_skipped_sales_invoices_banner_viewed, %{
         skipped_invoice_count: length(socket.assigns.skipped_ksef_sales_invoices)
       })
@@ -1034,44 +1022,32 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @dashboard_tile_limit 5
 
   defp fetch_dashboard_data(socket) do
-    if can_view_invoicing?(socket.assigns.current_user) do
-      month = socket.assigns.params.month
-      scope = socket.assigns.ash_scope
-      date_range_from = Date.beginning_of_month(month)
-      date_range_to = Date.end_of_month(month)
+    month = socket.assigns.params.month
+    scope = socket.assigns.ash_scope
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
 
-      unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
-      unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
-      matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-      # With the inbox sidebar, bank accounts have their own settings page.
-      bank_accounts_path =
-        if flag_enabled?(:inbox, socket.assigns),
-          do: ~p"/ustawienia/konta-bankowe",
-          else: ~p"/ustawienia/firma"
+    unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
+    unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
+    matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
+    # With the inbox sidebar, bank accounts have their own settings page.
+    bank_accounts_path =
+      if flag_enabled?(:inbox, socket.assigns),
+        do: ~p"/ustawienia/konta-bankowe",
+        else: ~p"/ustawienia/firma"
 
-      suggestions =
-        fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, bank_accounts_path)
+    suggestions =
+      fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, bank_accounts_path)
 
-      socket
-      |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
-      |> assign(:dashboard_unpaid_invoices_count, unpaid_invoices.total_count)
-      |> assign(:dashboard_unmatched_transactions, unmatched_transactions.entries)
-      |> assign(:dashboard_unmatched_transactions_count, unmatched_transactions.total_count)
-      |> assign(:dashboard_matched_entries, matched_entries.entries)
-      |> assign(:dashboard_matched_entries_count, matched_entries.total_count)
-      |> assign(:dashboard_suggestions, suggestions.entries)
-      |> assign(:dashboard_suggestions_count, suggestions.total_count)
-    else
-      socket
-      |> assign(:dashboard_unpaid_invoices, [])
-      |> assign(:dashboard_unpaid_invoices_count, 0)
-      |> assign(:dashboard_unmatched_transactions, [])
-      |> assign(:dashboard_unmatched_transactions_count, 0)
-      |> assign(:dashboard_matched_entries, [])
-      |> assign(:dashboard_matched_entries_count, 0)
-      |> assign(:dashboard_suggestions, [])
-      |> assign(:dashboard_suggestions_count, 0)
-    end
+    socket
+    |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
+    |> assign(:dashboard_unpaid_invoices_count, unpaid_invoices.total_count)
+    |> assign(:dashboard_unmatched_transactions, unmatched_transactions.entries)
+    |> assign(:dashboard_unmatched_transactions_count, unmatched_transactions.total_count)
+    |> assign(:dashboard_matched_entries, matched_entries.entries)
+    |> assign(:dashboard_matched_entries_count, matched_entries.total_count)
+    |> assign(:dashboard_suggestions, suggestions.entries)
+    |> assign(:dashboard_suggestions_count, suggestions.total_count)
   end
 
   defp fetch_unpaid_invoices(from, to, scope) do
@@ -1183,10 +1159,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     suggestions = []
 
     # Check bank connection
-    has_bank =
-      [scope: scope]
-      |> Finances.list_requisitions!()
-      |> Enum.any?(&(&1.status == :accepted))
+    has_bank = Finances.list_requisitions!(%{status: :accepted}, scope: scope) != []
 
     # Only an admin can connect a bank.
     suggestions =
