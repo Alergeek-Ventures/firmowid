@@ -6,11 +6,11 @@ updated: 2026-11-11
 category: ksef-w-praktyce
 ---
 
-Krajowy System e-Faktur działał jako rozwiązanie dobrowolne od 2022 r., a obowiązkowy stał się 1 lutego 2026 r., kiedy faktury zaczęli w nim wystawiać najwięksi podatnicy, ze sprzedażą powyżej 200 mln zł brutto w 2024 r., a odbierać wszystkie firmy. Pozostałe przedsiębiorstwa dołączyły 1 kwietnia 2026 r., a najmniejsze, których faktury objęte obowiązkiem nie przekraczają [10 000 zł brutto miesięcznie](/poradnik/limit-10000-ksef), korzystają z wyjątku do końca 2026 r. Przyjmuje on faktury ustrukturyzowane, czyli pliki XML zgodne ze wzorem Ministerstwa Finansów, a za wystawioną uważa się fakturę dopiero po nadaniu jej numeru KSeF, więc sam komunikat o wysłaniu jeszcze o niczym nie przesądza.
+Krajowy System e-Faktur działał jako rozwiązanie dobrowolne od 2022 r., a obowiązkowy stał się 1 lutego 2026 r., kiedy faktury zaczęli w nim wystawiać najwięksi podatnicy, ze sprzedażą powyżej 200 mln zł brutto w 2024 r., a odbierać wszystkie firmy. Pozostałe przedsiębiorstwa dołączyły 1 kwietnia 2026 r., a najmniejsze, których faktury objęte obowiązkiem nie przekraczają [10 000 zł brutto miesięcznie](/poradnik/limit-10000-ksef), korzystają z wyjątku do końca 2026 r., chyba że limit przekroczą, bo wtedy od faktury, która go przekroczyła, wystawiają już wszystkie w systemie. Przyjmuje on faktury ustrukturyzowane, czyli pliki XML zgodne ze wzorem Ministerstwa Finansów, a za wystawioną uważa się fakturę dopiero po nadaniu jej numeru KSeF, więc sam komunikat o wysłaniu jeszcze o niczym nie przesądza.
 
 ## E-faktura a PDF
 
-Plik PDF pełni przy e-fakturze funkcję wizualizacji, czyli czytelnej wersji danych, na której umieszcza się kod QR z numerem KSeF, ale fakturą ustrukturyzowaną nie jest. Odbiorca, który ma dostęp do KSeF, widzi dokument od chwili nadania numeru i nie musi go akceptować, a ministerstwo przechowuje faktury w systemie przez 10 lat. Danych kontrahenta system nie weryfikuje, dlatego faktura z pomylonym NIP nabywcy zostaje przyjęta i poprawia się ją [korektą](/poradnik/korekta-faktury-ksef).
+Plik PDF pełni przy e-fakturze funkcję wizualizacji, czyli czytelnej wersji danych, na której umieszcza się kod QR z numerem KSeF, ale fakturą ustrukturyzowaną nie jest. Odbiorca, który ma dostęp do KSeF, widzi dokument od chwili nadania numeru i nie musi go akceptować, a ministerstwo przechowuje faktury w systemie przez 10 lat. Danych kontrahenta system nie weryfikuje, dlatego faktura z pomylonym NIP nabywcy zostaje przyjęta, a poprawia się ją [korektą do zera](/poradnik/korekta-faktury-ksef) i nową fakturą z właściwym NIP.
 
 ## Co zmienia się 1 stycznia 2027 r.
 
