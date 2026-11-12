@@ -5,14 +5,14 @@ defmodule Firmowid.Timetracker.Session.Calculations.Duration do
   """
   use Ash.Resource.Calculation
 
-  alias Firmowid.Timetracker.Workers.StopSessionWorker
+  alias Firmowid.Timetracker.Changes.ClampSessionBoundaries
 
   @doc """
   Builds the duration expression used for loading, filtering, and sorting.
   """
   @spec expression(keyword(), Ash.Resource.Calculation.Context.t()) :: any()
   def expression(_opts, _context) do
-    max_running_seconds = StopSessionWorker.max_running_seconds()
+    max_running_seconds = ClampSessionBoundaries.max_running_seconds()
 
     expr(
       if is_nil(end_datetime) do

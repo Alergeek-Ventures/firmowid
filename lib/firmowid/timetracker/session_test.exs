@@ -10,7 +10,6 @@ defmodule Firmowid.Timetracker.SessionTest do
   alias Firmowid.Scope
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
-  alias Firmowid.Timetracker.Workers.StopSessionWorker
 
   setup do
     user = user_fixture()
@@ -119,24 +118,21 @@ defmodule Firmowid.Timetracker.SessionTest do
       project: project,
       scope: scope
     } do
-      # Inline Oban would run the auto-stop as soon as the session starts.
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        {:ok, session} =
-          Session.start(
-            %{
-              title: "Running",
-              project_id: project.id
-            },
-            scope: scope
-          )
+      {:ok, session} =
+        Session.start(
+          %{
+            title: "Running",
+            project_id: project.id
+          },
+          scope: scope
+        )
 
-        assert is_nil(session.end_datetime)
+      assert is_nil(session.end_datetime)
 
-        {:ok, stopped} = Session.stop(session, scope: scope)
+      {:ok, stopped} = Session.stop(session, scope: scope)
 
-        assert stopped.start_datetime.second == 0
-        assert stopped.end_datetime.second == 0
-      end)
+      assert stopped.start_datetime.second == 0
+      assert stopped.end_datetime.second == 0
     end
 
     test "leaves a session that has already ended untouched", %{
@@ -594,51 +590,32 @@ defmodule Firmowid.Timetracker.SessionTest do
     end
   end
 
-  describe "auto-stop worker" do
-    test "cancels pending auto-stop when session is stopped", %{project: project, scope: scope} do
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        {:ok, session} =
-          Session.start(%{title: "Running", project_id: project.id}, scope: scope)
-
-        assert_enqueued(worker: StopSessionWorker)
-
-        {:ok, _stopped} = Session.stop(session, scope: scope)
-
-        refute_enqueued(worker: StopSessionWorker)
-      end)
-    end
-
+  describe "auto-stop trigger" do
     test "caps a still-running session at start + 12 hours", %{
       user: user,
       project: project,
       scope: scope
     } do
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        start_datetime = ~U[2026-03-10 08:00:00Z]
+      start_datetime = ~U[2026-03-10 08:00:00Z]
 
-        {:ok, session} =
-          Session.create(
-            %{
-              title: "Running",
-              project_id: project.id,
-              member_id: user.member.id,
-              start_datetime: start_datetime
-            },
-            scope: scope
-          )
+      {:ok, session} =
+        Session.create(
+          %{
+            title: "Running",
+            project_id: project.id,
+            member_id: user.member.id,
+            start_datetime: start_datetime
+          },
+          scope: scope
+        )
 
-        assert is_nil(session.end_datetime)
+      assert is_nil(session.end_datetime)
 
-        assert :ok =
-                 perform_job(StopSessionWorker, %{
-                   "session_id" => session.id,
-                   "organization_id" => session.organization_id
-                 })
+      AshOban.schedule_and_run_triggers({Session, :auto_stop})
 
-        updated = Ash.reload!(session, scope: scope)
+      updated = Ash.reload!(session, scope: scope)
 
-        assert updated.end_datetime == DateTime.shift(start_datetime, hour: 12)
-      end)
+      assert updated.end_datetime == DateTime.shift(start_datetime, hour: 12)
     end
 
     test "clamps the cap to the end of the start month", %{
@@ -646,46 +623,34 @@ defmodule Firmowid.Timetracker.SessionTest do
       project: project,
       scope: scope
     } do
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        {:ok, session} =
-          Session.create(
-            %{
-              title: "Running",
-              project_id: project.id,
-              member_id: user.member.id,
-              start_datetime: ~U[2026-08-31 20:00:00Z]
-            },
-            scope: scope
-          )
+      {:ok, session} =
+        Session.create(
+          %{
+            title: "Running",
+            project_id: project.id,
+            member_id: user.member.id,
+            start_datetime: ~U[2026-08-31 20:00:00Z]
+          },
+          scope: scope
+        )
 
-        assert :ok =
-                 perform_job(StopSessionWorker, %{
-                   "session_id" => session.id,
-                   "organization_id" => session.organization_id
-                 })
+      AshOban.schedule_and_run_triggers({Session, :auto_stop})
 
-        updated = Ash.reload!(session, scope: scope)
+      updated = Ash.reload!(session, scope: scope)
 
-        assert updated.end_datetime == ~U[2026-08-31 23:59:00Z]
-      end)
+      assert updated.end_datetime == ~U[2026-08-31 23:59:00Z]
     end
 
     test "no-ops when session is already stopped", %{project: project, scope: scope} do
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        {:ok, session} =
-          Session.start(%{title: "Running", project_id: project.id}, scope: scope)
+      {:ok, session} =
+        Session.start(%{title: "Running", project_id: project.id}, scope: scope)
 
-        {:ok, stopped} = Session.stop(session, scope: scope)
+      {:ok, stopped} = Session.stop(session, scope: scope)
 
-        assert :ok =
-                 perform_job(StopSessionWorker, %{
-                   "session_id" => stopped.id,
-                   "organization_id" => stopped.organization_id
-                 })
+      AshOban.schedule_and_run_triggers({Session, :auto_stop})
 
-        reloaded = Ash.reload!(stopped, scope: scope)
-        assert reloaded.end_datetime == stopped.end_datetime
-      end)
+      reloaded = Ash.reload!(stopped, scope: scope)
+      assert reloaded.end_datetime == stopped.end_datetime
     end
   end
 
