@@ -108,6 +108,75 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     assert invoice.blob_id
   end
 
+  test "keeps the export key out of the queued poll job in plain text and imports with it", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    ksef_private_key = X509.PrivateKey.new_rsa(2048)
+    ksef_certificate = X509.Certificate.self_signed(ksef_private_key, "/CN=KSeF Encryption")
+    Cachex.put(:ksef, {:public_key, "SymmetricKeyEncryption"}, ksef_certificate)
+    on_exit(fn -> Cachex.del(:ksef, {:public_key, "SymmetricKeyEncryption"}) end)
+    test_pid = self()
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      send(test_pid, {:export_encryption, Jason.decode!(body)["encryption"]})
+      Req.Test.json(Plug.Conn.put_status(conn, 201), %{"referenceNumber" => "export-ref-sealed"})
+    end)
+
+    [poll_job] =
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, _job} =
+                 perform_job(FetchWorker, %{
+                   "action" => "initiate_export",
+                   "organization_id" => organization_id,
+                   "date_from" => "2026-03-01T00:00:00Z"
+                 })
+
+        all_enqueued(worker: FetchWorker)
+      end)
+
+    assert_received {:export_encryption, %{"encryptedSymmetricKey" => sent_key, "initializationVector" => iv}}
+
+    key =
+      sent_key
+      |> Base.decode64!()
+      |> :public_key.decrypt_private(ksef_private_key,
+        rsa_padding: :rsa_pkcs1_oaep_padding,
+        rsa_mgf1_md: :sha256,
+        rsa_oaep_md: :sha256
+      )
+
+    refute Jason.encode!(poll_job.args) =~ Base.encode64(key)
+
+    ksef_number = "KSEF-SEALED-#{System.unique_integer([:positive])}"
+    xml = invoice_xml(invoice_identifier: "FETCH/2026/SEALED", total_amount: "100.00")
+
+    {zip_binary, encrypted_package} =
+      build_encrypted_package(
+        [%{ksef_number: ksef_number, xml: xml, permanent_storage_date: "2026-03-06T12:34:56Z"}],
+        %{key: key, iv: Base.decode64!(iv)}
+      )
+
+    part = package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/sealed")
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case conn.request_path do
+        "/invoices/exports/export-ref-sealed" ->
+          Req.Test.json(conn, %{
+            "status" => %{"code" => 200},
+            "package" => %{"parts" => [part], "isTruncated" => false}
+          })
+
+        "/downloads/sealed" ->
+          Plug.Conn.send_resp(conn, 200, encrypted_package)
+      end
+    end)
+
+    assert :ok = perform_job(FetchWorker, poll_job.args)
+    assert [_invoice] = cost_invoices_by_ksef_number([ksef_number], scope)
+  end
+
   # A settlement invoice (ROZ) shows the amount left after advance invoices; it is
   # negative when the advances exceed the total, so the seller owes a refund.
   test "imports a settlement invoice whose advances exceed its total as a refund", %{
