@@ -5,12 +5,13 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Fallback do
   """
   use FirmowidWeb, :controller
 
+  alias FirmowidWeb.Infrastructure.Components.ErrorHtml
   alias FirmowidWeb.Infrastructure.Components.ErrorJson
 
   def call(conn, {:error, :unauthorized}) do
     conn
     |> put_status(:unauthorized)
-    |> put_view(ErrorJson)
-    |> render(:"401")
+    |> put_view(html: ErrorHtml, json: ErrorJson)
+    |> render(:"401", layout: false)
   end
 end
