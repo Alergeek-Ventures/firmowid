@@ -1277,22 +1277,16 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     module FirmowidWeb.Core.Endpoint
     prefix "sales_invoice"
 
-    publish :draft, ["created", :_tenant]
-    publish :issue, ["created", :_tenant]
-    publish :correct, ["created", :_tenant]
-    publish :import_from_ksef, ["created", :_tenant]
-    publish :revise, ["updated", :_tenant]
-    publish :finalize, ["updated", :_tenant]
-    publish :return_to_draft, ["updated", :_tenant]
-    publish :destroy, ["destroyed", :_tenant]
-    publish :toggle_skip, ["updated", :_tenant]
-    publish :update_internal_note, ["updated", :_tenant]
-    publish :generate_share_token, ["updated", :_tenant]
-    publish :attach_suggested_counterparty, ["updated", :_tenant]
-    publish :link_counterparty, ["updated", :_tenant]
-    publish :connect_transactions, ["updated", :_tenant]
-    publish :disconnect_transactions, ["updated", :_tenant]
-    publish :disconnect_all_transactions, ["updated", :_tenant]
+    publish_all :create, ["created", :_tenant]
+    publish_all :destroy, ["destroyed", :_tenant]
+    publish_all :update, ["updated", :_tenant],
+      except: [
+        :denormalize_item_names,
+        :start_ksef_submission,
+        :record_ksef_submission,
+        :confirm_in_ksef,
+        :withdraw_ksef_submission
+      ]
   end
 
   changes do

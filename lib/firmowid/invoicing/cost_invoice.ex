@@ -656,14 +656,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
     prefix "cost_invoice"
 
     publish :create, ["created", :_tenant]
-    publish :toggle_skip, ["updated", :_tenant]
-    publish :update_blob_id, ["updated", :_tenant]
-    publish :update_internal_note, ["updated", :_tenant]
-    publish :refresh_seller_display_name, ["updated", :_tenant]
-    publish :refresh_description, ["updated", :_tenant]
-    publish :connect_transactions, ["updated", :_tenant]
-    publish :disconnect_transactions, ["updated", :_tenant]
-    publish :disconnect_all_transactions, ["updated", :_tenant]
+    publish_all :update, ["updated", :_tenant]
   end
 
   multitenancy do
