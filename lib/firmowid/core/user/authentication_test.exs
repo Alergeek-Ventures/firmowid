@@ -70,7 +70,7 @@ defmodule Firmowid.Core.User.AuthenticationTest do
       assert confirmed.confirmed_at
     end
 
-    test "an email change of a confirmed account is confirmed by the token alone", %{
+    test "the emailed token alone does not confirm an email change; its signed-in holder does", %{
       confirm_strategy: strategy
     } do
       user = Ash.Seed.update!(user_fixture(), %{confirmed_at: DateTime.utc_now()})
@@ -80,7 +80,14 @@ defmodule Firmowid.Core.User.AuthenticationTest do
       Core.change_email!(user, %{email: new_email, current_password: valid_user_password()}, actor: user)
 
       params = %{"confirm" => extract_token_from_email!("/potwierdz-email/")}
-      assert {:ok, confirmed} = Strategy.action(strategy, :confirm, params, [])
+
+      for actor <- [nil, user_fixture()] do
+        assert {:error, %Forbidden{errors: [%UnconfirmedUser{}]}} =
+                 Strategy.action(strategy, :confirm, params, actor: actor)
+      end
+
+      assert to_string(User.get!(user.id, actor: user).email) == to_string(user.email)
+      assert {:ok, confirmed} = Strategy.action(strategy, :confirm, params, actor: user)
       assert to_string(confirmed.email) == new_email
     end
 

@@ -7042,7 +7042,7 @@ msgstr ""
 
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
-msgid "Log in to confirm your account."
+msgid "Log in to confirm your email address."
 msgstr ""
 
 #: lib/firmowid_web/auth/views/login.ex

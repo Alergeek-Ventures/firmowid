@@ -230,28 +230,25 @@ defmodule Firmowid.Core.User do
 
       change AshAuthentication.AddOn.Confirmation.ConfirmChange
 
-      # The link proves the mailbox, not the password: anyone can register a password
-      # account for an address they do not own. So its first confirmation, unlike a
-      # change of its address, needs the password holder signed in to it. Requesting
-      # an address change clears confirmed_at too, so this runs after ConfirmChange has
-      # applied the token and tells the two apart by the changing address.
+      # The link proves the mailbox, not who holds the account: anyone can register an
+      # account for an address they do not own, or point their own account at it. If
+      # the owner of the mailbox then clicked the link, the account would carry their
+      # address and the other person's credentials. So a confirmation counts only from
+      # the account's holder, signed in to it.
       change before_action(fn changeset, context ->
-               %{id: id, confirmed_at: confirmed_at, hashed_password: hashed_password} =
-                 changeset.data
+               %{id: id} = changeset.data
 
-               if is_nil(confirmed_at) and is_binary(hashed_password) and
-                    not Ash.Changeset.changing_attribute?(changeset, :email) and
-                    not match?(%{__struct__: __MODULE__, id: ^id}, context.actor),
-                  do:
-                    Ash.Changeset.add_error(
-                      changeset,
-                      AshAuthentication.Errors.UnconfirmedUser.exception(
-                        resource: __MODULE__,
-                        field: :confirm,
-                        confirmation_field: :confirmed_at
-                      )
-                    ),
-                  else: changeset
+               if match?(%{__struct__: __MODULE__, id: ^id}, context.actor),
+                 do: changeset,
+                 else:
+                   Ash.Changeset.add_error(
+                     changeset,
+                     AshAuthentication.Errors.UnconfirmedUser.exception(
+                       resource: __MODULE__,
+                       field: :confirm,
+                       confirmation_field: :confirmed_at
+                     )
+                   )
              end)
 
       change AshAuthentication.GenerateTokenChange
