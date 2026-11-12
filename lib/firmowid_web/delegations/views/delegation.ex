@@ -186,8 +186,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       {:noreply,
        socket |> assign(:statement_expense_id, expense_id) |> push_event("preserve-statement-upload-scroll", %{})}
 
-  def handle_event("delete", %{"kind" => kind, "id" => id}, socket) do
-    result = destroy_expense(kind, id, socket.assigns.ash_scope)
+  def handle_event("delete", %{"id" => id}, socket) do
+    result = destroy_expense(id, socket.assigns.ash_scope)
 
     {:noreply,
      if(result == :ok,
@@ -198,7 +198,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("remove-related-document", %{"expense-id" => expense_id, "blob-id" => blob_id}, socket) do
     result =
-      with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope),
+      with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope),
            {:ok, _expense} <-
              Delegations.remove_related_document(expense, %{blob_id: blob_id}, scope: socket.assigns.ash_scope) do
         :ok
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("remove-statement-document", %{"expense-id" => expense_id}, socket) do
     result =
-      with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope) do
+      with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope) do
         Delegations.remove_statement_document(expense, scope: socket.assigns.ash_scope)
       end
 
@@ -652,7 +652,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp consume_related_document(socket, entry, expense_id) when is_binary(expense_id) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       {:ok,
-       with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope) do
+       with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope) do
          Delegations.add_related_document(
            expense,
            %{
@@ -673,7 +673,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp consume_statement_document(socket, entry, expense_id) when is_binary(expense_id) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       {:ok,
-       with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope) do
+       with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope) do
          Delegations.add_statement_document(
            expense,
            %{
@@ -734,14 +734,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp type_name(kind), do: Atom.to_string(kind)
 
-  defp destroy_expense(kind, id, scope) do
-    with {:ok, expense} <- get_expense(kind, id, scope) do
-      _ = kind
+  defp destroy_expense(id, scope) do
+    with {:ok, expense} <- get_expense(id, scope) do
       Delegations.destroy_expense(expense, scope: scope)
     end
   end
 
-  defp get_expense(_kind, id, scope), do: Delegations.get_expense(id, scope: scope, not_found_error?: false)
+  defp get_expense(id, scope), do: Delegations.get_expense(id, scope: scope, not_found_error?: false)
 
   defp assign_complete_form(socket, form) do
     %{expense_forms: expense_forms, trip_forms: trip_forms} = SettlementForm.nested_forms(form)
