@@ -89,7 +89,8 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
         id == params["entity_id"] and Atom.to_string(type) == params["entity_type"]
       end)
 
-    if flag_enabled?(:analysis_dashboard, socket.assigns) and entry != nil and editable?(entry) do
+    if flag_enabled?(:analysis_dashboard, socket.assigns) and entry != nil and
+         CategorySelector.editable?(entry) do
       case EntryCategoryChanges.change(
              event,
              params,
@@ -163,11 +164,4 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   defp entry_date(%Transaction{booking_date: date}), do: date
   defp entry_date(invoice), do: invoice.effective_sale_date
-
-  defp editable?(%Transaction{} = transaction) do
-    is_nil(transaction.salary_user_id) and transaction.cost_invoices == [] and
-      transaction.sales_invoices == []
-  end
-
-  defp editable?(invoice), do: invoice.skip_invoicing or invoice.transactions != []
 end

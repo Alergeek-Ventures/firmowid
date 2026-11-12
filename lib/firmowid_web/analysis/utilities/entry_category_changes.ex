@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Analysis.Utilities.EntryCategoryChanges do
   toggling one of the given projects.
   """
 
+  alias Firmowid.Analysis
   alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Finances.Transaction
@@ -58,7 +59,5 @@ defmodule FirmowidWeb.Analysis.Utilities.EntryCategoryChanges do
 
   @doc "Identifies the entry for entity tag actions."
   @spec entity_arguments(entry()) :: %{entity_type: atom(), resource_id: String.t()}
-  def entity_arguments(%SalesInvoice{id: id}), do: %{entity_type: :sales_invoice, resource_id: id}
-  def entity_arguments(%CostInvoice{id: id}), do: %{entity_type: :cost_invoice, resource_id: id}
-  def entity_arguments(%Transaction{id: id}), do: %{entity_type: :transaction, resource_id: id}
+  def entity_arguments(entry), do: %{entity_type: Analysis.entity_type(entry), resource_id: entry.id}
 end
