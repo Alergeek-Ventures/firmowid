@@ -3,8 +3,7 @@ defmodule Firmowid.ParadeDBFieldName do
   Postgrex extension for ParadeDB's `fieldname` type.
 
   Handles encoding/decoding of field name references used by ParadeDB
-  search indexes. Ported from `paradex` to allow dropping that dependency
-  in favour of plain SQL fragments with v2 operators.
+  search indexes.
   """
   @behaviour Postgrex.Extension
 
