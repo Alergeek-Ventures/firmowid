@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
 
   attr :employee, :map, required: true
@@ -22,7 +23,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
             Polecenie wyjazdu służbowego nr <strong>{@delegation.reference}</strong>
           </h1>
           <p class="mt-1">
-            z dnia <strong>{DelegationPresentation.format_date(@delegation.command_date)}</strong>
+            z dnia <strong>{TimeFormatter.format_date(@delegation.command_date)}</strong>
           </p>
         </div>
       </header>

@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPdf do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
 
@@ -297,7 +298,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPdf do
   defp position(contract), do: contract.position || "—"
   defp format_datetime_date(nil), do: "—"
 
-  defp format_datetime_date(datetime), do: datetime |> DateTime.to_date() |> DelegationPresentation.format_date()
+  defp format_datetime_date(datetime), do: datetime |> DateTime.to_date() |> TimeFormatter.format_date()
 
   defp billing_month(date) do
     month =

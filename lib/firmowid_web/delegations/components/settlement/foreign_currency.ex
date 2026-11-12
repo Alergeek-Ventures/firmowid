@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
+  alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.Rendered
 
@@ -172,7 +173,9 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       <% else %>
         <div>
           <.label class="mb-2">
-            {gettext("Rate | %{date}", date: format_date(@nbp_settlement && @nbp_settlement.date))}
+            {gettext("Rate | %{date}",
+              date: SettlementPresentation.format_date(@nbp_settlement && @nbp_settlement.date)
+            )}
           </.label>
           <div class="rounded-lg border border-grey-200 bg-transparent px-3 py-1.5 text-base/tight text-grey-700">
             {format_rate(@currency, @nbp_settlement, "PLN")}
@@ -265,8 +268,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
 
   defp mode_label(:statement), do: gettext("I have the amount from the statement")
   defp mode_label(:nbp), do: gettext("Convert at the NBP rate")
-  defp format_date(nil), do: "—"
-  defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
   defp format_rate(_source, nil, _target), do: gettext("Could not fetch the rate")
 
   defp format_rate(source, %{rate: rate}, target),
