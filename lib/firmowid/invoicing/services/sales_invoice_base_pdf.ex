@@ -14,12 +14,11 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceBasePdf do
   Generates the base sales-invoice PDF.
   """
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%SalesInvoice{} = invoice, opts \\ []) do
+  def generate(%SalesInvoice{} = invoice, opts) do
     alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
 
     show_vat = Keyword.get(opts, :show_vat, true)
-    ash_scope = Keyword.get(opts, :scope)
-    ash_opts = ash_opts(invoice, ash_scope)
+    ash_opts = [scope: Keyword.fetch!(opts, :scope)]
     logo_url = Keyword.get(opts, :logo_url)
 
     logo_data_uri = PdfHelpers.url_to_data_uri(logo_url)
@@ -147,7 +146,4 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceBasePdf do
 
   defp loaded?(%Ash.NotLoaded{}), do: false
   defp loaded?(_value), do: true
-
-  defp ash_opts(invoice, nil), do: [tenant: invoice.organization_id]
-  defp ash_opts(_invoice, scope), do: [scope: scope]
 end

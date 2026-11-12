@@ -18,9 +18,12 @@ defmodule Firmowid.Invoicing.Services.SalesInvoicePdf do
   Generates a sales-invoice PDF with optional augmentations.
   """
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%SalesInvoice{} = invoice, opts \\ []) do
+  def generate(%SalesInvoice{} = invoice, opts) do
     include_internal_note = Keyword.get(opts, :include_internal_note, false)
-    invoice = maybe_load_internal_note(invoice, opts, include_internal_note)
+
+    invoice =
+      maybe_load_internal_note(invoice, Keyword.fetch!(opts, :scope), include_internal_note)
+
     internal_note = if include_internal_note, do: invoice.internal_note
 
     with {:ok, base_pdf} <- SalesInvoiceBasePdf.generate(invoice, opts),
@@ -38,12 +41,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoicePdf do
     end
   end
 
-  defp maybe_load_internal_note(invoice, _opts, false), do: invoice
+  defp maybe_load_internal_note(invoice, _scope, false), do: invoice
 
-  defp maybe_load_internal_note(invoice, opts, true) do
-    case Keyword.get(opts, :scope) do
-      nil -> Ash.load!(invoice, [:internal_note], tenant: invoice.organization_id)
-      scope -> Ash.load!(invoice, [:internal_note], scope: scope)
-    end
-  end
+  defp maybe_load_internal_note(invoice, scope, true), do: Ash.load!(invoice, [:internal_note], scope: scope)
 end

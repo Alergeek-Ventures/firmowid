@@ -1,6 +1,7 @@
 defmodule Firmowid.Invoicing.Services.Pdf do
   @moduledoc """
-  Backwards-compatible wrapper for sales invoice PDF generation.
+  The sales invoice PDF attached to invoice emails. Tests of the email flow
+  configure an `:adapter` here instead of rendering through Gotenberg.
   """
 
   alias Firmowid.Invoicing.SalesInvoice
@@ -10,7 +11,7 @@ defmodule Firmowid.Invoicing.Services.Pdf do
   Delegates to the configured PDF adapter (defaults to `SalesInvoicePdf`).
   """
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%SalesInvoice{} = invoice, opts \\ []) do
+  def generate(%SalesInvoice{} = invoice, opts) do
     pdf_adapter().generate(invoice, opts)
   end
 

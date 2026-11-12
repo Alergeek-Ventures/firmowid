@@ -9,8 +9,8 @@ defmodule Firmowid.Invoicing.Services.CostInvoiceBasePdf.Blob do
   Fetches the uploaded PDF blob and returns it as the base PDF.
   """
   @spec generate(CostInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%CostInvoice{} = invoice, opts \\ []) do
-    ash_scope = Keyword.get(opts, :scope)
+  def generate(%CostInvoice{} = invoice, opts) do
+    ash_scope = Keyword.fetch!(opts, :scope)
 
     invoice = Ash.load!(invoice, [blob: [:url]], scope: ash_scope)
 
