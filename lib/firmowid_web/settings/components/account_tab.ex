@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.Settings.Components.EditButton
+  import FirmowidWeb.Settings.Components.Helpers, only: [settings_section: 1, detail_row: 1]
 
   alias Firmowid.TimeFormatter
   alias FirmowidUI.Components.Inputs
@@ -69,63 +69,13 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     """
   end
 
-  attr :title, :string, required: true
-  attr :action, :any, default: nil
-  attr :action_label, :string, default: nil
-  attr :class, :any, default: nil
-  slot :inner_block, required: true
-
-  defp account_section(assigns) do
-    ~H"""
-    <section class={["space-y-4", @class]}>
-      <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
-
-        <span
-          :if={@action}
-          id={"settings-#{@action}-tooltip"}
-          phx-hook="Tippy"
-          data-tippy-content={@action_label || @title}
-          data-tippy-delay="100"
-          data-tippy-theme="small"
-        >
-          <.edit_button
-            type="button"
-            class="size-8!"
-            phx-click={@action}
-            aria-label={@action_label || @title}
-          />
-        </span>
-      </div>
-
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  attr :label, :string, required: true
-  attr :value_class, :string, default: nil
-  slot :inner_block, required: true
-
-  defp detail_row(assigns) do
-    ~H"""
-    <Helpers.settings_display_field
-      label={@label}
-      class="justfy-center"
-      value_class={["break-words", @value_class]}
-    >
-      {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
-    """
-  end
-
   attr :current_user, :map, required: true
   attr :editing_account_name, :boolean, required: true
   attr :member_form, :map, required: true
 
   defp name_section(assigns) do
     ~H"""
-    <.account_section
+    <.settings_section
       title={gettext("Personal data")}
       action={if(!@editing_account_name, do: "toggle_editing_account_name")}
       action_label={gettext("Edit personal data")}
@@ -230,7 +180,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </.detail_row>
         </div>
       <% end %>
-    </.account_section>
+    </.settings_section>
     """
   end
 
@@ -242,7 +192,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   defp credentials_section(assigns) do
     ~H"""
-    <.account_section
+    <.settings_section
       title={gettext("Access data")}
       action={if(!@editing_credentials, do: "toggle_editing_credentials")}
       action_label={gettext("Edit access data")}
@@ -389,7 +339,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <.detail_row label={gettext("E-mail")}>{@current_user.email}</.detail_row>
         <.detail_row label={gettext("Password")}>****************</.detail_row>
       </div>
-    </.account_section>
+    </.settings_section>
     """
   end
 
@@ -398,7 +348,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   defp google_login_section(assigns) do
     ~H"""
-    <.account_section title={gettext("Log in with Google")}>
+    <.settings_section title={gettext("Log in with Google")}>
       <div class="flex flex-col gap-4">
         <Helpers.settings_display_field label={gettext("Linked account")} class="w-full">
           <%= if @google_connected? do %>
@@ -457,7 +407,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </div>
         </Helpers.settings_display_field>
       </div>
-    </.account_section>
+    </.settings_section>
     """
   end
 
@@ -469,7 +419,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       )
 
     ~H"""
-    <.account_section title={gettext("Language")}>
+    <.settings_section title={gettext("Language")}>
       <.form for={%{}} action={~p"/jezyk"} id="locale_form">
         <Helpers.settings_display_field>
           <.segmented_control label={gettext("Language")}>
@@ -485,7 +435,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </.segmented_control>
         </Helpers.settings_display_field>
       </.form>
-    </.account_section>
+    </.settings_section>
     """
   end
 
@@ -512,7 +462,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       )
 
     ~H"""
-    <.account_section title={gettext("Closing the account")}>
+    <.settings_section title={gettext("Closing the account")}>
       <div class="flex flex-col gap-4">
         <.detail_row label={gettext("Account name")}>{@current_user.email}</.detail_row>
         <Helpers.settings_display_field>
@@ -574,7 +524,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </:actions>
         </.simple_form>
       </.modal>
-    </.account_section>
+    </.settings_section>
     """
   end
 

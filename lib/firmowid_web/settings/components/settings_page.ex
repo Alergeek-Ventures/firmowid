@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Settings.Components.Helpers, only: [initial: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Settings.Utilities.Navigation
@@ -200,11 +201,4 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   defp tab_styles(false),
     do:
       "inline-flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium leading-tight text-grey-700 transition hover:border-rust-200 hover:text-grey-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
-
-  defp initial(email) do
-    email
-    |> to_string()
-    |> String.slice(0, 1)
-    |> String.upcase()
-  end
 end

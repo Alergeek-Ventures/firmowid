@@ -11,7 +11,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.Management.Components.Roles
-  import FirmowidWeb.Settings.Components.EditButton
+
+  import FirmowidWeb.Settings.Components.Helpers,
+    only: [settings_section: 1, detail_row: 1, row_input: 1, present: 1, initial: 1]
+
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
@@ -60,7 +63,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           editing_basic_info={@editing_basic_info}
         />
 
-        <.company_section title={gettext("KSeF integration")}>
+        <.settings_section title={gettext("KSeF integration")}>
           <.ksef_connection
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
@@ -70,7 +73,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             allow_fetch?
             fetching?={@ksef_fetching?}
           />
-        </.company_section>
+        </.settings_section>
       </div>
 
       <.company_details_form :if={@section == :organization} company_form={@company_form} />
@@ -109,61 +112,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  attr :title, :string, required: true
-  attr :action, :any, default: nil
-  attr :action_label, :string, default: nil
-  attr :class, :string, default: nil
-  slot :inner_block, required: true
-
-  defp company_section(assigns) do
-    ~H"""
-    <section class={["space-y-4", @class]}>
-      <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
-
-        <span
-          :if={@action}
-          id={"settings-#{@action}-tooltip"}
-          phx-hook="Tippy"
-          data-tippy-content={@action_label || gettext("Edit %{section}", section: @title)}
-          data-tippy-delay="100"
-          data-tippy-theme="small"
-        >
-          <.edit_button
-            type="button"
-            phx-click={@action}
-            aria-label={@action_label || gettext("Edit %{section}", section: @title)}
-          />
-        </span>
-      </div>
-
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  attr :label, :string, required: true
-  slot :inner_block, required: true
-
-  defp detail_row(assigns) do
-    ~H"""
-    <Helpers.settings_display_field
-      label={@label}
-      class="justify-center"
-      value_class="break-words"
-    >
-      {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
-    """
-  end
-
   attr :current_org, :map, required: true
   attr :company_form, :map, required: true
   attr :editing_basic_info, :boolean, required: true
 
   defp company_basic_info_section(assigns) do
     ~H"""
-    <.company_section
+    <.settings_section
       title={gettext("Company details")}
       action={if(!@editing_basic_info, do: "toggle_editing_basic_info")}
       action_label={gettext("Edit company details")}
@@ -331,7 +286,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           </.detail_row>
         </div>
       <% end %>
-    </.company_section>
+    </.settings_section>
     """
   end
 
@@ -1010,19 +965,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  attr :field, :map, required: true
-  attr :label, :string, required: true
-  attr :type, :string, required: true
-  attr :label_class, :string, default: nil
-
-  defp row_input(assigns) do
-    ~H"""
-    <Helpers.settings_field label={@label} layout={:row} for={@field.id} label_class={@label_class}>
-      <.input field={@field} type={@type} input_class="w-full" />
-    </Helpers.settings_field>
-    """
-  end
-
   defp invite_toggle_track_styles(true), do: "bg-teal-700 relative inline-flex h-[24px] w-[44px] rounded-full"
 
   defp invite_toggle_track_styles(false), do: "bg-grey-200 relative inline-flex h-[24px] w-[44px] rounded-full"
@@ -1073,10 +1015,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp bank_account_menu_label(%{iban: iban}) when is_binary(iban) and iban != "", do: iban
   defp bank_account_menu_label(_account), do: pgettext("bank account fallback", "bank")
 
-  defp present(nil), do: "—"
-  defp present(""), do: "—"
-  defp present(value), do: to_string(value)
-
   defp format_iban(nil), do: ""
 
   defp format_iban(iban) do
@@ -1093,13 +1031,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp multiline_address(nil), do: "—"
   defp multiline_address(""), do: "—"
   defp multiline_address(address), do: to_string(address)
-
-  defp initial(email) do
-    email
-    |> to_string()
-    |> String.slice(0, 1)
-    |> String.upcase()
-  end
 
   defp present_vat_exemption(%{vat_exemption_type: nil}), do: nil
 
