@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
+  alias Ash.Resource.Info
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Core
   alias Firmowid.Finances
@@ -207,7 +208,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
                 profile_value(field, value)
               )
 
-      changes = Enum.reject(changes, &(&1.from == &1.to))
+      changes =
+        changes
+        |> clear_correspondence_address(same?, user.member)
+        |> Enum.reject(&(&1.from == &1.to))
 
       if changes == [], do: :unchanged, else: {:ok, [], changes}
     end
@@ -215,9 +219,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
     with {:ok, invoice} <- invoice_input(input),
+         # Skipping the draft in matching has no row on the card, so it cannot be approved.
          {:ok, draft} <-
            result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
-      # Skipping the draft in matching has no row on the card, so it cannot be approved.
       if draft.skip_invoicing,
         do: :error,
         else: {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
@@ -393,6 +397,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     ]
   end
 
+  # The action clears the correspondence address when it is the same as the residence one,
+  # whatever address the call carries.
+  defp clear_correspondence_address(changes, true, member) do
+    label = profile_fields()[:correspondence_address]
+
+    Enum.reject(changes, &(&1.label == label)) ++
+      [change(label, member.correspondence_address, nil)]
+  end
+
+  defp clear_correspondence_address(changes, _same?, _member), do: changes
+
   defp profile_value(_field, nil), do: nil
   defp profile_value(:birthday, %Date{} = birthday), do: date(birthday)
   defp profile_value(:birthday, birthday), do: birthday
@@ -464,7 +479,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp item_changes(saved, revised) do
     Enum.filter(
       [
-        not same_items?(saved, revised) && change(gettext("Items"), saved && items(saved), items(revised)),
+        not same_items?(saved, revised) &&
+          change(gettext("Items"), saved && items(saved), items(revised)),
         (is_nil(saved) or vat_rates(saved) != vat_rates(revised)) &&
           change(gettext("VAT"), saved && vat_rates(saved), vat_rates(revised))
       ],
@@ -504,7 +520,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp snapshot(invoice) do
     invoice
     |> Preview.review_snapshot()
-    |> Map.merge(Map.take(invoice, Ash.Resource.Info.action(SalesInvoice, :revise).accept))
+    |> Map.merge(Map.take(invoice, Info.action(SalesInvoice, :revise).accept))
     |> Map.update!(:items, fn items ->
       Enum.map(items, &Map.new(&1, fn {key, value} -> {key, normalize(value)} end))
     end)
