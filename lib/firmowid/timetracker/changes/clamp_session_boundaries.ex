@@ -9,12 +9,18 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
   month the session started in, or the maximum running time, after which the
   `:auto_stop` trigger ends a forgotten session.
 
-  Only ever shortens the session, so it cannot introduce an overlap. A running
-  session already extends to `infinity` in the database overlap trigger, so no
-  other session can exist in the window being trimmed away.
+  The end is stored at minute precision, or at the start when that lies later,
+  and the start stays as stored. So the change only ever shortens the session
+  and cannot introduce an overlap: a running session already extends to
+  `infinity` in the database overlap trigger, so no other session can exist in
+  the window being trimmed away. Moving the start to its minute would break
+  that for a session stored with seconds whose predecessor ended in the same
+  minute.
   """
 
   use Ash.Resource.Change
+
+  alias Firmowid.Timetracker.Changes.NormalizeSessionBoundaries
 
   @max_running_seconds 12 * 3600
 
@@ -28,11 +34,14 @@ defmodule Firmowid.Timetracker.Changes.ClampSessionBoundaries do
     start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
     end_datetime = Ash.Changeset.get_attribute(changeset, :end_datetime)
 
-    Ash.Changeset.force_change_attribute(
-      changeset,
-      :end_datetime,
-      clamp(start_datetime, end_datetime)
-    )
+    end_datetime = start_datetime |> clamp(end_datetime) |> NormalizeSessionBoundaries.datetime()
+
+    # A start stored with seconds can lie after the minute its end falls in, for
+    # example in the last minute of its month; the session then ends where it began.
+    end_datetime =
+      if DateTime.before?(end_datetime, start_datetime), do: start_datetime, else: end_datetime
+
+    Ash.Changeset.force_change_attribute(changeset, :end_datetime, end_datetime)
   end
 
   # Clamps end_datetime down to the first limit that binds: the end of the month
