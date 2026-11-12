@@ -400,6 +400,34 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(plan.view, "#{plan.id} ins", "PL61109010140000071219812874")
   end
 
+  test "an add sessions card reads remote work the way the action casts it", %{conn: conn} do
+    owner = admin_fixture()
+
+    project =
+      Ash.Seed.seed!(Project, %{
+        organization_id: owner.member.organization_id,
+        name: "Projekt testowy"
+      })
+
+    plan =
+      open_plan(conn, owner, "add_sessions", %{
+        input: %{
+          sessions: [
+            %{
+              title: "Przegląd",
+              project_id: project.id,
+              start_datetime: "2026-11-04T08:00:00+01:00",
+              end_datetime: "2026-11-04T10:00:00+01:00",
+              is_remote: "true"
+            }
+          ]
+        }
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} dt", "Praca zdalna")
+  end
+
   # Opens the assistant on a conversation that waits for approval of one tool call.
   defp open_plan(conn, owner, name, arguments) do
     scope = Scope.new!(owner, owner.member.organization_id)
