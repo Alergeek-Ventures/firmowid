@@ -118,20 +118,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("validate", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
 
   def handle_event("validate", %{"delegation" => params} = event_params, socket) do
-    expense_currencies =
-      Map.merge(
-        socket.assigns.expense_currencies,
-        Map.get(event_params, "expense_currencies", %{})
-      )
-
-    params =
-      params
-      |> SettlementForm.merge_expense_currencies(expense_currencies)
-      |> SettlementForm.merge_foreign_currency_settlements(
-        socket.assigns.foreign_currency_modes,
-        socket.assigns.nbp_settlements
-      )
-
+    expense_currencies = merged_expense_currencies(socket, event_params)
+    params = settlement_params(socket, params, expense_currencies)
     date_change = detected_date_change(socket.assigns.delegation, params)
 
     {:noreply,
@@ -245,16 +233,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("submit", _params, %{assigns: %{uploading?: true}} = socket), do: {:noreply, socket}
 
   def handle_event("submit", params, socket) do
-    expense_currencies =
-      Map.merge(socket.assigns.expense_currencies, Map.get(params, "expense_currencies", %{}))
-
     params =
-      params
-      |> Map.get("delegation", %{})
-      |> SettlementForm.merge_expense_currencies(expense_currencies)
-      |> SettlementForm.merge_foreign_currency_settlements(
-        socket.assigns.foreign_currency_modes,
-        socket.assigns.nbp_settlements
+      settlement_params(
+        socket,
+        Map.get(params, "delegation", %{}),
+        merged_expense_currencies(socket, params)
       )
 
     date_change = detected_date_change(socket.assigns.delegation, params)
@@ -451,16 +434,22 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp save_current_draft(socket) do
-    params =
-      socket.assigns.complete_form
-      |> SettlementForm.preserve_expense_params(socket.assigns.complete_form.source.raw_params)
-      |> SettlementForm.merge_expense_currencies(socket.assigns.expense_currencies)
-      |> SettlementForm.merge_foreign_currency_settlements(
-        socket.assigns.foreign_currency_modes,
-        socket.assigns.nbp_settlements
-      )
+    form = socket.assigns.complete_form
+    params = SettlementForm.preserve_expense_params(form, form.source.raw_params)
+    save_draft(socket, settlement_params(socket, params, socket.assigns.expense_currencies), nil)
+  end
 
-    save_draft(socket, params, nil)
+  defp merged_expense_currencies(socket, event_params),
+    do: Map.merge(socket.assigns.expense_currencies, Map.get(event_params, "expense_currencies", %{}))
+
+  # The settlement method, rate and converted amount come from the server state, never the client.
+  defp settlement_params(socket, params, expense_currencies) do
+    params
+    |> SettlementForm.merge_expense_currencies(expense_currencies)
+    |> SettlementForm.merge_foreign_currency_settlements(
+      socket.assigns.foreign_currency_modes,
+      socket.assigns.nbp_settlements
+    )
   end
 
   defp reload(socket, reference) do
