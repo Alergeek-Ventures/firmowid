@@ -566,11 +566,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     {:noreply, assign(socket, trim_plan: nil)}
   end
 
+  # Stops the session running now: the one this page shows may have ended
+  # meanwhile in another tab or by the auto-stop.
   def handle_event("end_session", _, socket) do
-    scope = socket.assigns.ash_scope
-    current_session = socket.assigns.current_session
-
-    case Session.stop(current_session, scope: scope) do
+    case Session.stop_current(scope: socket.assigns.ash_scope) do
       {:ok, _ended_session} ->
         {:noreply,
          socket
