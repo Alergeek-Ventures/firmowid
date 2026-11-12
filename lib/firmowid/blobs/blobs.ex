@@ -115,9 +115,10 @@ defmodule Firmowid.Blobs do
     end
   end
 
-  # The uploader holds these bytes, so handing back the stored file reveals
-  # nothing, even when another member's record holds it. The record the
-  # uploader attaches it to is what lets them read it afterwards.
+  # The uploader holds these bytes, so handing back the stored file reveals no
+  # content, even when another member's record holds it; it does carry the name
+  # the file was first uploaded under. The record the uploader attaches it to is
+  # what lets them read it afterwards.
   defp stored_file_opts(opts) do
     tenant =
       case Keyword.fetch(opts, :scope) do
