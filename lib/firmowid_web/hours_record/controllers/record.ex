@@ -17,43 +17,14 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   # This is safe because pdf_binary is a generated PDF served as a download,
   # not user-controlled HTML executed by the browser.
   def pdf(conn, %{"date" => date}) do
-    scope = conn.assigns.ash_scope
+    {avatar_url, assigns} =
+      conn |> record_assigns(Date.from_iso8601!(date)) |> Keyword.pop!(:avatar_url)
 
-    {:ok, contract} =
-      Payroll.load_current_contract(conn.assigns.current_user.member.id, scope: scope)
-
-    contract_date = contract && (contract.signed_at || contract.starts_at)
-
-    # Get avatar URL and convert to data URI
-    avatar_url =
-      conn.assigns.current_org
-      |> Ash.load!([avatar_blob: [:url]], scope: scope)
-      |> Map.get(:avatar_blob)
-      |> case do
-        %{url: url} -> url
-        _ -> nil
-      end
-
-    avatar_data_uri = PdfHelpers.url_to_data_uri(avatar_url)
-
-    date_parsed = Date.from_iso8601!(date)
-    start_date = Date.beginning_of_month(date_parsed)
-    end_date = Date.end_of_month(date_parsed)
-
-    total_hours = Timetracker.seconds_to_hours(Session.month_duration!(date_parsed, scope: scope))
-
-    # Render HTML to string
     html_content =
       PdfHelpers.render_pdf_html(
         FirmowidWeb.HoursRecord.Components.PdfTemplate,
         :hours_record,
-        layout: false,
-        name: conn.assigns.current_user.member.name,
-        contract_date: contract_date,
-        start_date: start_date,
-        end_date: end_date,
-        hours: total_hours,
-        avatar_data_uri: avatar_data_uri
+        [layout: false, avatar_data_uri: PdfHelpers.url_to_data_uri(avatar_url)] ++ assigns
       )
 
     {:ok, pdf_binary} = PdfUtils.render_html_to_pdf(html_content, scale: 1.0)
@@ -68,36 +39,23 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   end
 
   def preview(conn, %{"date" => date}) do
-    scope = conn.assigns.ash_scope
+    render(conn, :preview, [layout: false] ++ record_assigns(conn, Date.from_iso8601!(date)))
+  end
 
-    {:ok, contract} =
-      Payroll.load_current_contract(conn.assigns.current_user.member.id, scope: scope)
+  # The acting member's month as the hours record template shows it.
+  defp record_assigns(conn, date) do
+    %{ash_scope: scope, current_user: user, current_org: org} = conn.assigns
+    {:ok, contract} = Payroll.load_current_contract(user.member.id, scope: scope)
+    %{avatar_blob: avatar_blob} = Ash.load!(org, [avatar_blob: [:url]], scope: scope)
 
-    contract_date = contract && (contract.signed_at || contract.starts_at)
-
-    date = Date.from_iso8601!(date)
-    start_date = Date.beginning_of_month(date)
-    end_date = Date.end_of_month(date)
-
-    total_hours = Timetracker.seconds_to_hours(Session.month_duration!(date, scope: scope))
-
-    render(conn, :preview,
-      layout: false,
-      name: conn.assigns.current_user.member.name,
-      contract_date: contract_date,
-      start_date: start_date,
-      end_date: end_date,
-      hours: total_hours,
-      avatar_url:
-        conn.assigns.current_org
-        |> Ash.load!([avatar_blob: [:url]], scope: scope)
-        |> Map.get(:avatar_blob)
-        |> case do
-          %{url: url} -> url
-          _ -> nil
-        end,
-      avatar_data_uri: nil
-    )
+    [
+      name: user.member.name,
+      contract_date: contract && (contract.signed_at || contract.starts_at),
+      start_date: Date.beginning_of_month(date),
+      end_date: Date.end_of_month(date),
+      hours: Timetracker.seconds_to_hours(Session.month_duration!(date, scope: scope)),
+      avatar_url: avatar_blob && avatar_blob.url
+    ]
   end
 
   def download(conn, %{"id" => id}) do
