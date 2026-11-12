@@ -1107,28 +1107,24 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center lg:py-3 lg:pr-11.5 [&_:is(h2,h3)]:flex [&_:is(h2,h3)]:items-center [&_:is(h2,h3)]:gap-2.5 [&_:is(h2,h3)]:text-[#f5f1ea] [&_:is(h2,h3)::before]:h-3.25 [&_:is(h2,h3)::before]:w-3 [&_:is(h2,h3)::before]:flex-none [&_:is(h2,h3)::before]:bg-rust-500 [&_:is(h2,h3)::before]:mask-[url('/images/landing/icons/check.svg')] [&_:is(h2,h3)::before]:mask-contain [&_:is(h2,h3)::before]:mask-center [&_:is(h2,h3)::before]:mask-no-repeat [&_:is(h2,h3)::before]:content-[''] [&_article]:py-6 lg:[&_article]:py-4.5 [&_article_:is(h2,h3)]:mb-2.5 lg:[&_article_:is(h2,h3)]:mb-2 [&_article+article]:border-t [&_article+article]:border-grey-800">
-          <article>
+          <article :for={{title, description} <- open_source_benefits()}>
             <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
-              {gettext("No limits")}
+              {title}
             </.dynamic_tag>
-            <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
-          </article>
-          <article>
-            <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
-              {gettext("No fees")}
-            </.dynamic_tag>
-            <p>{gettext("Install on your own server and pay no subscription.")}</p>
-          </article>
-          <article>
-            <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
-              {gettext("Full control")}
-            </.dynamic_tag>
-            <p>{gettext("The code is public, your data stays with you. AGPL-3.0 license.")}</p>
+            <p>{description}</p>
           </article>
         </div>
       </div>
     </section>
     """
+  end
+
+  defp open_source_benefits do
+    [
+      {gettext("No limits"), gettext("Invoices, bank accounts and users without plan limits.")},
+      {gettext("No fees"), gettext("Install on your own server and pay no subscription.")},
+      {gettext("Full control"), gettext("The code is public, your data stays with you. AGPL-3.0 license.")}
+    ]
   end
 
   @doc """
