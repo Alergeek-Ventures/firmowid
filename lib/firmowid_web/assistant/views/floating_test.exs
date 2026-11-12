@@ -492,6 +492,34 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
   end
 
+  test "a draft card linking a counterparty of another organization cannot be approved", %{
+    conn: conn
+  } do
+    owner = admin_fixture()
+    draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
+    stranger = admin_fixture()
+
+    counterparty =
+      Ash.Seed.seed!(Counterparty, %{
+        organization_id: stranger.member.organization_id,
+        type: :company,
+        full_name: "Acme Sp. z o.o.",
+        country: "PL",
+        tax_id: "1234563218",
+        normalized_tax_id: "1234563218"
+      })
+
+    plan =
+      open_plan(conn, owner, "update_sales_invoice_draft", %{
+        id: draft.id,
+        input: %{buyer_address: "ul. Inna 2, Kraków", counterparty_id: counterparty.id}
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='deny']:not([disabled])")
+    refute has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    refute has_element?(plan.view, plan.id, "Acme Sp. z o.o.")
+  end
+
   # Opens the assistant on a conversation that waits for approval of one tool call.
   defp open_plan(conn, owner, name, arguments) do
     scope = Scope.new!(owner, owner.member.organization_id)
