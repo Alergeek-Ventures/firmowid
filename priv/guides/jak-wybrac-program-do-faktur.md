@@ -88,6 +88,8 @@ Porównuj cenę planu, którego będziesz używać za pół roku. Zobacz:
 - czy okres próbny wymaga karty i co się dzieje po jego końcu;
 - czy dodatkowe konto bankowe, użytkownik albo OCR są płatne osobno.
 
+![Dziewięć rzeczy do sprawdzenia przed rejestracją w programie do faktur, od najważniejszych: 1. KSeF w Twoim planie, czyli wysyłka w planie darmowym i automatyczny odbiór kosztów. 2. Jak liczony jest limit: sprzedaż czy też koszty, korekty, co po przekroczeniu. 3. Połączenie z bankiem: dopasowanie przelewów, liczba kont, fintechy. 4. Waluty i klienci z UE: odwrotne obciążenie, waluty, VAT-EU. 5. Użytkownicy i uprawnienia, w tym dostęp księgowej. 6. Ewidencja czasu pracy, jeśli rozliczasz się z godzin. 7. Co dostanie księgowa: księgowość w programie albo eksport za miesiąc. 8. Dane po rezygnacji: eksport, zamknięcie konta, własny serwer. 9. Cena po okresie próbnym: netto czy brutto, plan roczny, dopłaty.](/images/guides/jak-wybrac-program-do-faktur-9-punktow.webp)
+
 ## Jak sprawdzić program w 30 minut
 
 Zanim przeniesiesz wszystko, zrób krótki test. Po nim będziesz wiedzieć, czy program obsłuży Twój typowy miesiąc: jedną fakturę, koszty, przelewy i eksport dla księgowej.
