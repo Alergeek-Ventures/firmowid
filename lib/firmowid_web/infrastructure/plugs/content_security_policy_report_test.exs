@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReportTest do
             %{
               "type" => "csp-violation",
               "body" => %{
-                "documentURL" => "https://firmowid.example/ustawienia?token=xyz",
+                "documentURL" => "https://firmowid.example/kosztowe/01a1d27d-0f3d-7698-8fb6-a715bbf775a5?token=xyz",
                 "effectiveDirective" => "img-src",
                 "blockedURL" => "https://images.example.com/a.png?sig=abc",
                 "lineNumber" => 3
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReportTest do
     assert logs =~ "csp_document=/faktury "
     assert logs =~ "csp_source=https://firmowid.example/assets/app.js "
     assert logs =~ "csp_directive=img-src"
-    assert logs =~ "csp_document=/ustawienia "
+    assert logs =~ "csp_document=/kosztowe/[ID] "
 
     for dropped <- ["szukaj", "key=abc", "token=xyz", "sig=abc", "v=1"] do
       refute logs =~ dropped
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReportTest do
       capture_log([level: :warning], fn ->
         post_report("application/csp-report", %{
           "csp-report" => %{
-            "document-uri" => "https://firmowid.example/resetuj-haslo/made-up-token",
+            "document-uri" => "https://firmowid.example/%72esetuj-haslo/made-up-token",
             "violated-directive" => "script-src-elem",
             "blocked-uri" => "inline",
             "source-file" => "https://firmowid.example/resetuj-haslo/made-up-token"
@@ -82,6 +82,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReportTest do
         })
       end)
 
+    # The router matches a percent-encoded path too.
     assert logs =~ "csp_document=/resetuj-haslo/[REDACTED_TOKEN] "
     assert logs =~ "csp_source=https://firmowid.example/resetuj-haslo/[REDACTED_TOKEN] "
 

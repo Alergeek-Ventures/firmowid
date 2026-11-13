@@ -140,7 +140,15 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReport do
   defp document_path(_value), do: nil
 
   defp scrub_path(nil), do: nil
-  defp scrub_path(path), do: Firmowid.Sentry.scrub_sensitive_route(path)
+
+  # Decoded first, as the router matches a percent-encoded path too. A record's id says
+  # nothing about what the policy blocked, so it goes as well.
+  defp scrub_path(path) do
+    path
+    |> URI.decode()
+    |> Firmowid.Sentry.scrub_sensitive_route()
+    |> String.replace(~r/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i, "[ID]")
+  end
 
   # Printable ASCII without spaces, of a sane length: nothing that could start a new log
   # line or pose as another key.
