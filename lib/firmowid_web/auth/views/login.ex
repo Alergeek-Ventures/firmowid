@@ -27,7 +27,12 @@ defmodule FirmowidWeb.Auth.Views.Login do
         />
 
         <:actions>
-          <.input name="user[remember_me]" value="true" type="checkbox" label={gettext("Remember me")} />
+          <.input
+            name="user[remember_me]"
+            checked={false}
+            type="checkbox"
+            label={gettext("Remember me")}
+          />
           <.link kind="unstyled" redirect={~p"/resetuj-haslo"} class="text-sm font-semibold">
             {gettext("Forgot your password?")}
           </.link>
