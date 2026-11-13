@@ -120,7 +120,7 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
   test "a long client name stays off the sign-in page" do
     {:ok, client, _response} =
       Register.register(Oauth2Server, %{
-        "client_name" => "ChatGPT. Your account is blocked, call the number below",
+        "client_name" => "ChatGPT. Your account is blocked, call the number below right now",
         "redirect_uris" => [@redirect_uri],
         "grant_types" => ["authorization_code"],
         "response_types" => ["code"],
@@ -133,6 +133,29 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     {:ok, _login, html} = live(recycle(conn), ~p"/zaloguj")
 
     refute html =~ "Your account is blocked"
+  end
+
+  test "a request too long for the session still leads to the setup, without promising a return",
+       %{client: client} do
+    conn =
+      log_in_user(
+        build_conn(),
+        Core.register_with_password!(
+          %{email: unique_user_email(), password: valid_user_password()},
+          authorize?: false,
+          actor: %{}
+        )
+      )
+
+    long_path =
+      authorize_path(client, "verifier-verifier-verifier-verifier-verifier") <>
+        "&state=" <> String.duplicate("s", 2000)
+
+    conn = get(conn, long_path)
+    assert redirected_to(conn) == ~p"/organizacja"
+
+    {:ok, _form, html} = live(recycle(conn), ~p"/organizacja/formularz")
+    refute html =~ "ChatGPT"
   end
 
   # Signs up from the sign-in page the OAuth server leads to, which names the client.
