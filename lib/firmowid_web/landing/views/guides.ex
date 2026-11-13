@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   def render(%{live_action: :index} = assigns) do
     ~H"""
     <.legal_page>
-      <h1>{gettext("Firmowid guides — KSeF and invoicing")}</h1>
+      <h1>{gettext("Firmowid guides: KSeF and invoicing")}</h1>
       <ul>
         <li :for={{category, _guides} <- @categories}>
           <a href={"#" <> category.slug}>{category.name}</a>

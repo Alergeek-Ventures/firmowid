@@ -5317,6 +5317,11 @@ msgstr ""
 
 #: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
+msgid "Firmowid guides: KSeF and invoicing"
+msgstr ""
+
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
 msgid "Firmowid guides — KSeF and invoicing"
 msgstr ""
 
