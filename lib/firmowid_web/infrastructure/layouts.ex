@@ -313,9 +313,15 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       )
   end
 
+  # Search results cut titles at about 60 characters, so the brand suffix goes only on short ones.
+  @title_suffix_max_length 50
+
   defp meta_title(assigns) do
     title = assigns[:page_title] || "Firmowid"
-    if String.contains?(title, "Firmowid"), do: title, else: title <> " · Firmowid"
+
+    if String.contains?(title, "Firmowid") or String.length(title) > @title_suffix_max_length,
+      do: title,
+      else: title <> " · Firmowid"
   end
 
   defp social_image(%{article: %{image: %{} = image} = article}) do
