@@ -7213,7 +7213,7 @@ msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
-msgid "Loading more months"
+msgid "Loading entries"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/trips.ex

@@ -15,11 +15,9 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
     current_month = Date.beginning_of_month(Date.utc_today())
     seed_cost_invoice!(admin.member.organization_id, current_month)
 
-    {:ok, lv, html} = conn |> log_in_user(admin) |> live(~p"/fakturowanie")
+    {:ok, lv, _html} = conn |> log_in_user(admin) |> live(~p"/fakturowanie")
 
-    assert html =~ "Pobierz"
-
-    rendered = render(lv)
+    rendered = render_async(lv)
     assert rendered =~ "Pobierz dokumenty"
 
     assert rendered =~ "/pobierz-miesiac?"
