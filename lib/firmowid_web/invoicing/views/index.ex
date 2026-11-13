@@ -966,9 +966,23 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> fetch_dashboard_data()
   end
 
+  # Only the filter bar, which the inbox sidebar replaces, and the list of unmatched entries
+  # show the month's status, so elsewhere its reads are skipped.
+  defp assign_month_status(socket, fetched_entries) do
+    if flag_enabled?(:inbox, socket.assigns) and socket.assigns.params.filter != :unmatched do
+      assign(socket,
+        is_month_touched: false,
+        is_month_closed: false,
+        pending_invoicing_entries_count: 0
+      )
+    else
+      read_month_status(socket, fetched_entries)
+    end
+  end
+
   # The month's lists of unmatched and of all entries ignore the subfilter, so the list
   # read serves for them when it is one of the two.
-  defp assign_month_status(socket, fetched_entries) do
+  defp read_month_status(socket, fetched_entries) do
     %{month: month, filter: filter} = socket.assigns.params
     scope = socket.assigns.ash_scope
     date_range_from = Date.beginning_of_month(month)
