@@ -420,12 +420,32 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       graph ++
         article_data(assigns[:article], canonical_url(assigns), organization_id, image.url) ++
         breadcrumb_data(assigns[:article], canonical_url(assigns), base_url) ++
-        guide_list_data(assigns[:guide_categories], canonical_url(assigns), base_url)
+        guide_list_data(assigns[:guide_categories], canonical_url(assigns), base_url) ++
+        guide_faq_data(assigns[:article], canonical_url(assigns))
 
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
   end
+
+  defp guide_faq_data(%{faq: [_ | _] = faq}, url) do
+    [
+      %{
+        "@type" => "FAQPage",
+        "@id" => url <> "#faq",
+        "mainEntity" =>
+          Enum.map(faq, fn entry ->
+            %{
+              "@type" => "Question",
+              "name" => entry.question,
+              "acceptedAnswer" => %{"@type" => "Answer", "text" => entry.answer}
+            }
+          end)
+      }
+    ]
+  end
+
+  defp guide_faq_data(_article, _url), do: []
 
   defp guide_list_data(nil, _url, _base_url), do: []
 

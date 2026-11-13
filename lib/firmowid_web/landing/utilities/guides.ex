@@ -4,7 +4,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated`, `category`); the file name is the URL slug. Categories, in display
-  order, are defined in `priv/guides/categories.yml`. Images in the body get their
+  order, are defined in `priv/guides/categories.yml`. Questions in a
+  `## Najczęstsze pytania` section become the guide's `faq`. Images in the body get their
   dimensions and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`,
   when present, becomes the guide's link preview image.
   """
@@ -21,6 +22,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
           updated: Date.t(),
           category: category(),
           html: String.t(),
+          faq: [%{question: String.t(), answer: String.t()}],
           image: image() | nil
         }
 
@@ -85,6 +87,28 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                 )
               )
 
+            # Questions under "## Najczęstsze pytania" (one "###" each) become FAQPage data,
+            # with images, captions and link targets left out of the answers.
+            faq =
+              case Regex.run(~r/^## Najczęstsze pytania\n(.*?)(?=^## |\z)/msu, body) do
+                [_, section] ->
+                  for [_, question, answer] <- Regex.scan(~r/^### ([^\n]+)\n(.*?)(?=^### |\z)/msu, section) do
+                    text =
+                      answer
+                      |> String.split(~r/\n\s*\n/)
+                      |> Enum.map(&String.trim/1)
+                      |> Enum.reject(&(&1 == "" or String.starts_with?(&1, ["!", "*"])))
+                      |> Enum.join(" ")
+                      |> then(&Regex.replace(~r/\[([^\]]+)\]\([^)]+\)/u, &1, "\\1"))
+                      |> String.replace("**", "")
+
+                    %{question: String.trim(question), answer: text}
+                  end
+
+                nil ->
+                  []
+              end
+
             og_path = "/images/guides/og/#{slug}.png"
 
             image =
@@ -103,6 +127,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                 Enum.find(@categories, &(&1.slug == category_slug)) ||
                   raise("#{path}: unknown guide category #{inspect(category_slug)}"),
               html: html,
+              faq: faq,
               image: image,
               # Body images and the preview path (even when missing) recompile this module when they change.
               resources:
