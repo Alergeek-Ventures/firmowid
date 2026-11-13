@@ -9869,7 +9869,6 @@ msgid "Route %{number}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/primitives.ex
-#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Run your business"
 msgstr ""
@@ -15256,7 +15255,6 @@ msgid "with a Trusted Profile"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/primitives.ex
-#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "with a lighter mind."
 msgstr ""
