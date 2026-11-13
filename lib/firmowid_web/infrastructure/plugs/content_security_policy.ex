@@ -8,6 +8,10 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy do
   While report-only, Phoenix's default `base-uri 'self'; frame-ancestors 'self'`
   policy from `put_secure_browser_headers` stays enforced; the full policy below
   repeats both directives, so enforcing it replaces that default without loss.
+
+  Browsers send violation reports to `ContentSecurityPolicyReport`: those supporting the
+  Reporting API through `report-to` and the `reporting-endpoints` header, the others
+  through `report-uri`.
   """
 
   @behaviour Plug
@@ -15,6 +19,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy do
   import Plug.Conn
 
   alias Firmowid.S3Client
+  alias FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReport
 
   @enforce? Application.compile_env(:firmowid, [__MODULE__, :enforce?], false)
 
@@ -30,6 +35,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy do
     conn
     |> assign(:csp_nonce, nonce)
     |> put_resp_header(header(), policy(nonce))
+    |> put_resp_header("reporting-endpoints", ~s(csp="#{ContentSecurityPolicyReport.path()}"))
   end
 
   defp header, do: if(@enforce?, do: "content-security-policy", else: "content-security-policy-report-only")
@@ -56,7 +62,9 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy do
         "worker-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",
-        "frame-ancestors 'self'"
+        "frame-ancestors 'self'",
+        "report-uri #{ContentSecurityPolicyReport.path()}",
+        "report-to csp"
       ],
       "; "
     )
