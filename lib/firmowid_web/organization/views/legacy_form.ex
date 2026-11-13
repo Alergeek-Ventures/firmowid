@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
           <p :if={@connecting_client} class="text-sm text-grey-600">
             {gettext(
               "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}.",
-              client: @connecting_client
+              client: @connecting_client.name
             )}
           </p>
         </div>
@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
     if flag_enabled?(:inbox, socket.assigns) do
       {:ok, push_navigate(socket, to: OrganizationNavigation.onboarding_path())}
     else
-      mount_form(assign(socket, :connecting_client, PendingAuthorization.client_name(session)))
+      mount_form(assign(socket, :connecting_client, PendingAuthorization.client(session)))
     end
   end
 

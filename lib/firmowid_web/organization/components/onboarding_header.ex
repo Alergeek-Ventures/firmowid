@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Auth.Components.ClientLogo, only: [client_logo: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.LiveView.Rendered
@@ -28,9 +29,9 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
     default: nil,
     doc: "the step number, `:done` once every step is behind, or nil for no progress"
 
-  attr :connecting_client, :string,
+  attr :connecting_client, :map,
     default: nil,
-    doc: "the AI client the person returns to after the last step, named beside the progress"
+    doc: "the AI client the person returns to after the last step, named with its logo beside the progress"
 
   def onboarding_header(assigns) do
     assigns = assign(assigns, :step_count, @step_count)
@@ -60,13 +61,7 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
         <img src={~p"/images/logo-head.svg"} alt="Firmowid" class="size-9 sm:hidden" />
       <% end %>
 
-      <p
-        :if={@step}
-        class={[
-          "flex items-center gap-1.5 text-sm text-grey-600 sm:gap-2",
-          @connecting_client && "max-md:flex-col"
-        ]}
-      >
+      <p :if={@step} class="flex items-center gap-1.5 text-sm text-grey-600 sm:gap-2">
         <span class="flex items-center gap-1.5 sm:gap-2">
           <span
             :for={number <- 1..@step_count}
@@ -79,16 +74,13 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
         <%= cond do %>
           <% @step == :done -> %>
           <% @connecting_client -> %>
-            <%!-- Narrower, where it ends goes on a line of its own under the bars. --%>
-            <span class="ms-1 max-md:sr-only">
+            <span class="ms-1 flex items-center gap-2 max-md:sr-only">
+              <.client_logo app={@connecting_client.app} class="size-5 rounded-md p-1" />
               {gettext("Step %{number} of %{total}, then back to %{client}",
                 number: @step,
                 total: @step_count,
-                client: @connecting_client
+                client: @connecting_client.name
               )}
-            </span>
-            <span class="text-xs md:hidden" aria-hidden="true">
-              {gettext("At the end you return to %{client}", client: @connecting_client)}
             </span>
           <% true -> %>
             <span class="ms-1 max-sm:sr-only">
@@ -134,6 +126,20 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
           </.form>
         <% end %>
       </div>
+
+      <%!-- Narrower, where it ends takes a row of its own under the header, so it neither
+           crowds the bars nor pushes the page wider than the screen. --%>
+      <p
+        :if={@connecting_client && @step not in [nil, :done]}
+        class="col-span-3 -mt-3 -mb-2 flex items-center justify-center gap-1.5 text-center text-xs text-grey-600 sm:text-sm md:hidden"
+        aria-hidden="true"
+      >
+        <.client_logo
+          app={@connecting_client.app}
+          class="size-4 rounded p-0.5 sm:size-5 sm:rounded-md sm:p-1"
+        />
+        {gettext("At the end you return to %{client}", client: @connecting_client.name)}
+      </p>
     </header>
     """
   end

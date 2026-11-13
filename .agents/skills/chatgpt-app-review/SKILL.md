@@ -37,6 +37,9 @@ guidelines. Two findings shaped the current design:
   people in plain words what the MCP tools read and change. When a tool adds a
   kind of data or a write, update those lines; a reviewer compares them with
   the tool list.
+- The connection pages show the client's logo (`FirmowidWeb.Auth.Components.ClientLogo`),
+  chosen by the host of its Client ID Metadata Document, never by its
+  registered name, which any client can set.
 
 ## Accounts that are not ready
 

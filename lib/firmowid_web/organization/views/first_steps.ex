@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.KsefConnection
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Auth.Components.ClientLogo, only: [client_logo: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
@@ -373,13 +374,20 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         variant="unstyled"
         class="mt-8 flex w-full items-center gap-4 rounded-xl bg-black px-5.5 py-4 text-left text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,.6)] transition-colors hover:bg-grey-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
+        <.client_logo
+          :if={@connecting_client}
+          app={@connecting_client.app}
+          class="size-10 rounded-lg p-2"
+        />
         <span class="flex-1">
           <%= if @connecting_client do %>
             <span class="block text-lg font-medium">
-              {gettext("Connect with %{client}", client: @connecting_client)}
+              {gettext("Connect with %{client}", client: @connecting_client.name)}
             </span>
             <span class="block text-sm text-white/65">
-              {gettext("Approve the connection and return to %{client}", client: @connecting_client)}
+              {gettext("Approve the connection and return to %{client}",
+                client: @connecting_client.name
+              )}
             </span>
           <% else %>
             <span class="block text-lg font-medium">{gettext("Go to Firmowid")}</span>
@@ -537,7 +545,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     if flag_enabled?(:inbox, socket.assigns) do
       socket
       |> assign(
-        connecting_client: PendingAuthorization.client_name(session),
+        connecting_client: PendingAuthorization.client(session),
         authorization_path: PendingAuthorization.return_path(session)
       )
       |> mount_steps()

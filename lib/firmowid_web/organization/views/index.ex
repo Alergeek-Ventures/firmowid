@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
       <%= if @connecting_client do %>
         {gettext(
           "Set up your company to use Firmowid in %{client}. Every step stamps the company card, and after five steps you will approve the connection and return to %{client}.",
-          client: @connecting_client
+          client: @connecting_client.name
         )}
       <% else %>
         {gettext(
@@ -566,7 +566,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   def mount(_params, session, socket) do
     # Without the flag the user keeps the organization form from before the wizard.
     if flag_enabled?(:inbox, socket.assigns) do
-      mount_wizard(assign(socket, :connecting_client, PendingAuthorization.client_name(session)))
+      mount_wizard(assign(socket, :connecting_client, PendingAuthorization.client(session)))
     else
       {:ok, push_navigate(socket, to: OrganizationNavigation.legacy_form_path())}
     end
