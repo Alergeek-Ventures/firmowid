@@ -579,8 +579,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <div class="flex min-w-0 items-center gap-4 sm:max-w-sm sm:flex-1">
               <.avatar class="size-12 rounded-full bg-grey-100">
                 <.avatar_image
-                  :if={user.member.avatar_blob && user.member.avatar_blob.url}
-                  src={user.member.avatar_blob.url}
+                  :if={user.member.avatar_blob}
+                  blob={user.member.avatar_blob}
+                  sizes="48px"
                   alt={user.member.name || user.email}
                 />
                 <.avatar_fallback class="text-sm font-medium text-grey-700">

@@ -16,6 +16,14 @@ export function startLiveSocket(hooks) {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
     hooks,
+    dom: {
+      // A loaded avatar stays shown when LiveView patches it (the mark is set in the root layout).
+      onBeforeElUpdated(from, to) {
+        if (from.hasAttribute("data-loaded") && from.getAttribute("src") === to.getAttribute("src")) {
+          to.setAttribute("data-loaded", from.getAttribute("data-loaded"));
+        }
+      },
+    },
   });
 
   // Show progress bar on live navigation and form submits

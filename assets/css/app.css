@@ -11,3 +11,24 @@
 @source "../../lib/firmowid_mcp.ex";
 @source "../../lib/firmowid_mcp";
 @source "../../deps/live_toast/lib";
+
+/* ── Avatars (avatar_image/1) ───────────────────────────────────────── */
+/* The picture fades in over its blurred placeholder once loaded, then the
+   placeholder goes, since it would show through a transparent logo. One
+   already at hand shows at once: data-loaded="instant" (root layout script). */
+.avatar-placeholder {
+  filter: blur(0.375rem);
+}
+img[data-progressive] {
+  transition: opacity 0.35s ease-out;
+}
+img[data-progressive]:not([data-loaded]) {
+  opacity: 0;
+}
+:has(> img[data-progressive][data-loaded]) > .avatar-placeholder {
+  opacity: 0;
+  transition: opacity 0.2s 0.35s;
+}
+:has(> img[data-progressive][data-loaded="instant"]) > :is(img[data-progressive], .avatar-placeholder) {
+  transition: none;
+}

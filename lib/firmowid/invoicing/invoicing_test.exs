@@ -1130,7 +1130,10 @@ defmodule Firmowid.Invoicing.InvoicingTest do
       blob = seed_blob!(organization_id, "org-logo.png", "org-logo-checksum")
       organization = Core.get_organization!(organization_id, scope: scope)
 
-      Core.update_organization_avatar!(organization, %{avatar_blob_id: blob.id}, scope: scope)
+      # The seeded blob has no stored file to make the picture's copies from.
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        Core.update_organization_avatar!(organization, %{avatar_blob_id: blob.id}, scope: scope)
+      end)
 
       assert is_binary(Invoicing.get_logo_url(organization_id, scope: scope))
     end

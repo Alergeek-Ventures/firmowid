@@ -86,7 +86,7 @@
                   search_name:
                     Phoenix.HTML.html_escape(user.member.name || user.email)
                     |> Phoenix.HTML.safe_to_string(),
-                  avatar_url: Map.get(user.member.avatar_blob || %{}, :url),
+                  avatar_url: user.member.avatar_blob && avatar_src(user.member.avatar_blob),
                   initials:
                     to_string(user.member.name || user.email || "")
                     |> String.slice(0, 1)
@@ -209,8 +209,9 @@
         >
           <.avatar class={["size-[50px]", entry.removed_from_project && "opacity-50"]}>
             <.avatar_image
-              :if={Map.get(entry.user.member.avatar_blob || %{}, :url)}
-              src={Map.get(entry.user.member.avatar_blob || %{}, :url)}
+              :if={entry.user.member.avatar_blob}
+              blob={entry.user.member.avatar_blob}
+              sizes="50px"
               alt={gettext("Avatar")}
             />
             <.avatar_fallback bg_color="teal-200" class="text-teal-800">

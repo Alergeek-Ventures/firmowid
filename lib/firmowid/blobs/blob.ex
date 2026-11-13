@@ -62,6 +62,29 @@ defmodule Firmowid.Blobs.Blob do
         worker_module_name Firmowid.Blobs.Blob.Worker.ProcessDocumentBlob
         scheduler_module_name Firmowid.Blobs.Blob.Scheduler.ProcessDocumentBlob
       end
+
+      # Avatars get their copies right after they are set (`Firmowid.Core.Changes.GenerateAvatarVariants`);
+      # the scheduler catches up on any picture without them, such as those uploaded before.
+      trigger :generate_picture_variants do
+        action :generate_picture_variants
+        read_action :read_global
+
+        where expr(
+                is_nil(placeholder) and not picture_variants_failed and
+                  (exists(avatar_members, true) or exists(avatar_organizations, true))
+              )
+
+        scheduler_cron "0 * * * *"
+        queue :pictures
+        max_attempts 3
+
+        # A picture the copies cannot be made from stops matching instead of being retried every hour.
+        on_error :mark_picture_variants_failed
+        on_error_fails_job? true
+
+        worker_module_name Firmowid.Blobs.Blob.Worker.GeneratePictureVariants
+        scheduler_module_name Firmowid.Blobs.Blob.Scheduler.GeneratePictureVariants
+      end
     end
   end
 
@@ -95,6 +118,8 @@ defmodule Firmowid.Blobs.Blob do
 
     define :process_document_blob, action: :process_document_blob
     define :cleanup_failed_document_blob, action: :cleanup_failed_document_blob
+    define :generate_picture_variants, action: :generate_picture_variants
+    define :mark_picture_variants_failed, action: :mark_picture_variants_failed
   end
 
   actions do
@@ -234,6 +259,24 @@ defmodule Firmowid.Blobs.Blob do
       change ProcessDocumentBlob
     end
 
+    update :generate_picture_variants do
+      description "Store the small copies of a picture and its placeholder."
+      require_atomic? false
+      # Talks to storage only; the placeholder is saved once the copies are uploaded.
+      transaction? false
+      accept []
+
+      change Firmowid.Blobs.Changes.GeneratePictureVariants
+    end
+
+    update :mark_picture_variants_failed do
+      description "Record that the copies of a picture could not be made."
+      require_atomic? false
+      accept []
+
+      change set_attribute(:picture_variants_failed, true)
+    end
+
     destroy :destroy do
       description "Delete a blob record and clean up the S3 object."
       primary? true
@@ -284,6 +327,14 @@ defmodule Firmowid.Blobs.Blob do
       constraints: [one_of: [:pending, :processing, :succeeded, :failed]]
 
     attribute :processing_metadata, :map, public?: true, allow_nil?: false, default: %{}
+
+    attribute :placeholder, :string do
+      public? true
+
+      description "A picture's blurred preview as a data URI, set once its small copies are stored."
+    end
+
+    attribute :picture_variants_failed, :boolean, public?: true, allow_nil?: false, default: false
 
     Resource.firmowid_timestamps()
   end

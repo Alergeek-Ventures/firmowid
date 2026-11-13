@@ -15,7 +15,8 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyTest do
            |> html_response(200)
            |> LazyHTML.from_document()
            |> LazyHTML.query("head script[nonce]")
-           |> LazyHTML.attribute("nonce") == [nonce]
+           |> LazyHTML.attribute("nonce")
+           |> Enum.uniq() == [nonce]
 
     refute get(build_conn(), ~p"/zaloguj").assigns.csp_nonce == nonce
   end

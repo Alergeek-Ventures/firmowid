@@ -210,6 +210,9 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   @doc """
   Stores the return URL for post-login redirect.
   """
+  # A picture a page loads after its session expired is not a page to return to.
+  def maybe_store_return_to(%{method: "GET", path_info: ["obrazy" | _]} = conn), do: conn
+
   def maybe_store_return_to(%{method: "GET"} = conn) do
     put_session(conn, :return_to, current_path(conn))
   end

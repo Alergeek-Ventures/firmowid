@@ -75,8 +75,9 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
             <.avatar class="hidden size-32 rounded-full border border-grey-100 bg-grey-100 lg:block">
               <.avatar_image
-                :if={Map.get(@current_user.member.avatar_blob || %{}, :url)}
-                src={Map.get(@current_user.member.avatar_blob || %{}, :url)}
+                :if={@current_user.member.avatar_blob}
+                blob={@current_user.member.avatar_blob}
+                sizes="128px"
                 alt={@current_user.member.name || @current_user.email}
               />
               <.avatar_fallback class="text-2xl font-medium text-grey-700">
@@ -129,8 +130,9 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
           <.avatar class="size-32 rounded-2xl! border border-grey-100 bg-grey-100">
             <.avatar_image
-              :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
-              src={@current_org.avatar_blob.url}
+              :if={@current_org.avatar_blob}
+              blob={@current_org.avatar_blob}
+              sizes="128px"
               alt={@current_org.display_name}
               class="rounded-2xl! object-contain"
             />
@@ -189,7 +191,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   @spec settings_avatar(map()) :: Rendered.t()
   attr :upload, :any, required: true
   attr :name, :string, required: true
-  attr :url, :string, default: nil
+  attr :blob, Firmowid.Blobs.Blob, default: nil, doc: "the picture, with `:url` loaded"
   attr :label, :string, required: true
   attr :class, :any, default: nil
 
@@ -203,7 +205,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
     >
       <.live_file_input upload={@upload} class="sr-only" aria-label={@label} />
       <.avatar class="size-20 border border-grey-100 bg-grey-100">
-        <.avatar_image :if={@url} src={@url} alt={@name} class="object-contain" />
+        <.avatar_image :if={@blob} blob={@blob} sizes="80px" alt={@name} class="object-contain" />
         <.avatar_fallback class="text-2xl font-medium text-grey-700">
           {initial(@name)}
         </.avatar_fallback>

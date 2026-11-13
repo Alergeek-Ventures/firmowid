@@ -1129,7 +1129,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           :if={@settings_tab == :organization}
           upload={@uploads.organization_avatar}
           name={@current_org.display_name}
-          url={@current_org.avatar_blob && @current_org.avatar_blob.url}
+          blob={@current_org.avatar_blob}
           label={gettext("Change organization logo")}
           class="rounded-md bg-white p-5"
         />
@@ -1137,7 +1137,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           :if={@settings_tab == :account}
           upload={@uploads.user_avatar}
           name={@current_user.member.name || @current_user.email}
-          url={@current_user.member.avatar_blob && @current_user.member.avatar_blob.url}
+          blob={@current_user.member.avatar_blob}
           label={gettext("Change profile picture")}
         />
       <% end %>
