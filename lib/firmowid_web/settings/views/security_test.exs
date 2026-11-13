@@ -3,8 +3,11 @@ defmodule FirmowidWeb.Settings.Views.SecurityTest do
   use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
+  import Firmowid.Test.Support.AuthEmailHelpers
   import Phoenix.LiveViewTest
+  import Swoosh.TestAssertions
 
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
@@ -73,6 +76,8 @@ defmodule FirmowidWeb.Settings.Views.SecurityTest do
       assert redirected_to(conn) == ~p"/zaloguj"
       assert get_session(conn, :return_to) == ~p"/ustawienia/konto"
       refute get_session(conn, :user_token)
+      # Without this the remember-me cookie would sign the browser straight back in.
+      assert %{max_age: 0} = conn.resp_cookies["remember_me"]
     end
 
     test "a session restored from the remember-me cookie does not count", %{conn: conn} do
@@ -94,6 +99,42 @@ defmodule FirmowidWeb.Settings.Views.SecurityTest do
                render_click(view, "delete_account")
 
       assert {:ok, _user} = Core.get_user(user.id, authorize?: false)
+    end
+
+    test "an account without a password changes its email only right after signing in",
+         %{conn: conn} do
+      user = Ash.Seed.update!(admin_fixture(), %{hashed_password: nil})
+      claims = %{"iat" => System.system_time(:second) - 11 * 60}
+      {:ok, token, _claims} = Jwt.token_for_user(user, claims)
+
+      conn =
+        conn
+        |> init_test_session(%{})
+        |> AuthHelpers.store_in_session(Ash.Resource.put_metadata(user, :token, token))
+
+      assert {:ok, view, _html} = live(conn, ~p"/ustawienia/konto")
+
+      view
+      |> element("button[aria-label='Edytuj dane dostępowe']")
+      |> render_click()
+
+      drain_sent_emails()
+      view |> form("#email_form", user: %{email: unique_user_email()}) |> render_submit()
+
+      # The address moves only when the link sent to it is confirmed, so a request
+      # that got through shows as that e-mail.
+      refute_email_sent()
+
+      # The page asks first; the action refuses on its own too.
+      stale = Ash.Resource.put_metadata(user, :token_claims, claims)
+
+      assert {:error, %Forbidden{}} =
+               Core.change_email(stale, %{email: unique_user_email()}, actor: stale)
+
+      new_email = unique_user_email()
+      fresh = with_session_claims(user)
+      assert {:ok, _user} = Core.change_email(fresh, %{email: new_email}, actor: fresh)
+      assert_email_sent(to: new_email)
     end
   end
 end

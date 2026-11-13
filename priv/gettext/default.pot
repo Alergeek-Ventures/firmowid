@@ -7242,6 +7242,11 @@ msgstr ""
 msgid "Log in again"
 msgstr ""
 
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Log in again to change your email address."
+msgstr ""
+
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
