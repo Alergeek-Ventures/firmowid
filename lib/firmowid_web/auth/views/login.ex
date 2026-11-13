@@ -8,9 +8,19 @@ defmodule FirmowidWeb.Auth.Views.Login do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
+
   def render(assigns) do
     ~H"""
-    <.auth_page title={gettext("Go to Firmowid")}>
+    <.auth_page
+      title={gettext("Go to Firmowid")}
+      lead={
+        @connecting_client &&
+          gettext("Log in or create an account to use Firmowid in %{client}.",
+            client: @connecting_client
+          )
+      }
+    >
       <.simple_form
         for={@form}
         id="login_form"
@@ -68,13 +78,14 @@ defmodule FirmowidWeb.Auth.Views.Login do
     """
   end
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
     socket =
       socket
       |> assign(form: form)
+      |> assign(:connecting_client, PendingAuthorization.client_name(session))
       |> assign(no_padding: true)
       |> assign(:page_title, gettext("Log in"))
 

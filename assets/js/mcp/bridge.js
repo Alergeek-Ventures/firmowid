@@ -74,31 +74,6 @@ const McpContext = {
   },
 };
 
-const McpKsefDownload = {
-  mounted() {
-    this.handleEvent("download-ksef-auth-token-request", async ({ content, filename }) => {
-      this.request?.abort();
-      const controller = new AbortController();
-      this.request = controller;
-      try {
-        await connection;
-        if (controller.signal.aborted) return;
-        const result = await app.downloadFile({
-          contents: [{
-            type: "resource",
-            resource: { uri: `file:///${encodeURIComponent(filename)}`, mimeType: "application/xml", text: content },
-          }],
-        }, { signal: controller.signal });
-        if (result.isError && !controller.signal.aborted) report("download_failed");
-      } catch {
-        if (!controller.signal.aborted) report("download_failed");
-      }
-    });
-  },
-  disconnected() { this.request?.abort(); },
-  destroyed() { this.request?.abort(); },
-};
-
 // Offers fullscreen while the widget is inline; the host provides its own exit.
 const McpFullscreen = {
   mounted() {
@@ -142,7 +117,7 @@ function mount(result) {
   root.innerHTML = data.html;
   if (!liveSocket) {
     liveSocket = new LiveSocket(data.socket_url, Socket, {
-      hooks: { ...UIHooks, Tippy, McpContext, McpKsefDownload, McpFullscreen, LiveToast: createLiveToastHook() },
+      hooks: { ...UIHooks, Tippy, McpContext, McpFullscreen, LiveToast: createLiveToastHook() },
     });
   }
   report();

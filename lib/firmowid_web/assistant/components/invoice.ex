@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
   alias FirmowidUI.Invoicing.Components.SalesInvoice, as: InvoicePreview
   alias FirmowidUI.Invoicing.Issuance
   alias FirmowidWeb.Assistant.Components.Records
+  alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
   alias Phoenix.LiveView.Rendered
 
   attr :id, :string, required: true, doc: "The preview's tool call."
@@ -205,6 +207,7 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
         <IssuanceWidget.issuance
           issuance={@issuance}
           footer_logo_url={~p"/images/invoice_firmowid_logo.png"}
+          ksef_settings_url={Endpoint.url() <> SettingsNavigation.canonical_path(:ksef)}
           call={@id}
           stacked
         >

@@ -14,6 +14,16 @@ defmodule FirmowidWeb.Inbox.Views.IndexTest do
     on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
   end
 
+  test "an admin without KSeF lands on the inbox, which leads to the KSeF settings", %{conn: conn} do
+    admin = admin_fixture()
+    conn = log_in_user(conn, admin)
+
+    assert {:error, {:live_redirect, %{to: "/skrzynka"}}} = live(conn, ~p"/fakturowanie")
+
+    {:ok, view, _html} = live(conn, ~p"/skrzynka")
+    assert has_element?(view, ~s(#item-ksef a[href="/ustawienia/ksef"]))
+  end
+
   test "a pending leave request leads the admin to the employee's leaves", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{name: "Jan Kowalski"})

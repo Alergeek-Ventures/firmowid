@@ -13,6 +13,11 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
   @doc "Renders the page with its title above the content."
   @spec auth_page(map()) :: Rendered.t()
   attr :title, :string, required: true
+
+  attr :lead, :string,
+    default: nil,
+    doc: "a sentence under the title, such as what the account is for"
+
   slot :inner_block, required: true
 
   def auth_page(assigns) do
@@ -25,6 +30,7 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
       />
       <div class="z-10 w-full max-w-xs">
         <h1 class="text-center text-2xl font-bold">{@title}</h1>
+        <p :if={@lead} class="mt-3 text-center text-sm text-grey-600">{@lead}</p>
         {render_slot(@inner_block)}
       </div>
     </div>

@@ -1488,6 +1488,11 @@ msgstr ""
 msgid "Approve"
 msgstr ""
 
+#: lib/firmowid_web/organization/views/first_steps.ex
+#, elixir-autogen, elixir-format
+msgid "Approve the connection and return to %{client}"
+msgstr ""
+
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Approve the settlement"
@@ -3014,6 +3019,11 @@ msgstr ""
 msgid "Connect to KSeF before issuing this invoice."
 msgstr ""
 
+#: lib/firmowid_web/organization/views/first_steps.ex
+#, elixir-autogen, elixir-format
+msgid "Connect with %{client}"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Connect with Google"
@@ -3366,12 +3376,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoice"
-msgstr ""
-
-#: lib/firmowid_web/development/views/inbox_scenarios.ex
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Cost invoices do not arrive on their own and sales invoices cannot be sent to KSeF."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/download_modal.ex
@@ -3910,6 +3914,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Create an account"
+msgstr ""
+
+#: lib/firmowid_web/auth/views/registration.ex
+#, elixir-autogen, elixir-format
+msgid "Create an account and fill in a short form to use Firmowid in %{client}. Then you will return to %{client}."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/legacy_form.ex
@@ -5228,6 +5237,11 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "File %{filename} does not contain the required data. Make sure you are uploading a contract."
+msgstr ""
+
+#: lib/firmowid_web/organization/components/onboarding_header.ex
+#, elixir-autogen, elixir-format
+msgid "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}."
 msgstr ""
 
 #: lib/firmowid/delegations/validations/expense_details_complete.ex
@@ -6615,11 +6629,6 @@ msgstr ""
 msgid "Invoices that reach KSeF by themselves"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
-#, elixir-autogen, elixir-format
-msgid "Invoices will be sent automatically to the National e-Invoice System."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices, bank accounts and users without plan limits."
@@ -6938,7 +6947,6 @@ msgstr ""
 msgid "KSeF errors since implementation"
 msgstr ""
 
-#: lib/firmowid_mcp/ksef/views/connection.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF integration"
@@ -6990,11 +6998,6 @@ msgstr ""
 #: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF rejected the submission as a duplicate. Change the invoice data and send it again."
-msgstr ""
-
-#: lib/firmowid_mcp/ksef/views/connection.ex
-#, elixir-autogen, elixir-format
-msgid "KSeF setup is unavailable."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/issuance.ex
@@ -7251,6 +7254,11 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Log in again to close your account."
+msgstr ""
+
+#: lib/firmowid_web/auth/views/login.ex
+#, elixir-autogen, elixir-format
+msgid "Log in or create an account to use Firmowid in %{client}."
 msgstr ""
 
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
@@ -8370,11 +8378,6 @@ msgstr ""
 msgid "Only an administrator can view invitations."
 msgstr ""
 
-#: lib/firmowid_mcp/ksef/views/connection.ex
-#, elixir-autogen, elixir-format
-msgid "Only an organization administrator can connect KSeF."
-msgstr ""
-
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "Only an outgoing PLN transfer can pay a salary."
@@ -8428,6 +8431,11 @@ msgstr ""
 #: lib/firmowid_web/auth/views/reset_password.ex
 #, elixir-autogen, elixir-format
 msgid "Oops, something went wrong! Check the errors below."
+msgstr ""
+
+#: lib/firmowid_ui/invoicing/components/issuance.ex
+#, elixir-autogen, elixir-format
+msgid "Open KSeF settings in Firmowid"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
@@ -11630,11 +11638,6 @@ msgstr ""
 msgid "The file %{file} will contain all documents whose %{dates} falls in the current month."
 msgstr ""
 
-#: lib/firmowid_mcp/runtime.ex
-#, elixir-autogen, elixir-format
-msgid "The file could not be downloaded. Try again."
-msgstr ""
-
 #: lib/firmowid/blobs/changes/process_document_blob.ex
 #, elixir-autogen, elixir-format
 msgid "The file does not contain the data required for a cost invoice."
@@ -12878,11 +12881,6 @@ msgstr ""
 msgid "Unable to issue the invoice. Check its details and try again."
 msgstr ""
 
-#: lib/firmowid_mcp/ksef/views/connection.ex
-#, elixir-autogen, elixir-format
-msgid "Unable to load the KSeF connection status. Try again."
-msgstr ""
-
 #: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to load the invoice preview. Try again."
@@ -13035,6 +13033,17 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Unspecified"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
+#, elixir-autogen, elixir-format
+msgid "Until KSeF is connected, you cannot issue sales invoices."
+msgstr ""
+
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Until it is connected, you cannot issue sales invoices, and cost invoices do not arrive on their own."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex

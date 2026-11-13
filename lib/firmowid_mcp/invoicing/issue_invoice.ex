@@ -5,10 +5,6 @@ defmodule FirmowidMcp.Invoicing.IssueInvoice do
   @spec tool_name() :: String.t()
   def tool_name, do: "preview_sales_invoice"
 
-  @doc "Returns the native read-only tool used to validate invoice input."
-  @spec data_tool_name() :: String.t()
-  def data_tool_name, do: tool_name()
-
   @doc "Returns the stable resource identifier; the runtime adds a content hash."
   @spec resource_uri() :: String.t()
   def resource_uri, do: "ui://firmowid/invoicing/issue-invoice.html"

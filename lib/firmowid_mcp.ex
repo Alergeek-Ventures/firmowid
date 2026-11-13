@@ -8,17 +8,10 @@ defmodule FirmowidMcp do
   alias FirmowidMcp.Invoicing
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice
-  alias FirmowidMcp.Ksef.Connection
+  alias FirmowidMcp.Ksef
   alias FirmowidMcp.Reconciliation
 
   mcp_resources do
-    mcp_ui_resource :ksef_connection, Connection.resource_uri(),
-      html: {FirmowidMcp.Runtime, :document, []},
-      title: "KSeF connection",
-      description: "Connect the organization's KSeF account using the existing administrator workflow.",
-      domain: nil,
-      prefers_border: true
-
     mcp_ui_resource :issue_invoice, IssueInvoice.resource_uri(),
       html: {FirmowidMcp.Runtime, :document, []},
       title: "Invoice confirmation",
@@ -36,8 +29,7 @@ defmodule FirmowidMcp do
 
   @doc "Composes the model instructions owned by the exposed MCP features."
   @spec instructions() :: String.t()
-  def instructions,
-    do: Enum.join([Invoicing.instructions(), Reconciliation.instructions(), Connection.instructions()], "\n")
+  def instructions, do: Enum.join([Invoicing.instructions(), Reconciliation.instructions(), Ksef.instructions()], "\n")
 
   @doc "Returns the Phoenix endpoint hosting this interface."
   @spec endpoint() :: module()

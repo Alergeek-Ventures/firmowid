@@ -96,6 +96,14 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert has_element?(view, "#upload-form")
   end
 
+  test "without the inbox, a member without KSeF sees on the dashboard that invoices need it", %{
+    conn: conn
+  } do
+    {:ok, view, _html} = conn |> log_in_user(admin_fixture()) |> live(~p"/fakturowanie")
+
+    assert has_element?(view, ~s(a[href="/ustawienia/ksef"]))
+  end
+
   describe "invoicing access" do
     test "redirects employees to time tracking", %{conn: conn} do
       user = user_fixture(%{role: :employee})

@@ -10,10 +10,20 @@ defmodule FirmowidWeb.Auth.Views.Registration do
 
   alias Firmowid.Core
   alias Firmowid.Core.User
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
 
   def render(assigns) do
     ~H"""
-    <.auth_page title={gettext("Sign up")}>
+    <.auth_page
+      title={gettext("Sign up")}
+      lead={
+        @connecting_client &&
+          gettext(
+            "Create an account and fill in a short form to use Firmowid in %{client}. Then you will return to %{client}.",
+            client: @connecting_client
+          )
+      }
+    >
       <.simple_form
         for={@form}
         id="registration_form"
@@ -65,7 +75,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
     """
   end
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     # After a failed sign-up the controller sends back the email and, when it is taken, why.
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
 
@@ -85,6 +95,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
       |> assign(:email_error, Phoenix.Flash.get(socket.assigns.flash, :email_error))
       |> assign(no_padding: true)
       |> assign(:page_title, gettext("Sign up"))
+      |> assign(:connecting_client, PendingAuthorization.client_name(session))
 
     {:ok, socket}
   end

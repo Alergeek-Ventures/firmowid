@@ -50,17 +50,13 @@ defmodule Firmowid.AiTools do
     :set_analysis_entry_project_tags
   ]
 
-  # Opens the KSeF connection MCP app. The assistant cannot render MCP apps and reads the same
-  # status through get_ksef_connection_status.
-  @mcp_only [:show_ksef_connection]
-
   # The confirmation widget reports the KSeF outcome on MCP; the assistant's invoice card shows it
   # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
   @assistant_only [:wait_for_ksef_submissions]
 
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
-  def mcp, do: @shared ++ @mcp_only
+  def mcp, do: @shared
 
   @doc "Returns the tools exposed to the in-app assistant."
   @spec assistant() :: [atom()]

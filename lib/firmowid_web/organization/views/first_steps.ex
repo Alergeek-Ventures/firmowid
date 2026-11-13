@@ -27,6 +27,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias FirmowidUI.Ksef.Connection
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.UserAuth
@@ -47,6 +48,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
       <.onboarding_header exit_path={@exit_path} back={back_path(@step)} step={step_number(@step)} />
+      <.connection_note :if={@connecting_client} client={@connecting_client} />
       <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
         <%!-- The card stays under the header while the steps beside it scroll. --%>
         <div class="order-2 lg:sticky lg:top-28 lg:order-1 lg:pt-2">
@@ -368,8 +370,19 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         class="mt-8 flex w-full items-center gap-4 rounded-xl bg-black px-5.5 py-4 text-left text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,.6)] transition-colors hover:bg-grey-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
         <span class="flex-1">
-          <span class="block text-lg font-medium">{gettext("Go to Firmowid")}</span>
-          <span class="block text-sm text-white/65">{gettext("Everything you set up is waiting there")}</span>
+          <%= if @connecting_client do %>
+            <span class="block text-lg font-medium">
+              {gettext("Connect with %{client}", client: @connecting_client)}
+            </span>
+            <span class="block text-sm text-white/65">
+              {gettext("Approve the connection and return to %{client}", client: @connecting_client)}
+            </span>
+          <% else %>
+            <span class="block text-lg font-medium">{gettext("Go to Firmowid")}</span>
+            <span class="block text-sm text-white/65">{gettext(
+              "Everything you set up is waiting there"
+            )}</span>
+          <% end %>
         </span>
         <Lucideicons.arrow_right class="size-5" aria-hidden="true" />
       </.button>
@@ -516,9 +529,14 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   # ── Lifecycle ────────────────────────────────────────────────────────
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if flag_enabled?(:inbox, socket.assigns) do
-      mount_steps(socket)
+      socket
+      |> assign(
+        connecting_client: PendingAuthorization.client_name(session),
+        authorization_path: PendingAuthorization.return_path(session)
+      )
+      |> mount_steps()
     else
       %{current_user: user, ash_scope: scope} = socket.assigns
       {:ok, push_navigate(socket, to: UserAuth.signed_in_path_for_user(user, scope.tenant))}
@@ -611,8 +629,12 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         socket
       end
 
-    # The inbox gathers what the new company needs to do next.
-    {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company))}
+    case socket.assigns.authorization_path do
+      # An AI client waits for the company: its consent screen is a page outside LiveView.
+      path when is_binary(path) -> {:noreply, redirect(socket, to: path)}
+      # The inbox gathers what the new company needs to do next.
+      nil -> {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company))}
+    end
   end
 
   def handle_event(event, params, socket)

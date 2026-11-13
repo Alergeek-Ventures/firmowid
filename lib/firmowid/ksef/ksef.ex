@@ -35,16 +35,7 @@ defmodule Firmowid.Ksef do
                   destructive_hint: false,
                   open_world_hint: false
 
-      description "Check KSeF connection status before invoice work. If disconnected or expired, suggest show_ksef_connection when can_connect is true; otherwise ask an organization admin to connect. Stored invoices remain readable while disconnected. A connected status does not guarantee current invoice data: data_freshness is unknown. Never request tokens, certificates, private keys or passwords in chat."
-    end
-
-    tool :show_ksef_connection, Credential, :connection_status do
-      annotations title: "Show KSeF connection",
-                  read_only_hint: true,
-                  destructive_hint: false,
-                  open_world_hint: false
-
-      description "Open the interactive KSeF connection setup inside the chat using a trusted profile or certificate; token registration is unavailable. After successfully opening the widget, stop: do not add a status table, summary, explanation or follow-up in chat. Let the user complete setup directly in the widget. This tool only reads status and makes no connection attempt, so an initial disconnected status is expected, not a failure. Only admins can connect or manage credentials. If can_connect is false, ask an organization admin to connect instead of opening the widget. Stored invoices remain readable while disconnected, and connected does not guarantee current data. Never request tokens, certificates, private keys or passwords in chat."
+      description "Check KSeF connection status before invoice work. KSeF is connected only by an organization admin in the Firmowid web app, never through this integration: if disconnected or expired, give the user the KSeF settings link from the server instructions. Stored invoices remain readable while disconnected. A connected status does not guarantee current invoice data: data_freshness is unknown."
     end
   end
 

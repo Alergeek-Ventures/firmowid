@@ -8,6 +8,8 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
   use FirmowidUI, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias FirmowidUI.Invoicing.Components.InvoiceNotes
   alias FirmowidUI.Invoicing.Components.InvoiceNumber
@@ -22,6 +24,10 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
     doc: "False once the interface's authorization expired."
 
   attr :footer_logo_url, :string, required: true
+
+  attr :ksef_settings_url, :string,
+    required: true,
+    doc: "Absolute address of the web KSeF settings, opened in a new window when KSeF is not connected."
 
   attr :call, :string,
     default: nil,
@@ -81,6 +87,15 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
           class="text-sm text-grey-600"
         >
           {gettext("Connect KSeF before issuing the invoice.")}
+          <.link
+            kind="unstyled"
+            external={@ksef_settings_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline underline-offset-4"
+          >
+            {gettext("Open KSeF settings in Firmowid")}
+          </.link>
         </p>
         <div class={[
           "grid items-start gap-6",

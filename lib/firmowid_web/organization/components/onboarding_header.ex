@@ -110,6 +110,21 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
     """
   end
 
+  @doc "Tells a person connecting an AI client what the setup is for and that they will return to it."
+  @spec connection_note(map()) :: Rendered.t()
+  attr :client, :string, required: true
+
+  def connection_note(assigns) do
+    ~H"""
+    <p id="connection-note" class="text-sm text-grey-600">
+      {gettext(
+        "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}.",
+        client: @client
+      )}
+    </p>
+    """
+  end
+
   defp back_link({:navigate, path}), do: %{navigate: path}
   defp back_link(path), do: %{patch: path}
 end
