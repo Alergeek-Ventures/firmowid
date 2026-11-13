@@ -94,13 +94,13 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </time>
       </p>
       <div class="[&_table]:block [&_table]:overflow-x-auto [&_tr.firmowid]:bg-[#1c1f23] [&_tr.firmowid_*]:text-white [&_tr.firmowid>td:first-child]:ps-3 [&_tr.firmowid>td:last-child]:pe-3">
-        {Phoenix.HTML.raw(elem(@article.html_sections, 0))}
-        <.guide_signup :if={elem(@article.html_sections, 1) != ""} cta="guide_mid_register">
+        {Phoenix.HTML.raw(@article.body.before_signup)}
+        <.guide_signup :if={@article.body.after_signup != ""} cta="guide_mid_register">
           {gettext(
             "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
           )}
         </.guide_signup>
-        {Phoenix.HTML.raw(elem(@article.html_sections, 1))}
+        {Phoenix.HTML.raw(@article.body.after_signup)}
       </div>
       <.guide_signup cta="guide_end_register">
         <strong class="block text-lg text-[#0f0f0f]">

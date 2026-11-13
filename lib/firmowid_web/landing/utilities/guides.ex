@@ -4,12 +4,14 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated`, `category`); the file name is the URL slug. Categories, in display
-  order, are defined in `priv/guides/categories.yml`. Questions in a
-  `## Najczęstsze pytania` section become the guide's `faq`, and `html_sections`
-  splits the body before its second `h2`, where the article shows a sign-up box.
-  Images in the body get their dimensions and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`,
-  when present, becomes the guide's link preview image.
+  order, are defined in `priv/guides/categories.yml`, and the index heading and
+  introduction in `priv/guides/index.yml`. Images in the body get their dimensions
+  and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`, when
+  present, becomes the guide's link preview image. The Markdown steps (Firmowid
+  rows, FAQ, sign-up split) live in `FirmowidWeb.Landing.Utilities.GuideMarkdown`.
   """
+
+  alias FirmowidWeb.Landing.Utilities.GuideMarkdown
 
   @type category :: %{slug: String.t(), name: String.t(), description: String.t()}
 
@@ -22,9 +24,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
           published: Date.t(),
           updated: Date.t(),
           category: category(),
-          html: String.t(),
-          faq: [%{question: String.t(), answer: String.t()}],
-          html_sections: {String.t(), String.t()},
+          body: GuideMarkdown.body(),
+          faq: [GuideMarkdown.faq_entry()],
           image: image() | nil
         }
 
@@ -86,46 +87,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   ~s(<img src="#{src}" width="#{width}" height="#{height}" loading="lazy" decoding="async")
                 end)
               )
-              # Comparison tables always set Firmowid's row apart from other programs.
-              |> then(
-                &Regex.replace(
-                  ~r/<tr>(\s*<td>(?:<strong>)?Firmowid)/,
-                  &1,
-                  ~S(<tr class="firmowid">\1)
-                )
-              )
-
-            # Questions under "## Najczęstsze pytania" (one "###" each) become FAQPage data,
-            # with images, captions and link targets left out of the answers.
-            faq =
-              case Regex.run(~r/^## Najczęstsze pytania\n(.*?)(?=^## |\z)/msu, body) do
-                [_, section] ->
-                  for [_, question, answer] <-
-                        Regex.scan(~r/^### ([^\n]+)\n(.*?)(?=^### |\z)/msu, section) do
-                    text =
-                      answer
-                      |> String.split(~r/\n\s*\n/)
-                      |> Enum.map(&String.trim/1)
-                      # Drop empty paragraphs, images and single-line italic captions;
-                      # keep bold text and lists.
-                      |> Enum.reject(&(&1 =~ ~r/\A(?:\z|!\[|\*[^*\n]+\*\z)/u))
-                      |> Enum.join(" ")
-                      |> then(&Regex.replace(~r/\[([^\]]+)\]\([^)]+\)/u, &1, "\\1"))
-                      |> String.replace("**", "")
-
-                    %{question: String.trim(question), answer: text}
-                  end
-
-                nil ->
-                  []
-              end
-
-            # The sign-up box goes before the second section, so the first one is read uninterrupted.
-            html_sections =
-              case String.split(html, "<h2", parts: 3) do
-                [lead, first, rest] -> {lead <> "<h2" <> first, "<h2" <> rest}
-                _ -> {html, ""}
-              end
+              |> GuideMarkdown.mark_firmowid_rows()
 
             og_path = "/images/guides/og/#{slug}.png"
 
@@ -144,9 +106,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               category:
                 Enum.find(@categories, &(&1.slug == category_slug)) ||
                   raise("#{path}: unknown guide category #{inspect(category_slug)}"),
-              html: html,
-              faq: faq,
-              html_sections: html_sections,
+              body: GuideMarkdown.split_for_signup(html),
+              faq: GuideMarkdown.faq(body),
               image: image,
               # Body images and the preview path (even when missing) recompile this module when they change.
               resources:
