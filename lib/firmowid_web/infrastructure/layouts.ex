@@ -419,11 +419,37 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     graph =
       graph ++
         article_data(assigns[:article], canonical_url(assigns), organization_id, image.url) ++
-        breadcrumb_data(assigns[:article], canonical_url(assigns), base_url)
+        breadcrumb_data(assigns[:article], canonical_url(assigns), base_url) ++
+        guide_list_data(assigns[:guide_categories], canonical_url(assigns), base_url)
 
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
+  end
+
+  defp guide_list_data(nil, _url, _base_url), do: []
+
+  defp guide_list_data(guide_categories, url, base_url) do
+    guides = Enum.flat_map(guide_categories, fn {_category, guides} -> guides end)
+
+    [
+      %{
+        "@type" => "ItemList",
+        "@id" => url <> "#guides",
+        "numberOfItems" => length(guides),
+        "itemListElement" =>
+          guides
+          |> Enum.with_index(1)
+          |> Enum.map(fn {guide, position} ->
+            %{
+              "@type" => "ListItem",
+              "position" => position,
+              "name" => guide.title,
+              "url" => base_url <> "/poradnik/" <> guide.slug
+            }
+          end)
+      }
+    ]
   end
 
   defp breadcrumb_data(nil, _url, _base_url), do: []
