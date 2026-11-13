@@ -28,6 +28,8 @@ Przykład: w miesiącu masz już faktury objęte limitem na 9 000 zł brutto. Ko
 
 Powrót poniżej 10 000 zł w kolejnym miesiącu nic nie zmienia. MF wyjaśnia, że po przekroczeniu limitu nie wraca się do wystawiania poza KSeF.
 
+![Limit 10 000 zł w KSeF do końca 2026 r. to suma brutto faktur objętych limitem w miesiącu według daty wystawienia. Przykład: faktury na 9 000 zł poza KSeF, kolejna na 2 000 zł przekracza próg i idzie już do KSeF, tak samo wszystkie następne, a słabszy miesiąc potem nic nie zmienia. Nie wliczasz faktur dla osób prywatnych, sprzedaży na kasie bez faktury, faktur z kasy ujętych w raporcie dobowym, paragonów z NIP do 450 zł brutto i faktur wyłączonych z obowiązkowego KSeF.](/images/guides/limit-10000-ksef-przekroczenie-progu.webp)
+
 ## Do którego miesiąca liczyć fakturę
 
 Liczy się data wystawienia, nie data sprzedaży. W przykładzie MF sprzedaż była 5 kwietnia 2026 r., a faktura wystawiona 7 maja, więc wlicza się do maja.
