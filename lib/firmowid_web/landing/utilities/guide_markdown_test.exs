@@ -19,29 +19,6 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdownTest do
     end
   end
 
-  describe "split_for_signup/1" do
-    test "splits before the second section" do
-      html = "<p>Lead</p><h2>One</h2><p>a</p><h2>Two</h2><p>b</p><h2>Three</h2>"
-
-      assert GuideMarkdown.split_for_signup(html) == %{
-               before_signup: "<p>Lead</p><h2>One</h2><p>a</p>",
-               after_signup: "<h2>Two</h2><p>b</p><h2>Three</h2>"
-             }
-    end
-
-    test "does not split when only the sources follow" do
-      html = "<p>Lead</p><h2>One</h2><p>a</p><h2>Źródła</h2><ul><li>MF</li></ul>"
-
-      assert GuideMarkdown.split_for_signup(html) == %{before_signup: html, after_signup: ""}
-    end
-
-    test "keeps a body with one section whole" do
-      html = "<p>Lead</p><h2>Only</h2><p>a</p>"
-
-      assert GuideMarkdown.split_for_signup(html) == %{before_signup: html, after_signup: ""}
-    end
-  end
-
   describe "faq/1" do
     test "reads each question and its plain answer" do
       markdown = """

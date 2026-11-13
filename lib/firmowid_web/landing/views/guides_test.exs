@@ -16,18 +16,11 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     for guide <- Guides.all(), do: assert(html =~ ~p"/poradnik/#{guide.slug}")
   end
 
-  test "a guide is in main and has one sign-up box", %{conn: conn} do
+  test "a guide is in main and has FAQPage data", %{conn: conn} do
     html = conn |> get(~p"/poradnik/tryb-offline-ksef") |> html_response(200)
 
     assert html =~ "<main>"
-    assert length(Regex.scan(~r/data-landing-cta="guide_mid_register"/, html)) == 1
     assert html =~ ~s("@type":"FAQPage")
-  end
-
-  test "a guide with only sources after one section has no box", %{conn: conn} do
-    html = conn |> get(~p"/poradnik/aplikacja-mobilna-ksef") |> html_response(200)
-
-    refute html =~ "guide_mid_register"
   end
 
   test "a long title drops the brand suffix and a short one keeps it", %{conn: conn} do

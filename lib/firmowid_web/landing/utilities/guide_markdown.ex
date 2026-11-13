@@ -6,10 +6,8 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
   """
 
   @type faq_entry :: %{question: String.t(), answer: String.t()}
-  @type body :: %{before_signup: String.t(), after_signup: String.t()}
 
   @faq_heading "Najczęstsze pytania"
-  @sources_heading "Źródła"
 
   @doc """
   Marks comparison table rows that start with Firmowid, so the page can set them apart.
@@ -17,24 +15,6 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
   @spec mark_firmowid_rows(String.t()) :: String.t()
   def mark_firmowid_rows(html) do
     Regex.replace(~r/<tr>(\s*<td>(?:<strong>)?Firmowid)/, html, ~S(<tr class="firmowid">\1))
-  end
-
-  @doc """
-  Splits the body before its second `h2`, where the page shows a sign-up box, so
-  the first section reads uninterrupted. When only the sources follow, or the body
-  has one section, nothing is split off and the page shows no box.
-  """
-  @spec split_for_signup(String.t()) :: body()
-  def split_for_signup(html) do
-    case String.split(html, "<h2", parts: 3) do
-      [lead, first, rest] ->
-        if String.starts_with?(rest, ">#{@sources_heading}<"),
-          do: %{before_signup: html, after_signup: ""},
-          else: %{before_signup: lead <> "<h2" <> first, after_signup: "<h2" <> rest}
-
-      _ ->
-        %{before_signup: html, after_signup: ""}
-    end
   end
 
   @doc """

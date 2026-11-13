@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   introduction in `priv/guides/index.yml`. Images in the body get their dimensions
   and lazy loading. A PNG at `priv/static/images/guides/og/<slug>.png`, when
   present, becomes the guide's link preview image. The Markdown steps (Firmowid
-  rows, FAQ, sign-up split) live in `FirmowidWeb.Landing.Utilities.GuideMarkdown`.
+  rows, FAQ) live in `FirmowidWeb.Landing.Utilities.GuideMarkdown`.
   """
 
   alias FirmowidWeb.Landing.Utilities.GuideMarkdown
@@ -24,7 +24,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
           published: Date.t(),
           updated: Date.t(),
           category: category(),
-          body: GuideMarkdown.body(),
+          html: String.t(),
           faq: [GuideMarkdown.faq_entry()],
           image: image() | nil
         }
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               category:
                 Enum.find(@categories, &(&1.slug == category_slug)) ||
                   raise("#{path}: unknown guide category #{inspect(category_slug)}"),
-              body: GuideMarkdown.split_for_signup(html),
+              html: html,
               faq: GuideMarkdown.faq(body),
               image: image,
               # Body images and the preview path (even when missing) recompile this module when they change.
