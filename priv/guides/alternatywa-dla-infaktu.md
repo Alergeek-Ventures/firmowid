@@ -18,6 +18,8 @@ Obowiązek wystawiania faktur w KSeF dotyczy większości firm od 1 kwietnia 202
 | Fakturownia | wysyłka w każdym planie | plan Micro: 3 faktury sprzedażowe/mies. bezpłatnie, 1 użytkownik, bez połączenia z bankiem; odbiór faktur kosztowych: sprawdź w planie, który rozważasz, na pomoc.fakturownia.pl | fakturownia.pl |
 | Firmowid (nasz produkt, AGPL-3.0) | wysyłka i odbiór | plan Darmowy: 0 zł, bez karty, bez limitu faktur sprzedaży; 1 konto bankowe z automatycznym dopasowaniem przelewów; ewidencja czasu do 3 projektów; brak księgowości (KPiR, ryczałt, ZUS, deklaracje) | firmowid.pl/cennik |
 
+![Faktury w KSeF bez pakietu księgowego: pięć opcji z artykułu. Aplikacja Podatnika KSeF ministerstwa: wysyłka i odbiór, bezpłatna, bez limitu faktur. FakturaXL: wysyłka i odbiór, plany tańsze niż pełne pakiety księgowe. Faktura.pl: w planie 0 zł tylko pobieranie i podgląd z KSeF, wysyłka od planu BASIC za 18,99 zł netto miesięcznie w cyklu 3-letnim. Fakturownia: wysyłka w każdym planie, w planie Micro 3 faktury sprzedaży miesięcznie bez opłat. Firmowid: wysyłka i odbiór, plan Darmowy 0 zł bez karty i bez limitu faktur sprzedaży. inFakt łączy faktury KSeF z obsługą biura rachunkowego.](/images/guides/alternatywa-dla-infaktu-opcje-ksef.webp)
+
 ## Co wybrać
 
 | Potrzebujesz | Gdzie szukać |
