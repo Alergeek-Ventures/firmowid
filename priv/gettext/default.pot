@@ -10877,7 +10877,6 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
 #: lib/firmowid_web/landing/components/primitives.ex
-#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Start for free"
 msgstr ""
@@ -10893,7 +10892,6 @@ msgid "Start with the free plan. No card required."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/primitives.ex
-#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
 msgstr ""
