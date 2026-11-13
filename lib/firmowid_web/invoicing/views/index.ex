@@ -29,7 +29,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
-  alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
@@ -127,6 +126,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       socket
       |> assign(:page_title, "Fakturowanie")
       |> assign(:projects_column, nil)
+      |> assign(:projects_loaded_at, nil)
 
     active_months =
       get_active_months(socket.assigns.ash_scope) ++
@@ -344,6 +344,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             return_to={Navigation.invoicing_index_path(@params)}
             can_write_invoicing={can_write_invoicing?(@current_user)}
             projects={@projects_column}
+            projects_loaded_at={@projects_loaded_at}
           />
       <% end %>
 
@@ -556,9 +557,18 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
   end
 
-  # A project assigned in one row also shows on the transaction paying that invoice.
+  # A project assigned in one row also shows on the transaction paying that invoice, and a
+  # new project needs its colour. The rows read their projects themselves, so the list is
+  # not read again.
   @impl true
-  def handle_info(:projects_changed, socket), do: {:noreply, refetch_invoicing_entries(socket)}
+  def handle_info(:projects_changed, socket) do
+    %{params: %{month: month}, ash_scope: scope} = socket.assigns
+
+    {:noreply,
+     socket
+     |> assign(:projects_column, projects_column(socket.assigns, month, scope))
+     |> assign(:projects_loaded_at, System.monotonic_time())}
+  end
 
   def handle_info({:debounced_refetch, :invoicing_entries}, socket) do
     {:noreply, refetch_invoicing_entries(socket)}
@@ -940,21 +950,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         do: fetch_entries(nil, nil, filter, subfilter, scope),
         else: fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
 
-    projects_column = projects_column(socket.assigns, month, scope)
-
-    entries =
-      if projects_column,
-        do: ProjectCell.preload(fetched_entries, scope),
-        else: fetched_entries
-
     entries =
       if all_months?,
-        do: with_month_separators(entries),
-        else: group_cost_transactions_by_party(entries)
+        do: with_month_separators(fetched_entries),
+        else: group_cost_transactions_by_party(fetched_entries)
 
     socket
     |> assign(:invoicing_entries, entries)
-    |> assign(:projects_column, projects_column)
+    |> assign(:projects_column, projects_column(socket.assigns, month, scope))
+    # Projects change without the entries changing (another session, the assistant, tracked
+    # time), so every reload makes the rows on screen read theirs again.
+    |> assign(:projects_loaded_at, System.monotonic_time())
     |> assign_month_status(fetched_entries)
     |> refetch_upload_counts()
     |> fetch_dashboard_data()

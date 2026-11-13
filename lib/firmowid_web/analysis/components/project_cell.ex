@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   @moduledoc """
-  Project selector in an invoicing table row. Entries arrive with their tags
-  preloaded for the whole list. A change sends `:projects_changed` to the list,
-  which reloads every row: a paying transaction shows its invoice's projects,
-  and a new project gets its colour before any row shows it.
+  Project selector in an invoicing table row. The tags of every row on screen
+  load together, so rows of months not shown cost nothing. They load again when
+  the list hands the rows a new `loaded_at`, which it does on every reload and
+  when a row sends it `:projects_changed`: a paying transaction shows its
+  invoice's projects, and a new project gets its colour before any row shows it.
   """
   use FirmowidWeb, :live_component
 
@@ -11,18 +12,24 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
 
   alias Firmowid.Analysis
   alias Firmowid.Finances.Transaction
-  alias Firmowid.Invoicing.CostInvoice
-  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategorySelector
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
 
   @impl true
   def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
+  # Every row of the list shares the scope.
   @impl true
-  def update(assigns, socket) do
-    socket = assign(socket, assigns)
-    {:ok, assign(socket, :entry, load(socket.assigns.entry, socket.assigns.scope))}
+  def update_many([{%{scope: scope}, _socket} | _] = assigns_sockets) do
+    entries =
+      assigns_sockets
+      |> Enum.map(fn {assigns, _socket} -> assigns.entry end)
+      |> load_tags(scope)
+
+    # Assigned loaded at once, an unchanged row is not rendered again.
+    Enum.zip_with(assigns_sockets, entries, fn {assigns, socket}, entry ->
+      assign(socket, %{assigns | entry: entry})
+    end)
   end
 
   @impl true
@@ -70,12 +77,9 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
     projects ++ Enum.uniq_by(assigned, & &1.id)
   end
 
-  @doc "Loads the selector's tags for a whole list at once, leaving other entries (groups) as they are."
-  @spec preload(list(), Firmowid.Scope.t()) :: list()
-  def preload(entries, scope) do
+  defp load_tags(entries, scope) do
     loaded =
       entries
-      |> Enum.filter(&(is_struct(&1, Transaction) or is_struct(&1, CostInvoice) or is_struct(&1, SalesInvoice)))
       |> Enum.group_by(& &1.__struct__)
       |> Enum.flat_map(fn {resource, list} ->
         Ash.load!(list, loads(resource), scope: scope, lazy?: true)
@@ -83,12 +87,8 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
       |> with_salary_tags(scope)
       |> Map.new(&{{&1.__struct__, &1.id}, &1})
 
-    Enum.map(entries, &Map.get(loaded, {&1.__struct__, Map.get(&1, :id)}, &1))
+    Enum.map(entries, &Map.fetch!(loaded, {&1.__struct__, &1.id}))
   end
-
-  # Entries from the list arrive loaded; one replaced elsewhere (a status change) loads again.
-  defp load(%{entity_tags: tags} = entry, _scope) when is_list(tags), do: entry
-  defp load(entry, scope), do: [entry] |> preload(scope) |> hd()
 
   # Salary transfers show the projects the analysis derives from tracked time, not stored tags.
   defp with_salary_tags(entries, scope) do
