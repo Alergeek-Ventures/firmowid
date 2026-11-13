@@ -31,9 +31,11 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @guides_dir Application.app_dir(:firmowid, "priv/guides")
   @static_dir Application.app_dir(:firmowid, "priv/static")
   @categories_path Path.join(@guides_dir, "categories.yml")
+  @index_path Path.join(@guides_dir, "index.yml")
   @paths @guides_dir |> Path.join("*.md") |> Path.wildcard()
 
   @external_resource @categories_path
+  @external_resource @index_path
 
   for path <- @paths do
     @external_resource path
@@ -41,6 +43,10 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   # Recompile when a guide is added or removed, not only when one changes.
   def __mix_recompile__?, do: @guides_dir |> Path.join("*.md") |> Path.wildcard() != @paths
+
+  @index_page @index_path
+              |> YamlElixir.read_from_file!()
+              |> then(&%{heading: Map.fetch!(&1, "heading"), intro: Map.fetch!(&1, "intro")})
 
   @categories @categories_path
               |> YamlElixir.read_from_file!()
@@ -162,6 +168,10 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @doc "Lists all guides, newest first."
   @spec all() :: [guide()]
   def all, do: @guides
+
+  @doc "Returns the heading and introduction of the guide index."
+  @spec index_page() :: %{heading: String.t(), intro: String.t()}
+  def index_page, do: @index_page
 
   @doc "Lists categories in display order with their guides, newest first, skipping empty ones."
   @spec by_category() :: [{category(), [guide()]}]

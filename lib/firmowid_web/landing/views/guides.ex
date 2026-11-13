@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   defp assign_page(socket, :index, _params) do
     assign(socket,
       guide_categories: Guides.by_category(),
+      index_page: Guides.index_page(),
       page_title: gettext("Firmowid guides — KSeF and invoicing"),
       meta_description: gettext("Practical guides on KSeF, e-invoices and invoicing software for small businesses.")
     )
@@ -45,12 +46,8 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   def render(%{live_action: :index} = assigns) do
     ~H"""
     <.legal_page>
-      <h1>{gettext("KSeF and invoicing guides for small businesses")}</h1>
-      <p>
-        {gettext(
-          "Practical answers for sole traders and small firms: when KSeF applies to you, what to do when it fails, how to choose an invoicing program and connect it to your bank. Each guide cites its sources and shows the date of its last update."
-        )}
-      </p>
+      <h1>{@index_page.heading}</h1>
+      <p>{@index_page.intro}</p>
       <ul>
         <li :for={{category, _guides} <- @guide_categories}>
           <a href={"#" <> category.slug}>{category.name}</a>
