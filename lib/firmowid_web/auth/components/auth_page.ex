@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Auth.Components.ClientLogo, only: [connection_logos: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.LiveView.Rendered
@@ -18,6 +19,10 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
     default: nil,
     doc: "a sentence under the title, such as what the account is for"
 
+  attr :connecting_client, :map,
+    default: nil,
+    doc: "the AI client the account is for, whose logo stands above the title"
+
   slot :inner_block, required: true
 
   def auth_page(assigns) do
@@ -29,6 +34,7 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
         class="pointer-events-none absolute -top-20 left-1/2 h-[135vh] opacity-10"
       />
       <div class="z-10 w-full max-w-xs">
+        <.connection_logos :if={@connecting_client} app={@connecting_client.app} class="mb-6" />
         <h1 class="text-center text-2xl font-bold">{@title}</h1>
         <p :if={@lead} class="mt-3 text-center text-sm text-grey-600">{@lead}</p>
         {render_slot(@inner_block)}

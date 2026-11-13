@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   alias AshAuthentication.Phoenix.Oauth2Server.Errors
   alias Firmowid.Core
   alias Firmowid.Core.User
+  alias FirmowidWeb.Auth.Components.ClientLogo
   alias FirmowidWeb.Auth.Components.McpConsent
   alias FirmowidWeb.Auth.Utilities.PendingAuthorization
   alias FirmowidWeb.Infrastructure.Flags
@@ -53,7 +54,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   end
 
   defp authorize(%{method: "GET"} = conn, nil) do
-    case client_name(conn) do
+    case client(conn) do
       {:ok, client} -> PendingAuthorization.put(conn, client, nil)
       :invalid -> conn
     end
@@ -84,7 +85,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   end
 
   defp continue_after_setup(conn, setup_path) do
-    case client_name(conn) do
+    case client(conn) do
       {:ok, client} ->
         conn
         |> remember_return(client, current_path(conn))
@@ -108,10 +109,11 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   # Any client may register under any name, so the pages show only a short one: a
   # longer name could pass a whole sentence onto the sign-in page. Counted in bytes,
   # since combining marks keep a long name one character long.
-  defp client_name(conn) do
+  defp client(conn) do
     case Authorize.validate_request(Firmowid.Oauth2Server, fetch_query_params(conn).query_params) do
-      {:ok, %{client: %{client_name: name}}} when is_binary(name) ->
-        {:ok, if(byte_size(name) <= @max_client_name_bytes, do: name)}
+      {:ok, %{client: %{client_name: name} = client}}
+      when is_binary(name) and byte_size(name) <= @max_client_name_bytes ->
+        {:ok, %{name: name, app: ClientLogo.app(client.cimd_url)}}
 
       {:ok, _unnamed} ->
         {:ok, nil}
@@ -122,13 +124,13 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   end
 
   defp consent(conn, members, selected) do
-    McpConsent.put_organizations(Enum.map(members, & &1.organization), selected)
+    McpConsent.put_context(Enum.map(members, & &1.organization), selected, consent_app(conn))
 
     # An earlier consent issues the code without rendering the screen; the
     # connection process may serve further requests.
     conn =
       register_before_send(conn, fn conn ->
-        McpConsent.delete_organizations()
+        McpConsent.delete_context()
         conn
       end)
 
@@ -137,6 +139,16 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     case selected do
       nil -> conn
       member -> set_tenant(conn, member.organization_id)
+    end
+  end
+
+  # The screen renders only for a valid request. The OAuth server loads a client with a
+  # URL `client_id` from the metadata document at that URL, and a registered client has
+  # its id there, so the parameter names the app without validating the request again.
+  defp consent_app(conn) do
+    case fetch_query_params(conn).query_params do
+      %{"client_id" => client_id} when is_binary(client_id) -> ClientLogo.app(client_id)
+      _missing -> :mcp
     end
   end
 

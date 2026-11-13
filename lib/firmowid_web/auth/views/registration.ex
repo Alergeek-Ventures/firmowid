@@ -15,12 +15,13 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   def render(assigns) do
     ~H"""
     <.auth_page
+      connecting_client={@connecting_client}
       title={gettext("Sign up")}
       lead={
         @connecting_client &&
           gettext(
             "Create an account and fill in a short form to use Firmowid in %{client}. Then you will return to %{client}.",
-            client: @connecting_client
+            client: @connecting_client.name
           )
       }
     >
@@ -95,7 +96,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
       |> assign(:email_error, Phoenix.Flash.get(socket.assigns.flash, :email_error))
       |> assign(no_padding: true)
       |> assign(:page_title, gettext("Sign up"))
-      |> assign(:connecting_client, PendingAuthorization.client_name(session))
+      |> assign(:connecting_client, PendingAuthorization.client(session))
 
     {:ok, socket}
   end

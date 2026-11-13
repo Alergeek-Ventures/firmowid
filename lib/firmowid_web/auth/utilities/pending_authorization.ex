@@ -4,9 +4,10 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorization do
 
   A person connecting an AI client (such as ChatGPT) may first need to sign up,
   create a company and finish its setup. `FirmowidWeb.Auth.Utilities.ConsentOrganization`
-  remembers the client's name in the session, so the registration and setup pages
-  can say what they are for, and the authorization request's path, so the setup
-  returns to the consent screen once it is done. The consent screen forgets it.
+  remembers the client's name and app in the session, so the registration and
+  setup pages can say what they are for and show its logo, and the authorization
+  request's path, so the setup returns to the consent screen once it is done. The
+  consent screen forgets it.
 
   A request abandoned halfway is forgotten after `@lifetime_seconds`, so a later
   company switch in the same browser session does not lead to an old consent.
@@ -14,14 +15,19 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorization do
 
   import Plug.Conn, only: [get_session: 2, put_session: 3, delete_session: 2]
 
+  alias FirmowidWeb.Auth.Components.ClientLogo
+
   @session_key "mcp_pending_authorization"
   @lifetime_seconds 3600
 
+  @typedoc "The client a page names, with the app whose logo it shows."
+  @type client :: %{name: String.t(), app: ClientLogo.app()}
+
   @doc "Remembers the client and, once the account is signed in, the request to return to."
-  @spec put(Plug.Conn.t(), String.t() | nil, String.t() | nil) :: Plug.Conn.t()
-  def put(conn, client_name, return_path) do
+  @spec put(Plug.Conn.t(), client() | nil, String.t() | nil) :: Plug.Conn.t()
+  def put(conn, client, return_path) do
     put_session(conn, @session_key, %{
-      "client" => client_name,
+      "client" => client,
       "path" => return_path,
       "at" => System.os_time(:second)
     })
@@ -31,9 +37,9 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorization do
   @spec delete(Plug.Conn.t()) :: Plug.Conn.t()
   def delete(conn), do: delete_session(conn, @session_key)
 
-  @doc "The name of the client waiting for the account, from a conn or a LiveView session."
-  @spec client_name(Plug.Conn.t() | map()) :: String.t() | nil
-  def client_name(conn_or_session) do
+  @doc "The client waiting for the account, from a conn or a LiveView session."
+  @spec client(Plug.Conn.t() | map()) :: client() | nil
+  def client(conn_or_session) do
     case fetch(conn_or_session) do
       %{"client" => client} -> client
       nil -> nil

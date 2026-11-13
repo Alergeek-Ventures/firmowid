@@ -6,34 +6,41 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   loads app CSS and mirrors the login page layout. The approval names the
   organization the client will work in (see
   `FirmowidWeb.Auth.Utilities.ConsentOrganization`): a choice when the account has
-  several.
+  several. The client's logo stands beside Firmowid's at the top.
   """
 
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.Auth.Components.ClientLogo, only: [connection_logos: 1]
 
   alias Firmowid.Core.Member
   alias Firmowid.Core.Organization
+  alias FirmowidWeb.Auth.Components.ClientLogo
 
-  @organizations_key {__MODULE__, :organizations}
+  @context_key {__MODULE__, :context}
 
   @doc """
-  Stores the account's organizations and the preselected one for the consent
-  screen rendered later in this request.
+  Stores the account's organizations, the preselected one and the client's app
+  for the consent screen rendered later in this request.
 
   ConsentRouter renders the view with its own assigns only, without the conn.
   """
-  @spec put_organizations([Organization.t()], Member.t() | nil) :: :ok
-  def put_organizations(organizations, selected) do
-    Process.put(@organizations_key, {organizations, selected && selected.organization_id})
+  @spec put_context([Organization.t()], Member.t() | nil, ClientLogo.app()) :: :ok
+  def put_context(organizations, selected, app) do
+    Process.put(@context_key, %{
+      organizations: organizations,
+      selected_id: selected && selected.organization_id,
+      app: app
+    })
+
     :ok
   end
 
-  @doc "Forgets the organizations when the request ends without rendering the screen."
-  @spec delete_organizations() :: :ok
-  def delete_organizations do
-    Process.delete(@organizations_key)
+  @doc "Forgets the context when the request ends without rendering the screen."
+  @spec delete_context() :: :ok
+  def delete_context do
+    Process.delete(@context_key)
     :ok
   end
 
@@ -42,8 +49,8 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   """
   @spec render(:consent, map()) :: iodata()
   def render(:consent, assigns) do
-    {organizations, selected_id} = Process.delete(@organizations_key) || {[], nil}
-    assigns = Map.merge(assigns, %{organizations: organizations, selected_id: selected_id})
+    context = Process.delete(@context_key) || %{organizations: [], selected_id: nil, app: :mcp}
+    assigns = Map.merge(assigns, context)
 
     Phoenix.HTML.Safe.to_iodata(~H"""
     <!DOCTYPE html>
@@ -77,6 +84,7 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
             class="absolute -top-20 left-1/2 h-[135vh] opacity-10"
           />
           <div class="z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-grey-200">
+            <.connection_logos app={@app} class="mbe-5" />
             <h1 class="text-center text-2xl font-bold text-balance wrap-break-word text-grey-900">
               {gettext("Connect %{client} to Firmowid?", client: @client_name)}
             </h1>

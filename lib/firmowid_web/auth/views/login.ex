@@ -13,11 +13,12 @@ defmodule FirmowidWeb.Auth.Views.Login do
   def render(assigns) do
     ~H"""
     <.auth_page
+      connecting_client={@connecting_client}
       title={gettext("Go to Firmowid")}
       lead={
         @connecting_client &&
           gettext("Log in or create an account to use Firmowid in %{client}.",
-            client: @connecting_client
+            client: @connecting_client.name
           )
       }
     >
@@ -85,7 +86,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
     socket =
       socket
       |> assign(form: form)
-      |> assign(:connecting_client, PendingAuthorization.client_name(session))
+      |> assign(:connecting_client, PendingAuthorization.client(session))
       |> assign(no_padding: true)
       |> assign(:page_title, gettext("Log in"))
 
