@@ -102,11 +102,6 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </.guide_signup>
         {Phoenix.HTML.raw(@article.body.after_signup)}
       </div>
-      <.guide_signup cta="guide_end_register">
-        <strong class="block text-lg text-[#0f0f0f]">
-          {gettext("Run your business")} {gettext("with a lighter mind.")}
-        </strong>
-      </.guide_signup>
       <div class="not-prose mt-12 flex flex-wrap items-center gap-3 border-t border-grey-300 pt-6 text-sm font-medium [&>a]:rounded-full [&>a]:border [&>a]:border-grey-300 [&>a]:px-4 [&>a]:py-2 [&>a:hover]:border-grey-900 [&>button]:rounded-full [&>button]:border [&>button]:border-grey-300 [&>button]:px-4 [&>button]:py-2 [&>button:hover]:border-grey-900">
         <.icon name="hero-share" class="size-5 text-grey-600" />
         <a
@@ -144,7 +139,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     """
   end
 
-  attr :cta, :string, required: true, values: ~w(guide_mid_register guide_end_register)
+  attr :cta, :string, required: true, values: ~w(guide_mid_register)
   slot :inner_block, required: true
 
   defp guide_signup(assigns) do

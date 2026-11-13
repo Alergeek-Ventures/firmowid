@@ -135,7 +135,6 @@ const LANDING_CTAS = new Map([
   ["footer_register", { cta: "footer_register" }],
   ["footer_demo_booking", { cta: "footer_demo_booking" }],
   ["guide_mid_register", { cta: "guide_mid_register" }],
-  ["guide_end_register", { cta: "guide_end_register" }],
 ]);
 const LANDING_PLANS = new Set(["start", "przedsiebiorca", "firma"]);
 const LANDING_BILLING_PERIODS = new Set(["monthly", "yearly"]);

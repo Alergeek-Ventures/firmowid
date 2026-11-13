@@ -29,6 +29,12 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdownTest do
              }
     end
 
+    test "does not split when only the sources follow" do
+      html = "<p>Lead</p><h2>One</h2><p>a</p><h2>Źródła</h2><ul><li>MF</li></ul>"
+
+      assert GuideMarkdown.split_for_signup(html) == %{before_signup: html, after_signup: ""}
+    end
+
     test "keeps a body with one section whole" do
       html = "<p>Lead</p><h2>Only</h2><p>a</p>"
 
