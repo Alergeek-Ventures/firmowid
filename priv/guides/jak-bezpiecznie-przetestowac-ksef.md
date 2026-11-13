@@ -16,6 +16,8 @@ W środowisku testowym wszystko może być fikcyjne, łącznie z danymi logowani
 - **Demo:** żeby przed pierwszą fakturą sprawdzić, czy działa twoje logowanie i nadane uprawnienia.
 - **Produkcyjne:** tylko do prawdziwych faktur. Nie wysyłaj tam niczego na próbę.
 
+![Trzy środowiska KSeF. Testowe: wszystko fikcyjne, także dane logowania, bez skutków prawnych. Demo: prawdziwe logowanie i uprawnienia, ale fikcyjne dane na fakturze, bez skutków podatkowych. Produkcyjne: tylko prawdziwe faktury, ze skutkami prawnymi i podatkowymi. Dane z testowego i Demo są co jakiś czas usuwane.](/images/guides/srodowiska-ksef-testowe-demo-produkcyjne.webp)
+
 ## Próba krok po kroku
 
 1. Otwórz testową wersję Aplikacji Podatnika KSeF 2.0.
