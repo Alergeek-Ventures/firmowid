@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   import FirmowidWeb.Settings.Components.SubscriptionTab
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Forbidden.Policy
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
   alias Firmowid.Billing.Month
@@ -363,7 +364,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       # The sign-in grew stale while the page was open: reloading it shows the way to
       # sign in again (see the User destroy policy).
-      {:error, %Ash.Error.Forbidden.Policy{}} ->
+      {:error, %Policy{}} ->
         {:noreply,
          socket
          |> put_flash(:info, gettext("Log in again to close your account."))
@@ -470,24 +471,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("change_email", %{"user" => user_params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.email_form, params: user_params) do
-      {:ok, user} ->
-        LiveToast.send_toast(
-          :info,
-          gettext("We have sent a confirmation link to the new email address.")
-        )
+    current_user = socket.assigns.current_user
 
-        {:noreply,
-         socket
-         |> assign(:editing_credentials, false)
-         |> assign(:current_user, user)
-         |> assign(:current_password, nil)
-         |> assign(:password_form, form_password_form(user))
-         |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
-
-      {:error, form} ->
-        LiveToast.send_toast(:error, gettext("Could not send the email. Try again."))
-        {:noreply, assign(socket, :email_form, form)}
+    # Only an account without a password is refused, when its sign-in is not recent
+    # (see the User `:change_email` policy).
+    if Ash.can?({current_user, :change_email}, current_user) do
+      change_email(socket, user_params)
+    else
+      LiveToast.send_toast(:error, gettext("Log in again to change your email address."))
+      {:noreply, socket}
     end
   end
 
@@ -1467,4 +1459,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp form_contract_form(contract, scope),
     do: contract |> AshPhoenix.Form.for_update(:update, domain: Payroll, scope: scope, as: "contract") |> to_form()
+
+  defp change_email(socket, user_params) do
+    case AshPhoenix.Form.submit(socket.assigns.email_form, params: user_params) do
+      {:ok, user} ->
+        LiveToast.send_toast(
+          :info,
+          gettext("We have sent a confirmation link to the new email address.")
+        )
+
+        {:noreply,
+         socket
+         |> assign(:editing_credentials, false)
+         |> assign(:current_user, user)
+         |> assign(:current_password, nil)
+         |> assign(:password_form, form_password_form(user))
+         |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
+
+      {:error, form} ->
+        LiveToast.send_toast(:error, gettext("Could not send the email. Try again."))
+        {:noreply, assign(socket, :email_form, form)}
+    end
+  end
 end

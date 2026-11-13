@@ -8,7 +8,8 @@ defmodule Firmowid.Checks.RecentSignIn do
   `FirmowidWeb.Infrastructure.UserAuth.load_member/2` puts on the user), which every
   sign-in mints anew. A session restored from the remember-me cookie carries the
   `"remembered"` claim (see the User `:sign_in_with_remember_me` action) and does not
-  count: no credential was given.
+  count: no credential was given. Neither does a superuser working as the user
+  (`"impersonator_id"`): the holder did not sign in.
   """
   use Ash.Policy.SimpleCheck
 
@@ -19,7 +20,7 @@ defmodule Firmowid.Checks.RecentSignIn do
 
   @impl true
   def match?(%{__metadata__: %{token_claims: %{"iat" => issued_at} = claims}}, _context, _opts) do
-    not Map.has_key?(claims, "remembered") and
+    not Map.has_key?(claims, "remembered") and not Map.has_key?(claims, "impersonator_id") and
       System.system_time(:second) - issued_at <= @max_age_seconds
   end
 

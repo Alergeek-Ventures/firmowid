@@ -26,6 +26,7 @@ defmodule Firmowid.Core.User do
 
   alias AshAuthentication.Strategy.Password.PasswordValidation
   alias Firmowid.Checks.OrganizationMemberAdmin
+  alias Firmowid.Checks.RecentSignIn
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Changes.CaptureGoogleRegistration
   alias Firmowid.Core.Member
@@ -568,8 +569,13 @@ defmodule Firmowid.Core.User do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
+    # An account with a password proves its holder with it (see the action). One without
+    # has only the sign-in: confirming the new address mints a fresh session, so a stolen
+    # session must not get that far.
     bypass action(:change_email) do
-      authorize_if expr(id == ^actor(:id))
+      forbid_unless expr(id == ^actor(:id))
+      authorize_if expr(not is_nil(hashed_password))
+      authorize_if RecentSignIn
     end
 
     policy action(:update_current_profile) do
@@ -611,7 +617,7 @@ defmodule Firmowid.Core.User do
     # session cannot.
     bypass action_type(:destroy) do
       forbid_if expr(not is_nil(^actor([:__metadata__, :token_claims, "impersonator_id"])))
-      forbid_unless Firmowid.Checks.RecentSignIn
+      forbid_unless RecentSignIn
       authorize_if expr(id == ^actor(:id))
     end
   end
