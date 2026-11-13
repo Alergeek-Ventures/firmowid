@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Landing.Utilities.GuideStructuredData
 
   embed_templates "layouts/*"
 
@@ -418,109 +419,15 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
     graph =
       graph ++
-        article_data(assigns[:article], canonical_url(assigns), organization_id, image.url) ++
-        breadcrumb_data(assigns[:article], canonical_url(assigns), base_url) ++
-        guide_list_data(assigns[:guide_categories], canonical_url(assigns), base_url) ++
-        guide_faq_data(assigns[:article], canonical_url(assigns))
+        GuideStructuredData.nodes(assigns, %{
+          url: canonical_url(assigns),
+          base_url: base_url,
+          organization_id: organization_id,
+          image_url: image.url
+        })
 
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
-  end
-
-  defp guide_faq_data(%{faq: [_ | _] = faq}, url) do
-    [
-      %{
-        "@type" => "FAQPage",
-        "@id" => url <> "#faq",
-        "mainEntity" =>
-          Enum.map(faq, fn entry ->
-            %{
-              "@type" => "Question",
-              "name" => entry.question,
-              "acceptedAnswer" => %{"@type" => "Answer", "text" => entry.answer}
-            }
-          end)
-      }
-    ]
-  end
-
-  defp guide_faq_data(_article, _url), do: []
-
-  defp guide_list_data(nil, _url, _base_url), do: []
-
-  defp guide_list_data(guide_categories, url, base_url) do
-    guides = Enum.flat_map(guide_categories, fn {_category, guides} -> guides end)
-
-    [
-      %{
-        "@type" => "ItemList",
-        "@id" => url <> "#guides",
-        "numberOfItems" => length(guides),
-        "itemListElement" =>
-          guides
-          |> Enum.with_index(1)
-          |> Enum.map(fn {guide, position} ->
-            %{
-              "@type" => "ListItem",
-              "position" => position,
-              "name" => guide.title,
-              "url" => base_url <> "/poradnik/" <> guide.slug
-            }
-          end)
-      }
-    ]
-  end
-
-  defp breadcrumb_data(nil, _url, _base_url), do: []
-
-  defp breadcrumb_data(article, url, base_url) do
-    [
-      %{
-        "@type" => "BreadcrumbList",
-        "@id" => url <> "#breadcrumb",
-        "itemListElement" => [
-          %{
-            "@type" => "ListItem",
-            "position" => 1,
-            "name" => "Firmowid",
-            "item" => base_url <> "/"
-          },
-          %{
-            "@type" => "ListItem",
-            "position" => 2,
-            "name" => gettext("Guides"),
-            "item" => base_url <> "/poradnik"
-          },
-          %{
-            "@type" => "ListItem",
-            "position" => 3,
-            "name" => article.category.name,
-            "item" => base_url <> "/poradnik#" <> article.category.slug
-          },
-          %{"@type" => "ListItem", "position" => 4, "name" => article.title}
-        ]
-      }
-    ]
-  end
-
-  defp article_data(nil, _url, _organization_id, _image_url), do: []
-
-  defp article_data(article, url, organization_id, image_url) do
-    [
-      %{
-        "@type" => "Article",
-        "@id" => url <> "#article",
-        "headline" => article.title,
-        "description" => article.description,
-        "datePublished" => Date.to_iso8601(article.published),
-        "dateModified" => Date.to_iso8601(article.updated),
-        "inLanguage" => "pl-PL",
-        "mainEntityOfPage" => %{"@id" => url <> "#webpage"},
-        "author" => %{"@id" => organization_id},
-        "publisher" => %{"@id" => organization_id},
-        "image" => image_url
-      }
-    ]
   end
 end
