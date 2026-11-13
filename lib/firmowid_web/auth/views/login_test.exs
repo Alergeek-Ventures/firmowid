@@ -37,6 +37,14 @@ defmodule FirmowidWeb.Auth.Views.LoginTest do
 
       assert redirected_to(conn) == "/zaloguj"
     end
+
+    test "offers a Google button for each state of the Remember me box", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
+
+      assert has_element?(lv, "#remember-me[type=checkbox]")
+      assert has_element?(lv, ~s|a[href="/auth/user/google"]|)
+      assert has_element?(lv, ~s|a[href="/auth/user/google?remember_me=true"]|)
+    end
   end
 
   describe "login navigation" do

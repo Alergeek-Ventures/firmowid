@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
 
         <:actions>
           <.input
+            id="remember-me"
             name="user[remember_me]"
             checked={false}
             type="checkbox"
@@ -55,7 +56,14 @@ defmodule FirmowidWeb.Auth.Views.Login do
         </.link>
       </p>
 
-      <.google_button label={gettext("Log in with Google")} />
+      <%!-- The box belongs to the password form, so the browser shows the Google
+      button that carries it while it is ticked. --%>
+      <div class="[body:has(#remember-me:checked)_&]:hidden">
+        <.google_button label={gettext("Log in with Google")} />
+      </div>
+      <div class="hidden [body:has(#remember-me:checked)_&]:block">
+        <.google_button label={gettext("Log in with Google")} remember_me />
+      </div>
     </.auth_page>
     """
   end
