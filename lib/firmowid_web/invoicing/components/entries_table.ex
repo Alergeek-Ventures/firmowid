@@ -16,7 +16,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
-  attr :invoicing_entries, :list, required: true
+  attr :invoicing_entries, :list,
+    required: true,
+    doc: "the rows to show, or nil while they load, which shows placeholder rows"
+
   attr :mode, :atom, required: true
 
   attr :load_newer, :string,
@@ -76,19 +79,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   def table(assigns) do
-    columns =
-      case assigns.mode do
-        :invoices -> @invoice_columns
-        :transactions -> @transaction_columns
-        _ -> @default_columns
-      end
-
-    # Rows are assigned to analysis projects before the dates, where the table is wide enough.
-    columns =
-      if assigns[:projects],
-        do: List.insert_at(columns, 1, "project"),
-        else: columns
-
     assigns =
       assigns
       |> assign_new(:return_to, fn -> nil end)
@@ -97,24 +87,24 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:projects_loaded_at, fn -> nil end)
       |> assign_new(:load_newer, fn -> nil end)
       |> assign_new(:load_more, fn -> nil end)
-      |> assign(
-        :columns,
-        columns
-      )
       # A list of every month separates the months with a line naming each.
-      |> assign(:by_month?, Enum.any?(assigns.invoicing_entries, &match?({:month, _}, &1)))
+      |> assign(:by_month?, Enum.any?(assigns.invoicing_entries || [], &match?({:month, _}, &1)))
 
     ~H"""
-    <%!-- The hook keeps rows in place itself when months load above, so the browser must not as well.
-         A flex column stretches the table across the page, as its parent did before this wrapper. --%>
+    <%!-- The hook keeps rows in place itself when rows load above, so the browser must not as well.
+         A flex column stretches the table across the page, as its parent did before this wrapper.
+         The placeholder rows sit inside, so the hook is there from the start to put the reader
+         back where they were once the rows arrive. --%>
     <div
       id="invoicing-entries-list"
       phx-hook=".MonthScroll"
       class={["flex flex-col", @by_month? && "[overflow-anchor:none]"]}
     >
-      <%!-- Coming into view (with a margin), each indicator loads the months on its side. --%>
+      <%!-- Coming into view (with a margin), each indicator loads the rows on its side. --%>
       <.load_indicator :if={@load_newer} event={@load_newer} />
+      <.loading_rows :if={is_nil(@invoicing_entries)} />
       <table
+        :if={@invoicing_entries}
         id="invoicing-entries"
         class={
           [
@@ -129,7 +119,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         }
       >
         <col
-          :for={column <- @columns}
+          :for={column <- columns(@mode, @projects)}
           class={[
             case column do
               "project" -> "w-48 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
@@ -157,7 +147,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         }>
           <tr>
             <th
-              :for={column <- @columns}
+              :for={column <- columns(@mode, @projects)}
               id={"header-#{column}"}
               phx-hook="ScrollStyle"
               data-classes="border-b-4 border-solid border-grey-700/40"
@@ -174,30 +164,17 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           </tr>
         </thead>
         <tbody class="max-md:flex max-md:flex-col max-md:gap-3">
-          <%= for entry <- @invoicing_entries do %>
-            <%= case entry do %>
-              <% {:month, month} -> %>
-                <.month_row month={month} />
-              <% %TransactionGroup{} = group -> %>
-                <.group_row
-                  group={group}
-                  projects={@projects}
-                  projects_loaded_at={@projects_loaded_at}
-                  columns={@columns}
-                  return_to={@return_to}
-                  can_write_invoicing={@can_write_invoicing}
-                />
-              <% invoicing_entry -> %>
-                <.table_row
-                  projects={@projects}
-                  projects_loaded_at={@projects_loaded_at}
-                  columns={@columns}
-                  invoicing_entry={invoicing_entry}
-                  return_to={@return_to}
-                  can_write_invoicing={@can_write_invoicing}
-                />
-            <% end %>
-          <% end %>
+          <%!-- Keyed, so rows loaded as the reader scrolls go to the browser alone, not with every row above. --%>
+          <.entry_rows
+            :for={entry <- @invoicing_entries}
+            :key={entry_key(entry)}
+            entry={entry}
+            projects={@projects}
+            projects_loaded_at={@projects_loaded_at}
+            columns={columns(@mode, @projects)}
+            return_to={@return_to}
+            can_write_invoicing={@can_write_invoicing}
+          />
         </tbody>
       </table>
       <.load_indicator :if={@load_more} event={@load_more} />
@@ -237,14 +214,31 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               });
             };
             window.addEventListener("scroll", this.onScroll, {passive: true});
-            // Months load ahead of the reader, before an indicator scrolls into view.
+            // Rows load ahead of the reader, before an indicator scrolls into view.
             this.observer = new IntersectionObserver(entries => {
               const entry = entries.find(entry => entry.isIntersecting);
               if (entry) this.load(entry.target.dataset.load);
             }, {rootMargin: "1200px 0px"});
+            // Going back to the list, LiveView scrolls to the reader's place while the page holds
+            // only placeholder rows, too short to get there, and then records where it stopped;
+            // the place is read first, and once the rows are in the hook scrolls there again,
+            // loading rows until the page reaches that far.
+            this.restoreTo = window.history.state?.scroll;
+            // Going back between filters or months keeps this hook, and the place too; any
+            // other navigation drops a place still being restored.
+            this.onNavigate = ({detail}) => {
+              this.restoreTo = detail.pop ? window.history.state?.scroll : null;
+            };
+            window.addEventListener("phx:navigate", this.onNavigate);
             this.observe();
             this.sync();
             this.handleEvent("scroll-to-month", ({month}) => this.scrollToMonth(month));
+          },
+          restore() {
+            if (!this.restoreTo || !this.el.querySelector("table")) return;
+            window.scrollTo({top: this.restoreTo, behavior: "instant"});
+            const more = this.el.querySelector("table ~ [data-load]");
+            if (window.scrollY >= this.restoreTo - 1 || !more) this.restoreTo = null;
           },
           scrollToMonth(month) {
             // Months run newest first; a month without entries scrolls to the next older one.
@@ -276,9 +270,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           load(event) {
             if (this.loading) return;
             this.loading = true;
-            // Months added above move the rows down the page; scrolling by as much keeps the
-            // first row on screen in place, whatever the reader scrolled meanwhile.
-            const anchor = Array.from(this.el.querySelectorAll("tbody tr"))
+            // Rows added above move the rows down the page; scrolling by as much keeps the
+            // first row on screen in place, whatever the reader scrolled meanwhile. A month's
+            // heading may move up with them, so it does not hold the place.
+            const anchor = Array.from(this.el.querySelectorAll("tbody tr:not([data-month])"))
               .find(row => row.getBoundingClientRect().bottom > 0);
             const pageTop = row => row.getBoundingClientRect().top + window.scrollY;
             const before = anchor && pageTop(anchor);
@@ -288,14 +283,20 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               this.sync();
               this.loading = false;
               if (this.pending) this.scrollToMonth(this.pending);
+              this.restore();
               // Observing again reports an indicator still in range, which loads the next months.
               this.observe();
             });
           },
-          // A patch may add months or replace the indicators.
+          // A patch may add rows, replace the indicators, or bring the rows in after placeholders.
           updated() {
+            this.restore();
             this.sync();
             this.observe();
+          },
+          // Joining again reads the rows anew under placeholders, so the reader's place is kept.
+          disconnected() {
+            this.restoreTo = window.scrollY;
           },
           // A reply lost with the connection would leave loading stuck.
           reconnected() {
@@ -304,6 +305,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           },
           destroyed() {
             window.removeEventListener("scroll", this.onScroll);
+            window.removeEventListener("phx:navigate", this.onNavigate);
             cancelAnimationFrame(this.frame);
             this.observer.disconnect();
           }
@@ -313,13 +315,74 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  # Called in the template rather than assigned, so the rows see the columns change only
+  # when the mode or the projects do, and are not sent again with every new row.
+  # Rows are assigned to analysis projects before the dates, where the table is wide enough.
+  defp columns(mode, nil = _projects), do: mode_columns(mode)
+  defp columns(mode, _projects), do: mode |> mode_columns() |> List.insert_at(1, "project")
+
+  defp mode_columns(:invoices), do: @invoice_columns
+  defp mode_columns(:transactions), do: @transaction_columns
+  defp mode_columns(_mode), do: @default_columns
+
+  defp entry_key({:month, month}), do: {:month, month}
+  defp entry_key(%struct{id: id}), do: {struct, id}
+
+  defp entry_rows(%{entry: {:month, month}} = assigns) do
+    assigns = assign(assigns, :month, month)
+
+    ~H"""
+    <.month_row month={@month} />
+    """
+  end
+
+  defp entry_rows(%{entry: %TransactionGroup{}} = assigns) do
+    ~H"""
+    <.group_row
+      group={@entry}
+      projects={@projects}
+      projects_loaded_at={@projects_loaded_at}
+      columns={@columns}
+      return_to={@return_to}
+      can_write_invoicing={@can_write_invoicing}
+    />
+    """
+  end
+
+  defp entry_rows(assigns) do
+    ~H"""
+    <.table_row
+      projects={@projects}
+      projects_loaded_at={@projects_loaded_at}
+      columns={@columns}
+      invoicing_entry={@entry}
+      return_to={@return_to}
+      can_write_invoicing={@can_write_invoicing}
+    />
+    """
+  end
+
   attr :event, :string, required: true
 
   defp load_indicator(assigns) do
     ~H"""
     <div data-load={@event} role="status" class="flex justify-center py-6 text-grey-700">
       <Lucideicons.loader_circle class="size-6 motion-safe:animate-spin" aria-hidden="true" />
-      <span class="sr-only">{gettext("Loading more months")}</span>
+      <span class="sr-only">{gettext("Loading entries")}</span>
+    </div>
+    """
+  end
+
+  # Blank rows where the first ones will be, under the space the column headings take.
+  defp loading_rows(assigns) do
+    ~H"""
+    <div id="invoicing-entries-loading" role="status" class="flex flex-col gap-3 md:pt-15">
+      <span class="sr-only">{gettext("Loading entries")}</span>
+      <div
+        :for={_row <- 1..8}
+        aria-hidden="true"
+        class="h-14 rounded-md bg-white motion-safe:animate-pulse max-md:h-19 max-md:rounded-lg"
+      />
     </div>
     """
   end

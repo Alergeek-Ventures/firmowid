@@ -35,6 +35,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     invoice = corrected_cost_invoice_fixture!(user)
 
     {:ok, dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+    render_async(dashboard)
 
     assert has_element?(
              dashboard,
@@ -58,6 +59,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
              MapSet.new([first_payment.id, second_payment.id])
 
     {:ok, paid_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+    render_async(paid_dashboard)
     assert has_element?(paid_dashboard, "p", "Brak nieopłaconych faktur.")
 
     {:ok, details, _html} = live(conn, ~p"/kosztowe/#{invoice.id}")
@@ -68,6 +70,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert Invoicing.get_cost_invoice!(invoice.id, scope: scope).skip_invoicing
 
     {:ok, skipped_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+    render_async(skipped_dashboard)
     assert has_element?(skipped_dashboard, "p", "Brak nieopłaconych faktur.")
   end
 
@@ -83,6 +86,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     user = admin_fixture()
     scope = scope_for(user)
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+    render_async(view)
 
     {:ok, path} = Briefly.create()
     File.write!(path, "attachment")
@@ -113,6 +117,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
           conn
           |> log_in_user(user)
           |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury&widok=lista")
+
+        render_async(view)
 
         assert has_element?(
                  view,
@@ -162,6 +168,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         })
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(view)
       assert has_element?(view, "#dashboard-attention h2", "Warte uwagi")
       refute has_element?(view, "#dashboard-attention .bg-brick-200")
 
@@ -218,6 +225,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert reconnected.id == account.id
 
       {:ok, renewed_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(renewed_view)
       assert has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
 
       refute has_element?(
@@ -272,6 +280,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       end
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(view)
       warning = view |> element("#dashboard-attention [id^='bank-connection-alert-']") |> render()
       assert warning =~ "Połączenie z Synthetic Bank wygasło"
       assert warning =~ "Od 12.01.2026 transakcje nie są synchronizowane"
@@ -302,6 +311,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       end
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(view)
 
       assert has_element?(
                view,
@@ -322,6 +332,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       )
 
       {:ok, summary_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(summary_view)
 
       assert has_element?(
                summary_view,
@@ -341,6 +352,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?filtr=nieprzypisane&widok=lista")
+
+      render_async(list_view)
 
       refute has_element?(list_view, "#dashboard-attention")
       refute has_element?(list_view, "#skipped-ksef-sales-invoices")
@@ -392,6 +405,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       # Mount the LiveView (subscribes to PubSub topics)
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(view)
 
       # Accept the requisition - triggers Ash.Notifier.PubSub broadcast
       # This will call GoCardless API (stubbed above) and broadcast :linked.
@@ -418,6 +432,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       # Mount the LiveView
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      render_async(view)
 
       # Reject the requisition - triggers Ash.Notifier.PubSub broadcast
       {:ok, _rejected} =
@@ -443,6 +458,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=wszystkie&widok=lista")
 
+      render_async(view)
+
       assert has_element?(view, "##{transaction.id}-button", "Pomiń")
 
       view |> element("##{transaction.id}-button", "Pomiń") |> render_click()
@@ -466,6 +483,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
 
+      render_async(view)
+
       updated_html =
         view
         |> element("##{invoice.id}-button")
@@ -486,6 +505,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
+
+      render_async(view)
 
       html = render(view)
 
@@ -525,7 +546,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       # scheduling and cancellation are covered by PubSubDebounceTest.
       send(view.pid, {:debounced_refetch, :invoicing_entries})
 
-      html_after_debounce = render(view)
+      html_after_debounce = render_async(view)
 
       refute html_after_debounce =~ "Grouped Party"
       refute html_after_debounce =~ "2 transakcje"
@@ -543,6 +564,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-05-01&filtr=nieprzypisane&widok=lista")
+
+      render_async(view)
 
       html = render(view)
 
@@ -598,12 +621,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     test "uploads a cost invoice and shows it in the list", %{conn: conn, user: user} do
       put_reducto_extract_result({:ok, cost_invoice_document()})
 
-      {:ok, view, html} =
+      {:ok, view, _html} =
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
-      assert html =~ "Brak transakcji i dokumentów dla wybranej daty"
+      assert render_async(view) =~ "Brak transakcji i dokumentów dla wybranej daty"
       subscribe_to_upload_notifications(user)
 
       upload_invoice(view, "upload-success.png")
@@ -637,6 +660,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
+      render_async(view)
+
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-invalid.png")
       assert_cost_invoice_blob_failed(user)
@@ -663,6 +688,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+
+      render_async(view)
 
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-missing-data.png")
@@ -695,6 +722,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
+      render_async(view)
+
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-corrupt.svg")
       assert_cost_invoice_blob_failed(user)
@@ -717,6 +746,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
+      render_async(view)
+
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-reducto-error.png")
       assert_cost_invoice_blob_failed(user)
@@ -738,6 +769,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         conn
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+
+      render_async(view)
 
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-success.png")
