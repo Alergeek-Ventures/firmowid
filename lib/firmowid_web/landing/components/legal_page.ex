@@ -30,9 +30,11 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
     >
       <.landing_navbar />
 
-      <article class={@class}>
-        {render_slot(@inner_block)}
-      </article>
+      <main>
+        <article class={@class}>
+          {render_slot(@inner_block)}
+        </article>
+      </main>
 
       <.cta_footer />
     </div>
