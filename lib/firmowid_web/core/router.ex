@@ -84,6 +84,10 @@ defmodule FirmowidWeb.Core.Router do
     plug FirmowidWeb.Auth.Utilities.ConsentOrganization
   end
 
+  pipeline :google_remember_me do
+    plug FirmowidWeb.Auth.Utilities.GoogleRememberMe
+  end
+
   pipeline :health do
     plug :accepts, ["json"]
   end
@@ -135,9 +139,14 @@ defmodule FirmowidWeb.Core.Router do
   # first-match-wins, and the protocol router would 404 `/oauth/authorize`.
 
   scope "/", FirmowidWeb do
-    pipe_through :browser
+    pipe_through [:browser, :google_remember_me]
 
     auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
+  end
+
+  scope "/", FirmowidWeb do
+    pipe_through :browser
+
     delete "/wyloguj", AuthController, :sign_out
     post "/zaloguj-ponownie", AuthController, :sign_in_again
     delete "/admin/impersonacja", Admin.Controllers.Impersonation, :delete

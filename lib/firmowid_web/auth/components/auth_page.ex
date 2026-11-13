@@ -35,10 +35,16 @@ defmodule FirmowidWeb.Auth.Components.AuthPage do
   @spec google_button(map()) :: Rendered.t()
   attr :label, :string, required: true
 
+  attr :remember_me, :boolean,
+    default: false,
+    doc: "the sign-in page's \"Remember me\" box (see `FirmowidWeb.Auth.Utilities.GoogleRememberMe`)"
+
   def google_button(assigns) do
     ~H"""
     <.link
-      redirect={~p"/auth/user/google"}
+      redirect={
+        if @remember_me, do: ~p"/auth/user/google?remember_me=true", else: ~p"/auth/user/google"
+      }
       kind="button"
       variant="outline"
       class="mt-8 w-full gap-3 bg-white text-sm font-medium shadow-sm"

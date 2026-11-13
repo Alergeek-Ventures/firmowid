@@ -270,6 +270,8 @@ defmodule Firmowid.Core.User do
       primary? true
       argument :user_info, :map, allow_nil?: false
       argument :oauth_tokens, :map, allow_nil?: false, sensitive?: true
+      # The "Remember me" box, set from the context below rather than taken as input.
+      argument :remember_me, :boolean, allow_nil?: true, public?: false
       upsert? true
       upsert_identity :unique_email
       upsert_fields []
@@ -323,6 +325,19 @@ defmodule Firmowid.Core.User do
       end
 
       change AshAuthentication.GenerateTokenChange
+
+      # The box comes back from Google as context (see
+      # `FirmowidWeb.Auth.Utilities.GoogleRememberMe`); the strategy's dispatcher sets
+      # the token as a cookie.
+      change fn changeset, _context ->
+        Ash.Changeset.set_private_argument(
+          changeset,
+          :remember_me,
+          changeset.context[:remember_me]
+        )
+      end
+
+      change AshAuthentication.Strategy.RememberMe.MaybeGenerateTokenChange
       change AshAuthentication.Strategy.OAuth2.IdentityChange
       change CaptureGoogleRegistration
     end
