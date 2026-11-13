@@ -1,0 +1,14 @@
+/* Public pages (home, pricing, guides, legal pages) load this instead of app.css.
+   It scans only the templates those pages render, so a guide gets a much smaller stylesheet. */
+@import "tailwindcss" source(none);
+@import "./shared.css";
+
+@source "../js/landing.js";
+@source "../js/hooks";
+@source "../js/telemetry";
+@source "../../lib/firmowid_web/landing";
+@source "../../lib/firmowid_web/infrastructure";
+@source "../../lib/firmowid_web/design_system";
+@source "../../lib/firmowid_ui.ex";
+@source "../../lib/firmowid_ui";
+@source "../../deps/live_toast/lib";

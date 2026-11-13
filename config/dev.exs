@@ -16,6 +16,8 @@ config :firmowid, Endpoint,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]},
+    landing_js: {Esbuild, :install_and_run, [:landing, ~w(--sourcemap=inline --watch)]},
+    landing_css: {Tailwind, :install_and_run, [:landing, ~w(--watch)]},
     mcp_js: {Esbuild, :install_and_run, [:mcp, ~w(--watch)]},
     mcp_dev_host_js: {Esbuild, :install_and_run, [:mcp_dev_host, ~w(--watch)]}
   ],
