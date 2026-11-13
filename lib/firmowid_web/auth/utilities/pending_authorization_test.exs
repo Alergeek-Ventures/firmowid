@@ -204,6 +204,7 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
         "grant_type" => "authorization_code",
         "code" => code,
         "client_id" => context.client.id,
+        "redirect_uri" => @redirect_uri,
         "code_verifier" => context.verifier
       })
       |> json_response(200)
