@@ -28,6 +28,10 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
     default: nil,
     doc: "the step number, `:done` once every step is behind, or nil for no progress"
 
+  attr :connecting_client, :string,
+    default: nil,
+    doc: "the AI client the person returns to after the last step, named beside the progress"
+
   def onboarding_header(assigns) do
     assigns = assign(assigns, :step_count, @step_count)
 
@@ -56,17 +60,41 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
         <img src={~p"/images/logo-head.svg"} alt="Firmowid" class="size-9 sm:hidden" />
       <% end %>
 
-      <p :if={@step} class="flex items-center gap-1.5 text-sm text-grey-600 sm:gap-2">
-        <span
-          :for={number <- 1..@step_count}
-          class={[
-            "h-1 w-5 rounded-full sm:w-7",
-            if(@step == :done or number <= @step, do: "bg-black", else: "bg-grey-200")
-          ]}
-        ></span>
-        <span :if={@step != :done} class="ml-1 max-sm:sr-only">
-          {gettext("Step %{number} of %{total}", number: @step, total: @step_count)}
+      <p
+        :if={@step}
+        class={[
+          "flex items-center gap-1.5 text-sm text-grey-600 sm:gap-2",
+          @connecting_client && "max-md:flex-col"
+        ]}
+      >
+        <span class="flex items-center gap-1.5 sm:gap-2">
+          <span
+            :for={number <- 1..@step_count}
+            class={[
+              "h-1 w-5 rounded-full sm:w-7",
+              if(@step == :done or number <= @step, do: "bg-black", else: "bg-grey-200")
+            ]}
+          ></span>
         </span>
+        <%= cond do %>
+          <% @step == :done -> %>
+          <% @connecting_client -> %>
+            <%!-- Narrower, where it ends goes on a line of its own under the bars. --%>
+            <span class="ms-1 max-md:sr-only">
+              {gettext("Step %{number} of %{total}, then back to %{client}",
+                number: @step,
+                total: @step_count,
+                client: @connecting_client
+              )}
+            </span>
+            <span class="text-xs md:hidden" aria-hidden="true">
+              {gettext("At the end you return to %{client}", client: @connecting_client)}
+            </span>
+          <% true -> %>
+            <span class="ms-1 max-sm:sr-only">
+              {gettext("Step %{number} of %{total}", number: @step, total: @step_count)}
+            </span>
+        <% end %>
       </p>
       <span :if={is_nil(@step)}></span>
 
@@ -107,21 +135,6 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
         <% end %>
       </div>
     </header>
-    """
-  end
-
-  @doc "Tells a person connecting an AI client what the setup is for and that they will return to it."
-  @spec connection_note(map()) :: Rendered.t()
-  attr :client, :string, required: true
-
-  def connection_note(assigns) do
-    ~H"""
-    <p id="connection-note" class="text-sm text-grey-600">
-      {gettext(
-        "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}.",
-        client: @client
-      )}
-    </p>
     """
   end
 

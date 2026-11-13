@@ -43,8 +43,8 @@ defmodule FirmowidWeb.Organization.Views.Index do
           exit_path={@exit_path}
           back={back_path(@step, @organization)}
           step={step_number(@step)}
+          connecting_client={@connecting_client}
         />
-        <.connection_note :if={@connecting_client} client={@connecting_client} />
 
         <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
           <%!-- The card stays under the header while the steps beside it scroll. --%>
@@ -133,9 +133,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
       <% end %>
     </h1>
     <p class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
-      {gettext(
-        "We will start with your company card. Every step stamps it, and after five steps the company is ready to issue invoices."
-      )}
+      <%= if @connecting_client do %>
+        {gettext(
+          "Set up your company to use Firmowid in %{client}. Every step stamps the company card, and after five steps you will approve the connection and return to %{client}.",
+          client: @connecting_client
+        )}
+      <% else %>
+        {gettext(
+          "We will start with your company card. Every step stamps it, and after five steps the company is ready to issue invoices."
+        )}
+      <% end %>
     </p>
     <div class="mt-9 grid gap-3">
       <.choice

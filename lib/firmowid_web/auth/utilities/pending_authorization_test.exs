@@ -79,7 +79,8 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     assert redirected_to(conn) == ~p"/organizacja"
 
     {:ok, wizard, _html} = live(recycle(conn), ~p"/organizacja?krok=firma")
-    assert has_element?(wizard, "#connection-note", "ChatGPT")
+    # The progress says where the setup ends.
+    assert has_element?(wizard, "header", "ChatGPT")
 
     # The VAT white list does not know the NIP, so the owner enters the details.
     wizard |> form("#company-form", %{"nip" => "5261040828"}) |> render_change()
@@ -182,6 +183,8 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
   defp approve_and_exchange(conn, context, organization_id) do
     conn = get(conn, context.authorize_path)
     html = html_response(conn, 200)
+    # The consent form names the one company the new account has.
+    assert html =~ ~s(name="organization_id" value="#{organization_id}")
     [_, consent_request] = Regex.run(~r/name="consent_request" value="([^"]+)"/, html)
 
     conn =
