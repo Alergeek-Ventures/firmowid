@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
-  @max_client_name_length 40
+  @max_client_name_bytes 60
   @max_return_path_bytes 1536
 
   @doc "Accepts the pipeline's keyword options without changing them."
@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     case client_name(conn) do
       {:ok, client} ->
         conn
-        |> PendingAuthorization.put(client, return_path(conn))
+        |> remember_return(client, current_path(conn))
         |> redirect(to: setup_path)
         |> halt()
 
@@ -97,20 +97,21 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   end
 
   # The session is a cookie of at most 4 KB, which also holds the sign-in token. A
-  # longer request (an unusually large `state`) is not kept: the setup then ends in
-  # the app and the person starts the connection again from the client.
-  defp return_path(conn) do
-    path = current_path(conn)
-    if byte_size(path) <= @max_return_path_bytes, do: path
-  end
+  # longer request (an unusually large `state`) is not kept, so the pages promise no
+  # return: the setup ends in the app and the person connects again from the client.
+  defp remember_return(conn, client, path) when byte_size(path) <= @max_return_path_bytes,
+    do: PendingAuthorization.put(conn, client, path)
+
+  defp remember_return(conn, _client, _path), do: PendingAuthorization.delete(conn)
 
   # Only a valid request is remembered; the OAuth server answers an invalid one itself.
   # Any client may register under any name, so the pages show only a short one: a
-  # longer name could pass a whole sentence onto the sign-in page.
+  # longer name could pass a whole sentence onto the sign-in page. Counted in bytes,
+  # since combining marks keep a long name one character long.
   defp client_name(conn) do
     case Authorize.validate_request(Firmowid.Oauth2Server, fetch_query_params(conn).query_params) do
       {:ok, %{client: %{client_name: name}}} when is_binary(name) ->
-        {:ok, if(String.length(name) <= @max_client_name_length, do: name)}
+        {:ok, if(byte_size(name) <= @max_client_name_bytes, do: name)}
 
       {:ok, _unnamed} ->
         {:ok, nil}
