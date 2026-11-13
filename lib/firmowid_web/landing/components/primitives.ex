@@ -44,12 +44,6 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <a
-              href={~p"/poradnik"}
-              class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
-            >
-              {gettext("Guides")}
-            </a>
-            <a
               href={~p"/#zespol"}
               class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
             >
