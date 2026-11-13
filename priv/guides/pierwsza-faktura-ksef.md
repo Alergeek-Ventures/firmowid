@@ -10,6 +10,8 @@ Pierwszą fakturę wystawisz w bezpłatnej Aplikacji Podatnika KSeF 2.0 albo w p
 
 Ćwicz w środowisku testowym albo Demo, nie na produkcji. Faktura wysłana na produkcję trafia do obiegu prawnego. Jak przygotować próbę, opisuje poradnik [jak przetestować KSeF](/poradnik/jak-bezpiecznie-przetestowac-ksef).
 
+![Pierwsza faktura w KSeF w 6 krokach. 1: sprawdź, czy obowiązek już Cię obejmuje, wyjątek do 10 000 zł miesięcznie trwa do końca 2026 r. 2: wybierz narzędzie, bezpłatną Aplikację Podatnika KSeF 2.0 albo program zintegrowany z KSeF. 3: przygotuj dostęp i nadaj innym osobom uprawnienia zamiast podawać swoje dane logowania. 4: zbierz dane stron, daty, pozycje i ceny, stawkę VAT i płatność. 5: wystaw fakturę i sprawdź NIP nabywcy, daty, kwoty, walutę i środowisko. 6: wyślij, sprawdź status i zapisz numer KSeF oraz UPO, bo bez numeru faktura nie jest przyjęta.](/images/guides/pierwsza-faktura-ksef-6-krokow.webp)
+
 ## 1. Sprawdź, czy obowiązek już cię obejmuje
 
 Od 1 kwietnia 2026 r. KSeF 2.0 obowiązuje przedsiębiorców z drugiego etapu wdrożenia. Najmniejsze firmy mogą do końca 2026 r. wystawiać faktury poza KSeF, dopóki miesięczna wartość brutto faktur, które bez tego wyjątku podlegałyby obowiązkowemu KSeF, nie przekroczy 10 000 zł ([szczegóły limitu](/poradnik/limit-10000-ksef)). Od 1 stycznia 2027 r. obowiązek obejmie także je. Terminy podaje [harmonogram MF](https://ksef.podatki.gov.pl/etapy-wdrozenia-ksef/).
