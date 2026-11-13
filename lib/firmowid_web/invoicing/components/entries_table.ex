@@ -34,6 +34,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     default: nil,
     doc: "project column settings (`projects`, `colors`, `scope`, `can_write`), or nil to hide it"
 
+  attr :projects_loaded_at, :integer,
+    default: nil,
+    doc: "changes with every reload of the list, so the rows on screen read their projects again"
+
   @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
 
   @invoice_columns ["party", "issue_date", "due_date", "status", "amount"]
@@ -90,6 +94,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:return_to, fn -> nil end)
       |> assign_new(:can_write_invoicing, fn -> true end)
       |> assign_new(:projects, fn -> nil end)
+      |> assign_new(:projects_loaded_at, fn -> nil end)
       |> assign_new(:load_newer, fn -> nil end)
       |> assign_new(:load_more, fn -> nil end)
       |> assign(
@@ -177,6 +182,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 <.group_row
                   group={group}
                   projects={@projects}
+                  projects_loaded_at={@projects_loaded_at}
                   columns={@columns}
                   return_to={@return_to}
                   can_write_invoicing={@can_write_invoicing}
@@ -184,6 +190,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               <% invoicing_entry -> %>
                 <.table_row
                   projects={@projects}
+                  projects_loaded_at={@projects_loaded_at}
                   columns={@columns}
                   invoicing_entry={invoicing_entry}
                   return_to={@return_to}
@@ -461,6 +468,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         }>
           <.render_cell
             projects={@projects}
+            projects_loaded_at={@projects_loaded_at}
             column={column}
             invoicing_entry={@invoicing_entry}
             return_to={@return_to}
@@ -510,6 +518,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       colors={@projects.colors}
       scope={@projects.scope}
       can_write={@projects.can_write}
+      loaded_at={@projects_loaded_at}
     />
     """
   end
@@ -1022,6 +1031,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     default: nil,
     doc: "project column settings (`projects`, `colors`, `scope`, `can_write`), or nil to hide it"
 
+  attr :projects_loaded_at, :integer,
+    default: nil,
+    doc: "changes with every reload of the list, so the rows on screen read their projects again"
+
   defp group_row(assigns) do
     assigns = assign(assigns, :bank_badge, bank_badge_for_group(assigns.group))
 
@@ -1113,6 +1126,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 <.icon name="hero-arrow-turn-down-right" class="size-3 text-grey-700 opacity-50" />
                 <.render_cell
                   projects={@projects}
+                  projects_loaded_at={@projects_loaded_at}
                   column={column}
                   invoicing_entry={transaction}
                   return_to={@return_to}
@@ -1122,6 +1136,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             <% else %>
               <.render_cell
                 projects={@projects}
+                projects_loaded_at={@projects_loaded_at}
                 column={column}
                 invoicing_entry={transaction}
                 return_to={@return_to}
