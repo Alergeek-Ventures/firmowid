@@ -1,6 +1,6 @@
 ---
 title: "Co to jest KSeF i czym e-faktura różni się od PDF-a"
-description: "Krajowy System e-Faktur w skrócie: czym e-faktura różni się od PDF-a, kogo i od kiedy obejmuje KSeF, co zmienia się 1 stycznia 2027 r. i czym wystawić pierwszą fakturę."
+description: "KSeF w skrócie: czym e-faktura różni się od PDF-a, kogo i od kiedy obejmuje KSeF, co zmienia się 1 stycznia 2027 r. i czym wystawić pierwszą fakturę."
 published: 2026-10-29
 updated: 2026-11-11
 category: ksef-w-praktyce

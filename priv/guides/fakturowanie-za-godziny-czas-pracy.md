@@ -1,6 +1,6 @@
 ---
 title: "Faktura za godziny pracy: jak liczymy czas projektów i wystawiamy fakturę w KSeF"
-description: "Jak w Firmowidzie godziny z licznika czasu w projekcie trafiają na fakturę w KSeF: raport godzin dla klienta, szkic faktury od asystenta albo Claude przez MCP, wysyłka po potwierdzeniu."
+description: "Jak godziny z licznika czasu w projekcie trafiają na fakturę w KSeF: raport dla klienta, szkic od asystenta albo Claude przez MCP, wysyłka po potwierdzeniu."
 published: 2026-11-12
 updated: 2026-11-12
 category: firma-uslugowa

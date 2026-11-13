@@ -1,6 +1,6 @@
 ---
 title: "Czy trzeba kupować program do KSeF?"
-description: "Do wystawiania i odbierania faktur w KSeF wystarczą bezpłatne narzędzia MF. Co daje aplikacja ministerstwa, a co program do faktur, w tabeli. Stan na 11.11.2026."
+description: "Do wystawiania i odbierania faktur w KSeF wystarczą bezpłatne narzędzia MF. Co daje aplikacja ministerstwa, a co program do faktur, w tabeli."
 published: 2026-10-28
 updated: 2026-11-11
 category: wybor-programu
