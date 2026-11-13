@@ -34,6 +34,9 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
+  @max_client_name_length 40
+  @max_return_path_bytes 1536
+
   @doc "Accepts the pipeline's keyword options without changing them."
   @impl true
   @spec init(keyword()) :: keyword()
@@ -64,7 +67,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     selected =
       Core.select_member(user, members, get_session(conn, UserAuth.organization_session_key()))
 
-    case setup_path(user, selected) do
+    case setup_path(selected) do
       nil -> consent(conn, members, selected.member)
       path -> continue_after_setup(conn, path)
     end
@@ -72,11 +75,9 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
 
   defp authorize(conn, %User{} = user), do: approve(conn, Core.list_usable_members(user))
 
-  defp setup_path(user, %User{member: nil}) do
-    if is_nil(Core.load_member(user).member), do: OrganizationNavigation.onboarding_path()
-  end
+  defp setup_path(%User{member: nil}), do: OrganizationNavigation.onboarding_path()
 
-  defp setup_path(_user, %User{member: member} = selected) do
+  defp setup_path(%User{member: member} = selected) do
     if UserAuth.first_steps_pending?(selected, member.organization) and
          Flags.flag_enabled?(:inbox, %{feature_flags: Flags.evaluate_for_user(selected)}),
        do: OrganizationNavigation.setup_path()
@@ -86,7 +87,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     case client_name(conn) do
       {:ok, client} ->
         conn
-        |> PendingAuthorization.put(client, current_path(conn))
+        |> PendingAuthorization.put(client, return_path(conn))
         |> redirect(to: setup_path)
         |> halt()
 
@@ -95,11 +96,27 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     end
   end
 
+  # The session is a cookie of at most 4 KB, which also holds the sign-in token. A
+  # longer request (an unusually large `state`) is not kept: the setup then ends in
+  # the app and the person starts the connection again from the client.
+  defp return_path(conn) do
+    path = current_path(conn)
+    if byte_size(path) <= @max_return_path_bytes, do: path
+  end
+
   # Only a valid request is remembered; the OAuth server answers an invalid one itself.
+  # Any client may register under any name, so the pages show only a short one: a
+  # longer name could pass a whole sentence onto the sign-in page.
   defp client_name(conn) do
     case Authorize.validate_request(Firmowid.Oauth2Server, fetch_query_params(conn).query_params) do
-      {:ok, %{client: client}} -> {:ok, client.client_name}
-      _invalid -> :invalid
+      {:ok, %{client: %{client_name: name}}} when is_binary(name) ->
+        {:ok, if(String.length(name) <= @max_client_name_length, do: name)}
+
+      {:ok, _unnamed} ->
+        {:ok, nil}
+
+      _invalid ->
+        :invalid
     end
   end
 

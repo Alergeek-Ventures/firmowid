@@ -6,6 +6,7 @@ defmodule FirmowidMcp.Router do
 
   alias AshAi.Mcp.Router, as: Transport
   alias FirmowidMcp.Invoicing.Privacy
+  alias FirmowidMcp.Ksef
   alias FirmowidMcp.Runtime
   alias FirmowidMcp.Widgets
 
@@ -110,7 +111,10 @@ defmodule FirmowidMcp.Router do
   end
 
   defp decorate(%{"result" => %{"isError" => false}} = response, request, conn) do
-    response = update_in(response, ["result"], &Privacy.result/1)
+    response =
+      update_in(response, ["result"], fn result ->
+        result |> Privacy.result() |> Ksef.status_result(request)
+      end)
 
     with %{"method" => "tools/call", "params" => %{"name" => name} = params} <- request,
          app when not is_nil(app) <- Widgets.for_tool(name) do

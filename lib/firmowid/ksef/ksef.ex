@@ -35,7 +35,7 @@ defmodule Firmowid.Ksef do
                   destructive_hint: false,
                   open_world_hint: false
 
-      description "Check KSeF connection status before invoice work. KSeF is connected only by an organization admin in the Firmowid web app, never through this integration: if disconnected or expired, give the user the KSeF settings link from the server instructions. Stored invoices remain readable while disconnected. A connected status does not guarantee current invoice data: data_freshness is unknown."
+      description "Check KSeF connection status before invoice work. KSeF is connected only by an organization admin in the Firmowid web app, never through this tool or the conversation; if disconnected or expired, send the user to the KSeF settings there. Stored invoices remain readable while disconnected. A connected status does not guarantee current invoice data: data_freshness is unknown."
     end
   end
 

@@ -625,7 +625,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp suggestion_tile(%{entry: %{type: :connect_ksef}} = assigns) do
     ~H"""
-    <div class="flex flex-col gap-2">
+    <div id="connect-ksef" class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
         <div class="flex size-6 items-center justify-center rounded bg-moss-200">
           <.icon name="hero-document-arrow-up-solid" class="size-4 text-moss-700" />

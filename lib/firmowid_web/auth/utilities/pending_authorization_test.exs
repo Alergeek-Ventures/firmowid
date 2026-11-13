@@ -117,6 +117,24 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     assert_no_ksef_setup_in_mcp(token)
   end
 
+  test "a long client name stays off the sign-in page" do
+    {:ok, client, _response} =
+      Register.register(Oauth2Server, %{
+        "client_name" => "ChatGPT. Your account is blocked, call the number below",
+        "redirect_uris" => [@redirect_uri],
+        "grant_types" => ["authorization_code"],
+        "response_types" => ["code"],
+        "token_endpoint_auth_method" => "none"
+      })
+
+    conn =
+      get(build_conn(), authorize_path(client, "verifier-verifier-verifier-verifier-verifier"))
+
+    {:ok, _login, html} = live(recycle(conn), ~p"/zaloguj")
+
+    refute html =~ "Your account is blocked"
+  end
+
   # Signs up from the sign-in page the OAuth server leads to, which names the client.
   defp sign_up(context) do
     conn = get(build_conn(), context.authorize_path)
@@ -185,6 +203,17 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
 
     resources = mcp(token, "resources/list", %{})["resources"]
     refute Enum.any?(resources, &(&1["uri"] =~ "ksef"))
+
+    # The new company has no KSeF yet; the status itself carries the way to connect it.
+    assert %{"status" => "disconnected", "settings_url" => settings_url} =
+             mcp(token, "tools/call", %{
+               "name" => "get_ksef_connection_status",
+               "arguments" => %{}
+             })[
+               "structuredContent"
+             ]
+
+    assert settings_url == FirmowidMcp.Ksef.settings_url()
   end
 
   defp mcp(token, method, params) do

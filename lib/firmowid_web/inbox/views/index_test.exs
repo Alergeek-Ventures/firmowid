@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Inbox.Views.IndexTest do
     assert {:error, {:live_redirect, %{to: "/skrzynka"}}} = live(conn, ~p"/fakturowanie")
 
     {:ok, view, _html} = live(conn, ~p"/skrzynka")
+    assert has_element?(view, "#item-ksef", "nie wystawisz faktur sprzedażowych")
     assert has_element?(view, ~s(#item-ksef a[href="/ustawienia/ksef"]))
   end
 
