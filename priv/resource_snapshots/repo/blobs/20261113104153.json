@@ -1,0 +1,214 @@
+{
+  "attributes": [
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"uuid_generate_v7()\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "blob_path",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "blob_checksum",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "original_filename",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"none\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "processing_target",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"succeeded\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "processing_state",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "%{}",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "processing_metadata",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "placeholder",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "false",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "picture_variants_failed",
+      "type": "boolean"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "inserted_at",
+      "type": "utc_datetime"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "updated_at",
+      "type": "utc_datetime"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "blobs_organization_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "organizations"
+      },
+      "scale": null,
+      "size": null,
+      "source": "organization_id",
+      "type": "uuid"
+    }
+  ],
+  "base_filter": null,
+  "check_constraints": [],
+  "create_table_options": null,
+  "custom_indexes": [],
+  "custom_statements": [
+    {
+      "after_tables": [],
+      "code?": true,
+      "down": ":ok",
+      "global?": false,
+      "name": "recalculate_byte_checksums",
+      "up": "execute(fn ->\n  {:ok, _apps} = Application.ensure_all_started(:req)\n\n  %{rows: blobs} =\n    repo().query!(\"SELECT id::text, blob_path, blob_checksum FROM blobs ORDER BY id FOR UPDATE\")\n\n  Enum.each(blobs, fn [id, blob_path, old_checksum] ->\n    {:ok, url} = Firmowid.S3Client.presigned_get_url(blob_path)\n    response = Req.get!(url, decode_body: false)\n\n    if response.status != 200 do\n      raise \"Checksum backfill failed for blob #{id}: S3 returned HTTP #{response.status}\"\n    end\n\n    checksum =\n      :sha256\n      |> :crypto.hash(response.body)\n      |> Base.encode16(case: :lower)\n\n    if checksum != old_checksum do\n      %{num_rows: 1} =\n        repo().query!(\n          \"UPDATE blobs SET blob_checksum = $1 WHERE id = $2::text::uuid AND blob_checksum = $3\",\n          [checksum, id, old_checksum]\n        )\n    end\n  end)\nend)\n"
+    }
+  ],
+  "has_create_action": true,
+  "hash": "FF11FD524419EB2F36EEC0B1B495BFF08E74AD50D40504AB31D3E18CEF892D18",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "blobs_unique_checksum_per_org_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "blob_checksum"
+        },
+        {
+          "type": "atom",
+          "value": "organization_id"
+        }
+      ],
+      "name": "unique_checksum_per_org",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
+  "multitenancy": {
+    "attribute": "organization_id",
+    "global": false,
+    "strategy": "attribute"
+  },
+  "repo": "Elixir.Firmowid.Repo",
+  "schema": null,
+  "table": "blobs",
+  "temporal": null
+}

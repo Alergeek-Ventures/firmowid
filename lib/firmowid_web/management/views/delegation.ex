@@ -418,8 +418,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   class="size-6 rounded-full border border-grey-200 bg-grey-100"
                 >
                   <.avatar_image
-                    :if={@employee.member.avatar_blob && @employee.member.avatar_blob.url}
-                    src={@employee.member.avatar_blob.url}
+                    :if={@employee.member.avatar_blob}
+                    blob={@employee.member.avatar_blob}
+                    sizes="24px"
                     alt={@employee.member.name || @employee.email}
                   />
                   <.avatar_fallback class="text-[10px] font-medium text-grey-700">

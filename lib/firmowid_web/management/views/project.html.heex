@@ -191,8 +191,9 @@
                 <div class="flex min-w-0 flex-row items-center gap-4 max-md:gap-2">
                   <.avatar class="size-8 shrink-0 ring-1 ring-grey-200/50">
                     <.avatar_image
-                      :if={Map.get(user.member.avatar_blob || %{}, :url)}
-                      src={Map.get(user.member.avatar_blob || %{}, :url)}
+                      :if={user.member.avatar_blob}
+                      blob={user.member.avatar_blob}
+                      sizes="32px"
                       alt={gettext("Avatar")}
                     />
                     <.avatar_fallback class="bg-teal-200 text-teal-800">

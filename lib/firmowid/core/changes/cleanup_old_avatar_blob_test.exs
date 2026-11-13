@@ -26,8 +26,7 @@ defmodule Firmowid.Core.Changes.CleanupOldAvatarBlobTest do
 
       replacement = create_blob!(scope, "replacement avatar", "replacement.txt")
 
-      assert {:ok, _member} =
-               Core.update_member_avatar(member, %{avatar_blob_id: replacement.id}, scope: scope)
+      assert {:ok, _member} = update_avatar_without_copies(member, replacement, scope)
 
       assert [%{avatar_blob_id: avatar_blob_id}] = Member.list!(scope: other_scope)
       assert avatar_blob_id == shared_blob.id
@@ -78,15 +77,13 @@ defmodule Firmowid.Core.Changes.CleanupOldAvatarBlobTest do
 
       first_blob = create_blob!(scope, "first avatar", "avatar-1.txt")
 
-      assert {:ok, member} =
-               Core.update_member_avatar(user.member, %{avatar_blob_id: first_blob.id}, scope: scope)
+      assert {:ok, member} = update_avatar_without_copies(user.member, first_blob, scope)
 
       assert member.avatar_blob_id == first_blob.id
 
       second_blob = create_blob!(scope, "second avatar", "avatar-2.txt")
 
-      assert {:ok, updated_member} =
-               Core.update_member_avatar(member, %{avatar_blob_id: second_blob.id}, scope: scope)
+      assert {:ok, updated_member} = update_avatar_without_copies(member, second_blob, scope)
 
       assert updated_member.avatar_blob_id == second_blob.id
 
@@ -96,6 +93,13 @@ defmodule Firmowid.Core.Changes.CleanupOldAvatarBlobTest do
 
       assert Blobs.get_blob!(second_blob.id, scope: scope).id == second_blob.id
     end
+  end
+
+  # A text file has no picture copies to make, so the copies job is not run.
+  defp update_avatar_without_copies(member, blob, scope) do
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      Core.update_member_avatar(member, %{avatar_blob_id: blob.id}, scope: scope)
+    end)
   end
 
   defp create_blob!(scope, content, filename, content_type \\ "text/plain") do

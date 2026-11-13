@@ -135,6 +135,43 @@
         if (localStorage.getItem("sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed";
       } catch {}
     </script>
+    <%!-- Avatars fade in over their blurred placeholder once loaded (avatar_image/1).
+         One already at hand (cached, or loaded within 100 ms of appearing) shows at
+         once instead, also on LiveView navigations: data-loaded="instant". Inline,
+         so pictures that load before app.js are caught too. --%>
+    <script :if={!assigns[:public_marketing?]} nonce={assigns[:csp_nonce]}>
+      (() => {
+        const shownAt = new WeakMap()
+        const pictures = node =>
+          node.matches?.("img[data-progressive]") ? [node] : [...(node.querySelectorAll?.("img[data-progressive]") ?? [])]
+        const mark = (img, instant) => img.setAttribute("data-loaded", instant ? "instant" : "")
+        // A cached picture is ready by the next frame (a srcset one only after a microtask).
+        const watch = (img, since) => {
+          if (img.hasAttribute("data-loaded")) return
+          shownAt.set(img, since ?? performance.now())
+          requestAnimationFrame(() => img.complete && img.naturalWidth && mark(img, true))
+        }
+        new MutationObserver(records => {
+          // LiveView may swap a picture still loading for a copy in the same patch:
+          // the copy keeps the original's start.
+          const loading = new Map()
+          for (const {removedNodes} of records)
+            for (const node of removedNodes)
+              for (const img of pictures(node))
+                if (!img.hasAttribute("data-loaded") && shownAt.has(img)) loading.set(img.getAttribute("src"), shownAt.get(img))
+          for (const {type, target, addedNodes} of records) {
+            if (type === "attributes" && target.matches("img[data-progressive]")) watch(target)
+            for (const node of addedNodes) pictures(node).forEach(img => watch(img, loading.get(img.getAttribute("src"))))
+          }
+        }).observe(document.documentElement, {childList: true, subtree: true, attributeFilter: ["src", "srcset"]})
+        // A picture that fails to load stays hidden under its blurred placeholder.
+        const onLoad = e => {
+          if (!e.target.matches?.("img[data-progressive]") || e.target.hasAttribute("data-loaded")) return
+          mark(e.target, performance.now() - (shownAt.get(e.target) ?? -Infinity) < 100)
+        }
+        document.addEventListener("load", onLoad, true)
+      })()
+    </script>
     <%!-- Public pages load a smaller bundle with only the styles and hooks they render. --%>
     <link
       phx-track-static

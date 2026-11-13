@@ -114,10 +114,11 @@
               <span class="sr-only">{pgettext("main navigation", "Navigation menu")}</span>
             </span>
             <span class="flex items-center p-1 px-2 max-md:hidden">
-              <%= if @current_user.member && @current_user.member.avatar_blob && @current_user.member.avatar_blob.url do %>
+              <%= if @current_user.member && @current_user.member.avatar_blob do %>
                 <.avatar class="size-9 rounded-full border-2 border-white/20">
                   <.avatar_image
-                    src={@current_user.member.avatar_blob.url}
+                    blob={@current_user.member.avatar_blob}
+                    sizes="36px"
                     alt={@current_user.email}
                   />
                   <.avatar_fallback bg_color="grey-700" class="text-white">

@@ -6,9 +6,12 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   """
   use Phoenix.Component
   use Gettext, backend: Firmowid.Gettext
+  use FirmowidWeb, :verified_routes
 
   import FirmowidUI.Components.Inputs
 
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Blobs.PictureVariants
   alias Phoenix.HTML.Form
   alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.JS
@@ -279,25 +282,71 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     """
   end
 
-  attr :class, :any, default: nil
-  attr :src, :string
+  @doc """
+  An avatar's picture inside `avatar/1`.
+
+  Once the picture's small copies exist (`Firmowid.Blobs.PictureVariants`), its
+  placeholder shows blurred at once and the copy that fits `sizes` fades in over
+  it when loaded (the `data-progressive` script in the root layout). Until then
+  the original loads through its presigned URL.
+  """
+  attr :blob, Blob, required: true, doc: "the picture, with `:url` loaded"
+  attr :sizes, :string, required: true, doc: "the displayed width, such as `32px`"
+  attr :class, :any, default: nil, doc: "applied to the placeholder too, so it fits the same way"
   attr :alt, :string, default: ""
   attr :rest, :global
 
-  def avatar_image(assigns) do
+  def avatar_image(%{blob: %Blob{placeholder: nil}} = assigns) do
     ~H"""
     <img
-      class={[
-        "aspect-square size-full rounded-full object-cover",
-        (!@src || @src === "") && "hidden",
-        @class
-      ]}
-      src={@src}
+      class={["aspect-square size-full rounded-full object-cover", @class]}
+      src={@blob.url}
       alt={@alt}
+      loading="lazy"
+      decoding="async"
       {@rest}
     />
     """
   end
+
+  def avatar_image(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :srcset,
+        Enum.map_join(PictureVariants.widths(), ", ", &"#{picture_path(assigns.blob, &1)} #{&1}w")
+      )
+
+    ~H"""
+    <img
+      src={@blob.placeholder}
+      alt=""
+      aria-hidden="true"
+      class={[
+        "avatar-placeholder absolute inset-0 aspect-square size-full rounded-full object-cover",
+        @class
+      ]}
+    />
+    <img
+      data-progressive
+      class={["relative aspect-square size-full rounded-full object-cover", @class]}
+      src={avatar_src(@blob)}
+      srcset={@srcset}
+      sizes={@sizes}
+      alt={@alt}
+      loading="lazy"
+      decoding="async"
+      {@rest}
+    />
+    """
+  end
+
+  @doc "The URL of an avatar's smallest copy once it exists, else of the original."
+  @spec avatar_src(Blob.t()) :: String.t()
+  def avatar_src(%Blob{placeholder: nil} = blob), do: blob.url
+  def avatar_src(%Blob{} = blob), do: picture_path(blob, hd(PictureVariants.widths()))
+
+  defp picture_path(blob, width), do: ~p"/obrazy/#{blob.id}/#{width}"
 
   attr :class, :any, default: nil
   attr :bg_color, :string, default: "grey-100"

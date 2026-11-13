@@ -184,6 +184,7 @@ defmodule Firmowid.Core.Member do
       validate Firmowid.Blobs.Validations.ReadableBlob
 
       change Firmowid.Core.Changes.CleanupOldAvatarBlob
+      change Firmowid.Core.Changes.GenerateAvatarVariants
     end
 
     update :archive do

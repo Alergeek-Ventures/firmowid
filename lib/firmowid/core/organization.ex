@@ -23,6 +23,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Core.Changes.DefaultDisplayName
+  alias Firmowid.Core.Changes.GenerateAvatarVariants
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
   alias Firmowid.Invoicing.VatExemption
@@ -205,6 +206,7 @@ defmodule Firmowid.Core.Organization do
       require_atomic? false
 
       change CleanupOldAvatarBlob
+      change GenerateAvatarVariants
     end
 
     # ── Destroy ─────────────────────────────────────────────────────

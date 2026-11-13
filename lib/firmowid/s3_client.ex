@@ -45,6 +45,18 @@ defmodule Firmowid.S3Client do
   end
 
   @doc """
+  Downloads an object from configured S3 bucket.
+  """
+  @spec get_object(object_key()) :: {:ok, binary()} | {:error, term()}
+  def get_object(object_key) do
+    case Req.get(req(), url: s3_url(bucket(), object_key), decode_body: false) do
+      {:ok, %Req.Response{status: 200, body: body}} -> {:ok, body}
+      {:ok, %Req.Response{status: status}} -> {:error, {:http_status, status}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Deletes an object from configured S3 bucket.
   """
   @spec delete_object(object_key()) :: {:ok, Req.Response.t()} | {:error, term()}
