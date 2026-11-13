@@ -33,6 +33,10 @@ guidelines. Two findings shaped the current design:
   does, over widgets that change settings.
 - Keep the in-app assistant and MCP on the same tools (`Firmowid.AiTools`);
   list every difference there with its reason.
+- The OAuth consent screen (`FirmowidWeb.Auth.Components.McpConsent`) tells
+  people in plain words what the MCP tools read and change. When a tool adds a
+  kind of data or a write, update those lines; a reviewer compares them with
+  the tool list.
 
 ## Accounts that are not ready
 

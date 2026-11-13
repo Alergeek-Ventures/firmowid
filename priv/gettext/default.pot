@@ -1180,6 +1180,11 @@ msgstr ""
 msgid "After the user deletes an account or an organization is deleted, the Controller immediately attempts to delete the associated data from the database. Full cleanup of data in the Service’s systems, including storage (Object Storage), may take up to 30 days. If an external service error occurs, deleting objects from storage may require manual intervention. Deletion does not cover data whose continued retention is required by law or data retained by external providers over which the Controller has no direct control; such data may be subject to those providers’ retention periods. Residual data may remain in the logs of external services (PostHog, Resend) for their standard retention periods."
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "After your decision you will return to %{host}."
+msgstr ""
+
 #: lib/firmowid_web/timetracker/components/overlap.ex
 #, elixir-autogen, elixir-format
 msgid "After:"
@@ -1228,11 +1233,6 @@ msgstr ""
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
 msgid "Allow"
-msgstr ""
-
-#: lib/firmowid_web/auth/components/mcp_consent.ex
-#, elixir-autogen, elixir-format
-msgid "Allow access"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/registration.ex
@@ -1710,6 +1710,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "At Alergeek Ventures, he handles company logistics and manages a team of 20. A happy Firmowid user, he uses it for daily tasks, leaving more time for management and less for invoices and settlements."
+msgstr ""
+
+#: lib/firmowid_web/organization/components/onboarding_header.ex
+#, elixir-autogen, elixir-format
+msgid "At the end you return to %{client}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
@@ -2392,6 +2397,11 @@ msgstr ""
 msgid "Changes to existing sessions:"
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Changes your profile, including the bank account for your pay"
+msgstr ""
+
 #: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Changing the role"
@@ -2632,6 +2642,11 @@ msgstr ""
 msgid "Choose the bank account to receive the payment."
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Choose the company %{client} will work in."
+msgstr ""
+
 #: lib/firmowid/delegations/changes/create_signed_settlement_blob.ex
 #, elixir-autogen, elixir-format
 msgid "Choose the signed PDF file."
@@ -2766,6 +2781,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/auth/components/mcp_consent.ex
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/landing/components/primitives.ex
@@ -2965,6 +2981,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Connect"
+msgstr ""
+
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Connect %{client} to Firmowid?"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
@@ -5239,7 +5260,7 @@ msgstr ""
 msgid "File %{filename} does not contain the required data. Make sure you are uploading a contract."
 msgstr ""
 
-#: lib/firmowid_web/organization/components/onboarding_header.ex
+#: lib/firmowid_web/organization/views/legacy_form.ex
 #, elixir-autogen, elixir-format
 msgid "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}."
 msgstr ""
@@ -7662,6 +7683,11 @@ msgstr ""
 msgid "Netherlands Antilles"
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Never gets your KSeF or bank login details"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "New account"
@@ -8524,7 +8550,6 @@ msgid "Order issue date"
 msgstr ""
 
 #: lib/firmowid_web/admin/views/organizations.ex
-#: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
 msgid "Organization"
 msgstr ""
@@ -9437,6 +9462,11 @@ msgstr ""
 msgid "Reading sales and cost invoices"
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Reads the company's invoices, clients, transfers, salaries, working time and leave"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Ready"
@@ -9513,6 +9543,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "Recording working time and managing projects"
+msgstr ""
+
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Records working time and leave, adds notes and categories, and matches transfers with invoices and salaries"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
@@ -10074,6 +10109,11 @@ msgstr ""
 msgid "Saved. Whatever was switched off comes back with a higher plan."
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Saves invoice drafts, which go to KSeF only after you confirm them"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Saving changes…"
@@ -10437,6 +10477,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Set up your company"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Set up your company to use Firmowid in %{client}. Every step stamps the company card, and after five steps you will approve the connection and return to %{client}."
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/layouts.ex
@@ -10942,6 +10987,11 @@ msgstr ""
 msgid "Step %{number} of %{total}"
 msgstr ""
 
+#: lib/firmowid_web/organization/components/onboarding_header.ex
+#, elixir-autogen, elixir-format
+msgid "Step %{number} of %{total}, then back to %{client}"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex
 #, elixir-autogen, elixir-format
 msgid "Step %{step}."
@@ -11207,6 +11257,11 @@ msgstr ""
 msgid "Technical data"
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Technical details"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/primitives.ex
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
@@ -11222,11 +11277,6 @@ msgstr ""
 #: lib/firmowid_web/feedback/components/form.ex
 #, elixir-autogen, elixir-format
 msgid "Thank you for your feedback!"
-msgstr ""
-
-#: lib/firmowid_web/auth/components/mcp_consent.ex
-#, elixir-autogen, elixir-format
-msgid "The %{client} application is requesting access to your Firmowid account through MCP."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -11359,11 +11409,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "The annual request not to withhold advances is recorded but not calculated."
-msgstr ""
-
-#: lib/firmowid_web/auth/components/mcp_consent.ex
-#, elixir-autogen, elixir-format
-msgid "The application will work in the selected organization."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex

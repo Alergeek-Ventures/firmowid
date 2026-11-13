@@ -47,8 +47,13 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
   @spec issuance(map()) :: Phoenix.LiveView.Rendered.t()
   def issuance(assigns) do
     ~H"""
-    <%!-- Inline, the column fits the form so the heading lines up with it. --%>
-    <div class={["grid gap-4", !@stacked && "@max-[58rem]:justify-center"]}>
+    <%!-- Inline, the heading, the notices and the form share one centred column of 37.5rem; --%>
+    <%!-- with the preview beside the form, 67rem, so a wide frame does not stretch the form. --%>
+    <div class={[
+      "grid gap-4",
+      !@stacked &&
+        "@max-[58rem]:mx-auto @max-[58rem]:inline-full @max-[58rem]:max-inline-150 @min-[58rem]:max-inline-268"
+    ]}>
       <div class="flex items-start justify-between gap-2">
         <h1 class={[
           "flex items-baseline gap-1 text-xl/tight font-medium",
@@ -126,16 +131,10 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
               />
             </div>
           </div>
-          <%!-- Sized by the suggestion row; centred inline, beside the preview in full screen. --%>
+          <%!-- As wide as the column inline, beside the preview in full screen. --%>
           <div
             :if={@issuance.invoice && @issuance.phase == :review}
-            class={[
-              "grid gap-4",
-              if(@stacked,
-                do: "inline-full max-inline-150",
-                else: "justify-self-center inline-fit max-inline-full @min-[58rem]:justify-self-start"
-              )
-            ]}
+            class={["grid gap-4 inline-full", @stacked && "max-inline-150"]}
           >
             <InvoiceNumber.invoice_number
               invoice_number={@issuance.invoice_number}

@@ -47,8 +47,12 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   def render(assigns) do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
-      <.onboarding_header exit_path={@exit_path} back={back_path(@step)} step={step_number(@step)} />
-      <.connection_note :if={@connecting_client} client={@connecting_client} />
+      <.onboarding_header
+        exit_path={@exit_path}
+        back={back_path(@step)}
+        step={step_number(@step)}
+        connecting_client={@connecting_client}
+      />
       <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
         <%!-- The card stays under the header while the steps beside it scroll. --%>
         <div class="order-2 lg:sticky lg:top-28 lg:order-1 lg:pt-2">

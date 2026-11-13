@@ -9,7 +9,6 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
-  import FirmowidWeb.Organization.Components.OnboardingHeader, only: [connection_note: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core
@@ -34,14 +33,21 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
         class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
       />
       <div class="z-10 max-w-3xl grow">
-        <h1 class="mb-16 text-lg font-bold">
-          <%= if @current_user.member do %>
-            {gettext("Create another organization or join another one with a code")}
-          <% else %>
-            {gettext("Time to assign an organization to your account")}
-          <% end %>
-        </h1>
-        <.connection_note :if={@connecting_client} client={@connecting_client} />
+        <div class="mb-16 grid gap-3">
+          <h1 class="text-lg font-bold">
+            <%= if @current_user.member do %>
+              {gettext("Create another organization or join another one with a code")}
+            <% else %>
+              {gettext("Time to assign an organization to your account")}
+            <% end %>
+          </h1>
+          <p :if={@connecting_client} class="text-sm text-grey-600">
+            {gettext(
+              "Fill in a short form to use Firmowid in %{client}. When you finish, you will approve the connection and return to %{client}.",
+              client: @connecting_client
+            )}
+          </p>
+        </div>
         <div class="flex justify-between md:flex-row">
           <div class="flex max-w-[400px] flex-col justify-between gap-4">
             <p>
