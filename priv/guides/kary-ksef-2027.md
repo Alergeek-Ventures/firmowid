@@ -1,6 +1,6 @@
 ---
 title: "Kary za KSeF w 2027 r.: co obowiązuje, a co jest projektem"
-description: "Ustawa o VAT odracza kary za błędy w KSeF do 1 stycznia 2027 r., a nowelizacja ma przesunąć ten termin o rok. Za co grozi kara, ile wynosi i czego odroczenie nie zmienia."
+description: "Kary za błędy w KSeF odroczono do 1 stycznia 2027 r., a nowelizacja ma przesunąć ten termin o rok. Za co grozi kara, ile wynosi i czego odroczenie nie zmienia."
 published: 2026-11-12
 updated: 2026-11-12
 category: ksef-w-praktyce

@@ -1,6 +1,6 @@
 ---
 title: "Alternatywa dla Fakturowni za darmo"
-description: "Plan Micro w Fakturowni to 3 faktury miesięcznie. Darmowe alternatywy z KSeF: aplikacja MF, plany z limitem 3–10 dokumentów i programy bez limitu faktur. Stan na 11.11.2026."
+description: "Plan Micro w Fakturowni to 3 faktury miesięcznie. Darmowe alternatywy z KSeF: aplikacja MF, plany z limitem 3–10 dokumentów i programy bez limitu faktur."
 published: 2026-11-12
 updated: 2026-11-12
 category: wybor-programu

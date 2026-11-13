@@ -1,6 +1,6 @@
 ---
 title: "Alternatywa dla inFaktu: programy z KSeF bez biura rachunkowego"
-description: "inFakt łączy faktury KSeF z obsługą biura rachunkowego. Jeśli potrzebujesz tylko faktur i KSeF, sprawdź opcje bez pakietu księgowego (w tym bezpłatną Aplikację Podatnika KSeF)."
+description: "inFakt łączy faktury KSeF z obsługą biura rachunkowego. Jeśli potrzebujesz tylko faktur i KSeF, sprawdź opcje bez pakietu księgowego, także bezpłatne."
 published: 2026-11-10
 updated: 2026-11-11
 category: wybor-programu

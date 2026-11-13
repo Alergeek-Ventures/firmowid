@@ -1,6 +1,6 @@
 ---
 title: "Rentowność projektu w małej firmie: koszty, faktury i godziny w jednym miejscu"
-description: "Jak liczymy rentowność projektów w Firmowidzie: koszty przypisywane przez Claude, ChatGPT albo asystenta, wynagrodzenia i koszty firmy rozkładane według godzin, symulacje i prognozy."
+description: "Jak liczymy rentowność projektów w Firmowidzie: koszty przypisywane przez Claude, ChatGPT albo asystenta, wynagrodzenia według godzin, symulacje i prognozy."
 published: 2026-11-12
 updated: 2026-11-12
 category: firma-uslugowa

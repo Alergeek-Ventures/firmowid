@@ -1,6 +1,6 @@
 ---
 title: "Dostęp do KSeF w jednoosobowej firmie i uprawnienia dla księgowej"
-description: "JDG ma dostęp do KSeF automatycznie. Jak się zalogować, kiedy potrzebny jest ZAW-FA, dlaczego certyfikatu nie przekazuje się księgowej i jak nadać uprawnienia biuru."
+description: "JDG ma dostęp do KSeF automatycznie. Jak się zalogować, kiedy potrzebny jest ZAW-FA, czemu nie dawać certyfikatu księgowej i jak nadać uprawnienia biuru."
 published: 2026-11-12
 updated: 2026-11-12
 category: ksef-w-praktyce
