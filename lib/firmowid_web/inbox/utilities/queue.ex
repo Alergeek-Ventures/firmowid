@@ -156,7 +156,10 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
                 do: gettext("The KSeF connection has expired"),
                 else: gettext("KSeF is not connected")
               ),
-            context: gettext("Cost invoices do not arrive on their own and sales invoices cannot be sent to KSeF."),
+            context:
+              gettext(
+                "Until it is connected, you cannot issue sales invoices, and cost invoices do not arrive on their own."
+              ),
             person: nil,
             action: gettext("Connect"),
             href: SettingsNavigation.canonical_path(:ksef)

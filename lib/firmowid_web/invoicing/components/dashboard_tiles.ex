@@ -634,7 +634,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       </div>
 
       <p class="text-xs text-grey-600">
-        {gettext("Invoices will be sent automatically to the National e-Invoice System.")}
+        {gettext("Until KSeF is connected, you cannot issue sales invoices.")}
       </p>
 
       <.link

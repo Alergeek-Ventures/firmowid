@@ -30,12 +30,13 @@ actions, arguments, types and policies. Follow `list_sales_invoices`,
 `list_cost_invoices` or `get_ksef_connection_status` as existing examples.
 
 Build interactive widgets under `lib/firmowid_mcp/`, within the owning feature;
-use `FirmowidMcp.Ksef.Connection` and its LiveView as the existing example.
+use `FirmowidMcp.Invoicing.IssueInvoice` and its LiveView as the existing example.
+Follow `chatgpt-app-review` for what MCP must never collect.
 Reuse `Widgets` for tool/resource registration lookup and scoped tool execution,
 `Runtime` for the HTML shell, content-addressed URIs and resource metadata, and
 `Session`/`LiveSession` for signed mounts, authorization and expiry. The
 existing `assets/js/mcp/bridge.js` connects LiveView to the Apps SDK, updates
-model context and handles downloads and external links. Share UI through
+model context and opens external links. Share UI through
 `FirmowidUI` where both web and MCP use it. Follow `repository-organization` for
 ownership rules.
 

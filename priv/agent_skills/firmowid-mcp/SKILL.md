@@ -17,5 +17,5 @@ Firmowid is a Polish business app for invoicing with KSeF, bank reconciliation, 
 
 - List the tools after connecting. The tool list and the server instructions returned by `initialize` are authoritative; follow them over this summary.
 - Invoices sent to KSeF are always previewed and confirmed by the person inside the confirmation widget. Do not try to issue them another way.
-- Never ask for KSeF tokens, passwords, certificates or private keys in chat.
+- KSeF is connected only in the Firmowid web app, at https://firmowid.pl/ustawienia/ksef. Never ask for or accept KSeF tokens, passwords, certificates or private keys.
 - Propose bank transaction matches, and connect only the ones the person approves.

@@ -51,6 +51,31 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
              {"FV/NOTES/1", "Visible note", "Private comment"}
   end
 
+  test "without KSeF the widget sends the user to the web app to connect it", %{conn: conn} do
+    admin = admin_fixture()
+    draft = draft_fixture!(admin, Date.utc_today())
+
+    conn =
+      conn
+      |> Plug.Conn.assign(:oauth_claims, registered_claims(admin))
+      |> Ash.PlugHelpers.set_actor(admin)
+      |> Ash.PlugHelpers.set_tenant(admin.member.organization_id)
+
+    arguments = %{"input" => %{"invoice" => %{}, "invoice_id" => draft.id}}
+    token = FirmowidMcp.Session.issue(conn, IssueInvoice.resource_uri(), arguments)
+
+    {:ok, view, _html} =
+      live_isolated(conn, Issue, session: %{"mcp_session" => token, "mcp_resource" => IssueInvoice.resource_uri()})
+
+    settings_url = FirmowidMcp.Ksef.settings_url()
+    assert has_element?(view, ~s(a[href="#{settings_url}"][target="_blank"]))
+    assert has_element?(view, "#confirm-invoice-issuance[disabled]")
+
+    assert_push_event(view, "mcp:context", %{
+      structuredContent: %{ksef_status: :disconnected, ksef_settings_url: ^settings_url}
+    })
+  end
+
   for changed_field <- [:should_send_emails, :gtu] do
     @changed_field changed_field
     test "requires another review after a saved draft changes #{@changed_field}", %{conn: conn} do

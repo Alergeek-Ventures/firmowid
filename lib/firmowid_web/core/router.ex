@@ -185,7 +185,7 @@ defmodule FirmowidWeb.Core.Router do
 
     forward "/", FirmowidMcp.Router,
       tools: Firmowid.AiTools.mcp(),
-      mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
+      mcp_resources: [:issue_invoice, :issue_correction]
   end
 
   scope "/admin" do

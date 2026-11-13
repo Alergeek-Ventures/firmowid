@@ -12,7 +12,7 @@ defmodule FirmowidMcp.Invoicing do
     Before preparing, saving, revising, correcting or issuing an invoice, check whether the buyer
     is purchasing as a business. Business buyers include sole traders and companies with a tax ID.
     If the buyer is a private individual not purchasing as a business, do not call Firmowid tools for
-    that request, including get_ksef_connection_status, show_ksef_connection or invoice previews.
+    that request, including get_ksef_connection_status or invoice previews.
     Give a short explanation that this MCP workflow supports business buyers only and direct the user
     to issue the consumer invoice in the Firmowid web app:
     #{FirmowidMcp.endpoint().url()}#{FirmowidWeb.Invoicing.Utilities.Navigation.sales_invoice_creator_path()}.
@@ -24,8 +24,8 @@ defmodule FirmowidMcp.Invoicing do
 
     For invoice reads and supported business-buyer workflows, call get_ksef_connection_status
     for the authenticated organization.
-    If disconnected or expired, propose connecting KSeF using show_ksef_connection when can_connect is true;
-    otherwise explain that an organization administrator must connect it.
+    If disconnected or expired, follow the KSeF connection instructions; when can_connect is false,
+    say that an organization administrator must connect it.
     A missing KSeF connection prevents issuance, not read-only previews or saving complete drafts.
     Stored invoice data remains available without a KSeF connection: continue reading it if the user wants,
     and explain that it may be out of date. A connected status does not guarantee synchronization freshness;

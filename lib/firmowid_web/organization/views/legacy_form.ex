@@ -9,11 +9,13 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Organization.Components.OnboardingHeader, only: [connection_note: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core
   alias Firmowid.Core.Organization
   alias FirmowidWeb.Analysis.Utilities.Industry
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
   alias FirmowidWeb.Organization.Views.Index
 
@@ -39,6 +41,7 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
             {gettext("Time to assign an organization to your account")}
           <% end %>
         </h1>
+        <.connection_note :if={@connecting_client} client={@connecting_client} />
         <div class="flex justify-between md:flex-row">
           <div class="flex max-w-[400px] flex-col justify-between gap-4">
             <p>
@@ -243,11 +246,11 @@ defmodule FirmowidWeb.Organization.Views.LegacyForm do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if flag_enabled?(:inbox, socket.assigns) do
       {:ok, push_navigate(socket, to: OrganizationNavigation.onboarding_path())}
     else
-      mount_form(socket)
+      mount_form(assign(socket, :connecting_client, PendingAuthorization.client_name(session)))
     end
   end
 

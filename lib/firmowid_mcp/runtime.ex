@@ -160,7 +160,6 @@ defmodule FirmowidMcp.Runtime do
       failed: gettext("This view is unavailable."),
       expired: gettext("This view is unavailable."),
       context_failed: gettext("The view is current, but ChatGPT could not receive its context."),
-      download_failed: gettext("The file could not be downloaded. Try again."),
       link_failed: gettext("Unable to open the link. Try again."),
       blocked: gettext("This view is unavailable.")
     }

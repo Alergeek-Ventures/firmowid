@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
   use FirmowidWeb, :controller
 
   alias Firmowid.Core
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
@@ -26,7 +27,7 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
        ) do
       conn
       |> put_session(UserAuth.organization_session_key(), organization_id)
-      |> redirect(to: destination(params["cel"], user, organization_id))
+      |> redirect(to: destination(conn, params["cel"], user, organization_id))
     else
       conn
       |> LiveToast.put_toast(:error, gettext("You do not belong to this organization."))
@@ -34,9 +35,17 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
     end
   end
 
-  defp destination(target, user, organization_id) do
-    if target == OrganizationNavigation.first_steps_target(),
-      do: OrganizationNavigation.first_steps_path(),
-      else: UserAuth.signed_in_path_for_user(user, organization_id)
+  # A company that is ready right away goes back to the AI client waiting for it, if any.
+  defp destination(conn, target, user, organization_id) do
+    cond do
+      target == OrganizationNavigation.first_steps_target() ->
+        OrganizationNavigation.first_steps_path()
+
+      path = PendingAuthorization.return_path(conn) ->
+        path
+
+      true ->
+        UserAuth.signed_in_path_for_user(user, organization_id)
+    end
   end
 end

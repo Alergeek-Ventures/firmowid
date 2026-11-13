@@ -8,6 +8,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   alias Firmowid.Ksef
   alias FirmowidMcp.Invoicing, as: McpInvoicing
   alias FirmowidMcp.Invoicing.IssueCorrection
+  alias FirmowidMcp.Ksef, as: McpKsef
   alias FirmowidMcp.LiveSession
   alias FirmowidMcp.Widgets
   alias FirmowidUI.Invoicing.Components.Issuance, as: IssuanceWidget
@@ -89,18 +90,29 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   defp update_issuance(socket, fun), do: assign(socket, :issuance, fun.(socket.assigns.issuance))
 
   defp publish_context(socket) do
-    %{invoice: invoice, phase: phase, issued_id: issued_id} = socket.assigns.issuance
+    %{invoice: invoice, phase: phase, issued_id: issued_id, connection: connection} =
+      socket.assigns.issuance
 
     push_event(socket, "mcp:context", %{
-      structuredContent: %{
-        state: phase,
-        invoice_id: issued_id,
-        invoice_number: if(invoice, do: invoice.invoice_number),
-        ksef_number: if(invoice, do: invoice.ksef_number),
-        requires_confirmation: phase == :review
-      }
+      structuredContent:
+        Map.merge(
+          %{
+            state: phase,
+            invoice_id: issued_id,
+            invoice_number: if(invoice, do: invoice.invoice_number),
+            ksef_number: if(invoice, do: invoice.ksef_number),
+            requires_confirmation: phase == :review
+          },
+          ksef_setup(connection)
+        )
     })
   end
+
+  # Issuing needs KSeF, which is connected only in the web app; the model passes the link on.
+  defp ksef_setup(%{status: status}) when status != :connected,
+    do: %{ksef_status: status, ksef_settings_url: McpKsef.settings_url()}
+
+  defp ksef_setup(_connection), do: %{}
 
   defp clear(socket), do: assign(socket, :issuance, Issuance.clear(socket.assigns.issuance))
 
@@ -119,6 +131,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         connected?={@connected?}
         available?={@status == :ready}
         footer_logo_url={@footer_logo_url}
+        ksef_settings_url={McpKsef.settings_url()}
       >
         <:notice>
           <p :if={@status == :expired} role="status" class="text-sm text-grey-600">

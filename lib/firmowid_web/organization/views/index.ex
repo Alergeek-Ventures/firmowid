@@ -27,6 +27,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   alias Firmowid.Core.Nip
   alias Firmowid.Core.Organization
   alias FirmowidWeb.Analysis.Utilities.Industry
+  alias FirmowidWeb.Auth.Utilities.PendingAuthorization
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
@@ -43,6 +44,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
           back={back_path(@step, @organization)}
           step={step_number(@step)}
         />
+        <.connection_note :if={@connecting_client} client={@connecting_client} />
 
         <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
           <%!-- The card stays under the header while the steps beside it scroll. --%>
@@ -554,10 +556,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
   # ── Params and lifecycle ─────────────────────────────────────────────
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     # Without the flag the user keeps the organization form from before the wizard.
     if flag_enabled?(:inbox, socket.assigns) do
-      mount_wizard(socket)
+      mount_wizard(assign(socket, :connecting_client, PendingAuthorization.client_name(session)))
     else
       {:ok, push_navigate(socket, to: OrganizationNavigation.legacy_form_path())}
     end

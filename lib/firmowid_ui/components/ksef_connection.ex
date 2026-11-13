@@ -17,7 +17,6 @@ defmodule FirmowidUI.Components.KsefConnection do
   attr :ksef_auth_status, :atom, required: true
   attr :ksef_failure, :any, default: nil
   attr :uploads, :map, required: true
-  attr :download_hook, :string, default: "KsefAuthDownload"
   attr :allow_token?, :boolean, default: true
   attr :allow_fetch?, :boolean, default: false
   attr :fetching?, :boolean, default: false
@@ -215,7 +214,7 @@ defmodule FirmowidUI.Components.KsefConnection do
               <:title>
                 <.button
                   id="download-ksef-auth-token-request"
-                  phx-hook={@download_hook}
+                  phx-hook="KsefAuthDownload"
                   type="button"
                   variant="unstyled"
                   class="cursor-pointer underline focus-visible:outline-2 active:opacity-80"
