@@ -35,6 +35,8 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
 
     assert redirected_to(conn) == ~p"/konto-wylaczone"
     refute get_session(conn, :user_token)
+    # The box is ticked, but a blocked account is not remembered.
+    assert %{max_age: 0} = conn.resp_cookies["remember_me"]
   end
 
   test "an existing session stops authenticating once the organization has no plan", %{conn: conn} do
@@ -58,8 +60,7 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
 
     lv
     |> form("#login_form",
-      user: %{email: user.email, password: valid_user_password()},
-      remember_me: false
+      user: %{email: user.email, password: valid_user_password(), remember_me: true}
     )
     |> submit_form(conn)
   end

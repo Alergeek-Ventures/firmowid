@@ -73,7 +73,6 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
       |> UserAuth.put_organization(user)
       |> store_in_session(user)
       |> set_live_socket_id(token)
-      |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
       |> assign(:current_user, user)
       |> maybe_put_sign_in_toast(activity)
       |> redirect(to: return_to)
@@ -97,13 +96,20 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
   defp maybe_put_sign_in_toast(conn, _activity), do: conn
 
-  defp deny_sign_in(conn, _user, :account_disabled) do
+  # The strategy's dispatcher has already set the remember-me cookie, if asked for.
+  defp deny_sign_in(conn, user, block) do
+    conn
+    |> Helpers.delete_all_remember_me_cookies(:firmowid)
+    |> redirect_blocked(user, block)
+  end
+
+  defp redirect_blocked(conn, _user, :account_disabled) do
     conn
     |> renew_session()
     |> redirect(to: ~p"/konto-wylaczone")
   end
 
-  defp deny_sign_in(conn, user, :subscription_expired) do
+  defp redirect_blocked(conn, user, :subscription_expired) do
     %{organization: organization} =
       user
       |> Core.list_active_members()
@@ -310,6 +316,23 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> put_session(:return_to, SettingsNavigation.canonical_path(:account))
     |> put_flash(:info, gettext("Log in again to close your account."))
     |> redirect(to: ~p"/zaloguj")
+  end
+
+  @secure_cookies Application.compile_env(:firmowid, :environment) == :prod
+
+  @doc """
+  Sets the remember-me cookie after a sign-in with "Remember me" ticked. Like the
+  session cookie (see `FirmowidWeb.Core.Endpoint`), it is Secure only in production:
+  development and tests reach Phoenix over plain http.
+  """
+  @spec put_remember_me_cookie(Plug.Conn.t(), String.t(), map()) :: Plug.Conn.t()
+  def put_remember_me_cookie(conn, cookie_name, %{token: token, max_age: max_age}) do
+    put_resp_cookie(conn, cookie_name, token,
+      http_only: true,
+      same_site: "Lax",
+      secure: @secure_cookies,
+      max_age: max_age
+    )
   end
 
   defp revoke_impersonated_session(conn) do

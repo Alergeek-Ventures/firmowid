@@ -38,8 +38,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
     conn =
       lv
       |> form("#login_form",
-        user: %{email: user.email, password: valid_user_password()},
-        remember_me: false
+        user: %{email: user.email, password: valid_user_password(), remember_me: false}
       )
       |> submit_form(conn)
 
@@ -134,5 +133,58 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
     for {session, _token, _topic} <- connections do
       assert session |> get("/czasosledz") |> html_response(200)
     end
+  end
+
+  describe "remember me" do
+    setup do
+      %{user: Ash.Seed.update!(user_fixture(), %{confirmed_at: DateTime.utc_now()})}
+    end
+
+    test "a ticked box signs the browser in again once the session is gone", %{
+      conn: conn,
+      user: user
+    } do
+      conn = sign_in(conn, user, true)
+
+      assert %{value: token, http_only: true, same_site: "Lax", max_age: max_age} =
+               conn.resp_cookies["remember_me"]
+
+      assert max_age == 30 * 24 * 60 * 60
+
+      assert {:ok, _lv, _html} =
+               build_conn() |> put_req_cookie("remember_me", token) |> live(~p"/czasosledz")
+    end
+
+    test "an unticked box sets no cookie", %{conn: conn, user: user} do
+      conn = sign_in(conn, user, false)
+
+      assert redirected_to(conn) == "/czasosledz"
+      refute Map.has_key?(conn.resp_cookies, "remember_me")
+    end
+
+    for {method, path} <- [delete: "/wyloguj", post: "/zaloguj-ponownie"] do
+      test "#{method} #{path} deletes and revokes the cookie", %{conn: conn, user: user} do
+        conn = sign_in(conn, user, true)
+        token = conn.resp_cookies["remember_me"].value
+
+        conn = conn |> recycle() |> unquote(method)(unquote(path))
+
+        assert %{max_age: 0} = conn.resp_cookies["remember_me"]
+        assert TokenResource.token_revoked?(Token, token)
+
+        assert {:error, {:redirect, %{to: "/zaloguj"}}} =
+                 build_conn() |> put_req_cookie("remember_me", token) |> live(~p"/czasosledz")
+      end
+    end
+  end
+
+  defp sign_in(conn, user, remember_me) do
+    {:ok, lv, _html} = live(conn, ~p"/zaloguj")
+
+    lv
+    |> form("#login_form",
+      user: %{email: user.email, password: valid_user_password(), remember_me: remember_me}
+    )
+    |> submit_form(conn)
   end
 end

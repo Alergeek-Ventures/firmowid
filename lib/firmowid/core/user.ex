@@ -192,10 +192,14 @@ defmodule Firmowid.Core.User do
 
       argument :email, :ci_string, allow_nil?: false
       argument :password, :string, allow_nil?: false, sensitive?: true
+      argument :remember_me, :boolean, allow_nil?: true
 
       prepare AshAuthentication.Strategy.Password.SignInPreparation
+      # The "Remember me" box: the strategy's dispatcher sets the token as a cookie.
+      prepare AshAuthentication.Strategy.RememberMe.MaybeGenerateTokenPreparation
 
       metadata :token, :string, allow_nil?: false
+      metadata :remember_me, :map, allow_nil?: true
     end
 
     read :sign_in_with_token do
