@@ -139,7 +139,9 @@
     <link
       phx-track-static
       rel="stylesheet"
-      href={if assigns[:public_marketing?], do: ~p"/assets/landing.css", else: ~p"/assets/app.css"}
+      href={
+        if assigns[:public_marketing?], do: ~p"/assets/landing.css", else: ~p"/assets/app.css"
+      }
     />
     <script
       defer
