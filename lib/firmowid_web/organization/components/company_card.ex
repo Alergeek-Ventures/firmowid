@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
           </p>
         <% end %>
 
-        <dl class="mt-8 grid grid-cols-[6rem_1fr] gap-y-3 text-base sm:mt-10 sm:grid-cols-[9rem_1fr]">
+        <dl class="mt-8 grid grid-cols-[6rem_minmax(0,1fr)] gap-y-3 text-base sm:mt-10 sm:grid-cols-[9rem_minmax(0,1fr)]">
           <%= for {row, index} <- Enum.with_index(@rows) do %>
             <dt class="pt-0.5 text-sm text-grey-500">{row.label}</dt>
             <dd :if={row.value} class="text-grey-900">
