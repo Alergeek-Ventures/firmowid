@@ -48,7 +48,12 @@ safe_sentry_metadata = [
   :bytes,
   :kind,
   :key_count,
-  :health_check
+  :health_check,
+  :csp_directive,
+  :csp_blocked,
+  :csp_document,
+  :csp_source,
+  :csp_line
 ]
 
 config :firmowid, Firmowid.Currencies.Converter, rates_provider: :api

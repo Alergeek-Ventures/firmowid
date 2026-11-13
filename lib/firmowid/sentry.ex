@@ -112,6 +112,11 @@ defmodule Firmowid.Sentry do
     :kind,
     :key_count,
     :health_check,
+    :csp_directive,
+    :csp_blocked,
+    :csp_document,
+    :csp_source,
+    :csp_line,
     :mfa
   ]
   @context_fields %{
@@ -379,9 +384,11 @@ defmodule Firmowid.Sentry do
 
   defp scrub_url_string(nil), do: nil
   defp scrub_url_string(_url), do: nil
-  defp scrub_sensitive_route(nil), do: nil
+  @doc "Replaces the token a password reset, e-mail confirmation or shared invoice path carries."
+  @spec scrub_sensitive_route(String.t() | nil) :: String.t() | nil
+  def scrub_sensitive_route(nil), do: nil
 
-  defp scrub_sensitive_route(path),
+  def scrub_sensitive_route(path),
     do: Regex.replace(~r{(/(?:resetuj-haslo|potwierdz-email|faktura)/)[^/?#]+}, path, "\\1[REDACTED_TOKEN]")
 
   defp safe_headers(headers) when is_map(headers) do

@@ -88,6 +88,7 @@ defmodule FirmowidWeb.Core.Endpoint do
     log: {RequestLogMetadata, :log_level, []}
 
   plug FirmowidWeb.Infrastructure.Plugs.TelemetryProxy
+  plug FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicyReport
 
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],

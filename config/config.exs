@@ -228,6 +228,11 @@ config :logger, :console,
     :kind,
     :key_count,
     :health_check,
+    :csp_directive,
+    :csp_blocked,
+    :csp_document,
+    :csp_source,
+    :csp_line,
     :sentry_live_view_captured
   ]
 
