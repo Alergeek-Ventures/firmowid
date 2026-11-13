@@ -17,6 +17,12 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :can_write, :boolean, default: false
   attr :target, :any, default: nil
 
+  attr :lazy, :boolean,
+    default: false,
+    doc: "renders the selector only once opened, asking the target with `open-categories`"
+
+  attr :opened, :boolean, default: false, doc: "whether a lazy selector was opened"
+
   @doc "Renders historical tags and a selector for built-in, custom and project categories."
   @spec cell(map()) :: Rendered.t()
   def cell(assigns) do
@@ -48,18 +54,25 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           aria-label={gettext("Edit categories")}
           aria-haspopup="listbox"
           aria-controls={"#{@popover_id}-listbox"}
-          phx-click={show_popover(@popover_id)}
+          phx-click={
+            if @lazy and not @opened,
+              do: JS.push("open-categories", target: @target),
+              else: show_popover(@popover_id)
+          }
           class="flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 transition hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
           <.badges tags={@tags} colors={@colors} limit={@limit} />
           <.icon name="hero-chevron-up-down-mini" class="size-4 shrink-0 text-grey-500" />
         </FirmowidUI.Components.Button.button>
+        <%!-- A lazy selector opens as soon as it is rendered, which its first click asked for. --%>
         <.popover
+          :if={not @lazy or @opened}
           id={@popover_id}
           reference_id={"#{@popover_id}-trigger"}
           placement="bottom-end"
           strategy="fixed"
           class="overflow-hidden rounded-lg border border-grey-200 bg-white"
+          phx-mounted={@lazy && show_popover(@popover_id)}
         >
           <div id={"#{@popover_id}-combobox"} class="w-72" phx-hook=".CategoryCombobox">
             <input

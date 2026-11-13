@@ -503,6 +503,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :reference_id, :string, required: true
   attr :strategy, :string, default: "absolute", values: ["absolute", "fixed"]
   attr :class, :any, default: nil
+  attr :rest, :global
 
   attr :placement, :string,
     default: "bottom",
@@ -538,6 +539,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         data-reference={@reference_id}
         data-placement={@placement}
         data-strategy={@strategy}
+        {@rest}
       >
         {render_slot(@inner_block)}
       </div>

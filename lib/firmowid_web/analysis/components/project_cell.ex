@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
 
   @impl true
-  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
+  def mount(socket), do: {:ok, socket |> attach_access_hook(:scope) |> assign(:opened?, false)}
 
   # Every row of the list shares the scope.
   @impl true
@@ -43,12 +43,18 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
         can_write={@can_write}
         target={@myself}
         limit={2}
+        lazy
+        opened={@opened?}
       />
     </div>
     """
   end
 
+  # Every row holding the whole list of projects made the page several times larger,
+  # so a row's selector is rendered once it is first opened.
   @impl true
+  def handle_event("open-categories", _params, socket), do: {:noreply, assign(socket, :opened?, true)}
+
   def handle_event(event, params, socket) do
     %{entry: entry, projects: projects, scope: scope} = socket.assigns
 
