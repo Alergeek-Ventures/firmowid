@@ -135,12 +135,17 @@
         if (localStorage.getItem("sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed";
       } catch {}
     </script>
-    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <%!-- Public pages load a smaller bundle with only the styles and hooks they render. --%>
+    <link
+      phx-track-static
+      rel="stylesheet"
+      href={if assigns[:public_marketing?], do: ~p"/assets/landing.css", else: ~p"/assets/app.css"}
+    />
     <script
       defer
       phx-track-static
       type="text/javascript"
-      src={~p"/assets/app.js"}
+      src={if assigns[:public_marketing?], do: ~p"/assets/landing.js", else: ~p"/assets/app.js"}
       data-telemetry-config="true"
       data-public-marketing={to_string(assigns[:public_marketing?] == true)}
       data-posthog-enabled={to_string(posthog_enabled?(assigns[:current_user]))}

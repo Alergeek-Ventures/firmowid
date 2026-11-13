@@ -63,6 +63,13 @@ config :esbuild,
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Mix.Project.build_path()}
+  ],
+  # Public pages (home, pricing, guides, legal pages): LiveView and only the hooks they render.
+  landing: [
+    args:
+      ~w(js/landing.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Mix.Project.build_path()}
   ]
 
 config :ex_cldr,
@@ -295,6 +302,13 @@ config :tailwind,
     args: ~w(
       --input=css/app.css
       --output=../priv/static/assets/app.css
+    ),
+    cd: Path.expand("../assets", __DIR__)
+  ],
+  landing: [
+    args: ~w(
+      --input=css/landing.css
+      --output=../priv/static/assets/landing.css
     ),
     cd: Path.expand("../assets", __DIR__)
   ]
