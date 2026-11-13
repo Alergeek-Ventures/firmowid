@@ -35,6 +35,8 @@ Spośród ofert bez limitu i bez opłat zostały w listopadzie aplikacja ministe
 
 Aplikacja Podatnika KSeF obsługuje wystawianie i odbiór faktur, UPO, korekty, uprawnienia i pracę w czasie niedostępności systemu, a e-mikrofirma w e-Urzędzie Skarbowym przenosi dodatkowo odebrane faktury do ewidencji VAT. Wpłat od klientów ani czasu pracy w projektach żadne z nich jednak nie pokazuje.
 
+![Czternaście ofert za 0 zł z KSeF według miesięcznego limitu dokumentów, stan na 11 listopada 2026 r. Bez limitu faktur lub bez opublikowanego limitu: Aplikacja Podatnika KSeF, e-mikrofirma, Firmowid Darmowy oraz programy na komputer KsefInvoice i ProFak. 10 dokumentów: Biuromat Free, Comarch Betterfly łącznie, ELISOFT na komputer i FakturaXL, w której sprzedaż i koszty liczą się razem. 5 faktur sprzedaży: Fakturoza Darmowy. 3 faktury: Fakturownia Micro, IFIRMA i PolskaFaktura FREE, która wlicza też korekty. Bez wysyłki do KSeF w planie 0 zł: Faktura.pl DARMOWY, tylko pobieranie i podgląd.](/images/guides/darmowe-programy-ksef-limity-planow.webp)
+
 ## Plany z limitem
 
 W planie Micro Fakturowni, w IFIRMIE i w PolskiejFakturze limit wynosi trzy faktury sprzedaży miesięcznie, przy czym PolskaFaktura wlicza do niego także korekty. W FakturzeXL i w Comarch Betterfly sprzedaż i koszty trafiają do jednej puli 10 dokumentów, którą wyczerpie już firma wystawiająca sześć faktur i odbierająca pięć kosztowych w miesiącu, a Biuromat dopuszcza 10 faktur i dwa konta użytkowników. Abonament wykupiony tylko po to, żeby wystawić kilka dodatkowych faktur, kosztuje zwykle więcej niż plan bez limitu.
