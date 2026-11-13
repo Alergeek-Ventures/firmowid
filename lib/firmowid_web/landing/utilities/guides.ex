@@ -92,13 +92,15 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
             faq =
               case Regex.run(~r/^## Najczęstsze pytania\n(.*?)(?=^## |\z)/msu, body) do
                 [_, section] ->
-                  for [_, question, answer] <- Regex.scan(~r/^### ([^\n]+)\n(.*?)(?=^### |\z)/msu, section) do
+                  for [_, question, answer] <-
+                        Regex.scan(~r/^### ([^\n]+)\n(.*?)(?=^### |\z)/msu, section) do
                     text =
                       answer
                       |> String.split(~r/\n\s*\n/)
                       |> Enum.map(&String.trim/1)
                       # Drop images and their single-line italic captions; keep bold text and lists.
-                      |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "![") or &1 =~ ~r/\A\*[^*\n]+\*\z/u))
+                      |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "![")))
+                      |> Enum.reject(&(&1 =~ ~r/\A\*[^*\n]+\*\z/u))
                       |> Enum.join(" ")
                       |> then(&Regex.replace(~r/\[([^\]]+)\]\([^)]+\)/u, &1, "\\1"))
                       |> String.replace("**", "")
