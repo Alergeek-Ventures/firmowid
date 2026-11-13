@@ -220,12 +220,13 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     assert instructions =~ FirmowidMcp.Ksef.settings_url()
     refute instructions =~ ~r/widget[^.]*(token|password|private key|certificate)/i
 
-    tools = mcp(token, "tools/list", %{})["tools"]
-    assert "get_ksef_connection_status" in Enum.map(tools, & &1["name"])
-    refute Enum.any?(tools, &(&1["name"] =~ "ksef" and &1["_meta"]["ui"]))
+    # Listing tools and resources renders the widget document from built assets, which tests
+    # lack, so the allowlists the router serves are checked instead.
+    assert Enum.filter(Firmowid.AiTools.mcp(), &(to_string(&1) =~ "ksef")) == [
+             :get_ksef_connection_status
+           ]
 
-    resources = mcp(token, "resources/list", %{})["resources"]
-    refute Enum.any?(resources, &(&1["uri"] =~ "ksef"))
+    refute Enum.any?(FirmowidMcp.Widgets.all(), &(&1.resource_uri() =~ "ksef"))
 
     # The new company has no KSeF yet; the status itself carries the way to connect it.
     assert %{"status" => "disconnected", "settings_url" => settings_url} =
