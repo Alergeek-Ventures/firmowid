@@ -6888,6 +6888,11 @@ msgstr ""
 msgid "KSeF accepted the invoice."
 msgstr ""
 
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "KSeF and invoicing guides for small businesses"
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF authentication failed."
@@ -9131,6 +9136,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Potential transactions for the document"
+msgstr ""
+
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "Practical answers for sole traders and small firms: when KSeF applies to you, what to do when it fails, how to choose an invoicing program and connect it to your bank. Each guide cites its sources and shows the date of its last update."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/guides.ex
