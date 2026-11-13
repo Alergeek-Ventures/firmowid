@@ -1,6 +1,6 @@
 ---
 title: "Firma usługowa założona w 2027 r.: od pierwszej faktury w KSeF"
-description: "Firma usługowa założona w 2027 r. wystawia faktury dla firm w KSeF od pierwszego dnia. Co z osobami prywatnymi, klientami z zagranicy i numerem KSeF w przelewie."
+description: "Firma usługowa założona w 2027 r. wystawia firmom faktury w KSeF od pierwszego dnia. Co z osobami prywatnymi, klientami z zagranicy i numerem KSeF w przelewie."
 published: 2026-11-12
 updated: 2026-11-12
 category: firma-uslugowa
