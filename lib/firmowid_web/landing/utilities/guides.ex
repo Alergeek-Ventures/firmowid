@@ -98,9 +98,9 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                       answer
                       |> String.split(~r/\n\s*\n/)
                       |> Enum.map(&String.trim/1)
-                      # Drop images and their single-line italic captions; keep bold text and lists.
-                      |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "![")))
-                      |> Enum.reject(&(&1 =~ ~r/\A\*[^*\n]+\*\z/u))
+                      # Drop empty paragraphs, images and single-line italic captions;
+                      # keep bold text and lists.
+                      |> Enum.reject(&(&1 =~ ~r/\A(?:\z|!\[|\*[^*\n]+\*\z)/u))
                       |> Enum.join(" ")
                       |> then(&Regex.replace(~r/\[([^\]]+)\]\([^)]+\)/u, &1, "\\1"))
                       |> String.replace("**", "")
