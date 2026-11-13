@@ -48,6 +48,19 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
     assert to == ~p"/zaloguj"
   end
 
+  test "a remembered browser is not signed in again once the organization has no plan", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    token = sign_in(conn, admin).resp_cookies["remember_me"].value
+    expire_subscription!(admin.member.organization_id)
+
+    conn = build_conn() |> put_req_cookie("remember_me", token) |> get(~p"/czasosledz")
+
+    assert redirected_to(conn) == ~p"/zaloguj"
+    assert %{max_age: 0} = conn.resp_cookies["remember_me"]
+  end
+
   test "a signed-in user is sent away from the blocked pages", %{conn: conn} do
     conn = log_in_user(conn, user_fixture())
 

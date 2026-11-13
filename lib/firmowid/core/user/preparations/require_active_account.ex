@@ -19,8 +19,12 @@ defmodule Firmowid.Core.User.Preparations.RequireActiveAccount do
   @doc false
   @impl true
   @spec prepare(Query.t(), keyword(), Ash.Resource.Preparation.Context.t()) :: Query.t()
+  # A blocked account is not restored from the remember-me cookie: the strategy's plug
+  # then deletes the cookie. The password sign-in keeps such an account in the result so
+  # its callback can explain the block.
   def prepare(%{action: %{name: :sign_in_with_remember_me}} = query, _options, context) do
     query
+    |> Query.filter(is_nil(access_block))
     |> Query.lock(:for_update)
     |> Query.after_action(fn query, users ->
       # The strategy verifies the remember token before reading/locking the user.
