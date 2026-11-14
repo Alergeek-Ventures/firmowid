@@ -351,11 +351,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             mode={@params.filter}
             by_month={@all_months?}
             invoicing_entries={
-              @invoicing_entries && window_entries(@invoicing_entries, @entries_window)
+              listed_entries(@invoicing_entries, @newest_entries) &&
+                window_entries(listed_entries(@invoicing_entries, @newest_entries), @entries_window)
             }
+            more_loading={is_nil(@invoicing_entries) and @newest_entries != nil}
             load_newer={newer_entries?(@entries_window) && "load-newer-entries"}
             load_more={
-              @invoicing_entries && older_entries?(@invoicing_entries, @entries_window) &&
+              listed_entries(@invoicing_entries, @newest_entries) &&
+                older_entries?(listed_entries(@invoicing_entries, @newest_entries), @entries_window) &&
                 "load-older-entries"
             }
             return_to={Navigation.invoicing_index_path(@params)}
@@ -406,6 +409,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         |> assign_new(:visible_month, fn -> nil end)
         # Other params show other entries, so the old ones give way to placeholders.
         |> assign(:invoicing_entries, nil)
+        |> assign(:newest_entries, nil)
+        |> read_newest_entries()
         |> refetch_invoicing_entries()
 
       {:noreply, socket}
@@ -924,26 +929,39 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     update_entry(socket, id, %{skip_invoicing: new_skip})
   end
 
+  # Until every entry arrives, the newest months show the change; the read in flight may have
+  # missed it, so it starts again.
+  defp update_entry(%{assigns: %{invoicing_entries: nil, newest_entries: [_ | _] = newest}} = socket, id, changes) do
+    socket
+    |> assign(:newest_entries, update_entries(newest, id, changes))
+    |> refetch_invoicing_entries()
+  end
+
   # A click that arrives just after the params changed finds no rows; the new read shows the change.
   defp update_entry(%{assigns: %{invoicing_entries: nil}} = socket, _id, _changes), do: socket
 
-  # A row may also sit inside a group of one party's transactions.
   defp update_entry(socket, id, changes) do
+    assign(
+      socket,
+      :invoicing_entries,
+      update_entries(socket.assigns.invoicing_entries, id, changes)
+    )
+  end
+
+  # A row may also sit inside a group of one party's transactions.
+  defp update_entries(entries, id, changes) do
     update = fn
       %{id: ^id} = entry -> Map.merge(entry, changes)
       other -> other
     end
 
-    entries =
-      Enum.map(socket.assigns.invoicing_entries, fn
-        %TransactionGroup{} = group ->
-          %{group | transactions: Enum.map(group.transactions, update)}
+    Enum.map(entries, fn
+      %TransactionGroup{} = group ->
+        %{group | transactions: Enum.map(group.transactions, update)}
 
-        entry ->
-          update.(entry)
-      end)
-
-    assign(socket, :invoicing_entries, entries)
+      entry ->
+        update.(entry)
+    end)
   end
 
   # Analysis members assign entries to the projects active in the month, behind the analysis flag.
@@ -990,15 +1008,62 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply,
      socket
      |> assign(:invoicing_entries, entries)
-     |> assign(:projects_column, projects_column(socket.assigns, month, scope))
-     # Projects change without the entries changing (another session, the assistant, tracked
-     # time), so every reload makes the rows on screen read theirs again.
-     |> assign(:projects_loaded_at, System.monotonic_time())
+     |> assign(:newest_entries, nil)
+     |> assign_projects_column(month, scope)
      |> assign_month_status(fetched_entries)
      |> fetch_dashboard_data()}
   end
 
   def handle_async(:invoicing_entries, {:exit, reason}, _socket), do: exit(reason)
+
+  # The newest months show until every entry arrives, unless the params changed meanwhile or
+  # every entry is already there. Without newest entries, the placeholders stay rather than
+  # telling that the list is empty.
+  def handle_async(:newest_entries, {:ok, {params, entries}}, socket) do
+    %{params: current_params, invoicing_entries: all_entries, ash_scope: scope} = socket.assigns
+
+    if params == current_params and is_nil(all_entries) and entries != [] do
+      {:noreply,
+       socket
+       |> assign(:newest_entries, entries)
+       |> assign_projects_column(params.month, scope)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_async(:newest_entries, {:exit, reason}, _socket), do: exit(reason)
+
+  # Projects change without the entries changing (another session, the assistant, tracked
+  # time), so every reload makes the rows on screen read theirs again.
+  defp assign_projects_column(socket, month, scope) do
+    socket
+    |> assign(:projects_column, projects_column(socket.assigns, month, scope))
+    |> assign(:projects_loaded_at, System.monotonic_time())
+  end
+
+  # The list of every month reads all of a company's entries, which takes a while for a busy
+  # one, so the current and previous months are read alongside to show first. A company
+  # whose entries all fall within them has nothing to show sooner.
+  defp read_newest_entries(%{assigns: %{all_months?: true}} = socket) do
+    %{params: params, active_months: active_months, ash_scope: scope} = socket.assigns
+    from = Date.utc_today() |> Date.beginning_of_month() |> Date.shift(month: -1)
+
+    if Date.before?(Enum.min(active_months, Date), from) do
+      start_async(socket, :newest_entries, fn ->
+        entries =
+          from
+          |> fetch_entries(nil, params.filter, params.subfilter, scope)
+          |> with_month_separators()
+
+        {params, entries}
+      end)
+    else
+      socket
+    end
+  end
+
+  defp read_newest_entries(socket), do: socket
 
   # The inbox lists of invoices and transactions show every month, newest first.
   # The month's status, which the ungrouped entries feed, is not read for these lists.
@@ -1286,6 +1351,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp newer_entries?({first, _count}), do: first > 0
+
+  # Every entry once read; until then the newest months, when they came first.
+  defp listed_entries(nil, newest_entries), do: newest_entries
+  defp listed_entries(entries, _newest_entries), do: entries
 
   defp older_entries?(entries, {first, count}), do: length(entries) > first + count
 
