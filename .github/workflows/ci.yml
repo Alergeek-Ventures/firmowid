@@ -34,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Sigstore signs the snapshot's build provenance with the job's OIDC identity.
+      id-token: write
+      attestations: write
+    env:
+      SNAPSHOT: ${{ github.sha }}.tar.gz
     steps:
       - name: Download generated PO catalog
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
@@ -42,20 +47,33 @@ jobs:
           name: accent-po-${{ github.sha }}
           path: priv/gettext
 
+      - name: Pack the snapshot of this commit
+        if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        run: tar -czf "$SNAPSHOT" -C priv/gettext pl/LC_MESSAGES/default.po uk/LC_MESSAGES/default.po
+
+      - name: Attest the snapshot's build provenance
+        id: attest
+        if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ env.SNAPSHOT }}
+
+      # The Sigstore bundle holds an in-toto SLSA provenance statement; the .intoto.jsonl name lets
+      # OpenSSF Scorecard find it, and `gh attestation verify --bundle` reads it as JSON lines.
       - name: Publish the snapshot of this commit
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SNAPSHOT: ${{ github.sha }}.tar.gz
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
           set -euo pipefail
-          tar -czf "$SNAPSHOT" -C priv/gettext pl/LC_MESSAGES/default.po uk/LC_MESSAGES/default.po
+          cp "$BUNDLE_PATH" "$SNAPSHOT.intoto.jsonl"
           gh release view translation-snapshots > /dev/null 2>&1 ||
             gh release create translation-snapshots --prerelease --title "Translation snapshots" \
               --notes "Validated translation catalogs of main commits, installed by deployment builds. Managed by CI." ||
             gh release view translation-snapshots > /dev/null
-          gh release upload translation-snapshots "$SNAPSHOT"
+          gh release upload translation-snapshots "$SNAPSHOT" "$SNAPSHOT.intoto.jsonl"
 
   build:
     name: Build and Test
