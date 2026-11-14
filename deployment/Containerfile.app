@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG BUILDER_IMAGE="hexpm/elixir:1.20.5-erlang-29.1.2-alpine-3.23.7@sha256:6f1ef15188fcfd5901f347dde366233323b8eef1fa52be708274bb4f23810e90"
+ARG BUILDER_IMAGE="hexpm/elixir:1.20.5-erlang-29.1.2-alpine-3.23.8@sha256:2a75686b3b9d60b6e73056944f88da8d4e2edd6eae9116977f9dc56de54f9649"
 ARG RUNNER_IMAGE="alpine:3.22.7@sha256:2e0b81d60597f449baa56dc25d355367869d2dca4cd57e866f1e2b52af3eb55f"
 
 FROM ${BUILDER_IMAGE} AS builder
@@ -10,7 +10,7 @@ RUN apk add --no-cache build-base git nodejs npm curl
 WORKDIR /app
 
 # Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
-ARG HEX_VERSION="2.5.3"
+ARG HEX_VERSION="2.7.0"
 
 RUN mix local.hex "${HEX_VERSION}" --force && \
   mix local.rebar --force

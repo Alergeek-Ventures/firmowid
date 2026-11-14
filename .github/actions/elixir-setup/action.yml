@@ -98,7 +98,7 @@ runs:
 
     # Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
     - name: Install Hex
-      run: mix local.hex 2.5.3 --force
+      run: mix local.hex 2.7.0 --force
       shell: sh
 
     - name: Install Dependencies
