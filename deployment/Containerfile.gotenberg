@@ -6,7 +6,7 @@
 # Build: docker build -f deployment/Containerfile.gotenberg -t firmowid-gotenberg:latest .
 # Run:   docker run -p 3000:3000 firmowid-gotenberg:latest
 
-FROM docker.io/gotenberg/gotenberg:8.39.0-chromium@sha256:558943677cf9092df83ff654c2645856dcb9ddf777f359243789688e74f3bcdd
+FROM docker.io/gotenberg/gotenberg:8.40.0-chromium@sha256:a03fb9f9a7db6e1ff9b798137f3d9f60601ded73fe626b10fa72c920360b0efd
 
 # Keep Chromium warm from boot instead of starting on first conversion.
 ENV CHROMIUM_AUTO_START=true

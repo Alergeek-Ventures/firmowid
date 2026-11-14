@@ -2,24 +2,13 @@
 
 let
   # Owner of the Hex version; version-sync-check.yml keeps CI and Containerfile.app in sync.
-  hex-version = "2.5.3";
+  hex-version = "2.7.0";
 
-  # Security-only overrides keep the remaining nixpkgs packages on the 7-day cooldown.
-  # https://github.com/elixir-lang/elixir/releases/tag/v1.20.5
-  elixir = pkgs.beam29Packages.elixir_1_20.overrideAttrs {
-    version = "1.20.5";
-    src = pkgs.fetchFromGitHub {
-      owner = "elixir-lang";
-      repo = "elixir";
-      rev = "v1.20.5";
-      hash = "sha256-MsRNaWAQ05ysL3hOqpfhm//tRNL0Z4Ia/NfEWEQfEWE=";
-    };
-  };
-
-  # https://github.com/pnpm/pnpm/releases/tag/v11.28.9 (GHSA-xjj6-f33q-929c).
+  # The pinned nixpkgs ships pnpm 11.27.0, without the 11.28.9 fix for GHSA-xjj6-f33q-929c.
+  # https://github.com/pnpm/pnpm/releases/tag/v11.28.11
   pnpm = pkgs.pnpm_11.override {
-    version = "11.28.9";
-    hash = "sha256-5UsH5WNLe/Q1IVPgyMJbzvKTCinj0b3EKp6vL/1ENt8=";
+    version = "11.28.11";
+    hash = "sha256-UDyhf0BAB0B2VjXQH2+n2TLv5TNgTW9v5zvYtInnPrs=";
     nodejs-slim = pkgs.nodejs-slim_26;
   };
 
@@ -99,7 +88,7 @@ in
     nodejs_26
     pnpm
     accent-cli
-    elixir
+    beam29Packages.elixir_1_20
     beam29Packages.erlang
     infisical
     worktrunk
