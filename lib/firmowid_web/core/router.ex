@@ -271,6 +271,7 @@ defmodule FirmowidWeb.Core.Router do
 
     post "/organizacja/przelacz", Organization.Controllers.Switch, :switch
     get "/obrazy/:id/:width", Infrastructure.Controllers.Picture, :show
+    get "/logotypy/:domain", Infrastructure.Controllers.CompanyLogo, :show
     get "/kosztowe/:id/pobierz", CostInvoicePdf, :pdf
     get "/sprzedazowe/:id/pdf", Pdf, :index
     get "/sprzedazowe/:id/pobierz", Pdf, :pdf

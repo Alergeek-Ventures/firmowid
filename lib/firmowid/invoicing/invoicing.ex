@@ -372,6 +372,7 @@ defmodule Firmowid.Invoicing do
       define :create_counterparty, action: :create
       define :update_counterparty, action: :update
       define :record_counterparty_vat_id_check, action: :record_vat_id_check
+      define :record_counterparty_website, action: :record_website
       define :archive_counterparty, action: :archive
       define :unarchive_counterparty, action: :unarchive
     end

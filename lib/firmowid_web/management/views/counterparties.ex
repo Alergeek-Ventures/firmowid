@@ -161,9 +161,24 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
   attr :counterparty, :map, required: true
 
+  # The website icon fades in over the type icon once loaded; one that fails stays
+  # hidden (the `data-progressive` script in the root layout). Its white background
+  # covers the type icon behind a transparent logo, on the white row. Only companies
+  # get a website domain (`CounterpartyWebsiteWorker`).
   defp counterparty_icon(assigns) do
     ~H"""
-    <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="size-6 text-grey-500" />
+    <span class="relative flex size-6 shrink-0">
+      <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="size-6 text-grey-500" />
+      <img
+        :if={@counterparty.website_domain}
+        data-progressive
+        src={~p"/logotypy/#{@counterparty.website_domain}"}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        class="absolute inset-0 size-full bg-white object-contain"
+      />
+    </span>
     """
   end
 
