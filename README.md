@@ -613,7 +613,8 @@ uruchomienie CI dla commita `main` używa już opublikowanego snapshotu. Nie
 tworzymy wersji w Accent.
 
 Ten sam job podpisuje proweniencję snapshotu przez `actions/attest` (Sigstore) i
-publikuje bundle obok niego jako `FULL_SHA.tar.gz.intoto.jsonl`. Wydanie trzyma
+publikuje bundle obok niego jako `FULL_SHA.tar.gz.intoto.jsonl`. Awaria Sigstore
+nie blokuje wdrożenia: snapshot trafia wtedy do wydania bez podpisu. Wydanie trzyma
 400 najnowszych snapshotów, bo GitHub mieści najwyżej 1000 plików w jednym wydaniu.
 Pochodzenie pobranego snapshotu sprawdzisz tak:
 

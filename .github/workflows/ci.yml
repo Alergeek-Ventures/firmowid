@@ -51,35 +51,49 @@ jobs:
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
         run: tar -czf "$SNAPSHOT" -C priv/gettext pl/LC_MESSAGES/default.po uk/LC_MESSAGES/default.po
 
+      # Best effort: a Sigstore outage must not block deployments, which need this job.
       - name: Attest the snapshot's build provenance
         id: attest
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        continue-on-error: true
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.SNAPSHOT }}
 
       # The Sigstore bundle holds an in-toto SLSA provenance statement; the .intoto.jsonl name lets
       # OpenSSF Scorecard find it, and `gh attestation verify --bundle` reads it as JSON lines.
+      # The bundle goes up first: a re-run skips commits whose snapshot exists, so a snapshot
+      # uploaded without its bundle would stay unattested.
       - name: Publish the snapshot of this commit
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          ATTESTED: ${{ steps.attest.outcome == 'success' }}
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
           set -euo pipefail
-          cp "$BUNDLE_PATH" "$SNAPSHOT.intoto.jsonl"
           gh release view translation-snapshots > /dev/null 2>&1 ||
             gh release create translation-snapshots --prerelease --title "Translation snapshots" \
               --notes "Validated translation catalogs of main commits, installed by deployment builds. Managed by CI." ||
             gh release view translation-snapshots > /dev/null
-          gh release upload translation-snapshots "$SNAPSHOT" "$SNAPSHOT.intoto.jsonl"
+          if [ "$ATTESTED" = "true" ]; then
+            cp "$BUNDLE_PATH" "$SNAPSHOT.intoto.jsonl"
+            gh release upload translation-snapshots "$SNAPSHOT.intoto.jsonl" --clobber
+          else
+            echo "::warning::Publishing $SNAPSHOT without a provenance attestation"
+            # A bundle left by an earlier attempt signs other tarball bytes.
+            gh release delete-asset translation-snapshots "$SNAPSHOT.intoto.jsonl" --yes < /dev/null || true
+          fi
+          gh release upload translation-snapshots "$SNAPSHOT"
 
       # A release holds at most 1000 assets and a snapshot takes two. Keeping the newest 400 snapshots
       # (weeks of main commits) keeps the deployed commit and recent rollbacks buildable; an older
-      # commit's deployment build then fails until its snapshot is published again.
+      # commit's deployment build then fails until its snapshot is published again. Pruning is
+      # housekeeping, so its failure must not block deployments either.
       - name: Prune the oldest snapshots
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -87,13 +101,18 @@ jobs:
         run: |
           set -euo pipefail
           gh release view translation-snapshots --json assets --jq '
-            .assets
-            | (map(select(.name | endswith(".tar.gz"))) | sort_by(.createdAt) | reverse
-               | .[(env.KEEP | tonumber):] | map(.name)) as $old
-            | .[] | select(.name | rtrimstr(".intoto.jsonl") | IN($old[])) | .name' |
+            .assets as $assets
+            | ($assets | map(select(.name | endswith(".tar.gz"))) | sort_by(.createdAt) | reverse
+               | .[:(env.KEEP | tonumber)] | map(.name)) as $keep
+            | $assets[]
+            | select(.name | endswith(".tar.gz") or endswith(".tar.gz.intoto.jsonl"))
+            | select(.name | rtrimstr(".intoto.jsonl") | IN($keep[]) | not)
+            # A parallel run uploads the attestation just before its snapshot; leave fresh ones.
+            | select((.name | endswith(".tar.gz")) or (.createdAt | fromdateiso8601) < now - 3600)
+            | .name' |
             while read -r asset; do
               # Main runs in parallel, so another run may have deleted this asset already.
-              gh release delete-asset translation-snapshots "$asset" --yes ||
+              gh release delete-asset translation-snapshots "$asset" --yes < /dev/null ||
                 echo "::warning::Could not delete $asset; another run may have pruned it"
             done
 
