@@ -32,11 +32,13 @@ Firmowid to aplikacja dla małych firm w Polsce: faktury w KSeF (wystawianie i
 pobieranie), automatyczne parowanie przelewów z bankiem (Open Banking),
 ewidencja czasu pracy w projektach, urlopy, delegacje i płace.
 
-Kod jest na licencji [AGPL-3.0](LICENSE). Możesz uruchomić Firmowid na własnym
-serwerze albo korzystać z wersji hostowanej na [firmowid.pl](https://firmowid.pl)
-(plan Darmowy 0 zł, bez limitu faktur).
+Kod jest na licencji [AGPL-3.0-or-later](LICENSE). Możesz uruchomić Firmowid na
+własnym serwerze albo korzystać z wersji hostowanej na [firmowid.pl](https://firmowid.pl)
+(plan Darmowy 0 zł, bez limitu faktur). Nie publikujemy wydań: każdy commit na
+`main` trafia na firmowid.pl przez ciągłe wdrażanie, a własną instalację budujesz
+z `main`.
 
-> **Note for English speakers:** Firmowid is a web app for small Polish businesses: KSeF e-invoicing, automatic bank-to-invoice matching, time tracking, leave and payroll. Open source under AGPL-3.0. The product targets the Polish market, so this README is in Polish; the commands in [Szybki start](#szybki-start-bez-infisical) work as-is, and `env.template` documents the local configuration in English.
+> **Note for English speakers:** Firmowid is a web app for small Polish businesses: KSeF e-invoicing, automatic bank-to-invoice matching, time tracking, leave and payroll. Open source under AGPL-3.0-or-later. The product targets the Polish market, so this README is in Polish; the commands in [Szybki start](#szybki-start-bez-infisical) work as-is, and `env.template` documents the local configuration in English. Issues, discussions and pull requests in English are welcome; report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## Co potrafi
 
@@ -302,7 +304,8 @@ formy liczby mnogiej i placeholdery nadal są weryfikowane bez wyjątków.
 
 Krótko: małe, skupione PR-y, testy tylko dla krytycznych ścieżek (pieniądze,
 faktury i KSeF, autoryzacja, integralność danych), zielony `mix check` i
-Conventional Commits. Więcej zasad (także dla agentów AI) jest w
+Conventional Commits. Nowa funkcja na krytycznej ścieżce wchodzi razem z testami
+automatycznymi w tym samym PR-ze. Więcej zasad (także dla agentów AI) jest w
 [AGENTS.md](AGENTS.md).
 
 ### Weryfikacja zmian
