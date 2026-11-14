@@ -14,7 +14,6 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   """
   use Oban.Worker, queue: :vat_id_checks, max_attempts: 3
 
-  alias Firmowid.Core
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.EuVatReview
@@ -46,18 +45,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
     |> Enum.each(&check(&1, scope))
   end
 
-  def perform(%Oban.Job{}) do
-    # cross_tenant_reader: enumerate organization ids only; each check runs under
-    # the organization's own vat_id_checker actor.
-    [
-      scope: %Scope{actor: %SystemActor{org_id: nil, role: :cross_tenant_reader}, tenant: nil}
-    ]
-    |> Core.list_organizations!()
-    |> Enum.map(&new(%{organization_id: &1.id}))
-    |> Firmowid.Oban.insert_all(skip_organization_id: true)
-
-    :ok
-  end
+  def perform(%Oban.Job{}), do: Firmowid.Oban.insert_per_organization(__MODULE__)
 
   defp scope(organization_id),
     do: %Scope{actor: %SystemActor{org_id: organization_id, role: :vat_id_checker}, tenant: organization_id}

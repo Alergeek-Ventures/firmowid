@@ -13,6 +13,25 @@ defmodule Firmowid.Oban do
   """
 
   alias Ecto.Changeset
+  alias Firmowid.Core
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
+
+  @doc """
+  Queues `worker` once for every organization, with its id in the args. Only the
+  organization ids are read, by the cross-tenant reader; each job then works
+  under an actor bound to its organization.
+  """
+  @spec insert_per_organization(module()) :: :ok
+  def insert_per_organization(worker) do
+    {:ok, _jobs} =
+      [scope: %Scope{actor: %SystemActor{org_id: nil, role: :cross_tenant_reader}, tenant: nil}]
+      |> Core.list_organizations!()
+      |> Enum.map(&worker.new(%{organization_id: &1.id}))
+      |> insert_all(skip_organization_id: true)
+
+    :ok
+  end
 
   @doc "Cancels all jobs matching the given queryable. Delegates to `Oban.cancel_all_jobs/2`."
   @spec cancel_all_jobs(Ecto.Queryable.t()) :: {:ok, non_neg_integer()}

@@ -126,6 +126,7 @@ config :firmowid, Oban,
     requisition_checks: 1,
     invoicing: 1,
     vat_id_checks: 1,
+    counterparty_websites: 1,
     document_blobs: 5,
     pictures: 2,
     sales_invoice_emails: 2,
@@ -148,7 +149,8 @@ config :firmowid, Oban,
        {"15 * * * *", Firmowid.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
        {"45 * * * *", Firmowid.Analysis.Workers.CategoryDispatcher, args: %{}},
        {"0 */2 * * *", Firmowid.Ksef.Workers.FetchDispatcher, args: %{}},
-       {"30 5 * * *", Firmowid.Invoicing.Workers.VatIdCheckWorker, args: %{}}
+       {"30 5 * * *", Firmowid.Invoicing.Workers.VatIdCheckWorker, args: %{}},
+       {"0 4 * * *", Firmowid.Invoicing.Workers.CounterpartyWebsiteWorker, args: %{}}
      ]}
   ]
 

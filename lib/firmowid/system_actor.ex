@@ -59,6 +59,9 @@ defmodule Firmowid.SystemActor do
   - `:vat_id_checker` — lists an organization's counterparties and records the
     result of the periodic EU VAT number check on them.
 
+  - `:website_finder` — lists an organization's counterparties and records the
+    website domain found for its companies.
+
   - `:cross_tenant_reader` — reads every organization and lists the organizations
     connected to KSeF. Schedulers use it to enumerate organizations and hand
     each one to work under an actor bound to that organization.
@@ -134,6 +137,7 @@ defmodule Firmowid.SystemActor do
           | :project_tag_manager
           | :cross_tenant_reader
           | :vat_id_checker
+          | :website_finder
           | :ksef_digest
           | :billing_snapshotter
           | :document_blob_processor

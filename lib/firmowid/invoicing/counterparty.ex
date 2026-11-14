@@ -29,6 +29,7 @@ defmodule Firmowid.Invoicing.Counterparty do
   alias Firmowid.Invoicing.Calculations.TaxIdType
   alias Firmowid.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Invoicing.Changes.EnqueueVatIdCheck
+  alias Firmowid.Invoicing.Changes.EnqueueWebsiteLookup
   alias Firmowid.Invoicing.Changes.NormalizeBlankCounterpartyFields
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
@@ -87,6 +88,10 @@ defmodule Firmowid.Invoicing.Counterparty do
       argument :vat_id_due_before, :utc_datetime_usec,
         description: "Only counterparties with an EU VAT number never checked or last checked before this time."
 
+      argument :website_unchecked, :boolean,
+        default: false,
+        description: "Only companies whose website was never looked up."
+
       prepare {Firmowid.Preparations.ParadeDBSearch,
                columns: ~w(display_name full_name given_name surname tax_id email)a,
                operator: :disjunction,
@@ -122,6 +127,10 @@ defmodule Firmowid.Invoicing.Counterparty do
                   )
               ) do
         where present(:vat_id_due_before)
+      end
+
+      prepare build(filter: expr(type == :company and is_nil(website_checked_at))) do
+        where argument_equals(:website_unchecked, true)
       end
     end
 
@@ -161,6 +170,7 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       change NormalizeCounterpartyTaxId
       change EnqueueVatIdCheck
+      change EnqueueWebsiteLookup
 
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
@@ -222,6 +232,8 @@ defmodule Firmowid.Invoicing.Counterparty do
         where any([changing(:tax_id), changing(:country)])
       end
 
+      change EnqueueWebsiteLookup
+
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateEuVatNumber, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
@@ -233,6 +245,11 @@ defmodule Firmowid.Invoicing.Counterparty do
     update :record_vat_id_check do
       description "Record the result of the periodic EU VAT number check."
       accept [:vat_id_status, :vat_id_checked_at]
+    end
+
+    update :record_website do
+      description "Record the website found for a company counterparty."
+      accept [:website_domain, :website_checked_at]
     end
 
     update :archive do
@@ -264,6 +281,10 @@ defmodule Firmowid.Invoicing.Counterparty do
 
     bypass {SystemActorRole, roles: [:vat_id_checker]} do
       authorize_if action([:list, :record_vat_id_check])
+    end
+
+    bypass {SystemActorRole, roles: [:website_finder]} do
+      authorize_if action([:list, :record_website])
     end
 
     # Other system actors: no access
@@ -328,6 +349,14 @@ defmodule Firmowid.Invoicing.Counterparty do
       description: "Last EU VAT number check: active or inactive in VIES, or invalid for its country's rules."
 
     attribute :vat_id_checked_at, :utc_datetime_usec, public?: true
+
+    attribute :website_domain, :string,
+      public?: true,
+      description: "Domain of the company's own website, nil when none was found."
+
+    attribute :website_checked_at, :utc_datetime_usec,
+      public?: true,
+      description: "When the website was last looked up, nil when it is still to be done."
 
     Resource.firmowid_timestamps()
   end
