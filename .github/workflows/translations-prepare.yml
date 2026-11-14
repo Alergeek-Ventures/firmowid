@@ -19,6 +19,9 @@ on:
         description: Whether a snapshot for this main commit was already published
         value: ${{ jobs.prepare.outputs.published }}
 
+permissions:
+  contents: read
+
 jobs:
   prepare:
     name: Export Accent PO catalog
