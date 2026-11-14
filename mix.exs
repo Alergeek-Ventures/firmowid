@@ -148,6 +148,8 @@ defmodule Firmowid.MixProject do
        runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
+      # Ash already requires it in every environment, so `only: :test` would diverge.
+      {:stream_data, "~> 1.4"},
       {:openai_ex, "~> 0.10.0"},
       {:req_llm, "~> 1.30.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
