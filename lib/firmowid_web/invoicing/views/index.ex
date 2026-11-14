@@ -218,7 +218,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
         class="flex flex-row gap-2 max-md:contents @min-[66.5rem]:gap-3"
       >
-        <%= if @invoicing_entries not in [nil, []] do %>
+        <%!-- The download reads the month itself, so it shows while the rows load and
+             goes only when the list turns out empty. --%>
+        <%= if @invoicing_entries != [] do %>
           <.live_component
             id="download-component"
             module={FirmowidWeb.Invoicing.Components.DownloadModal}
@@ -335,6 +337,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             month={@params.month}
             return_to={Navigation.invoicing_index_path(@params)}
           />
+        <% @params.view_mode == :dashboard -> %>
+          <%!-- The column dashboard has no list headings to hold its place while it loads. --%>
+          <span role="status" class="sr-only">{gettext("Loading entries")}</span>
         <% @is_month_closed and @params.filter == :unmatched and @invoicing_entries != nil -> %>
           <.live_component
             id="month-closed-zero-state"
@@ -344,6 +349,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         <% true -> %>
           <EntriesTable.table
             mode={@params.filter}
+            by_month={@all_months?}
             invoicing_entries={
               @invoicing_entries && window_entries(@invoicing_entries, @entries_window)
             }

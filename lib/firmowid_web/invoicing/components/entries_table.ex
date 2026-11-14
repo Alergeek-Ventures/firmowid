@@ -22,6 +22,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   attr :mode, :atom, required: true
 
+  attr :by_month, :boolean,
+    default: false,
+    doc: "the list of every month, whose months are separated by a heading row"
+
   attr :load_newer, :string,
     default: nil,
     doc: "event loading newer rows when the table's start comes into view"
@@ -87,24 +91,24 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:projects_loaded_at, fn -> nil end)
       |> assign_new(:load_newer, fn -> nil end)
       |> assign_new(:load_more, fn -> nil end)
-      # A list of every month separates the months with a line naming each.
-      |> assign(:by_month?, Enum.any?(assigns.invoicing_entries || [], &match?({:month, _}, &1)))
+      |> assign_new(:by_month, fn -> false end)
 
     ~H"""
     <%!-- The hook keeps rows in place itself when rows load above, so the browser must not as well.
          A flex column stretches the table across the page, as its parent did before this wrapper.
-         The placeholder rows sit inside, so the hook is there from the start to put the reader
-         back where they were once the rows arrive. --%>
+         While the rows load, the table with its headings holds placeholder rows, so nothing moves
+         when they arrive, and the hook is there from the start to put the reader back. --%>
     <div
       id="invoicing-entries-list"
       phx-hook=".MonthScroll"
-      class={["flex flex-col", @by_month? && "[overflow-anchor:none]"]}
+      class={["flex flex-col", @by_month && "[overflow-anchor:none]"]}
     >
       <%!-- Coming into view (with a margin), each indicator loads the rows on its side. --%>
       <.load_indicator :if={@load_newer} event={@load_newer} />
-      <.loading_rows :if={is_nil(@invoicing_entries)} />
+      <span :if={is_nil(@invoicing_entries)} role="status" class="sr-only">
+        {gettext("Loading entries")}
+      </span>
       <table
-        :if={@invoicing_entries}
         id="invoicing-entries"
         class={
           [
@@ -114,7 +118,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             # the party readable
             "w-full border-separate border-spacing-y-3 max-md:mt-0 max-md:block xl:table-fixed",
             # the headings start where they stick, so nothing moves as scrolling begins
-            if(@by_month?, do: "-mt-6", else: "-mt-8")
+            if(@by_month, do: "-mt-6", else: "-mt-8")
           ]
         }
       >
@@ -139,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           [
             "sticky z-1 bg-grey-100 max-md:hidden",
             # the list of every month (`Index`) has a taller bar, 1.25rem more than the plain page header
-            if(@by_month?,
+            if(@by_month,
               do: "top-[calc(var(--spacing-navbar)+var(--page-header-height)+1.25rem)]",
               else: "top-[calc(var(--spacing-navbar)+var(--page-header-height))]"
             )
@@ -164,9 +168,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           </tr>
         </thead>
         <tbody class="max-md:flex max-md:flex-col max-md:gap-3">
+          <.placeholder_rows
+            :if={is_nil(@invoicing_entries)}
+            columns={columns(@mode, @projects)}
+            by_month={@by_month}
+          />
           <%!-- Keyed, so rows loaded as the reader scrolls go to the browser alone, not with every row above. --%>
           <.entry_rows
-            :for={entry <- @invoicing_entries}
+            :for={entry <- @invoicing_entries || []}
             :key={entry_key(entry)}
             entry={entry}
             projects={@projects}
@@ -235,7 +244,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             this.handleEvent("scroll-to-month", ({month}) => this.scrollToMonth(month));
           },
           restore() {
-            if (!this.restoreTo || !this.el.querySelector("table")) return;
+            if (!this.restoreTo || this.el.querySelector("[data-placeholder]")) return;
             window.scrollTo({top: this.restoreTo, behavior: "instant"});
             const more = this.el.querySelector("table ~ [data-load]");
             if (window.scrollY >= this.restoreTo - 1 || !more) this.restoreTo = null;
@@ -373,17 +382,44 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
-  # Blank rows where the first ones will be, under the space the column headings take.
-  defp loading_rows(assigns) do
+  # A soft band passing across the blank rows tells that they are loading. Fixed to the
+  # viewport, the band crosses the cells of a row as one. Without motion the rows only pulse.
+  @shimmer "bg-white motion-safe:bg-[linear-gradient(90deg,transparent_35%,var(--color-grey-200)_50%,transparent_65%)] motion-safe:bg-size-[200%_100%] motion-safe:bg-fixed motion-safe:animate-shimmer motion-reduce:animate-pulse"
+  # On phones a row is one tile, which carries the band itself.
+  @tile_shimmer "max-md:bg-white max-md:motion-safe:bg-[linear-gradient(90deg,transparent_35%,var(--color-grey-200)_50%,transparent_65%)] max-md:motion-safe:bg-size-[200%_100%] max-md:motion-safe:bg-fixed max-md:motion-safe:animate-shimmer max-md:motion-reduce:animate-pulse"
+
+  attr :columns, :list, required: true
+  attr :by_month, :boolean, required: true
+
+  # Blank rows where the first ones will be, cell by cell as the rows lay them out; on phones,
+  # where the first month is named, a blank line holds its place.
+  defp placeholder_rows(assigns) do
+    assigns = assign(assigns, shimmer: @shimmer, tile_shimmer: @tile_shimmer)
+
     ~H"""
-    <div id="invoicing-entries-loading" role="status" class="flex flex-col gap-3 md:pt-15">
-      <span class="sr-only">{gettext("Loading entries")}</span>
-      <div
-        :for={_row <- 1..8}
-        aria-hidden="true"
-        class="h-14 rounded-md bg-white motion-safe:animate-pulse max-md:h-19 max-md:rounded-lg"
+    <tr
+      :if={@by_month}
+      data-placeholder
+      aria-hidden="true"
+      class="hidden max-md:block max-md:h-[30px]"
+    />
+    <tr
+      :for={_row <- 1..8}
+      data-placeholder
+      aria-hidden="true"
+      class={["max-md:block max-md:h-[77px] max-md:rounded-lg", @tile_shimmer]}
+    >
+      <td
+        :for={column <- @columns}
+        class={[
+          "h-14 p-0 max-md:hidden",
+          column == "party" && "rounded-l-md",
+          column == "amount" && "rounded-r-md",
+          column == "project" && "in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden",
+          @shimmer
+        ]}
       />
-    </div>
+    </tr>
     """
   end
 

@@ -112,6 +112,16 @@
     }
   }
 
+  /* Placeholder rows while a list loads: a soft band passes across them. */
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
   /* Easing: quick start, soft landing, for panels that slide or resize */
   --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
 
@@ -124,4 +134,5 @@
   --animate-marker: marker 650ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-step-in: step-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-swap-in: swap-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 }

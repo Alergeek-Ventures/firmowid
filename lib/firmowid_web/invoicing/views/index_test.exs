@@ -100,6 +100,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     conn: conn
   } do
     {:ok, view, _html} = conn |> log_in_user(admin_fixture()) |> live(~p"/fakturowanie")
+    render_async(view)
 
     assert has_element?(view, "#connect-ksef", "nie wystawisz faktur sprzedażowych")
     assert has_element?(view, ~s(#connect-ksef a[href="/ustawienia/ksef"]))
