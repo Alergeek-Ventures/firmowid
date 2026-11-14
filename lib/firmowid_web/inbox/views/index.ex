@@ -10,6 +10,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   Each group shows five items and unfolds the rest in place; what is unfolded
   holds while the page stays open, live updates included, and resets when the
   layer changes. The search narrows the groups to matching items.
+
+  Under the company's queue sit the actions the organization does most often
+  (`FirmowidWeb.Inbox.Utilities.Shortcuts`); a cost invoice from outside KSeF
+  is uploaded right from its tile.
   """
   use FirmowidWeb, :live_view
 
@@ -17,15 +21,23 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   import FirmowidUI.Components.Link
   import FirmowidWeb.Inbox.Components.Queue
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Notifier.Notification
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.LeaveRequest
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Inbox.Utilities.Queue
+  alias FirmowidWeb.Inbox.Utilities.Shortcuts
+  alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
+  alias Phoenix.Socket.Broadcast
 
   # Items a group shows before "Show N more".
   @folded 5
@@ -34,15 +46,18 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   def mount(_params, _session, socket) do
     if flag_enabled?(:inbox, socket.assigns) do
       {:ok,
-       assign(socket,
+       socket
+       |> assign(
          page_title: pgettext("sidebar", "Inbox"),
          # The page sets its own padding (32px top and bottom, 40px at the sides).
          no_padding: true,
          items: [],
+         shortcuts: [],
          fresh: MapSet.new(),
          query: "",
          expanded: MapSet.new()
-       )}
+       )
+       |> allow_cost_invoice_upload()}
     else
       {:ok, push_navigate(socket, to: ~p"/fakturowanie")}
     end
@@ -58,7 +73,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     socket =
       if socket.assigns[:layer] == layer,
         do: socket,
-        else: assign(socket, query: "", expanded: MapSet.new())
+        else: assign(socket, query: "", expanded: MapSet.new(), shortcuts: shortcuts(socket, layer))
 
     # The company layer links to the assistant from its header instead.
     {:noreply,
@@ -67,8 +82,56 @@ defmodule FirmowidWeb.Inbox.Views.Index do
      |> load(layer)}
   end
 
-  # Something the inbox shows changed elsewhere (see `FirmowidWeb.Inbox.Hooks.LiveQueue`).
+  # The upload tile is offered to the members who may add cost invoices; they
+  # also see on it the files still on their way and hear when one could not
+  # be read.
+  defp allow_cost_invoice_upload(socket) do
+    if Ash.can?({CostInvoice, :create}, socket.assigns.current_user) do
+      if connected?(socket) do
+        for event <- ["created", "updated", "destroyed"],
+            do: Endpoint.subscribe("blob:#{event}:#{socket.assigns.current_org.id}")
+      end
+
+      socket
+      |> allow_upload(
+        :file,
+        [progress: guard_upload_progress(&handle_progress/3, :ash_scope)] ++
+          CostInvoiceUpload.upload_options()
+      )
+      |> CostInvoiceUpload.assign_counts()
+    else
+      socket
+    end
+  end
+
+  # What the organization does most often is read once per layer: it does not
+  # change while the page stays open.
+  defp shortcuts(socket, :company),
+    do: Shortcuts.for_company(socket.assigns.ash_scope, socket.assigns.current_org, DateTime.utc_now())
+
+  defp shortcuts(_socket, :me), do: []
+
+  defp handle_progress(:file, _entry, socket) do
+    with {[_ | _] = entries, []} <- uploaded_entries(socket, :file),
+         true <-
+           Enum.any?(CostInvoiceUpload.consume(socket, entries), &match?({:ok, %Blob{}}, &1)) do
+      LiveToast.send_toast(
+        :info,
+        gettext("The files are being processed and will be available in Firmowid in a few moments")
+      )
+    end
+
+    {:noreply, CostInvoiceUpload.assign_counts(socket)}
+  end
+
+  # A file was sent, read or could not be read.
   @impl true
+  def handle_info(%Broadcast{payload: %Notification{} = notification}, socket) do
+    CostInvoiceUpload.toast_failure(notification)
+    {:noreply, CostInvoiceUpload.assign_counts(socket)}
+  end
+
+  # Something the inbox shows changed elsewhere (see `FirmowidWeb.Inbox.Hooks.LiveQueue`).
   def handle_info(:inbox_refresh, socket), do: {:noreply, reload(socket)}
 
   # Overdue invoices and expiring connections change with time alone (see
@@ -137,6 +200,24 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   end
 
   def handle_event("search", %{"q" => query}, socket), do: {:noreply, assign(socket, :query, String.trim(query))}
+
+  # The files upload on their own; `handle_progress/3` takes them from there.
+  # A rejected file (too large or of a wrong type) is dropped with a toast:
+  # left in place, it would hold back the files chosen after it.
+  def handle_event("upload", _params, socket) do
+    socket =
+      Enum.reduce(socket.assigns.uploads.file.entries, socket, fn
+        %{valid?: false} = entry, socket ->
+          LiveToast.send_toast(:error, entry.client_name, title: gettext("Failed to upload the file"))
+
+          cancel_upload(socket, :file, entry.ref)
+
+        _entry, socket ->
+          socket
+      end)
+
+    {:noreply, CostInvoiceUpload.assign_counts(socket)}
+  end
 
   def handle_event("decide_item", %{"id" => id, "decision" => action}, socket) do
     decision =
@@ -357,7 +438,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             @items == [] && @session? && "@3xl:mt-7.75"
           ]}
         >
-          <.all_done :if={@items == [] and not @session?} class="h-full justify-center" />
+          <.all_done :if={@items == [] and not @session?} class="flex-1 justify-center" />
           <p
             :if={@items != [] and @shown == []}
             class="rounded-sm bg-white px-5 py-4 text-sm text-grey-600"
@@ -402,6 +483,13 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               </.button>
             </div>
           </section>
+          <.shortcuts
+            :if={@shortcuts != []}
+            shortcuts={@shortcuts}
+            upload={assigns[:uploads][:file]}
+            uploading={assigns[:currently_uploading_count]}
+            processing={assigns[:processing_blobs_count]}
+          />
           <.session_panel :if={@session?} session={@session} last_session={@last_session} />
         </div>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SmoothHeight">
