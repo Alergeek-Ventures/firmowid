@@ -1,0 +1,10 @@
+# Advisories in mix.lock that do not affect Firmowid and have no patched release.
+# OpenSSF Scorecard and OSV-Scanner read this file next to the lockfile.
+
+[[IgnoredVulns]]
+id = "EEF-CVE-2026-95105"
+reason = "Only Cloak.Ciphers.AES.CTR lacks authentication; the vault uses Cloak.Ciphers.AES.GCM alone (config/runtime.exs)."
+
+[[IgnoredVulns]]
+id = "EEF-CVE-2026-94206"
+reason = "Only Cloak.Ecto.PBKDF2 fields are affected; Firmowid defines no PBKDF2 field, just Cloak.Ecto.Binary."
