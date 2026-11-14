@@ -75,6 +75,28 @@ jobs:
             gh release view translation-snapshots > /dev/null
           gh release upload translation-snapshots "$SNAPSHOT" "$SNAPSHOT.intoto.jsonl"
 
+      # A release holds at most 1000 assets and a snapshot takes two. Keeping the newest 400 snapshots
+      # (weeks of main commits) keeps the deployed commit and recent rollbacks buildable; an older
+      # commit's deployment build then fails until its snapshot is published again.
+      - name: Prune the oldest snapshots
+        if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          KEEP: "400"
+        run: |
+          set -euo pipefail
+          gh release view translation-snapshots --json assets --jq '
+            .assets
+            | (map(select(.name | endswith(".tar.gz"))) | sort_by(.createdAt) | reverse
+               | .[(env.KEEP | tonumber):] | map(.name)) as $old
+            | .[] | select(.name | rtrimstr(".intoto.jsonl") | IN($old[])) | .name' |
+            while read -r asset; do
+              # Main runs in parallel, so another run may have deleted this asset already.
+              gh release delete-asset translation-snapshots "$asset" --yes ||
+                echo "::warning::Could not delete $asset; another run may have pruned it"
+            done
+
   build:
     name: Build and Test
     needs: translations
