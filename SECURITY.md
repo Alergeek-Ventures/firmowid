@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report suspected security vulnerabilities privately to **contact@alergeek.ventures** with the subject **“Firmowid security report”**. Do not disclose vulnerability details in public GitHub issues, discussions, or pull requests.
+Please report suspected security vulnerabilities privately to **[contact@alergeek.ventures](mailto:contact@alergeek.ventures)** with the subject **“Firmowid security report”**. Do not disclose vulnerability details in public GitHub issues, discussions, or pull requests. The same contact is published in [security.txt](https://firmowid.pl/.well-known/security.txt).
 
 Useful reports include:
 
