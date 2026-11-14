@@ -7236,6 +7236,7 @@ msgid "Loading document..."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex
+#: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Loading entries"
 msgstr ""
