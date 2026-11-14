@@ -122,6 +122,7 @@ defmodule FirmowidWeb.Core.Router do
 
   scope "/", FirmowidWeb do
     get "/.well-known/openai-apps-challenge", Infrastructure.Controllers.OpenaiChallenge, :show
+    get "/.well-known/security.txt", Infrastructure.Controllers.SecurityTxt, :show
     get "/.well-known/ai-catalog.json", AgentDiscovery, :ai_catalog
     get "/.well-known/api-catalog", AgentDiscovery, :api_catalog
     get "/.well-known/agent-skills/index.json", AgentDiscovery, :agent_skills
