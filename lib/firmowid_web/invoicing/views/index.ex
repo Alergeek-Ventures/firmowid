@@ -18,7 +18,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Ash.Notifier.Notification
   alias Firmowid.Analysis
   alias Firmowid.Analysis.TagDefinition
-  alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
@@ -32,9 +31,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
-  alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
+  alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
   alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
@@ -112,11 +111,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     socket =
       if can_write_invoicing?(user) do
-        allow_upload(socket, :file,
-          max_entries: 50,
-          accept: ["application/pdf", "image/*"],
-          progress: guard_upload_progress(&handle_progress/3, :ash_scope),
-          auto_upload: true
+        allow_upload(
+          socket,
+          :file,
+          [progress: guard_upload_progress(&handle_progress/3, :ash_scope)] ++
+            CostInvoiceUpload.upload_options()
         )
       else
         socket
@@ -248,27 +247,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 data-fab
               >
                 <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
-                  <span
+                  <CostInvoiceUpload.processing_badge
                     id="upload-count-indicator"
-                    phx-hook="Tippy"
-                    data-tippy-content={
-                      gettext(
-                        "The files are being processed and will be available in Firmowid in a few moments"
-                      )
-                    }
-                    class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
-                  >
-                    <span class="absolute block size-full animate-pulse bg-rust-600" />
-                    <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
-                      <Lucideicons.arrow_up
-                        :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
-                        class="size-4 leading-none text-rust-900"
-                      />
-                      <span :if={@currently_uploading_count == 0 and @processing_blobs_count > 1}>
-                        {@processing_blobs_count}
-                      </span>
-                    </span>
-                  </span>
+                    uploading={@currently_uploading_count}
+                    processing={@processing_blobs_count}
+                  />
                 <% else %>
                   <span
                     id="upload-count-indicator"
@@ -521,7 +504,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_event("upload", _, socket) do
-    socket = refetch_upload_counts(socket)
+    socket = CostInvoiceUpload.assign_counts(socket)
 
     {:noreply, socket}
   end
@@ -627,36 +610,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @impl true
   def handle_info(
         %Broadcast{
-          payload: %Notification{
-            resource: Blob,
-            action: %{type: :update},
-            data: %{processing_target: :cost_invoice} = blob
-          }
-        },
-        socket
-      ) do
-    if blob.processing_state == :failed do
-      BlobProcessingToasts.show_failure_toast(blob)
-    end
-
-    {:noreply, gather_refetch(socket)}
-  end
-
-  # Blob destroyed — processing failed
-  @impl true
-  def handle_info(
-        %Broadcast{
           payload:
-            %Notification{
-              resource: Blob,
-              data: %{processing_target: :cost_invoice},
-              action: %{type: :destroy},
-              metadata: %{reason: :processing_failed}
-            } = notification
+            %Notification{resource: Blob, action: %{type: :update}, data: %{processing_target: :cost_invoice}} =
+              notification
         },
         socket
       ) do
-    LiveToast.send_toast(:error, notification.data.original_filename, title: gettext("Failed to upload the file"))
+    CostInvoiceUpload.toast_failure(notification)
 
     {:noreply, gather_refetch(socket)}
   end
@@ -675,26 +635,23 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         },
         socket
       ) do
-    LiveToast.send_toast(
-      :error,
-      gettext(
-        "The file %{filename} does not contain the required data. Make sure you are uploading an invoice, receipt or bill.",
-        filename: notification.data.original_filename
-      ),
-      title: gettext("Invalid document")
-    )
+    CostInvoiceUpload.toast_failure(notification)
 
     {:noreply, socket}
   end
 
-  # Blob destroyed — normal cleanup (delete invoice, etc.)
+  # Blob destroyed — processing failed, or normal cleanup (delete invoice, etc.)
   @impl true
   def handle_info(
         %Broadcast{
-          payload: %Notification{resource: Blob, data: %{processing_target: :cost_invoice}, action: %{type: :destroy}}
+          payload:
+            %Notification{resource: Blob, data: %{processing_target: :cost_invoice}, action: %{type: :destroy}} =
+              notification
         },
         socket
       ) do
+    CostInvoiceUpload.toast_failure(notification)
+
     {:noreply, gather_refetch(socket)}
   end
 
@@ -837,8 +794,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket =
       case uploaded_entries(socket, :file) do
         {[_ | _] = entries, []} ->
-          handle_uploads(entries, socket)
-          refetch_upload_counts(socket)
+          CostInvoiceUpload.consume(socket, entries)
+          CostInvoiceUpload.assign_counts(socket)
 
         _ ->
           socket
@@ -846,55 +803,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     {:noreply, socket}
   end
-
-  defp handle_uploads(entries, socket) do
-    scope = socket.assigns.ash_scope
-
-    for entry <- entries do
-      consume_uploaded_entry(socket, entry, fn %{path: path} ->
-        path
-        |> Blobs.create_or_retry_cost_invoice_blob(entry.client_type, entry.client_name, scope: scope)
-        |> handle_upload_result()
-
-        {:ok, nil}
-      end)
-    end
-  end
-
-  defp handle_upload_result({:ok, {:existing_cost_invoice, cost_invoice}}) do
-    LiveToast.send_toast(
-      :info,
-      gettext("This invoice is already in the system"),
-      title: gettext("Duplicate file"),
-      action: fn assigns ->
-        assigns = assign(assigns, :cost_invoice_id, cost_invoice.id)
-
-        ~H"""
-        <.link
-          kind="unstyled"
-          class="text-sm font-bold underline"
-          navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
-        >
-          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
-        </.link>
-        """
-      end
-    )
-  end
-
-  defp handle_upload_result({:ok, :blob_already_processing}) do
-    LiveToast.send_toast(:info, gettext("This file is already being processed"))
-  end
-
-  defp handle_upload_result({:ok, :blob_reprocessing_started}) do
-    LiveToast.send_toast(:info, gettext("The file was added to the processing queue again"))
-  end
-
-  defp handle_upload_result({:error, :blob_already_exists}) do
-    LiveToast.send_toast(:info, gettext("This invoice is already in the system"))
-  end
-
-  defp handle_upload_result(_result), do: nil
 
   defp do_toggle_skip(socket, id, "transaction") do
     scope = socket.assigns.ash_scope
@@ -995,7 +903,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     scope = socket.assigns.ash_scope
 
     socket
-    |> refetch_upload_counts()
+    |> CostInvoiceUpload.assign_counts()
     |> start_async(:invoicing_entries, fn ->
       read_entries(month, filter, subfilter, all_months?, scope)
     end)
@@ -1137,24 +1045,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> assign(:is_month_touched, is_month_touched)
     |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
     |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
-  end
-
-  defp refetch_upload_counts(socket) do
-    currently_uploading_count =
-      case socket.assigns do
-        %{uploads: %{file: upload}} ->
-          length(Enum.filter(upload.entries, &(!&1.done?)))
-
-        _ ->
-          0
-      end
-
-    socket
-    |> assign(
-      :processing_blobs_count,
-      Blobs.get_processing_blobs_count(:cost_invoice, socket.assigns.ash_scope)
-    )
-    |> assign(:currently_uploading_count, currently_uploading_count)
   end
 
   @dashboard_tile_limit 5

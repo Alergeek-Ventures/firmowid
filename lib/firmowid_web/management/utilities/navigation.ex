@@ -206,6 +206,10 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     ~p"/zarzadzanie/kontrahenci/dodaj?#{encode_params(params)}"
   end
 
+  @doc "The form that adds a project."
+  @spec project_new_path() :: String.t()
+  def project_new_path, do: ~p"/zarzadzanie/projekty/dodaj"
+
   @doc """
   Builds the canonical counterparty details path.
   """

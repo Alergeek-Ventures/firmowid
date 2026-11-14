@@ -701,6 +701,11 @@ msgstr ""
 msgid "50 credits / month"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "A PDF or a photo"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "A budget that is outdated the day it is created"
@@ -714,6 +719,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "A civil contract with or for the employee's employer must be combined with employment payroll."
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "A company or a person"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex
@@ -741,6 +751,11 @@ msgstr ""
 msgid "A new contract is waiting for you. Sign it with a Trusted Profile to finalize the formalities."
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "A new person on the team"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #, elixir-autogen, elixir-format
 msgid "A payment confirmation alone is not enough. If you attach a transfer or card payment confirmation, add a document showing what the payment was for, e.g. a booking."
@@ -759,6 +774,11 @@ msgstr ""
 #: lib/firmowid/timetracker/validations/no_sessions.ex
 #, elixir-autogen, elixir-format
 msgid "A project with recorded time cannot be deleted."
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "A sales invoice for KSeF"
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/error_html.ex
@@ -967,6 +987,11 @@ msgstr ""
 msgid "Add a related document"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "Add an invoice from outside KSeF"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Add another company."
@@ -992,6 +1017,7 @@ msgstr ""
 msgid "Add contract"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
@@ -1050,6 +1076,7 @@ msgctxt "avatar menu"
 msgid "Add organization"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
 #: lib/firmowid_web/management/views/project_form.html.heex
 #: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
@@ -4597,7 +4624,7 @@ msgstr ""
 msgid "Due: %{date}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "Duplicate file"
 msgstr ""
@@ -5177,7 +5204,8 @@ msgstr ""
 msgid "Failed to unlink the invoices"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/inbox/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to upload the file"
 msgstr ""
@@ -5605,6 +5633,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "For the amount"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "For time tracking"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6408,7 +6441,7 @@ msgid "Invalid currency code"
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #: lib/firmowid_web/management/views/employee.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
@@ -6447,6 +6480,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Invite a new employee"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
+#, elixir-autogen, elixir-format
+msgid "Invite an employee"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
@@ -6731,6 +6769,7 @@ msgstr ""
 msgid "Issue date:"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/shortcuts.ex
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
 #: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
@@ -10554,6 +10593,11 @@ msgstr ""
 msgid "Sharing your date of birth"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Shortcuts"
+msgstr ""
+
 #: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgid "Shorten session to one day"
@@ -11669,7 +11713,7 @@ msgstr ""
 msgid "The expense must be related to the business trip. For example, insurance can be settled when it covers the business trip."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "The file %{filename} does not contain the required data. Make sure you are uploading an invoice, receipt or bill."
 msgstr ""
@@ -11717,7 +11761,7 @@ msgstr ""
 msgid "The file is too large."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "The file was added to the processing queue again"
 msgstr ""
@@ -11733,7 +11777,8 @@ msgid "The file was uploaded."
 msgstr ""
 
 #: lib/firmowid_web/documents/components/documents_section.ex
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/inbox/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "The files are being processed and will be available in Firmowid in a few moments"
 msgstr ""
@@ -12322,7 +12367,7 @@ msgstr ""
 msgid "This field is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "This file is already being processed"
 msgstr ""
@@ -12352,7 +12397,7 @@ msgstr ""
 msgid "This invoice covers all transactions from the previous month"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "This invoice is already in the system"
 msgstr ""
@@ -13364,6 +13409,7 @@ msgid "Value"
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "View"
@@ -13648,6 +13694,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/transcript.ex
 #, elixir-autogen, elixir-format
 msgid "What would you like to know about these numbers?"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "What your company does most often."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
