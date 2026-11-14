@@ -26,6 +26,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     default: false,
     doc: "the list of every month, whose months are separated by a heading row"
 
+  attr :more_loading, :boolean,
+    default: false,
+    doc: "rows still on their way below the ones shown, which placeholder rows stand for"
+
   attr :load_newer, :string,
     default: nil,
     doc: "event loading newer rows when the table's start comes into view"
@@ -92,6 +96,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:load_newer, fn -> nil end)
       |> assign_new(:load_more, fn -> nil end)
       |> assign_new(:by_month, fn -> false end)
+      |> assign_new(:more_loading, fn -> false end)
 
     ~H"""
     <%!-- The hook keeps rows in place itself when rows load above, so the browser must not as well.
@@ -184,6 +189,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             return_to={@return_to}
             can_write_invoicing={@can_write_invoicing}
           />
+          <.placeholder_rows :if={@more_loading} columns={columns(@mode, @projects)} by_month={false} />
         </tbody>
       </table>
       <.load_indicator :if={@load_more} event={@load_more} />
