@@ -612,6 +612,15 @@ produkcja dostaje dokładnie katalog zwalidowany dla swojego commita. Ponowne
 uruchomienie CI dla commita `main` używa już opublikowanego snapshotu. Nie
 tworzymy wersji w Accent.
 
+Ten sam job podpisuje proweniencję snapshotu przez `actions/attest` (Sigstore) i
+publikuje bundle obok niego jako `FULL_SHA.tar.gz.intoto.jsonl`. Wydanie trzyma
+400 najnowszych snapshotów, bo GitHub mieści najwyżej 1000 plików w jednym wydaniu.
+Pochodzenie pobranego snapshotu sprawdzisz tak:
+
+```bash
+gh attestation verify FULL_SHA.tar.gz --repo Alergeek-Ventures/firmowid
+```
+
 Lokalnie:
 
 ```bash
