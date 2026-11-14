@@ -1,0 +1,11 @@
+# Advisories in the extension's development tooling with no fixed release reachable
+# from the latest eslint, ultracite and Raycast CLI. Neither package ships in the built
+# extension; both only read our own source files and configuration.
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+reason = "minimatch 10 comes from eslint, typescript-eslint and the ray CLI (@oclif/core in @raycast/api), which do not accept the fixed 11.x; it only matches our own globs at development time."
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+reason = "deepmerge has no fixed release; ultracite merges only our own lint configuration with it."

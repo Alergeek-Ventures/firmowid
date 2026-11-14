@@ -12,6 +12,7 @@ import {
 } from "@raycast/api";
 import { FormValidation, useForm, useFrecencySorting } from "@raycast/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import type { Session } from "../lib/api";
 import {
@@ -37,6 +38,10 @@ function SessionForm(props: SessionFormProps) {
   const edit = useMutation(editSessionMutationOptions);
 
   const session = props.kind === "edit" ? props.session : undefined;
+  // A new session starts when the form opens; re-renders must not move that time.
+  // The time never changes, so there is no setter.
+  // oxlint-disable-next-line react/hook-use-state
+  const [openedAt] = useState(() => new Date());
 
   const {
     data: neighbors,
@@ -59,7 +64,7 @@ function SessionForm(props: SessionFormProps) {
       title: session?.title ?? "",
       project_id: session?.project.id ?? projects[0]?.id ?? undefined,
       is_remote: session?.is_remote ?? false,
-      start_datetime: session ? new Date(session.start_datetime) : new Date(),
+      start_datetime: session ? new Date(session.start_datetime) : openedAt,
       end_datetime: session?.end_datetime
         ? new Date(session.end_datetime)
         : null,

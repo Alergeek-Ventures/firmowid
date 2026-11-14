@@ -21,7 +21,9 @@ defmodule Firmowid.MixProject do
       licenses: ["AGPL-3.0-or-later"],
       hex: [
         ignore_advisories: [
-          # Remove both exceptions on or after 2026-11-10 and rerun mix hex.audit.
+          # No Cloak release fixes these yet (checked 2026-11-14; recheck with every
+          # dependency update). Once one does, remove both here and in osv-scanner.toml,
+          # then rerun mix hex.audit.
           # The vault uses authenticated AES-GCM, never the affected AES-CTR cipher.
           "CVE-2026-95105",
           # Encrypted fields use Cloak.Ecto.Binary, not the affected PBKDF2 field.
@@ -113,8 +115,7 @@ defmodule Firmowid.MixProject do
       {:gettext, "~> 1.0", override: true},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.3.0"},
-      # Pin the upstream CVE-2026-105659 fix until a patched Hex release is available.
-      {:bandit, github: "mtrudel/bandit", ref: "d88b21953c65061f21136ea76a89a4f95a2ac7a1", override: true},
+      {:bandit, "~> 1.14"},
       {:ex_cldr, "~> 2.37"},
       {:ex_cldr_dates_times, "~> 2.5"},
       {:ex_cldr_territories, "~> 2.11"},
@@ -138,7 +139,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
-      {:posthog, "~> 2.18.0"},
+      {:posthog, "~> 2.20.0"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.13.1"},
       {:mdex, "~> 0.7"},
@@ -150,7 +151,7 @@ defmodule Firmowid.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.10.0"},
-      {:req_llm, "~> 1.29.0"},
+      {:req_llm, "~> 1.30.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
