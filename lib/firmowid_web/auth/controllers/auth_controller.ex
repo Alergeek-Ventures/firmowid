@@ -77,6 +77,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
       |> maybe_put_sign_in_toast(activity)
       |> redirect(to: return_to)
 
+    Analytics.identify_user(user)
+
     case activity do
       {method, _phase} when method in [:password, :google] ->
         Analytics.capture_user_signed_in(user, method)
