@@ -26,7 +26,7 @@
     "@tailwindcss/cli": "4.3.5",
     "audit-ci": "7.1.0",
     "esbuild": "0.28.2",
-    "impeccable": "4.8.0",
+    "impeccable": "4.8.1",
     "license-checker": "25.0.1"
   },
   "scripts": {
