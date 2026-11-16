@@ -100,13 +100,9 @@ jobs:
           fetch-depth: 0
 
       - name: Scan repository with Betterleaks
-        uses: docker://ghcr.io/betterleaks/betterleaks@sha256:e3b95b0db6c2735db17165c009b0ad6d9cef34fb4578659232b98f69d7346cac # v1.9.0
-        env:
-          GIT_CONFIG_COUNT: "1"
-          GIT_CONFIG_KEY_0: safe.directory
-          GIT_CONFIG_VALUE_0: /github/workspace
+        uses: docker://ghcr.io/betterleaks/betterleaks@sha256:f345c1ac502abc51ec334c3d815ad18a79fb1509555fc4496b2cb88e760681b3 # v1.10.1
         with:
-          args: git . --validation=false --redact --no-banner --no-color
+          args: git . --config .betterleaks.toml --validation=false --redact --no-banner --no-color
 
   extract-versions:
     name: Extract versions and service images
