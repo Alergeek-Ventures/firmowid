@@ -103,7 +103,7 @@
     }
   ],
   "dependencies": {
-    "@formatjs/intl-durationformat": "0.12.3",
+    "@formatjs/intl-durationformat": "0.12.4",
     "@raycast/api": "2.11.1",
     "@raycast/utils": "2.3.3",
     "@tanstack/query-async-storage-persister": "5.107.1",
