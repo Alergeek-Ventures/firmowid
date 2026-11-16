@@ -31,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.DelegationComponents do
           :for={{suggestion, index} <- Enum.with_index(@suggestions)}
           id={"delegation-suggestion-#{suggestion.delegation_id}"}
           name={suggestion.name}
+          navigate={Navigation.employee_delegation_path(suggestion.user_id, suggestion.reference)}
           description={description(suggestion)}
           date={TimeFormatter.format_date_range(suggestion.start_date, suggestion.end_date)}
           amount={suggestion.expected_amount || "—"}

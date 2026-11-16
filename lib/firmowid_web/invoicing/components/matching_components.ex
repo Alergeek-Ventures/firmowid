@@ -3,6 +3,9 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
@@ -45,6 +48,7 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
   slot :candidate, required: true do
     attr :id, :string, required: true
     attr :name, :string
+    attr :navigate, :string, doc: "the page of the suggested invoice, salary or business trip"
     attr :description, :string
     attr :date, :any, required: true
     attr :amount, :any, required: true
@@ -70,7 +74,17 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
           class="col-span-full grid grid-cols-subgrid items-center max-md:gap-y-2"
         >
           <div class="flex min-w-0 flex-col gap-1 max-md:col-span-full">
-            <p class="line-clamp-1 font-semibold wrap-anywhere">{candidate.name}</p>
+            <.link
+              :if={candidate[:navigate]}
+              kind="unstyled"
+              navigate={candidate.navigate}
+              class="line-clamp-1 font-semibold wrap-anywhere hover:underline"
+            >
+              {candidate.name}
+            </.link>
+            <p :if={!candidate[:navigate]} class="line-clamp-1 font-semibold wrap-anywhere">
+              {candidate.name}
+            </p>
             <p class="line-clamp-2 text-sm/snug wrap-anywhere text-grey-600">
               {candidate.description}
             </p>

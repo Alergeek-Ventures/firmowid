@@ -119,7 +119,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
               <ShowComponents.linked_state transaction={@transaction} return_to={@return_to} />
             <% true -> %>
               <div class="flex flex-col gap-18">
-                <ShowComponents.invoice_suggestions suggestions={@invoice_suggestions} />
+                <ShowComponents.invoice_suggestions
+                  suggestions={@invoice_suggestions}
+                  transaction={@transaction}
+                  return_to={@return_to}
+                />
                 <SalaryComponents.suggestions suggestions={@salary_suggestions} />
                 <DelegationComponents.suggestions suggestions={@delegation_suggestions} />
                 <ShowComponents.empty_state

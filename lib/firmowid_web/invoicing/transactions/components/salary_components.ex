@@ -31,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
           :for={{suggestion, index} <- Enum.with_index(@suggestions)}
           id={"salary-suggestion-#{suggestion.user_id}-#{suggestion.month}"}
           name={suggestion.name}
+          navigate={Navigation.employee_path(suggestion.user_id, %{miesiac: suggestion.month})}
           description={
             Enum.join(
               [
