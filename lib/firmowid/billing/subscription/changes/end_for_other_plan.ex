@@ -1,10 +1,13 @@
 defmodule Firmowid.Billing.Subscription.Changes.EndForOtherPlan do
   @moduledoc """
-  A change of `Organization :update_billing_plan`: once the organization's plan changes, its
-  subscription for a different plan ends, whether active or still awaiting a card, so a plan set by
-  hand is never charged for the old one and a card saved later does not bring the old plan back.
+  A change of the organization's shared `:plan_change` pipeline: once the organization's plan
+  changes, every subscription that does not carry the new plan ends, so a plan set by hand is never
+  charged for the old one and a card saved later does not bring the old plan back. Only an active
+  subscription for the new plan stays. A subscription still awaiting its card always ends, so
+  a late card notification finds nothing to activate.
 
-  The subscription that set the plan already has it, so for `:save_card` this does nothing.
+  The subscription that set the plan is already active with it, so for `:save_card` this does
+  nothing.
   """
 
   use Ash.Resource.Change
@@ -12,7 +15,7 @@ defmodule Firmowid.Billing.Subscription.Changes.EndForOtherPlan do
   alias Firmowid.Billing
   alias Firmowid.Billing.Subscription
 
-  @doc "Ends the organization's not ended subscription for another plan after the plan is saved."
+  @doc "Ends the organization's not ended subscriptions other than the active one for the new plan."
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
   def change(changeset, _opts, _context) do
@@ -21,15 +24,15 @@ defmodule Firmowid.Billing.Subscription.Changes.EndForOtherPlan do
       scope = Billing.scope(organization.id)
 
       with {:ok, subscriptions} <- Subscription.list(scope: scope),
-           :ok <- end_other_plans(subscriptions, organization.billing_plan, scope) do
+           :ok <- end_superseded(subscriptions, organization.billing_plan, scope) do
         {:ok, organization}
       end
     end)
   end
 
-  defp end_other_plans(subscriptions, plan, scope) do
+  defp end_superseded(subscriptions, plan, scope) do
     subscriptions
-    |> Enum.reject(&(&1.status == :ended or &1.plan == plan))
+    |> Enum.reject(&(&1.status == :ended or (&1.status == :active and &1.plan == plan)))
     |> Enum.reduce_while(:ok, fn subscription, :ok ->
       case Billing.end_subscription(subscription, %{reason: :plan_changed}, scope: scope) do
         {:ok, _subscription} -> {:cont, :ok}

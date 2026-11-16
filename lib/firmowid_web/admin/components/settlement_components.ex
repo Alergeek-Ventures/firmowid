@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Billing.PlanCatalog
+  alias Firmowid.Billing.Subscription
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
 
@@ -33,6 +34,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   attr :selected_org, :map, required: true
   attr :status, :map, required: true
   attr :pending_billing_plan, :string, required: true
+  attr :pending_trial, :map, required: true, doc: ~s(The trial form's `"plan"` and `"months"`.)
 
   def organization_panel(assigns) do
     ~H"""
@@ -116,7 +118,10 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               type="submit"
               variant="primary"
               size="small"
-              disabled={@pending_billing_plan == Atom.to_string(@selected_org.billing_plan)}
+              disabled={
+                @pending_billing_plan == Atom.to_string(@selected_org.billing_plan) and
+                  is_nil(@selected_org.trial_ends_on)
+              }
               class="justify-center sm:min-w-32"
             >
               {gettext("Save plan")}
@@ -126,6 +131,51 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           <p class="text-sm/snug text-grey-700">
             {gettext(
               "A plan change applies to the current and future months. The historical snapshot below stays unchanged."
+            )}
+          </p>
+
+          <.form
+            :let={trial_form}
+            for={to_form(@pending_trial, as: "trial")}
+            id="trial-form"
+            phx-change="change-trial"
+            phx-submit="grant-trial"
+            class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_4.5rem_auto] sm:items-end"
+          >
+            <.input
+              field={trial_form[:plan]}
+              type="select"
+              label={gettext("Trial plan")}
+              options={trial_plan_options()}
+            />
+
+            <.input
+              field={trial_form[:months]}
+              type="number"
+              min="1"
+              max="12"
+              step="1"
+              label={gettext("Months")}
+            />
+
+            <FirmowidUI.Components.Button.button
+              type="submit"
+              variant="primary"
+              size="small"
+              disabled={@selected_org.has_active_subscription?}
+              class="justify-center"
+            >
+              {gettext("Grant trial")}
+            </FirmowidUI.Components.Button.button>
+          </.form>
+
+          <p :if={trial_state_text(@selected_org)} id="trial-state" class="text-sm/snug text-grey-900">
+            {trial_state_text(@selected_org)}
+          </p>
+
+          <p class="text-sm/snug text-grey-700">
+            {gettext(
+              "The company gets the plan at once, without a card, and returns to the Free plan after the last month. A trial replaces the free month of the first purchase."
             )}
           </p>
         </div>
@@ -426,6 +476,24 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
       month: format_month(selected_month)
     )
   end
+
+  defp trial_plan_options do
+    Enum.map(Subscription.plans(), &{Worksheet.plan_label(&1), Atom.to_string(&1)})
+  end
+
+  # A paying company cannot get a trial; otherwise the running trial, or that one was used.
+  defp trial_state_text(%{has_active_subscription?: true}),
+    do: gettext("This company pays for its plan, so it cannot get a trial.")
+
+  defp trial_state_text(%{trial_ends_on: %Date{} = ends_on} = organization) do
+    gettext("Trial of the %{plan} plan until %{date}.",
+      plan: Worksheet.plan_label(organization.billing_plan),
+      date: Calendar.strftime(ends_on, "%d.%m.%Y")
+    )
+  end
+
+  defp trial_state_text(%{trial_granted_at: %DateTime{}}), do: gettext("Trial used.")
+  defp trial_state_text(_organization), do: nil
 
   defp format_month(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
   defp format_datetime(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M")

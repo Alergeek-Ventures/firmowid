@@ -3,10 +3,10 @@ defmodule Firmowid.Billing.Subscription.Changes.OpenPeriod do
   Opens the subscription's next paid-for period, and the payment for it unless it is free.
 
   The first period (`:save_card`, no charge date yet) is the current Warsaw month: free while
-  the organization has never activated a subscription, otherwise a full month or twelve paid at
-  once. A renewal (`:renew`) opens the period starting on `next_charge_on`, or the current one
-  when that has already passed, so months in between are not billed. The next charge falls on
-  the day after the period.
+  the organization has its free month (`free_month_available?`), otherwise a full month or
+  twelve paid at once. A renewal (`:renew`) opens the period starting on `next_charge_on`, or
+  the current one when that has already passed, so months in between are not billed. The next
+  charge falls on the day after the period.
 
   Options:
 

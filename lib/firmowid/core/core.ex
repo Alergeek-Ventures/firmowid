@@ -65,6 +65,7 @@ defmodule Firmowid.Core do
       define :complete_organization_onboarding, action: :complete_onboarding
       define :update_basic_info, action: :update_basic_info
       define :update_organization_billing_plan, action: :update_billing_plan
+      define :grant_organization_trial, action: :grant_trial, args: [:plan, :months]
       define :update_organization_plan_limit_decision, action: :update_plan_limit_decision
       define :update_organization_avatar, action: :update_avatar
 

@@ -8,9 +8,9 @@ defmodule Firmowid.Billing.Subscription do
 
   `:start` opens Tpay's card page and leaves the row `:awaiting_card`; the tokenization
   notification runs `:save_card`, which activates it, opens its first period and sets the
-  organization's plan. The first period is the organization's free month once; after that it is
-  paid at once. `:renew` opens each next period with the payment for it, and `:end` stops the
-  charges. At most one subscription per organization is not `:ended`.
+  organization's plan. The first period is the organization's free month once, unless it had
+  a trial; after that it is paid at once. `:renew` opens each next period with the payment for
+  it, and `:end` stops the charges. At most one subscription per organization is not `:ended`.
 
   An active subscription moves to a more expensive plan with `:upgrade`, which charges the price
   difference first, and replaces its card with `:change_card`, which opens Tpay's card page

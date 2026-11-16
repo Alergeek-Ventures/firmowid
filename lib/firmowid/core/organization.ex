@@ -1,4 +1,6 @@
 # credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
+# `:read_global` and `:end_trial` run only from the AshOban trigger.
+# credo:disable-for-this-file AshCredo.Check.Design.MissingCodeInterface
 defmodule Firmowid.Core.Organization do
   @moduledoc """
   Ash resource for the `organizations` table.
@@ -9,10 +11,12 @@ defmodule Firmowid.Core.Organization do
   use Ash.Resource,
     domain: Firmowid.Core,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshOban]
 
   use Gettext, backend: Firmowid.Gettext
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
@@ -26,7 +30,9 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Core.Changes.DefaultDisplayName
   alias Firmowid.Core.Changes.GenerateAvatarVariants
+  alias Firmowid.Core.Changes.SetTrialEnd
   alias Firmowid.Core.User
+  alias Firmowid.Core.Validations.NoActiveSubscription
   alias Firmowid.Core.Validations.ValidateNip
   alias Firmowid.Invoicing.VatExemption
   alias Firmowid.Resource
@@ -58,6 +64,23 @@ defmodule Firmowid.Core.Organization do
     end
   end
 
+  oban do
+    triggers do
+      # Before the 08:00 charges and the 09:00 plan limits check, which then sees the Free plan.
+      trigger :end_trial do
+        action :end_trial
+        read_action :read_global
+        where expr(trial_ends_on < fragment("(now() AT TIME ZONE 'Europe/Warsaw')::date"))
+        scheduler_cron "0 5 * * *"
+        max_attempts 3
+        queue :billing_renewals
+
+        worker_module_name Firmowid.Core.Organization.Worker.EndTrial
+        scheduler_module_name Firmowid.Core.Organization.Scheduler.EndTrial
+      end
+    end
+  end
+
   code_interface do
     define :destroy, action: :destroy
   end
@@ -81,6 +104,11 @@ defmodule Firmowid.Core.Organization do
       end
 
       prepare {Firmowid.Preparations.ParadeDBSearch, columns: ~w(name nip)a, argument: :search}
+    end
+
+    read :read_global do
+      description "Read for AshOban schedulers, across all organizations."
+      pagination keyset?: true
     end
 
     # ── Create ──────────────────────────────────────────────────────
@@ -187,16 +215,38 @@ defmodule Firmowid.Core.Organization do
     end
 
     update :update_billing_plan do
-      description "Update the billing plan assigned to an organization."
+      description "Update the billing plan assigned to an organization; it replaces a running trial."
       accept [:billing_plan]
       require_atomic? false
 
-      # A higher plan brings back what the lower one switched off.
-      change after_action(fn changeset, organization, _context ->
-               PlanLimits.plan_changed(organization, changeset.data.billing_plan)
-             end)
+      # A plan set by hand or bought is not taken away when the trial would have ended.
+      change set_attribute(:trial_ends_on, nil)
+      pipe_through [:plan_change]
+    end
 
-      change Subscription.Changes.EndForOtherPlan
+    update :grant_trial do
+      description "Give a company that does not pay a paid plan for a number of months, without a card; granting again sets a new end."
+      accept []
+      require_atomic? false
+
+      argument :plan, :atom, allow_nil?: false, constraints: [one_of: Subscription.plans()]
+      argument :months, :integer, allow_nil?: false, constraints: [min: 1, max: 12]
+
+      validate NoActiveSubscription
+      change set_attribute(:billing_plan, arg(:plan))
+      change SetTrialEnd, only_when_valid?: true
+      change set_attribute(:trial_granted_at, &DateTime.utc_now/0)
+      pipe_through [:plan_change]
+    end
+
+    update :end_trial do
+      description "Return the organization to the Free plan once its trial has ended."
+      accept []
+      require_atomic? false
+
+      change set_attribute(:billing_plan, :free)
+      change set_attribute(:trial_ends_on, nil)
+      pipe_through [:plan_change]
     end
 
     update :update_plan_limit_decision do
@@ -226,6 +276,10 @@ defmodule Firmowid.Core.Organization do
     end
 
     bypass actor_attribute_equals(:system_role, :superuser) do
+      authorize_if always()
+    end
+
+    bypass [AshObanInteraction, action([:read_global, :end_trial])] do
       authorize_if always()
     end
 
@@ -291,7 +345,7 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
-    policy action(:update_billing_plan) do
+    policy action([:update_billing_plan, :grant_trial]) do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
@@ -350,6 +404,16 @@ defmodule Firmowid.Core.Organization do
       default: :free,
       constraints: [one_of: PlanCatalog.plans()]
 
+    attribute :trial_ends_on, :date,
+      public?: true,
+      description:
+        "The last day of a running trial of a paid plan granted without a card; the next day the plan returns to Free."
+
+    attribute :trial_granted_at, :utc_datetime_usec,
+      public?: true,
+      description:
+        "When a superuser last granted a trial; a company that had one gets no free month with its first subscription."
+
     attribute :plan_limit_decision_on, :date,
       public?: true,
       description:
@@ -403,6 +467,17 @@ defmodule Firmowid.Core.Organization do
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
     end
+
+    # Every change of the plan: a higher plan brings back what the lower one switched off, and a
+    # subscription for another plan ends.
+    pipeline :plan_change do
+      # Qualified: the section also imports the preparation `after_action/1`.
+      change Ash.Resource.Change.Builtins.after_action(fn changeset, organization, _context ->
+               PlanLimits.plan_changed(organization, changeset.data.billing_plan)
+             end)
+
+      change Subscription.Changes.EndForOtherPlan
+    end
   end
 
   calculations do
@@ -415,8 +490,10 @@ defmodule Firmowid.Core.Organization do
               :boolean,
               expr(billing_plan in ^Subscription.plans() and not has_active_subscription?)
 
-    # A subscription starts with a free month until one was ever activated.
-    calculate :free_month_available?, :boolean, expr(not has_activated_subscription?)
+    # A subscription starts with a free month until one was ever activated or a trial granted.
+    calculate :free_month_available?,
+              :boolean,
+              expr(not has_activated_subscription? and is_nil(trial_granted_at))
   end
 
   # Plan limits are facts about the organization, so they do not depend on who may read its

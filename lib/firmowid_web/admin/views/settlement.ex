@@ -26,7 +26,8 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
      |> assign(:available_months, [])
      |> assign(:worksheet, nil)
      |> assign(:status, nil)
-     |> assign(:pending_billing_plan, nil)}
+     |> assign(:pending_billing_plan, nil)
+     |> assign(:pending_trial, nil)}
   end
 
   @impl true
@@ -34,7 +35,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
     case Core.get_organization(org_id,
            actor: socket.assigns.current_user,
            tenant: org_id,
-           load: [:on_trial?, owner: :member]
+           load: [:on_trial?, :has_active_subscription?, owner: :member]
          ) do
       {:ok, selected_org} ->
         case load_page(socket, selected_org, params) do
@@ -73,6 +74,10 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
 
   def handle_event("change-current-plan", %{"plan" => %{"billing_plan" => billing_plan}}, socket) do
     {:noreply, assign(socket, :pending_billing_plan, billing_plan)}
+  end
+
+  def handle_event("change-trial", %{"trial" => trial}, socket) do
+    {:noreply, assign(socket, :pending_trial, Map.take(trial, ["plan", "months"]))}
   end
 
   def handle_event("open-delete-organization", _params, socket) do
@@ -142,37 +147,35 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
              actor: socket.assigns.current_user
            ) do
       LiveToast.send_toast(:success, gettext("The organization plan was saved."))
-
-      reloaded_org =
-        Core.get_organization!(selected_org.id,
-          actor: socket.assigns.current_user,
-          tenant: selected_org.id,
-          load: [:on_trial?, owner: :member]
-        )
-
-      {:ok, reloaded_socket} =
-        load_page(socket, reloaded_org, %{
-          "miesiac" => Date.to_iso8601(socket.assigns.selected_month)
-        })
-
-      {:noreply, reloaded_socket}
+      {:noreply, reload_page(socket)}
     else
       :error ->
         LiveToast.send_toast(:error, gettext("Invalid plan."))
         {:noreply, socket}
 
-      {:error, %Ash.Error.Invalid{errors: errors}} ->
-        message =
-          Enum.map_join(errors, ", ", fn error ->
-            translate_error({Map.get(error, :message) || Exception.message(error), error.vars})
-          end)
+      {:error, error} ->
+        {:noreply, toast_error(socket, error)}
+    end
+  end
 
-        LiveToast.send_toast(:error, message)
+  def handle_event("grant-trial", %{"trial" => %{"plan" => plan, "months" => months}}, socket) do
+    with {:ok, plan} <- cast_plan(plan),
+         {:ok, _updated} <-
+           Core.grant_organization_trial(
+             socket.assigns.selected_org,
+             plan,
+             months,
+             actor: socket.assigns.current_user
+           ) do
+      LiveToast.send_toast(:success, gettext("The trial was granted."))
+      {:noreply, reload_page(socket)}
+    else
+      :error ->
+        LiveToast.send_toast(:error, gettext("Invalid plan."))
         {:noreply, socket}
 
       {:error, error} ->
-        LiveToast.send_toast(:error, Exception.message(error))
-        {:noreply, socket}
+        {:noreply, toast_error(socket, error)}
     end
   end
 
@@ -190,6 +193,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
           selected_org={@selected_org}
           status={@status}
           pending_billing_plan={@pending_billing_plan}
+          pending_trial={@pending_trial}
         />
 
         <SettlementComponents.activity_panel activity={@activity} />
@@ -239,10 +243,45 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
        |> assign(:available_months, available_months)
        |> assign(:worksheet, billing_context.worksheet)
        |> assign(:status, billing_context.status)
-       |> assign(:pending_billing_plan, Atom.to_string(selected_org.billing_plan))}
+       |> assign(:pending_billing_plan, Atom.to_string(selected_org.billing_plan))
+       |> assign(:pending_trial, %{"plan" => "przedsiebiorca", "months" => "1"})}
     else
       {:patch, canonical_path}
     end
+  end
+
+  # The page after a saved change, for the same month.
+  defp reload_page(socket) do
+    %{selected_org: selected_org, current_user: user} = socket.assigns
+
+    reloaded_org =
+      Core.get_organization!(selected_org.id,
+        actor: user,
+        tenant: selected_org.id,
+        load: [:on_trial?, :has_active_subscription?, owner: :member]
+      )
+
+    {:ok, reloaded_socket} =
+      load_page(socket, reloaded_org, %{
+        "miesiac" => Date.to_iso8601(socket.assigns.selected_month)
+      })
+
+    reloaded_socket
+  end
+
+  defp toast_error(socket, %Ash.Error.Invalid{errors: errors}) do
+    message =
+      Enum.map_join(errors, ", ", fn error ->
+        translate_error({Map.get(error, :message) || Exception.message(error), error.vars})
+      end)
+
+    LiveToast.send_toast(:error, message)
+    socket
+  end
+
+  defp toast_error(socket, error) do
+    LiveToast.send_toast(:error, Exception.message(error))
+    socket
   end
 
   defp available_months(snapshots, current_month) do

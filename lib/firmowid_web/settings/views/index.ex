@@ -1172,6 +1172,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             worksheet={@subscription_worksheet}
             subscription={@active_subscription}
             plan_granted?={@plan_granted?}
+            trial_ends_on={@current_org.trial_ends_on}
           />
         <% :account -> %>
           <.account_tab

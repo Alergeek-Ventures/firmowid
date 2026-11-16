@@ -118,7 +118,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
             </fieldset>
 
             <p class="mt-3 text-[0.9375rem]/relaxed text-grey-700">
-              {first_charge_text(@fitting_plan, @billing_period, @free_month?)}
+              {first_charge_text(@fitting_plan, @billing_period, @first_charge_on)}
             </p>
 
             <%= if @purchase == :available do %>
@@ -375,14 +375,20 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
       %{status: :active}
       |> Billing.list_subscriptions!(
         scope: scope,
-        load: [:current_period_settled?, upgrade_price: %{plan: fitting_plan}]
+        load: [
+          :current_period_settled?,
+          :current_period_free?,
+          upgrade_price: %{plan: fitting_plan}
+        ]
       )
       |> List.first()
 
     assign(socket,
       purchase: purchase_offer(org, subscription),
       subscription: subscription,
-      free_month?: org.free_month_available?
+      free_month?: org.free_month_available?,
+      # The month the card is saved is free; without it the card pays at once.
+      first_charge_on: if(org.free_month_available?, do: Month.next())
     )
   end
 
@@ -595,33 +601,33 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
 
   defp net_price_text(rules, :yearly), do: gettext("%{price} + VAT / year", price: format_money(rules.yearly_price_pln))
 
-  # The month of the first purchase is free, so the first charge falls on the 1st of the next.
-  defp first_charge_text(plan, :monthly, true = _free_month?) do
+  # The first purchase is free until the day before its first charge.
+  defp first_charge_text(plan, :monthly, %Date{} = first_charge_on) do
     gettext(
-      "This month is free, until %{last_day}. Then %{amount} gross every month, first on %{date}.",
-      last_day: format_date(Date.shift(Month.next(), day: -1)),
+      "Free until %{last_day}. Then %{amount} gross every month, first on %{date}.",
+      last_day: format_date(Date.add(first_charge_on, -1)),
       amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly)),
-      date: format_date(Month.next())
+      date: format_date(first_charge_on)
     )
   end
 
-  defp first_charge_text(plan, :yearly, true = _free_month?) do
+  defp first_charge_text(plan, :yearly, %Date{} = first_charge_on) do
     gettext(
-      "This month is free, until %{last_day}. Then %{amount} gross once a year, first on %{date}.",
-      last_day: format_date(Date.shift(Month.next(), day: -1)),
+      "Free until %{last_day}. Then %{amount} gross once a year, first on %{date}.",
+      last_day: format_date(Date.add(first_charge_on, -1)),
       amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly)),
-      date: format_date(Month.next())
+      date: format_date(first_charge_on)
     )
   end
 
   # A returning company pays the current period as soon as the card is saved.
-  defp first_charge_text(plan, :monthly, false = _free_month?) do
+  defp first_charge_text(plan, :monthly, nil = _first_charge_on) do
     gettext("You pay %{amount} gross now for this month, then every month on the 1st.",
       amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly))
     )
   end
 
-  defp first_charge_text(plan, :yearly, false = _free_month?) do
+  defp first_charge_text(plan, :yearly, nil = _first_charge_on) do
     gettext("You pay %{amount} gross now for a year, until %{last_day}, then once a year.",
       amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly)),
       last_day: format_date(Date.shift(Month.current(), month: 12, day: -1))
@@ -631,21 +637,25 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
   # The subscription's `:upgrade_price` is loaded for the fitting plan.
   defp upgrade_free?(subscription), do: Decimal.eq?(subscription.upgrade_price.gross_amount, 0)
 
+  # The free period's wording follows the fact, not the price: an ended period awaiting its
+  # renewal also costs nothing to switch, but it is not free.
   defp upgrade_text(plan, subscription) do
     price = format_money(PlanCatalog.gross_price_pln(plan, subscription.billing_period))
     next_charge_on = format_date(subscription.next_charge_on)
 
     cond do
-      upgrade_free?(subscription) and subscription.billing_period == :monthly ->
+      subscription.current_period_free? and subscription.billing_period == :monthly ->
         gettext(
-          "This month is still free, so the switch costs nothing now. Then %{price} gross every month, from %{date}.",
+          "Still free until %{last_day}, so the switch costs nothing now. Then %{price} gross every month, from %{date}.",
+          last_day: format_date(subscription.current_period_end),
           price: price,
           date: next_charge_on
         )
 
-      upgrade_free?(subscription) ->
+      subscription.current_period_free? ->
         gettext(
-          "This month is still free, so the switch costs nothing now. Then %{price} gross once a year, from %{date}.",
+          "Still free until %{last_day}, so the switch costs nothing now. Then %{price} gross once a year, from %{date}.",
+          last_day: format_date(subscription.current_period_end),
           price: price,
           date: next_charge_on
         )

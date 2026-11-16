@@ -18,6 +18,10 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   attr :subscription, :any, default: nil, doc: "the organization's active subscription, if any"
   attr :plan_granted?, :boolean, default: false
 
+  attr :trial_ends_on, Date,
+    default: nil,
+    doc: "the last day of the organization's trial, if one runs"
+
   def subscription_tab(assigns) do
     ~H"""
     <%= if @worksheet do %>
@@ -56,7 +60,17 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             {payment_line(@subscription)}
           </p>
 
-          <p :if={!@subscription and @plan_granted?} class="text-sm/snug text-grey-700">
+          <p :if={!@subscription and @trial_ends_on} class="text-sm/snug text-grey-700">
+            {gettext("Trial of the %{plan} plan until %{date}. Nothing is charged.",
+              plan: @worksheet.selected_plan_label,
+              date: Firmowid.Cldr.Date.to_string!(@trial_ends_on, format: :long)
+            )}
+          </p>
+
+          <p
+            :if={!@subscription and !@trial_ends_on and @plan_granted?}
+            class="text-sm/snug text-grey-700"
+          >
             {gettext("This plan is granted to your organization. Nothing is charged for it.")}
           </p>
 
