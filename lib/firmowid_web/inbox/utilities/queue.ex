@@ -172,17 +172,14 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   end
 
   defp vat_id_items(scope) do
-    %{vat_id_statuses: [:invalid, :inactive]}
+    %{vat_id_statuses: [:invalid, :inactive, :closed, :unknown]}
     |> Invoicing.list_counterparties!(scope: scope, load: [:display_label])
     |> Enum.map(fn counterparty ->
       %{
         id: "vat-id-#{counterparty.id}",
         tier: :urgent,
         icon: "id-card",
-        title:
-          gettext("%{counterparty}: EU VAT number to check",
-            counterparty: counterparty.display_label
-          ),
+        title: vat_id_title(counterparty),
         context: vat_id_context(counterparty),
         person: nil,
         action: gettext("Check the counterparty"),
@@ -190,6 +187,22 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       }
     end)
   end
+
+  defp vat_id_title(%{vat_id_status: status} = counterparty) when status in [:closed, :unknown],
+    do: gettext("%{counterparty}: NIP to check", counterparty: counterparty.display_label)
+
+  defp vat_id_title(counterparty),
+    do: gettext("%{counterparty}: EU VAT number to check", counterparty: counterparty.display_label)
+
+  defp vat_id_context(%{vat_id_status: :closed, tax_id: tax_id, vat_id_checked_at: checked_at}),
+    do:
+      gettext("REGON showed the business with NIP %{number} as closed on %{date}.",
+        number: tax_id,
+        date: Calendar.strftime(checked_at, "%d.%m")
+      )
+
+  defp vat_id_context(%{vat_id_status: :unknown, tax_id: tax_id}),
+    do: gettext("No register knows NIP %{number}.", number: tax_id)
 
   defp vat_id_context(%{vat_id_status: :invalid, tax_id: tax_id}),
     do: gettext("%{number} does not match the VAT number format of its country.", number: tax_id)

@@ -57,7 +57,7 @@ defmodule Firmowid.SystemActor do
     implementation detail of timetracker projects.
 
   - `:vat_id_checker` — lists an organization's counterparties and records the
-    result of the periodic EU VAT number check on them.
+    result of the periodic EU VAT number and NIP check on them.
 
   - `:website_finder` — lists an organization's counterparties and records the
     website domain found for its companies.

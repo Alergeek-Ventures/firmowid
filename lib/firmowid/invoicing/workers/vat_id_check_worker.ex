@@ -1,11 +1,11 @@
 defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   @moduledoc """
-  Checks the EU VAT numbers of saved counterparties: right after a number is saved
-  (`EnqueueVatIdCheck`) and again every week.
+  Checks the tax IDs of saved counterparties, EU VAT numbers and Polish NIPs:
+  right after a number is saved (`EnqueueVatIdCheck`) and again every week.
 
-  Each check applies the country's rules (`EuVatNumber`), then asks VIES. The
-  result is stored on the counterparty, and the inbox lists the ones that are
-  invalid or inactive.
+  An EU VAT number is checked against its country's rules (`EuVatNumber`), then
+  in VIES; a NIP in the VAT white list and REGON (`NipRegistration`). The result
+  is stored on the counterparty, and the inbox lists the problems.
 
   The daily cron run (no `organization_id`) queues one job per organization,
   which re-checks every counterparty never checked or last checked more than a
@@ -17,6 +17,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.EuVatReview
+  alias Firmowid.Invoicing.NipRegistration
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
@@ -63,6 +64,8 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
         )
     end
   end
+
+  defp status(%{country: "PL", tax_id: nip}), do: NipRegistration.check(nip)
 
   defp status(counterparty) do
     case EuVatNumber.check(counterparty.country, counterparty.tax_id) do
