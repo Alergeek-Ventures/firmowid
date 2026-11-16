@@ -1,400 +1,471 @@
-<div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
-  <div class="sticky top-0 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
-    <div class="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
-      <form class="flex gap-4 max-md:gap-3" phx-submit="search">
-        <.month_picker
-          id="month"
-          show_on_mobile
-          selected_date={@selected_date}
-          active_months={@active_months}
-          class="max-md:flex-1"
-        />
+<div class="flex w-full flex-col px-4 py-6 md:px-10 md:pt-8 md:pb-12">
+  <header class="flex items-end justify-between gap-4">
+    <h1 class="text-3xl/[1.3] font-bold text-grey-900">{pgettext("sidebar", "Team")}</h1>
+    <.header_actions selected_date={@selected_date} />
+  </header>
 
-        <div
-          id="search-container"
-          data-expanded={to_string(@search != "")}
-          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
-        >
-          <.input
-            type="text"
-            name="szukaj"
-            value={@search}
-            placeholder={gettext("Search employees")}
-            phx-change="search"
-            phx-debounce="300"
-            input_class="py-0 px-1 bg-transparent! border-none"
-            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden max-md:group-data-[expanded=true]:w-36"
-          />
-          <.button
-            type="button"
-            phx-click={
-              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
-              |> JS.focus(to: "#search-container input")
-            }
-            variant="tertiary"
-          >
-            <Lucideicons.search />
-          </.button>
-        </div>
-      </form>
-
-      <div class="flex gap-4 max-md:contents">
+  <%!-- 24px around the toolbar, as between the title, the toolbar and the table. --%>
+  <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-grey-100 py-6 max-md:static max-md:z-auto max-md:flex-col max-md:items-stretch">
+    <.month_and_search
+      selected_date={@selected_date}
+      active_months={@active_months}
+      search={@search}
+    >
+      <nav
+        aria-label={gettext("Employee scope")}
+        class="flex h-9 items-center gap-0.5 overflow-hidden rounded-sm border border-grey-200 max-md:order-last max-md:w-full"
+      >
         <.link
-          kind="button"
-          variant="tertiary"
-          size="big"
-          download
-          redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
-          class="max-md:hidden"
+          :for={
+            {action, label} <- [
+              index: pgettext("people list tab", "Active"),
+              archive: pgettext("people list tab", "Archived")
+            ]
+          }
+          kind="unstyled"
+          patch={Navigation.employees_path(action, @params)}
+          aria-current={@live_action == action && "page"}
+          class={[
+            "flex h-full items-center justify-center rounded-[2px] px-3 text-sm/none font-medium whitespace-nowrap transition-colors max-md:flex-1",
+            if(@live_action == action,
+              do: "bg-grey-200 text-grey-900",
+              else: "text-grey-700 hover:text-grey-900"
+            )
+          ]}
         >
-          <Lucideicons.file_text /> {gettext("Payroll report")}
+          {label}
         </.link>
-        <.page_actions>
-          <:action>
-            <.button
-              type="button"
-              variant="special"
-              phx-click={show_modal("organization_invite_modal")}
-              data-fab
-            >
-              <.icon name="hero-plus-mini" class="size-6" />
-              <span class="max-md:sr-only">{gettext("Add employee")}</span>
-            </.button>
-          </:action>
-        </.page_actions>
-      </div>
-    </div>
+      </nav>
+    </.month_and_search>
 
-    <div class="flex items-center gap-4">
-      <.filter_tabs label={gettext("Employee scope")}>
-        <:tab patch={Navigation.employees_path(:index, @params)} active={@live_action == :index}>
-          {pgettext("people list tab", "Active")}
-        </:tab>
-        <:tab
-          patch={Navigation.employees_path(:archive, @params)}
-          active={@live_action == :archive}
-        >
-          {pgettext("people list tab", "Archived")}
-        </:tab>
-      </.filter_tabs>
-      <.switch
-        class="ml-auto flex-row-reverse gap-4 max-md:hidden"
-        label={gettext("Payroll view")}
-        field={@form[:viewing_wages]}
-        phx-click="toggle_wages_view"
-      />
-    </div>
+    <.switch
+      class="flex-row-reverse max-md:hidden"
+      field={@form[:viewing_wages]}
+      disabled={@live_action == :archive}
+      phx-click="toggle_wages_view"
+    >
+      <:label_slot>
+        <span class="text-sm/[1.35] text-grey-700">{gettext("Payroll view")}</span>
+      </:label_slot>
+    </.switch>
   </div>
 
-  <form
-    phx-submit="save_wages"
-    class={[
-      "grid gap-x-6 gap-y-2",
-      roles_column?(assigns) &&
-        "grid-cols-[1fr_max-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
-      @view == :standard && @live_action == :archive &&
-        "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
-      @view != :standard && @live_action == :index &&
-        if(flag_enabled?(:accurate_salary_calculation, assigns),
-          do:
-            "grid-cols-[minmax(10rem,2fr)_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
-          else:
-            "grid-cols-[minmax(10rem,2fr)_max-content_repeat(2,minmax(6rem,1fr))_min-content_min-content]"
-        ),
-      @view != :standard && @live_action == :archive &&
-        if(flag_enabled?(:accurate_salary_calculation, assigns),
-          do:
-            "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
-          else:
-            "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(2,minmax(6rem,1fr))_min-content_min-content]"
-        )
-    ]}
-  >
-    <div
-      id="employees-list-header"
-      class="sticky top-(--page-header-with-tabs-height) z-1 col-span-full grid h-11 grid-cols-subgrid items-center bg-grey-100 px-4 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
-      phx-hook="ScrollStyle"
-      data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
-      data-scroll-offset="90"
-    >
-      <p>{gettext("Employee")}</p>
-      <p :if={roles_column?(assigns)} class="pr-10 text-nowrap max-md:hidden">
-        {gettext("Role")}
-      </p>
-      <p class="text-end text-nowrap">{gettext("Hours")}</p>
-
-      <%= if @live_action == :archive do %>
-        <p class="text-right text-nowrap">{gettext("Archived on")}</p>
-      <% end %>
-
-      <%= if @view in [:wages, :wage_editor] do %>
-        <%= case @view do %>
-          <% :wages -> %>
-            <%= if @selected_date in @editable_months do %>
-              <.button
-                phx-click="toggle_wage_editor"
-                type="button"
-                variant="ghost"
-                size="small"
-                class="justify-self-end"
-              >
-                {pgettext("hourly rate", "Rate")}
-                <.icon name="hero-pencil-square-solid" class="size-4" />
-              </.button>
-            <% else %>
-              <p class="text-right text-nowrap">{pgettext("hourly rate", "Rate")}</p>
-            <% end %>
-          <% :wage_editor -> %>
-            <div class="flex gap-2 justify-self-end">
-              <.button
-                id="wage-editor-toggle"
-                variant="tertiary"
-                size="small"
-                class="size-8 p-0 text-grey-700"
-                phx-click="toggle_wage_editor"
-                phx-hook="ConfirmLeave"
-                data-confirm-leave
-                data-unsaved={true}
-                type="button"
-                aria-label={gettext("Cancel editing rates")}
-              >
-                <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-              </.button>
-              <.button
-                variant="tertiary"
-                accent="rust"
-                size="small"
-                class="w-22 text-caps-sm/tight font-medium uppercase"
-                type="submit"
-              >
-                {gettext("Save")}
-              </.button>
-            </div>
-        <% end %>
-
-        <p class="text-end text-nowrap">{gettext("Gross")}</p>
-        <p
-          :if={flag_enabled?(:accurate_salary_calculation, assigns)}
-          class="text-end text-nowrap"
-        >
-          {gettext("Amount to pay")}
-        </p>
-      <% end %>
-      <span />
-      <p class="text-end text-nowrap max-md:hidden">{gettext("Timesheet")}</p>
-    </div>
-
-    <%= if Enum.empty?(@employees) do %>
-      <div class="col-span-full py-10 text-center text-grey-700">
-        <%= if @search != "" do %>
-          {gettext("No results. Try changing the search criteria.")}
-        <% else %>
-          <%= case @live_action do %>
-            <% :index -> %>
-              {gettext("There are no active employees to show.")}
-            <% :archive -> %>
-              {gettext("There are no archived employees to show.")}
-          <% end %>
-        <% end %>
-      </div>
-    <% else %>
-      <div
-        :for={employee <- @employees}
-        :key={employee.user.id}
-        class="col-span-full grid h-14 grid-cols-subgrid"
+  <%!-- Figma "duży ekran (1920)": from 1800px the month and who works today stand beside the
+       table, 48px apart, level with the first row (below the 27px header and 8px gap). --%>
+  <div class="flex min-[1800px]:gap-12">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <form
+        id="employees-table"
+        phx-submit="save_wages"
+        class={
+          [
+            "grid gap-x-6 gap-y-2",
+            roles_column?(assigns) &&
+              "grid-cols-[1fr_max-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
+            @view == :standard && @live_action == :archive &&
+              "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
+            # The rate column is 152px in both states, so editing does not move the columns.
+            @view != :standard && @live_action == :index &&
+              if(flag_enabled?(:accurate_salary_calculation, assigns),
+                do:
+                  "grid-cols-[minmax(10rem,1fr)_5rem_9.5rem_7.5rem_8.75rem_min-content_min-content]",
+                else: "grid-cols-[minmax(10rem,1fr)_5rem_9.5rem_7.5rem_min-content_min-content]"
+              ),
+            @view != :standard && @live_action == :archive &&
+              if(flag_enabled?(:accurate_salary_calculation, assigns),
+                do:
+                  "grid-cols-[minmax(10rem,1fr)_5rem_max-content_7.5rem_7.5rem_8.75rem_min-content_min-content]",
+                else:
+                  "grid-cols-[minmax(10rem,1fr)_5rem_max-content_7.5rem_7.5rem_min-content_min-content]"
+              )
+          ]
+        }
       >
-        <div class={[
-          "grid grid-cols-subgrid items-center rounded-sm bg-white px-4",
-          cond do
-            roles_column?(assigns) ->
-              "col-span-4 max-md:col-span-3"
-
-            @view == :standard and @live_action == :archive ->
-              "col-span-4"
-
-            @live_action == :index ->
-              if flag_enabled?(:accurate_salary_calculation, assigns),
-                do: "col-span-6",
-                else: "col-span-5"
-
-            true ->
-              if flag_enabled?(:accurate_salary_calculation, assigns),
-                do: "col-span-7",
-                else: "col-span-6"
-          end
-        ]}>
-          <div class="flex min-w-0 items-center gap-3">
-            <.avatar class="size-8 shrink-0 ring-1 ring-grey-200/50">
-              <.avatar_image
-                :if={employee.user.member.avatar_blob}
-                blob={employee.user.member.avatar_blob}
-                sizes="32px"
-                alt={gettext("Avatar")}
-              />
-              <.avatar_fallback class="bg-teal-200 text-teal-800">
-                {to_string(employee.user.member.name || employee.user.email || "")
-                |> String.slice(0, 1)
-                |> String.upcase()}
-              </.avatar_fallback>
-            </.avatar>
-            <.link
-              kind="unstyled"
-              navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
-              class="min-w-0 truncate hover:underline"
-              title={employee.user.member.name || to_string(employee.user.email)}
-            >
-              {employee.user.member.name || employee.user.email}
-            </.link>
-            <span
-              :if={
-                flag_enabled?(:accurate_salary_calculation, assigns) and @view != :standard and
-                  MonthlyPayout.amount(employee.monthly_payout)
-              }
-              class="shrink-0 rounded-sm bg-grey-100 px-1.5 py-0.5 text-xs/snug text-grey-700"
-            >
-              {PayoutEstimates.contract_label(employee.monthly_payout.result.variant)}
-            </span>
-          </div>
-
-          <%!-- Room between the role and the hours, which align to the right. --%>
-          <div :if={roles_column?(assigns)} class="pr-10 max-md:hidden">
-            <%!-- The owner's and your own role cannot be changed (see the Member policies). --%>
-            <%= if employee.user.id in [@current_user.id, @current_org.owner_id] do %>
-              <.role_badge role={employee.user.member.role} />
-            <% else %>
-              <.button
-                type="button"
-                variant="unstyled"
-                phx-click="open_update_role_modal"
-                phx-value-user_id={employee.user.id}
-                aria-label={
-                  gettext("Change role of %{name}",
-                    name: employee.user.member.name || to_string(employee.user.email)
-                  )
-                }
-                class="cursor-pointer rounded-sm transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-teal-700 active:scale-95"
-              >
-                <.role_badge role={employee.user.member.role}>
-                  <Lucideicons.chevron_down class="size-3.5 shrink-0" aria-hidden="true" />
-                </.role_badge>
-              </.button>
-            <% end %>
-          </div>
-
-          <p class="text-right text-nowrap">
-            {TimeFormatter.format_duration(employee.time_worked)}
+        <div
+          id="employees-list-header"
+          class={
+            [
+              "sticky z-1 col-span-full grid grid-cols-subgrid items-center bg-grey-100 px-4 transition-all duration-75 max-md:static",
+              # An empty archive keeps the heading's room, so the empty state stays in place.
+              (@live_action == :archive and @employees == []) && "invisible",
+              # below the sticky toolbar: a row of big (h-9) buttons with py-6 around it
+              "top-21 py-1 text-sm/[1.35] text-grey-500"
+            ]
+          }
+          phx-hook="ScrollStyle"
+          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
+          data-scroll-offset="90"
+        >
+          <p>{gettext("Employee")}</p>
+          <p
+            :if={roles_column?(assigns)}
+            class="text-nowrap transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none max-md:hidden starting:translate-x-1 starting:opacity-0"
+          >
+            {gettext("Role")}
+          </p>
+          <p class={["text-end text-nowrap", @view == :standard && "md:min-w-30"]}>
+            {gettext("Hours")}
           </p>
 
           <%= if @live_action == :archive do %>
-            <p class="text-right text-black">
-              <%= if employee.user.member.archived_at do %>
-                {Calendar.strftime(employee.user.member.archived_at, "%d.%m.%Y")}
-              <% end %>
-            </p>
+            <p class="text-right text-nowrap">{gettext("Archived on")}</p>
           <% end %>
 
           <%= if @view in [:wages, :wage_editor] do %>
             <%= case @view do %>
               <% :wages -> %>
-                <p class="mx-2 text-right">
-                  {Decimal.round(employee.hourly_rate || 0)} {gettext("PLN/h")}
-                </p>
+                <%= if @selected_date in @editable_months do %>
+                  <%!-- Figma "Stawka (edycja stawek)": grey-700 like a column heading, as tall as
+                   the heading row (its py-1 is the row's own). --%>
+                  <.button
+                    phx-click="toggle_wage_editor"
+                    type="button"
+                    variant="unstyled"
+                    class="-my-1 inline-flex cursor-pointer items-center gap-1.5 justify-self-end rounded-sm px-2 py-1 text-grey-700 transition-[color,background-color,opacity] duration-300 ease-out hover:bg-grey-200 hover:text-grey-900 motion-reduce:transition-none starting:opacity-0"
+                  >
+                    {pgettext("hourly rate", "Rate")}
+                    <Lucideicons.square_pen class="size-4 shrink-0" aria-hidden="true" />
+                  </.button>
+                <% else %>
+                  <p class="text-right text-nowrap transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
+                    {pgettext("hourly rate", "Rate")}
+                  </p>
+                <% end %>
               <% :wage_editor -> %>
-                <div class="mx-2 flex items-center gap-1 justify-self-end">
-                  <.input
+                <%!-- Figma "Stawka (edycja stawek)": 24px buttons fit the 27px heading row, so
+                     the heading keeps its height: they reach 2.5px into its py-1. --%>
+                <div class="my-[-2.5px] flex items-center gap-1.5 justify-self-end transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
+                  <.button
+                    id="wage-editor-toggle"
+                    variant="unstyled"
+                    class="inline-flex size-6 cursor-pointer items-center justify-center rounded-[6px] bg-grey-200 text-grey-900 transition-colors hover:bg-grey-300"
+                    phx-click="toggle_wage_editor"
+                    phx-hook="ConfirmLeave"
+                    data-confirm-leave
+                    data-unsaved={true}
+                    type="button"
+                    aria-label={gettext("Cancel editing rates")}
+                  >
+                    <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
+                  </.button>
+                  <.button
+                    variant="unstyled"
+                    class="inline-flex h-6 cursor-pointer items-center rounded-[6px] bg-rust-200 px-2.5 text-sm/[1.35] font-medium text-rust-900 transition-colors hover:bg-rust-300"
+                    type="submit"
+                  >
+                    {gettext("Save")}
+                  </.button>
+                </div>
+            <% end %>
+
+            <p class="text-end text-nowrap transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
+              {gettext("Gross")}
+            </p>
+            <p
+              :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+              class="text-end text-nowrap transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0"
+            >
+              {gettext("Amount to pay")}
+            </p>
+          <% end %>
+          <span />
+          <p class="pl-4 text-nowrap max-md:hidden">{gettext("Timesheet")}</p>
+        </div>
+
+        <%= if Enum.empty?(@employees) do %>
+          <%!-- Figma "Pusty stan / Zarchiwizowani": the small empty state, with the room of a list. --%>
+          <.empty_state
+            size="small"
+            title={
+              cond do
+                @search != "" -> gettext("No results. Try changing the search criteria.")
+                @live_action == :archive -> gettext("You have no archived employees")
+                true -> gettext("There are no active employees to show.")
+              end
+            }
+            class="col-span-full gap-4! py-16! [&_p]:leading-[normal] [&_p+div]:max-w-none [&_p+div]:leading-[1.35]"
+          >
+            <:icon><Lucideicons.users class="text-grey-400" /></:icon>
+            <%= if @search == "" and @live_action == :archive do %>
+              {gettext(
+                "People you archive, for example when you stop working together, end up here."
+              )}
+            <% end %>
+          </.empty_state>
+        <% else %>
+          <div
+            :for={{employee, index} <- Enum.with_index(@employees)}
+            :key={employee.user.id}
+            class="col-span-full grid h-14 grid-cols-subgrid"
+            style={"--row: #{min(index, 12)}"}
+          >
+            <div class={[
+              "grid grid-cols-subgrid items-center rounded-sm bg-white px-4",
+              cond do
+                roles_column?(assigns) ->
+                  "col-span-4 max-md:col-span-3"
+
+                @view == :standard and @live_action == :archive ->
+                  "col-span-4"
+
+                @live_action == :index ->
+                  if flag_enabled?(:accurate_salary_calculation, assigns),
+                    do: "col-span-6",
+                    else: "col-span-5"
+
+                true ->
+                  if flag_enabled?(:accurate_salary_calculation, assigns),
+                    do: "col-span-7",
+                    else: "col-span-6"
+              end
+            ]}>
+              <div class="flex min-w-0 items-center gap-4">
+                <.avatar class="size-8 shrink-0">
+                  <.avatar_image
+                    :if={employee.user.member.avatar_blob}
+                    blob={employee.user.member.avatar_blob}
+                    sizes="32px"
+                    alt={gettext("Avatar")}
+                  />
+                  <.avatar_fallback class="bg-grey-700 text-sm font-medium text-white">
+                    {to_string(employee.user.member.name || employee.user.email || "")
+                    |> String.slice(0, 1)
+                    |> String.upcase()}
+                  </.avatar_fallback>
+                </.avatar>
+                <.link
+                  kind="unstyled"
+                  navigate={
+                    Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
+                  }
+                  class="min-w-0 truncate text-grey-900 hover:underline"
+                  title={employee.user.member.name || to_string(employee.user.email)}
+                >
+                  {employee.user.member.name || employee.user.email}
+                </.link>
+                <span
+                  :if={
+                    flag_enabled?(:accurate_salary_calculation, assigns) and @view != :standard and
+                      MonthlyPayout.amount(employee.monthly_payout)
+                  }
+                  class="shrink-0 rounded-sm bg-grey-100 px-1.5 py-0.5 text-xs/snug text-grey-700"
+                >
+                  {PayoutEstimates.contract_label(employee.monthly_payout.result.variant)}
+                </span>
+              </div>
+
+              <%!-- Room between the role and the hours, which align to the right. --%>
+              <%!-- The column is as wide as its widest pill (max-content); the others stretch to it. --%>
+              <div
+                :if={roles_column?(assigns)}
+                class="transition-[opacity,translate] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none max-md:hidden starting:translate-x-1 starting:opacity-0"
+              >
+                <%!-- The owner's and your own role cannot be changed (see the Member policies). --%>
+                <%= if employee.user.id in [@current_user.id, @current_org.owner_id] do %>
+                  <.role_badge role={employee.user.member.role} neutral />
+                <% else %>
+                  <.button
+                    type="button"
+                    variant="unstyled"
+                    phx-click="open_update_role_modal"
+                    phx-value-user_id={employee.user.id}
+                    aria-label={
+                      gettext("Change role of %{name}",
+                        name: employee.user.member.name || to_string(employee.user.email)
+                      )
+                    }
+                    class="flex w-full cursor-pointer rounded-sm transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-teal-700 active:scale-95"
+                  >
+                    <.role_badge role={employee.user.member.role} neutral>
+                      <Lucideicons.chevron_down class="size-4 shrink-0" aria-hidden="true" />
+                    </.role_badge>
+                  </.button>
+                <% end %>
+              </div>
+
+              <%!-- The units in grey; no time at all is grey as a whole. --%>
+              <p class={[
+                "flex items-baseline justify-end gap-1 text-nowrap",
+                @view == :standard && "md:min-w-30",
+                if(employee.time_worked == 0, do: "text-grey-500", else: "text-grey-900")
+              ]}>
+                <%= if @view == :standard do %>
+                  <span
+                    :for={[value, unit] <- duration_parts(employee.time_worked)}
+                    class="flex items-baseline gap-0.5"
+                  >
+                    {value}<span class="text-sm text-grey-500">{unit}</span>
+                  </span>
+                <% else %>
+                  <%!-- Payroll counts whole hours, rounded up (Figma "Widok=Wypłaty"). --%>
+                  <span class="flex items-baseline gap-0.5">
+                    {ceil(employee.time_worked / 3600)}<span class="text-sm text-grey-500">{pgettext(
+                      "hours worked unit",
+                      "hrs"
+                    )}</span>
+                  </span>
+                <% end %>
+              </p>
+
+              <%= if @live_action == :archive do %>
+                <p class="text-right text-black">
+                  <%= if employee.user.member.archived_at do %>
+                    {Calendar.strftime(employee.user.member.archived_at, "%d.%m.%Y")}
+                  <% end %>
+                </p>
+              <% end %>
+
+              <%= if @view in [:wages, :wage_editor] do %>
+                <%!-- One field in both states, so entering the editor morphs it instead of
+                     swapping it: shown, it reads as text as wide as its digits; editing, it grows
+                     into Figma's "Text input and select (34px)", rust (1px grey border, 2px rust-300
+                     with focus, the inset shadow adding the pixel without moving the text). Rows
+                     follow each other 20ms apart, the first 12. --%>
+                <div class="flex items-center gap-1.5 justify-self-end transition-[opacity,translate] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
+                  <input
                     type="number"
-                    class="w-14"
-                    input_class="text-right"
                     step="0.01"
                     min="0"
                     name={"employee[#{employee.user.id}][wage]"}
                     value={Decimal.round(employee.hourly_rate || 0)}
+                    readonly={@view == :wages}
+                    tabindex={if(@view == :wages, do: "-1")}
+                    aria-label={pgettext("hourly rate", "Rate")}
+                    style={
+                      if(@view == :wages, do: "width: #{rate_width(employee.hourly_rate)}ch")
+                    }
+                    class={[
+                      "h-8.5 [appearance:textfield] rounded-sm border text-right text-base/[1.35] tabular-nums transition-[width,padding,border-color,background-color,color] delay-[calc(var(--row)*20ms)] duration-300 ease-out focus:ring-0 focus:outline-none motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                      if(@view == :wage_editor,
+                        do:
+                          "w-18 border-grey-200 bg-white px-3 text-black focus:border-rust-300 focus:shadow-[inset_0_0_0_1px_var(--color-rust-300)]",
+                        else:
+                          "pointer-events-none border-transparent bg-transparent px-0 text-grey-900"
+                      )
+                    ]}
                   />
-                  <p>{gettext("PLN/h")}</p>
+                  <span class={[
+                    "text-nowrap transition-[color,font-size] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none",
+                    if(@view == :wage_editor,
+                      do: "text-sm/[1.35] text-grey-500",
+                      else: "text-base/[1.35] text-grey-900"
+                    )
+                  ]}>
+                    {gettext("PLN/h")}
+                  </span>
                 </div>
-            <% end %>
 
-            <p class="text-end text-nowrap text-grey-700 tabular-nums">
-              {if flag_enabled?(:accurate_salary_calculation, assigns),
-                do: (employee.monthly_payout && employee.monthly_payout.gross) || "—",
-                else: employee.monthly_gross}
-            </p>
-            <p
-              :if={flag_enabled?(:accurate_salary_calculation, assigns)}
-              class="text-end font-medium text-nowrap text-grey-900 tabular-nums"
-              title={MonthlyPayout.status_label(employee.monthly_payout)}
-            >
-              {MonthlyPayout.amount(employee.monthly_payout) || "—"}
-            </p>
-          <% end %>
+                <p class="text-end text-nowrap text-grey-700 tabular-nums transition-[opacity,translate] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
+                  {if flag_enabled?(:accurate_salary_calculation, assigns),
+                    do: (employee.monthly_payout && employee.monthly_payout.gross) || "—",
+                    else: employee.monthly_gross}
+                </p>
+                <p
+                  :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+                  class="text-end font-medium text-nowrap text-grey-900 tabular-nums transition-[opacity,translate] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0"
+                  title={MonthlyPayout.status_label(employee.monthly_payout)}
+                >
+                  {MonthlyPayout.amount(employee.monthly_payout) || "—"}
+                </p>
+              <% end %>
 
-          <div class="flex items-center justify-end gap-3">
-            <.button
-              :if={@live_action == :archive}
-              type="button"
-              variant="tertiary"
-              size="small"
-              phx-click="unarchive_employee"
-              phx-value-id={employee.user.id}
-            >
-              {gettext("Restore")}
-            </.button>
-            <.link
-              kind="unstyled"
-              navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
-              class="flex items-center"
-              aria-label={
-                gettext("Show details of employee %{name}",
-                  name: employee.user.member.name || employee.user.email
-                )
-              }
-            >
-              <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-700" />
-            </.link>
+              <div class="flex items-center justify-end gap-3">
+                <.button
+                  :if={@live_action == :archive}
+                  type="button"
+                  variant="tertiary"
+                  size="small"
+                  phx-click="unarchive_employee"
+                  phx-value-id={employee.user.id}
+                >
+                  {gettext("Restore")}
+                </.button>
+                <.link
+                  kind="unstyled"
+                  navigate={
+                    Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
+                  }
+                  class="flex items-center"
+                  aria-label={
+                    gettext("Show details of employee %{name}",
+                      name: employee.user.member.name || employee.user.email
+                    )
+                  }
+                >
+                  <Lucideicons.chevron_right class="size-4 shrink-0 text-black" />
+                </.link>
+              </div>
+            </div>
+
+            <div class="flex w-[221px] items-center justify-between gap-3.75 rounded-sm bg-white p-4 max-md:hidden">
+              <.hours_record_status
+                hours_record={employee.hours_record}
+                user={employee.user}
+                change_request_path={
+                  Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
+                }
+              />
+
+              <.tooltip
+                id={"bank-number-tooltip-#{employee.user.id}"}
+                text={
+                  if employee.user.member.bank_account_number,
+                    do: gettext("Copy bank account number"),
+                    else: gettext("No bank account number")
+                }
+              >
+                <.button
+                  type="button"
+                  variant="unstyled"
+                  id={"copy-bank-number-#{employee.user.id}"}
+                  phx-hook="CopyToClipboard"
+                  disabled={is_nil(employee.user.member.bank_account_number)}
+                  phx-click="copy-bank-number"
+                  phx-value-number={employee.user.member.bank_account_number}
+                  aria-label={gettext("Copy bank account number")}
+                  class="inline-flex cursor-pointer items-center justify-center text-grey-700 transition-colors hover:text-black disabled:pointer-events-none disabled:text-grey-400"
+                >
+                  <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />
+                </.button>
+              </.tooltip>
+            </div>
           </div>
-        </div>
+        <% end %>
+      </form>
 
-        <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4 max-md:hidden">
-          <.hours_record_status
-            hours_record={employee.hours_record}
-            user={employee.user}
-            change_request_path={
-              Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
-            }
+      <section
+        id="employees-invites"
+        phx-hook="CopyToClipboard"
+        class="flex flex-col gap-2 has-[h2]:pbe-14"
+      >
+        <%= if @invites != [] and @live_action == :index do %>
+          <h2 class="mbs-4 px-4 text-sm/snug text-grey-700">{gettext("Active invitations")}</h2>
+          <.invite_row
+            :for={invite <- @invites}
+            invite={invite}
+            class="rounded-sm bg-white px-4 py-2.5"
           />
+        <% end %>
+      </section>
+    </div>
 
-          <.button
-            type="button"
-            variant="unstyled"
-            id={"copy-bank-number-#{employee.user.id}"}
-            phx-hook="CopyToClipboard"
-            disabled={is_nil(employee.user.member.bank_account_number)}
-            phx-click="copy-bank-number"
-            phx-value-number={employee.user.member.bank_account_number}
-            aria-label={gettext("Copy bank account number")}
-            class="inline-flex items-center justify-center text-grey-700 transition hover:text-grey-800 active:scale-95 active:text-grey-900 disabled:text-grey-400"
-          >
-            <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />
-          </.button>
-        </div>
-      </div>
-    <% end %>
-  </form>
-
-  <section
-    id="employees-invites"
-    phx-hook="CopyToClipboard"
-    class="flex flex-col gap-2 has-[h2]:pbe-14"
-  >
-    <%= if @invites != [] and @live_action == :index do %>
-      <h2 class="mbs-4 px-4 text-sm/snug text-grey-700">{gettext("Active invitations")}</h2>
-      <.invite_row
-        :for={invite <- @invites}
-        invite={invite}
-        class="rounded-sm bg-white px-4 py-2.5"
+    <aside
+      :if={@live_action == :index}
+      class="hidden w-80 shrink-0 flex-col gap-2.5 pt-8.75 min-[1800px]:flex"
+    >
+      <.month_summary
+        selected_date={@selected_date}
+        employees={@employees}
+        wages?={@view != :standard}
+        accurate?={flag_enabled?(:accurate_salary_calculation, assigns)}
       />
-    <% end %>
-  </section>
+      <.office_panel
+        :if={@presence != []}
+        presence={@presence}
+        fit_to="employees-table"
+      />
+    </aside>
+  </div>
 </div>
 
 <.invite_modal />

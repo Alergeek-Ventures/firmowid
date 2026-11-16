@@ -23,12 +23,29 @@ defmodule FirmowidWeb.Management.Components.Roles do
   @spec role_badge(map()) :: Rendered.t()
   attr :role, :atom, required: true
   attr :class, :any, default: nil
+
+  attr :neutral, :boolean,
+    default: false,
+    doc: "the quieter colors of the Team table"
+
   slot :inner_block
+
+  def role_badge(%{neutral: true} = assigns) do
+    ~H"""
+    <span class={[
+      "flex w-full items-center justify-between gap-1 rounded-[6px] py-1 pr-2 pl-2.5 text-sm/[1.35] whitespace-nowrap",
+      neutral_badge_styles(@role),
+      @class
+    ]}>
+      {UserRole.label(@role)}{render_slot(@inner_block)}
+    </span>
+    """
+  end
 
   def role_badge(assigns) do
     ~H"""
     <span class={[
-      "inline-flex min-w-28 items-center justify-center gap-1 rounded-sm px-3 py-1 text-sm leading-[1.35]",
+      "inline-flex min-w-28 items-center justify-center gap-1 rounded-sm px-3 py-1 text-sm/[1.35]",
       role_badge_styles(@role),
       @class
     ]}>
@@ -253,6 +270,13 @@ defmodule FirmowidWeb.Management.Components.Roles do
   defp role_desc(:accountant) do
     gettext("Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF.")
   end
+
+  # The Team table: the wider the access, the stronger the color (admin, accountant, invoicing,
+  # then the employee in the palest grey).
+  defp neutral_badge_styles(:admin), do: "bg-teal-200 text-teal-700"
+  defp neutral_badge_styles(:accountant), do: "bg-rust-200 text-rust-700"
+  defp neutral_badge_styles(:invoicing), do: "bg-grey-200 text-grey-900"
+  defp neutral_badge_styles(_role), do: "bg-grey-100 text-grey-700"
 
   defp role_badge_styles(:admin), do: "bg-teal-200 text-teal-700"
   defp role_badge_styles(:accountant), do: "bg-moss-200 text-moss-700"
