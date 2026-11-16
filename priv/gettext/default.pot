@@ -260,6 +260,12 @@ msgid_plural "%{count} monthly salaries"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/management/views/employees.ex
+#, elixir-autogen, elixir-format
+msgctxt "team month"
+msgid "%{count} of %{total}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} page"
@@ -1044,7 +1050,7 @@ msgstr ""
 msgid "Add description"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex
+#: lib/firmowid_web/management/views/employees.ex
 #, elixir-autogen, elixir-format
 msgid "Add employee"
 msgstr ""
@@ -1836,6 +1842,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Average onboarding time"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.ex
+#, elixir-autogen, elixir-format
+msgctxt "team month"
+msgid "Average per person"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -5917,6 +5929,12 @@ msgstr ""
 msgid "Gross total"
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
+#, elixir-autogen, elixir-format
+msgctxt "team month"
+msgid "Gross total"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Gross value"
@@ -6033,6 +6051,7 @@ msgid "Hours that count themselves"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Hours worked"
@@ -7802,6 +7821,11 @@ msgstr ""
 msgid "No attached documents."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.html.heex
+#, elixir-autogen, elixir-format
+msgid "No bank account number"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "No bank accounts have been added yet."
@@ -8049,6 +8073,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "No suggestion yet; choose a category"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/status.ex
+#, elixir-autogen, elixir-format
+msgid "No timesheet for this month"
 msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
@@ -8944,7 +8973,7 @@ msgstr ""
 msgid "Payout date"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex
+#: lib/firmowid_web/management/views/employees.ex
 #, elixir-autogen, elixir-format
 msgid "Payroll report"
 msgstr ""
@@ -8972,6 +9001,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Pension contribution base before this payout, from all employers"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.html.heex
+#, elixir-autogen, elixir-format
+msgid "People you archive, for example when you stop working together, end up here."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegation.ex
@@ -10171,7 +10205,7 @@ msgstr ""
 msgid "Search document"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex
+#: lib/firmowid_web/management/views/employees.ex
 #, elixir-autogen, elixir-format
 msgid "Search employees"
 msgstr ""
@@ -11216,6 +11250,7 @@ msgid "Team"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
+#: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Team"
@@ -12204,11 +12239,6 @@ msgstr ""
 msgid "There are no additional charges for invoices or KSeF - in every plan, including Free, they are unlimited. Only the number of bank accounts (1 / 3 / unlimited) and users (2 / 5 / unlimited) depends on your plan. Need more? Move to a higher plan, with no per-account charges."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex
-#, elixir-autogen, elixir-format
-msgid "There are no archived employees to show."
-msgstr ""
-
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "These Terms of Service are governed by Polish law. Any disputes arising from the use of the Service will be resolved by the court having jurisdiction over the Service Provider’s registered office, namely a court in Kraków."
@@ -12526,6 +12556,12 @@ msgstr ""
 msgid "Timesheet change request, %{month}"
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
+#, elixir-autogen, elixir-format
+msgctxt "team month"
+msgid "Timesheets submitted"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/timetracker/controllers/csv.ex
 #, elixir-autogen, elixir-format
@@ -12592,6 +12628,12 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "To pay after the correction"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.ex
+#, elixir-autogen, elixir-format
+msgctxt "team month"
+msgid "To pay in total"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -14043,6 +14085,11 @@ msgstr ""
 msgid "You have no archived counterparties to show."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.html.heex
+#, elixir-autogen, elixir-format
+msgid "You have no archived employees"
+msgstr ""
+
 #: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "You have no archived projects to show."
@@ -14516,6 +14563,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "landing compass"
 msgid "hours and projects"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.ex
+#: lib/firmowid_web/management/views/employees.html.heex
+#, elixir-autogen, elixir-format
+msgctxt "hours worked unit"
+msgid "hrs"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex

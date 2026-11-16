@@ -559,7 +559,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def switch(assigns) do
     ~H"""
-    <label class={["inline-flex cursor-pointer items-center gap-2", @class]}>
+    <label class={[
+      "inline-flex cursor-pointer items-center gap-2 has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50",
+      @class
+    ]}>
       <input
         type="hidden"
         name={@field.name}
@@ -577,7 +580,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {@rest}
       />
       <div class={[
-        "relative h-[24px] w-[38px] shrink-0 rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
+        "relative h-[24px] w-[38px] shrink-0 rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px]",
         @color == "rust" && "peer-checked:bg-rust-700",
         @color == "teal" && "peer-checked:bg-teal-700"
       ]}>

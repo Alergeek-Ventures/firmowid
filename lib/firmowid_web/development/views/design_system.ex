@@ -258,6 +258,7 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
       <.catalog_section title="Formularze">
         <.form for={@form} phx-change="noop" class="grid max-w-3xl gap-6 md:grid-cols-2">
           <.search_field name="szukaj" placeholder="Szukaj kontrahenta" />
+          <.search_field name="szukaj_sredni" placeholder="Szukaj (średni)" size="medium" />
           <.search_field name="szukaj_maly" placeholder="Szukaj (mały)" size="small" />
           <.field_row label="Nazwa projektu" for="catalog-name">
             <.input id="catalog-name" name="nazwa" value="" placeholder="np. Firmowid" />
