@@ -12213,6 +12213,11 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
+#, elixir-autogen, elixir-format
+msgid "The transfer title names this month"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "The usage is above the limits of the assigned plan."
