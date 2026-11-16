@@ -75,6 +75,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               invoice={@preview_invoice}
             />
 
+            <.live_component
+              module={FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck}
+              id="nip-check"
+              invoice={@preview_invoice}
+            />
+
             <FirmowidUI.Invoicing.Components.InvoiceNotes.invoice_notes
               invoice_note={@invoice.invoice_note}
               internal_note={@invoice.internal_note}

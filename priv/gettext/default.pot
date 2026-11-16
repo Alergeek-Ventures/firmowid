@@ -7674,6 +7674,11 @@ msgstr ""
 msgid "NBP does not publish an exchange rate for %{currency}"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#, elixir-autogen, elixir-format
+msgid "NIP check"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_form.ex
 #, elixir-autogen, elixir-format
 msgid "NIP is required"
@@ -7724,6 +7729,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Neither the VAT white list nor REGON knows this NIP. Check the number with the counterparty."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#, elixir-autogen, elixir-format
+msgid "Neither the VAT white list nor REGON knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -9538,6 +9548,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "REGON shows this business as closed or its NIP as revoked. Before you issue the next invoice, confirm the details with the counterparty."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#, elixir-autogen, elixir-format
+msgid "REGON shows this business as closed or its NIP as revoked. Confirm the details with the buyer before you issue the invoice."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_details.ex
