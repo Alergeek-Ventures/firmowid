@@ -1,6 +1,6 @@
 ---
-title: "Darmowy program do faktur z KSeF: porównanie planów za 0 zł"
-description: "Darmowy program do faktur z KSeF: bezpłatne narzędzia MF, plany z limitem 3–10 dokumentów i programy bez limitu faktur. Porównanie 14 ofert, stan na 11.11.2026."
+title: "Darmowa aplikacja KSeF i program do faktur za 0 zł: 14 ofert"
+description: "Za 0 zł wystawisz e-faktury w Aplikacji Podatnika KSeF i e-mikrofirmie. Porównanie 14 darmowych programów: limity faktur, wysyłka do KSeF. Stan 11.11.2026."
 published: 2026-10-30
 updated: 2026-11-11
 category: wybor-programu
