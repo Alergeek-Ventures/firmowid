@@ -1,6 +1,6 @@
 ---
-title: "Limit 10 000 zł w KSeF w 2026 r.: co się wlicza i co po przekroczeniu"
-description: "Które faktury wliczasz do limitu 10 000 zł brutto miesięcznie, która faktura musi już trafić do KSeF i czemu słabszy miesiąc nic nie zmienia."
+title: "Limit 10 000 zł brutto w KSeF: które faktury liczyć w 2026 r."
+description: "Liczysz tylko faktury, które bez wyjątku musiałyby iść do KSeF, a nie cały obrót. Faktura, która przekracza 10 000 zł brutto w miesiącu, trafia już do KSeF."
 published: 2026-10-30
 updated: 2026-10-30
 category: ksef-w-praktyce
