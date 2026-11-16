@@ -65,6 +65,22 @@ default_ksef_base_url =
 default_ksef_qr_code_base_url =
   if ksef_env == "prod", do: "https://qr.ksef.mf.gov.pl", else: "https://qr-test.ksef.mf.gov.pl"
 
+# Production must name the Tpay environment and its credentials; development and tests
+# default to the sandbox and boot without credentials (only a call to Tpay fails then).
+{tpay_env, tpay_client_id, tpay_client_secret} =
+  if config_env() == :prod do
+    {System.fetch_env!("TPAY_ENV"), System.fetch_env!("TPAY_CLIENT_ID"), System.fetch_env!("TPAY_CLIENT_SECRET")}
+  else
+    {System.get_env("TPAY_ENV", "sandbox"), System.get_env("TPAY_CLIENT_ID"), System.get_env("TPAY_CLIENT_SECRET")}
+  end
+
+{tpay_base_url, tpay_jws_host} =
+  case tpay_env do
+    "sandbox" -> {"https://openapi.sandbox.tpay.com", "secure.sandbox.tpay.com"}
+    "production" -> {"https://api.tpay.com", "secure.tpay.com"}
+    _other -> raise "TPAY_ENV must be one of: sandbox, production"
+  end
+
 config :firmowid, Endpoint, secret_key_base: secret_key_base
 
 config :firmowid, Firmowid.Vault,
@@ -75,6 +91,21 @@ config :firmowid, Firmowid.Vault,
 config :firmowid, :ksef,
   base_url: default_ksef_base_url,
   qr_code_base_url: default_ksef_qr_code_base_url
+
+# Tpay card payments.
+config :firmowid, :tpay,
+  base_url: tpay_base_url,
+  jws_host: tpay_jws_host,
+  client_id: tpay_client_id,
+  client_secret: tpay_client_secret
+
+# The organization that sells Firmowid: it issues the advance invoices of card payments.
+# Development and tests default to the seeded organization (config/dev.exs, config/test.exs).
+case {config_env(), System.get_env("BILLING_SELLER_ORGANIZATION_ID")} do
+  {:prod, nil} -> raise "BILLING_SELLER_ORGANIZATION_ID environment variable is not set"
+  {_env, nil} -> :ok
+  {_env, seller_id} -> config :firmowid, :billing, seller_organization_id: seller_id
+end
 
 config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),

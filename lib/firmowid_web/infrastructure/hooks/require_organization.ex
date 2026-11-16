@@ -16,6 +16,9 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   page once the company must decide about its usage above the plan (see
   `Firmowid.Billing.PlanLimits.decision_due?/1`). Before that day the inbox
   tells them (see `FirmowidWeb.Inbox.Utilities.Queue`). Other members work normally.
+  Buying a plan from there passes through the card return page, which both hooks let through;
+  `:plan_limit` also lets through the company details settings, where the address a purchase
+  needs is filled in.
   """
 
   use FirmowidWeb, :verified_routes
@@ -28,10 +31,12 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Core
   alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
+  alias FirmowidWeb.Billing.Views.CardReturn
   alias FirmowidWeb.Billing.Views.PlanLimit
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
   alias FirmowidWeb.Organization.Views.FirstSteps
+  alias FirmowidWeb.Settings.Views.Index, as: Settings
   alias Phoenix.LiveView.Socket
 
   def on_mount(:default, _params, session, socket) do
@@ -60,28 +65,35 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   end
 
   # Runs after the feature flags, since the setup is behind `inbox`. The plan limit
-  # page stays reachable, since `:plan_limit` holds a due admin there, first steps included.
+  # page and the buy flow it starts stay reachable, since `:plan_limit` holds a due admin
+  # there, first steps included.
   def on_mount(:first_steps, _params, _session, socket) do
     %{current_user: user, current_org: org} = socket.assigns
 
     if flag_enabled?(:inbox, socket.assigns) and
-         UserAuth.first_steps_pending?(user, org) and socket.view not in [FirstSteps, PlanLimit] do
+         UserAuth.first_steps_pending?(user, org) and
+         socket.view not in [FirstSteps, PlanLimit, CardReturn] do
       {:halt, redirect(socket, to: OrganizationNavigation.setup_path())}
     else
       {:cont, socket}
     end
   end
 
-  def on_mount(:plan_limit, _params, _session, socket) do
+  def on_mount(:plan_limit, params, _session, socket) do
     %{current_user: user, current_org: org} = socket.assigns
 
-    if match?(%{member: %{role: :admin}}, user) and socket.view != PlanLimit and
+    if match?(%{member: %{role: :admin}}, user) and not plan_limit_flow?(socket.view, params) and
          PlanLimits.decision_due?(org) do
       {:halt, redirect(socket, to: BillingNavigation.plan_limit_path())}
     else
       {:cont, socket}
     end
   end
+
+  # The plan limit page links to the company details for the address a purchase needs. Only that
+  # tab of the settings is let through; patching to another tab there does not mount again.
+  defp plan_limit_flow?(Settings, %{"section" => "firma"}), do: true
+  defp plan_limit_flow?(view, _params), do: view in [PlanLimit, CardReturn]
 
   @doc "Checks the current organization and role before LiveView or LiveComponent events."
   @spec attach_access_hook(Socket.t(), atom()) :: Socket.t()

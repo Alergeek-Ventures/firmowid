@@ -20,7 +20,10 @@ defmodule Firmowid.SystemActor do
     OCR pipeline). Can read/write cost invoices, blobs, and bank accounts.
 
   - `:sales_invoice_processor` — processes outgoing sales invoices (KSeF submission
-    workers, invoice generation). Can read/write sales invoices and related items.
+    workers, invoice generation). Can read/write sales invoices and related items,
+    and issue invoices: bound to the seller organization it issues the advance
+    invoices of card payments (see `Firmowid.Billing.Payment`), reading that
+    organization and whether it is connected to KSeF.
 
   - `:ksef_session` — manages KSeF (National e-Invoice System) sessions of `org_id`.
     Can lock/unlock invoices for KSeF submission, update KSeF fields, and read
@@ -119,6 +122,13 @@ defmodule Firmowid.SystemActor do
     `Firmowid.Billing.PlanLimits`). Records when its admins must decide, emails
     them, and switches members, projects and bank accounts above the limit off
     and back on.
+
+  - `:billing` — keeps an organization's subscription and plan in step with Tpay.
+    Without `org_id` it can only find the subscription a card tokenization belongs
+    to; bound to `org_id` it reads that organization and its subscriptions, saves
+    the card, ends subscriptions and sets the organization's plan. It also charges
+    the organization's payments and reads the organization as the buyer of their
+    advance invoices.
   """
 
   @type role ::
@@ -152,6 +162,7 @@ defmodule Firmowid.SystemActor do
           | :actor_member_loader
           | :sign_in_recorder
           | :plan_limits
+          | :billing
 
   @enforce_keys [:org_id, :role]
   defstruct [:org_id, :role, :blob_id, :user_id]

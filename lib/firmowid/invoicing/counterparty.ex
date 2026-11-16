@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 # credo:disable-for-this-file ExDNA.Credo
 # Create/update action and expr duplication is intentional for Ash runtime/SQL parity;
 # removing it cleanly requires shared action/calc extraction used by multiple resources.
@@ -279,6 +280,12 @@ defmodule Firmowid.Invoicing.Counterparty do
     # Invoicing system roles: read-only
     bypass {SystemActorRole, roles: [:sales_invoice_processor, :cost_invoice_processor, :invoice_matcher]} do
       authorize_if action_type(:read)
+    end
+
+    # Advance invoices for Firmowid's card payments add their buyer as a counterparty, or restore
+    # it and give it the payer's email (Firmowid.Billing.Payment.Changes.IssueAdvanceInvoice).
+    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
+      authorize_if action([:create, :update, :unarchive])
     end
 
     bypass {SystemActorRole, roles: [:vat_id_checker]} do

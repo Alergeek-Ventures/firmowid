@@ -37,7 +37,7 @@ defmodule Firmowid.Billing.PlanLimitEmails do
 
     assigns = %{
       company: organization.display_name,
-      plan: plan_name(organization.billing_plan),
+      plan: PlanCatalog.name(organization.billing_plan),
       rows: Enum.map(exceeded, &{label(&1), "#{usage[&1]}, plan obejmuje #{limits[&1]}"}),
       decision_today?: Date.compare(decision_on, LocalDate.today()) != :gt,
       decision_on: format_date(decision_on),
@@ -62,7 +62,7 @@ defmodule Firmowid.Billing.PlanLimitEmails do
   def deliver_excess_switched_off(admins, organization, switched_off) do
     assigns = %{
       company: organization.display_name,
-      plan: plan_name(organization.billing_plan),
+      plan: PlanCatalog.name(organization.billing_plan),
       rows:
         for(
           limited <- PlanCatalog.limited(),
@@ -170,10 +170,6 @@ defmodule Firmowid.Billing.PlanLimitEmails do
   defp label(:users), do: "Osoby"
   defp label(:bank_institutions), do: "Banki"
   defp label(:active_projects), do: "Projekty"
-
-  defp plan_name(:free), do: "Darmowy"
-  defp plan_name(:przedsiebiorca), do: "Przedsiębiorca"
-  defp plan_name(:firma), do: "Firma"
 
   defp format_date(date), do: Firmowid.Cldr.Date.to_string!(date, format: :long, locale: "pl")
 end

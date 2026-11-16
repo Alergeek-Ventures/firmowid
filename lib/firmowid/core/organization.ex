@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Core.Organization do
   @moduledoc """
   Ash resource for the `organizations` table.
@@ -15,6 +16,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
+  alias Firmowid.Billing.Subscription
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
@@ -193,6 +195,8 @@ defmodule Firmowid.Core.Organization do
       change after_action(fn changeset, organization, _context ->
                PlanLimits.plan_changed(organization, changeset.data.billing_plan)
              end)
+
+      change Subscription.Changes.EndForOtherPlan
     end
 
     update :update_plan_limit_decision do
@@ -236,10 +240,20 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(id == ^actor(:org_id))
     end
 
+    bypass [{SystemActorRole, roles: [:billing]}, action([:read, :update_billing_plan])] do
+      authorize_if expr(id == ^actor(:org_id))
+    end
+
     # Actors built for one organization read only that organization; the classifier reads the
-    # industry whose categories it chooses from.
+    # industry whose categories it chooses from, the invoice processor the seller of its invoices.
     bypass [
-      {SystemActorRole, roles: [:analysis_classifier, :billing_snapshotter, :ksef_session]},
+      {SystemActorRole,
+       roles: [
+         :analysis_classifier,
+         :billing_snapshotter,
+         :ksef_session,
+         :sales_invoice_processor
+       ]},
       action_type(:read)
     ] do
       authorize_if expr(id == ^actor(:org_id))
@@ -378,6 +392,7 @@ defmodule Firmowid.Core.Organization do
     end
 
     has_many :members, Firmowid.Core.Member
+    has_many :subscriptions, Subscription
   end
 
   pipelines do
@@ -394,5 +409,27 @@ defmodule Firmowid.Core.Organization do
     calculate :vat_eu, :string, expr("PL" <> nip)
 
     calculate :on_trial?, :boolean, expr(inserted_at >= ago(@trial_days, :day))
+
+    # A paid plan nobody pays for: set by hand, not bought.
+    calculate :plan_granted?,
+              :boolean,
+              expr(billing_plan in ^Subscription.plans() and not has_active_subscription?)
+
+    # A subscription starts with a free month until one was ever activated.
+    calculate :free_month_available?, :boolean, expr(not has_activated_subscription?)
+  end
+
+  # Plan limits are facts about the organization, so they do not depend on who may read its
+  # subscriptions (a member, the plan limits job).
+  aggregates do
+    exists :has_active_subscription?, :subscriptions do
+      filter expr(status == :active)
+      authorize? false
+    end
+
+    exists :has_activated_subscription?, :subscriptions do
+      filter expr(not is_nil(activated_at))
+      authorize? false
+    end
   end
 end

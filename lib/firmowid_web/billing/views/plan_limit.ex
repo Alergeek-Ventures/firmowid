@@ -2,8 +2,11 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
   @moduledoc """
   The choice admins make when their company uses more than its plan includes:
   they tick what stays switched on within the current plan (see
-  `Firmowid.Billing.PlanLimits`). The cheapest plan that fits is shown for
-  information; buying it comes with card payments.
+  `Firmowid.Billing.PlanLimits`), or buy the cheapest plan that fits with a
+  card saved at Tpay (see `Firmowid.Billing.Subscription`). Tpay brings them
+  back to `CardReturn`. A company that already pays for a cheaper plan switches
+  to it at once instead, paying the price difference with the saved card, once
+  this month's payment has gone through.
 
   A page of its own, without the app navigation. From the decision day every
   page leads admins here (see `RequireOrganization`); before it, their inbox
@@ -12,13 +15,20 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
   use FirmowidWeb, :live_view
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Organization.Components.OnboardingHeader
+  import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Billing
+  alias Firmowid.Billing.Month
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Core
+  alias FirmowidUI.Components.Inputs
+  alias FirmowidWeb.Billing.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
 
@@ -48,8 +58,14 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
         >
           <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 class="text-xl font-semibold text-grey-900">{Worksheet.plan_label(@fitting_plan)}</h2>
-            <p class="text-[0.9375rem] font-medium text-grey-900">
+            <p :if={is_nil(@purchase)} class="text-[0.9375rem] font-medium text-grey-900">
               {gettext("%{price} PLN net / month", price: @fitting_rules.monthly_price_pln)}
+            </p>
+            <p
+              :if={@purchase in [:upgrade, :upgrade_unsettled]}
+              class="text-[0.9375rem] font-medium text-grey-900 tabular-nums"
+            >
+              {net_price_text(@fitting_rules, @subscription.billing_period)}
             </p>
           </div>
           <p class="mt-1.5 text-[0.9375rem]/relaxed text-grey-700">
@@ -66,6 +82,105 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
               </dd>
             </div>
           </dl>
+
+          <.form
+            :if={@purchase in [:available, :address_missing]}
+            for={@period_form}
+            id="plan-limit-buy"
+            phx-change="period"
+            phx-submit="buy"
+            class="mt-7"
+          >
+            <fieldset>
+              <legend class="text-sm text-grey-600">{gettext("Billing period")}</legend>
+              <label
+                :for={period <- [:monthly, :yearly]}
+                id={"plan-limit-period-#{period}"}
+                class="flex cursor-pointer items-baseline gap-3 py-2"
+              >
+                <input
+                  type="radio"
+                  name={@period_form[:billing_period].name}
+                  value={period}
+                  checked={period == @billing_period}
+                  class="size-4 shrink-0 translate-y-0.5 border border-grey-700 text-grey-900 focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
+                />
+                <span class={[
+                  "flex-1 text-[0.9375rem]",
+                  if(period == @billing_period, do: "text-grey-900", else: "text-grey-700")
+                ]}>
+                  {period_label(period)}
+                </span>
+                <span class="shrink-0 text-right text-[0.9375rem] font-medium text-grey-900 tabular-nums">
+                  {net_price_text(@fitting_rules, period)}
+                </span>
+              </label>
+            </fieldset>
+
+            <p class="mt-3 text-[0.9375rem]/relaxed text-grey-700">
+              {first_charge_text(@fitting_plan, @billing_period, @free_month?)}
+            </p>
+
+            <%= if @purchase == :available do %>
+              <.button
+                id="plan-limit-buy-submit"
+                type="submit"
+                class="mt-5 w-full"
+                phx-disable-with={gettext("Opening the card page...")}
+              >
+                {gettext("Buy the %{plan} plan", plan: Worksheet.plan_label(@fitting_plan))}
+              </.button>
+              <p class="mt-2 text-sm text-grey-600">
+                {if @free_month?,
+                  do: gettext("Next you enter the card on Tpay's page. Nothing is charged today."),
+                  else:
+                    gettext(
+                      "Next you enter the card on Tpay's page. The payment follows right after."
+                    )}
+              </p>
+            <% else %>
+              <.link
+                id="plan-limit-address"
+                kind="button"
+                variant="primary"
+                navigate={SettingsNavigation.canonical_path(:organization)}
+                class="mt-5 w-full"
+              >
+                {gettext("Fill in the company address to buy")}
+              </.link>
+              <p class="mt-2 text-sm text-grey-600">
+                {gettext("The plan's invoice needs it. Then come back here to buy.")}
+              </p>
+            <% end %>
+          </.form>
+
+          <p
+            :if={@purchase == :upgrade_unsettled}
+            id="plan-limit-switch-plan-waiting"
+            class="mt-7 text-[0.9375rem]/relaxed text-grey-700"
+          >
+            {gettext("You can switch plans once this month's payment goes through.")}
+          </p>
+
+          <div :if={@purchase == :upgrade} id="plan-limit-switch-plan" class="mt-7">
+            <p class="text-[0.9375rem]/relaxed text-grey-700">
+              {upgrade_text(@fitting_plan, @subscription)}
+            </p>
+            <.button
+              id="plan-limit-switch-plan-submit"
+              type="button"
+              phx-click="upgrade"
+              class="mt-5 w-full"
+              phx-disable-with={gettext("Switching the plan...")}
+            >
+              {gettext("Switch to the %{plan} plan", plan: Worksheet.plan_label(@fitting_plan))}
+            </.button>
+            <p class="mt-2 text-sm text-grey-600">
+              {if upgrade_free?(@subscription),
+                do: gettext("Nothing is charged today."),
+                else: gettext("Charged to the card ending in %{tail}.", tail: @subscription.card_tail)}
+            </p>
+          </div>
         </section>
 
         <section id="plan-limit-keep" class="mt-8">
@@ -216,7 +331,8 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
         %{kind: kind, items: switched_on[kind], limit: limits[kind]}
       end
 
-    assign(socket,
+    socket
+    |> assign(
       page_title: gettext("Plan limit"),
       # A page of its own, without the app navigation.
       focused: true,
@@ -231,6 +347,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
           &(&1.id != org.id and Core.usable_organization?(user, &1))
         ),
       decision_on: org.plan_limit_decision_on,
+      billing_plan: org.billing_plan,
       plan_label: Worksheet.plan_label(org.billing_plan),
       fitting_plan: fitting_plan,
       fitting_rules: PlanCatalog.plan!(fitting_plan),
@@ -238,11 +355,82 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
       own_member_id: user.member.id,
       locked: locked,
       lists: lists,
-      selected: Map.new(lists, &{&1.kind, preselect(&1, locked)})
+      selected: Map.new(lists, &{&1.kind, preselect(&1, locked)}),
+      billing_period: :monthly,
+      period_form: to_form(%{"billing_period" => "monthly"})
+    )
+    |> assign_purchase()
+  end
+
+  # What the upgrade section offers: nothing without the flag or for a plan granted by hand;
+  # a switch to the fitting plan for a company that pays for a cheaper one; otherwise the
+  # purchase, which needs the company address for the invoice and starts with the free month
+  # while the company has not used it.
+  defp assign_purchase(socket) do
+    %{current_org: org, ash_scope: scope, fitting_plan: fitting_plan} = socket.assigns
+
+    org = Ash.load!(org, [:plan_granted?, :free_month_available?], scope: scope)
+
+    subscription =
+      %{status: :active}
+      |> Billing.list_subscriptions!(
+        scope: scope,
+        load: [:current_period_settled?, upgrade_price: %{plan: fitting_plan}]
+      )
+      |> List.first()
+
+    assign(socket,
+      purchase: purchase_offer(org, subscription),
+      subscription: subscription,
+      free_month?: org.free_month_available?
     )
   end
 
+  # The switch waits while the current period's payment is unsettled (see `Subscription` `:upgrade`).
+  defp purchase_offer(_organization, %{current_period_settled?: true}), do: :upgrade
+  defp purchase_offer(_organization, %{status: :active}), do: :upgrade_unsettled
+  defp purchase_offer(%{plan_granted?: true}, nil), do: nil
+  defp purchase_offer(%{address: address}, nil) when address in [nil, ""], do: :address_missing
+  defp purchase_offer(_organization, nil), do: :available
+
   @impl true
+  def handle_event("period", %{"billing_period" => period}, socket) do
+    {:noreply, assign(socket, :billing_period, billing_period(period))}
+  end
+
+  def handle_event("buy", %{"billing_period" => period}, socket) do
+    %{fitting_plan: plan, ash_scope: scope} = socket.assigns
+
+    if socket.assigns.purchase == :available do
+      case Billing.start_subscription(%{plan: plan, billing_period: billing_period(period)},
+             scope: scope
+           ) do
+        {:ok, subscription} ->
+          {:noreply, redirect(socket, external: subscription.__metadata__.card_page_url)}
+
+        # A refused purchase, such as a used free month.
+        {:error, error} ->
+          {:noreply, refused(socket, error)}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("upgrade", _params, socket) do
+    %{fitting_plan: plan, subscription: subscription, ash_scope: scope} = socket.assigns
+
+    if socket.assigns.purchase == :upgrade do
+      case Billing.upgrade_subscription(subscription, plan, scope: scope) do
+        {:ok, subscription} -> {:noreply, upgraded(socket, plan, subscription)}
+        # A refused upgrade, such as a month whose payment has not gone through.
+        {:error, error} -> {:noreply, refused(socket, error)}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("select", params, socket) do
     {:noreply, assign(socket, :selected, selected_from(params, socket.assigns))}
   end
@@ -251,7 +439,24 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
     %{current_org: org, ash_scope: scope} = socket.assigns
     selected = selected_from(params, socket.assigns)
     kept = Map.new(selected, fn {kind, ids} -> {kind, MapSet.to_list(ids)} end)
+    # The plan may have changed since the page opened, such as an upgrade Tpay confirmed late.
+    org = Core.get_organization!(org.id, scope: scope)
 
+    if org.billing_plan == socket.assigns.billing_plan do
+      keep(socket, org, kept, selected, scope)
+    else
+      # What was ticked fits the old plan; `keep` would switch off the rest under the new one.
+      {:noreply,
+       socket
+       |> LiveToast.put_toast(
+         :info,
+         gettext("Your plan has changed. Check what stays switched on again.")
+       )
+       |> push_navigate(to: Navigation.plan_limit_path())}
+    end
+  end
+
+  defp keep(socket, org, kept, selected, scope) do
     case PlanLimits.keep(org, kept, scope) do
       {:ok, _organization} ->
         {:noreply,
@@ -268,6 +473,45 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
          |> assign(:selected, selected)
          |> LiveToast.put_toast(:error, gettext("Tick no more than the plan includes."))}
     end
+  end
+
+  # An action refused with a reason the admin can act on; anything else, such as a Tpay failure,
+  # raises and reaches Sentry.
+  defp refused(socket, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}) do
+    LiveToast.put_toast(
+      socket,
+      :error,
+      Inputs.translate_error({message, Map.get(error, :vars, [])})
+    )
+  end
+
+  defp refused(_socket, error), do: raise(error)
+
+  # The subscription as the upgrade left it: on the new plan once paid (or free), still on the
+  # old one when the card was declined or Tpay has not decided yet.
+  defp upgraded(socket, plan, %{plan: plan}) do
+    socket
+    |> LiveToast.put_toast(
+      :info,
+      gettext("You are on the %{plan} plan now.", plan: Worksheet.plan_label(plan))
+    )
+    |> push_navigate(to: socket.assigns.app_path)
+  end
+
+  defp upgraded(socket, _plan, %{__metadata__: %{upgrade_payment: %{status: :failed}}}) do
+    LiveToast.put_toast(
+      socket,
+      :error,
+      gettext("The payment did not go through. Your plan has not changed.")
+    )
+  end
+
+  defp upgraded(socket, _plan, _pending) do
+    LiveToast.put_toast(
+      socket,
+      :info,
+      gettext("Tpay is still confirming the payment. The plan changes once it goes through.")
+    )
   end
 
   # Disabled boxes are not submitted, so the locked members are added back.
@@ -339,6 +583,93 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
   defp item_detail(_kind, _item), do: nil
 
   defp format_date(date), do: Firmowid.Cldr.Date.to_string!(date, format: :long)
+
+  defp billing_period("monthly"), do: :monthly
+  defp billing_period("yearly"), do: :yearly
+
+  defp period_label(:monthly), do: pgettext("billing period", "Monthly")
+  defp period_label(:yearly), do: pgettext("billing period", "Yearly")
+
+  defp net_price_text(rules, :monthly),
+    do: gettext("%{price} + VAT / month", price: format_money(rules.monthly_price_pln))
+
+  defp net_price_text(rules, :yearly), do: gettext("%{price} + VAT / year", price: format_money(rules.yearly_price_pln))
+
+  # The month of the first purchase is free, so the first charge falls on the 1st of the next.
+  defp first_charge_text(plan, :monthly, true = _free_month?) do
+    gettext(
+      "This month is free, until %{last_day}. Then %{amount} gross every month, first on %{date}.",
+      last_day: format_date(Date.shift(Month.next(), day: -1)),
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly)),
+      date: format_date(Month.next())
+    )
+  end
+
+  defp first_charge_text(plan, :yearly, true = _free_month?) do
+    gettext(
+      "This month is free, until %{last_day}. Then %{amount} gross once a year, first on %{date}.",
+      last_day: format_date(Date.shift(Month.next(), day: -1)),
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly)),
+      date: format_date(Month.next())
+    )
+  end
+
+  # A returning company pays the current period as soon as the card is saved.
+  defp first_charge_text(plan, :monthly, false = _free_month?) do
+    gettext("You pay %{amount} gross now for this month, then every month on the 1st.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly))
+    )
+  end
+
+  defp first_charge_text(plan, :yearly, false = _free_month?) do
+    gettext("You pay %{amount} gross now for a year, until %{last_day}, then once a year.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly)),
+      last_day: format_date(Date.shift(Month.current(), month: 12, day: -1))
+    )
+  end
+
+  # The subscription's `:upgrade_price` is loaded for the fitting plan.
+  defp upgrade_free?(subscription), do: Decimal.eq?(subscription.upgrade_price.gross_amount, 0)
+
+  defp upgrade_text(plan, subscription) do
+    price = format_money(PlanCatalog.gross_price_pln(plan, subscription.billing_period))
+    next_charge_on = format_date(subscription.next_charge_on)
+
+    cond do
+      upgrade_free?(subscription) and subscription.billing_period == :monthly ->
+        gettext(
+          "This month is still free, so the switch costs nothing now. Then %{price} gross every month, from %{date}.",
+          price: price,
+          date: next_charge_on
+        )
+
+      upgrade_free?(subscription) ->
+        gettext(
+          "This month is still free, so the switch costs nothing now. Then %{price} gross once a year, from %{date}.",
+          price: price,
+          date: next_charge_on
+        )
+
+      subscription.billing_period == :monthly ->
+        gettext(
+          "You pay %{amount} gross now, the difference for this month. Then %{price} gross every month, from %{date}.",
+          amount: format_money(subscription.upgrade_price.gross_amount),
+          price: price,
+          date: next_charge_on
+        )
+
+      true ->
+        gettext(
+          "You pay %{amount} gross now, the difference until %{last_day}. Then %{price} gross once a year, from %{date}.",
+          amount: format_money(subscription.upgrade_price.gross_amount),
+          last_day: format_date(subscription.current_period_end),
+          price: price,
+          date: next_charge_on
+        )
+    end
+  end
+
+  defp format_money(amount), do: :PLN |> Money.new(amount) |> Money.to_string!(no_fraction_if_integer: true)
 
   defp heading_styles,
     do: "text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.625rem]/[1.1]"

@@ -21,6 +21,13 @@ defmodule Firmowid.Billing.Month do
   end
 
   @doc """
+  Returns the marker of the month after the current one: the day a free month
+  ends and the first charge falls.
+  """
+  @spec next() :: Date.t()
+  def next, do: Date.shift(current(), month: 1)
+
+  @doc """
   Normalizes a date to the first day of its billing month.
   """
   @spec normalize(Date.t()) :: Date.t()

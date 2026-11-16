@@ -6,10 +6,10 @@ defmodule Firmowid.Billing.Workers.PlanLimitsWorker do
   when usage fits again.
 
   Scheduling this job is what turns the plan limits on: without it no
-  organization ever gets a decision day, so nobody is held or switched off. It is
-  deliberately not in the Oban crontab until card payments exist, since admins
-  must be able to buy a higher plan before they are asked to choose. It gets
-  scheduled together with the payments.
+  organization ever gets a decision day, so nobody is held or switched off. It
+  runs daily at 09:00, after the 08:00 charges, so an organization that fell back
+  to the free plan because its card was declined is checked the same day. Admins
+  can buy a higher plan before they are asked to choose.
   """
 
   use Oban.Worker,

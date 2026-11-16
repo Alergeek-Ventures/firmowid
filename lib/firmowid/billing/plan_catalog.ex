@@ -10,6 +10,7 @@ defmodule Firmowid.Billing.PlanCatalog do
   @type plan :: :no_plan | :free | :przedsiebiorca | :firma
   @type offered_plan :: :free | :przedsiebiorca | :firma
   @type money_amount :: Decimal.t()
+  @type billing_period :: :monthly | :yearly
   @type limited :: :users | :bank_institutions | :active_projects
   @type limit :: non_neg_integer() | :unlimited
 
@@ -82,6 +83,42 @@ defmodule Firmowid.Billing.PlanCatalog do
       limits: %{users: :unlimited, bank_institutions: :unlimited, active_projects: :unlimited}
     }
   end
+
+  @doc """
+  Returns the Polish name of an offered plan, as Firmowid's emails, card charges and
+  invoices name it. The app's own screens translate the names instead.
+  """
+  @spec name(offered_plan()) :: String.t()
+  def name(:free), do: "Darmowy"
+  def name(:przedsiebiorca), do: "Przedsiębiorca"
+  def name(:firma), do: "Firma"
+
+  @doc """
+  Returns what a plan costs for a billing period with 23% VAT added, rounded to
+  the grosz. Catalog prices are net.
+  """
+  @spec gross_price_pln(plan(), billing_period()) :: money_amount()
+  def gross_price_pln(plan, billing_period), do: plan |> net_price_pln(billing_period) |> with_vat()
+
+  @doc """
+  Returns the net price of a plan for a billing period.
+  """
+  @spec net_price_pln(plan(), billing_period()) :: money_amount()
+  def net_price_pln(plan, :monthly), do: plan!(plan).monthly_price_pln
+  def net_price_pln(plan, :yearly), do: plan!(plan).yearly_price_pln
+
+  @doc """
+  Returns how many months a billing period covers.
+  """
+  @spec months(billing_period()) :: pos_integer()
+  def months(:monthly), do: 1
+  def months(:yearly), do: 12
+
+  @doc """
+  Adds 23% VAT to a net amount, rounded to the grosz.
+  """
+  @spec with_vat(money_amount()) :: money_amount()
+  def with_vat(net), do: net |> Decimal.mult(Decimal.new("1.23")) |> Decimal.round(2)
 
   @doc """
   Returns all plan rules keyed by plan identifier.

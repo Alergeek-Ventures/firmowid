@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   use FirmowidWeb, :html
 
+  alias Firmowid.Billing.PlanCatalog
   alias FirmowidWeb.Settings.Components.Helpers
 
   @doc """
@@ -14,6 +15,8 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   attr :worksheet, :any, required: true
 
   attr :standalone, :boolean, default: false
+  attr :subscription, :any, default: nil, doc: "the organization's active subscription, if any"
+  attr :plan_granted?, :boolean, default: false
 
   def subscription_tab(assigns) do
     ~H"""
@@ -48,6 +51,14 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               {@worksheet.monthly_price_text}
             </Helpers.settings_display_field>
           </div>
+
+          <p :if={@subscription} class="text-sm/snug text-grey-700">
+            {payment_line(@subscription)}
+          </p>
+
+          <p :if={!@subscription and @plan_granted?} class="text-sm/snug text-grey-700">
+            {gettext("This plan is granted to your organization. Nothing is charged for it.")}
+          </p>
 
           <div class="space-y-3 rounded-lg bg-grey-50 p-4">
             <h3 class="text-sm leading-none font-medium text-grey-900">
@@ -140,6 +151,33 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
     <% end %>
     """
   end
+
+  # The card, the next charge with its gross amount, and how often the plan is billed.
+  defp payment_line(subscription) do
+    amount =
+      :PLN
+      |> Money.new(PlanCatalog.gross_price_pln(subscription.plan, subscription.billing_period))
+      |> Money.to_string!(no_fraction_if_integer: true)
+
+    [
+      card_text(subscription),
+      gettext("Next payment on %{date}: %{amount} gross",
+        date: Firmowid.Cldr.Date.to_string!(subscription.next_charge_on, format: :long),
+        amount: amount
+      ),
+      billing_period_label(subscription.billing_period)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" · ")
+  end
+
+  # Tpay may leave out the brand or the digits of the card.
+  defp card_text(%{card_tail: nil}), do: nil
+  defp card_text(%{card_brand: nil, card_tail: tail}), do: "•••• #{tail}"
+  defp card_text(%{card_brand: brand, card_tail: tail}), do: "#{brand} •••• #{tail}"
+
+  defp billing_period_label(:monthly), do: pgettext("billing period", "Monthly")
+  defp billing_period_label(:yearly), do: pgettext("billing period", "Yearly")
 
   defp plan_badge_label(:no_plan), do: gettext("no plan")
   defp plan_badge_label(_plan), do: gettext("active")
