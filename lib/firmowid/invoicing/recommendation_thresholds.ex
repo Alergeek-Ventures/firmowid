@@ -32,6 +32,10 @@ defmodule Firmowid.Invoicing.RecommendationThresholds do
 
   def match_chip_type(_score, _source), do: {nil, nil}
 
+  @doc "Whether a score is high enough to show the match as a confident one."
+  @spec high_confidence?(float()) :: boolean()
+  def high_confidence?(score), do: score >= @confidence_high_threshold
+
   @doc """
   Returns the prediction visual level for a potential transaction candidate.
   """

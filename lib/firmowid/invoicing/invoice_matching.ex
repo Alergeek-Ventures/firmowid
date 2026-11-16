@@ -73,24 +73,59 @@ defmodule Firmowid.Invoicing.InvoiceMatching do
     end
   end
 
-  defp pending_invoices_for_transaction(transaction, scope) do
-    case Decimal.compare(Money.to_decimal(transaction.amount), Decimal.new(0)) do
-      :lt ->
-        Invoicing.list_cost_invoices!(%{reconciliation: :pending, merge_corrections: true},
-          load: [:effective_amount, :effective_seller_display_name],
-          scope: scope
-        )
-
-      :gt ->
-        Invoicing.list_sales_invoices!(
-          %{reconciliation: :pending, kind: :vat, submission: :confirmed},
-          load: [:effective_amount, :buyer_display_name_label, sales_invoice_items: [:name]],
-          scope: scope
-        )
-
-      :eq ->
+  @doc """
+  Returns the best-scoring unresolved invoice of each pending transaction, reading the invoices
+  once for all of them. Transactions without a candidate are left out.
+  """
+  @spec best_invoices_for_transactions([Transaction.t()], Scope.t()) :: %{
+          Ash.UUID.t() => {struct(), float()}
+        }
+  def best_invoices_for_transactions(transactions, scope) do
+    transactions
+    |> Enum.group_by(&invoice_side/1)
+    |> Enum.flat_map(fn
+      {nil, _transactions} ->
         []
+
+      {side, transactions} ->
+        for invoice <- pending_invoices(side, scope),
+            {transaction, score} <- score_and_sort_transactions(invoice, transactions),
+            do: {transaction.id, {invoice, score}}
+    end)
+    |> Enum.group_by(fn {id, _match} -> id end, fn {_id, match} -> match end)
+    |> Map.new(fn {id, matches} ->
+      {id, Enum.max_by(matches, fn {_invoice, score} -> score end)}
+    end)
+  end
+
+  defp pending_invoices_for_transaction(transaction, scope) do
+    case invoice_side(transaction) do
+      nil -> []
+      side -> pending_invoices(side, scope)
     end
+  end
+
+  defp invoice_side(transaction) do
+    case Decimal.compare(Money.to_decimal(transaction.amount), Decimal.new(0)) do
+      :lt -> :cost
+      :gt -> :sales
+      :eq -> nil
+    end
+  end
+
+  defp pending_invoices(:cost, scope) do
+    Invoicing.list_cost_invoices!(%{reconciliation: :pending, merge_corrections: true},
+      load: [:effective_amount, :effective_seller_display_name],
+      scope: scope
+    )
+  end
+
+  defp pending_invoices(:sales, scope) do
+    Invoicing.list_sales_invoices!(
+      %{reconciliation: :pending, kind: :vat, submission: :confirmed},
+      load: [:effective_amount, :buyer_display_name_label, sales_invoice_items: [:name]],
+      scope: scope
+    )
   end
 
   @doc """

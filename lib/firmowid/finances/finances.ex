@@ -191,6 +191,7 @@ defmodule Firmowid.Finances do
       define :disconnect_transaction_salary, action: :disconnect_salary
       define :suggest_transaction_salaries, action: :salary_suggestions, args: [:transaction_id]
       define :suggest_transaction_invoices, action: :invoice_suggestions, args: [:transaction_id]
+      define :list_strong_transaction_matches, action: :strong_matches, args: [:transaction_ids]
       define :connect_transaction_delegation, action: :connect_delegation
       define :disconnect_transaction_delegation, action: :disconnect_delegation
 

@@ -339,6 +339,13 @@ msgstr[1] ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
+msgid "%{count} to confirm"
+msgid_plural "%{count} to confirm"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
 msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
 msgstr[0] ""
@@ -11110,6 +11117,11 @@ msgstr ""
 msgid "Street, building and/or flat number, postal code, city"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "Strong match: %{match}. Open to confirm."
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
@@ -12678,6 +12690,11 @@ msgstr ""
 #: lib/firmowid_web/auth/views/confirm_email.ex
 #, elixir-autogen, elixir-format
 msgid "To change your email address, click the button below."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "To confirm"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/confirm_email.ex
@@ -14556,6 +14573,11 @@ msgstr ""
 msgid "breakfasts: %{breakfasts}, lunches: %{lunches}, dinners: %{dinners}"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "business trip %{reference} of %{employee}"
+msgstr ""
+
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "can't be blank"
@@ -14786,6 +14808,11 @@ msgstr ""
 #: lib/firmowid/invoicing/validations/validate_vat_rate.ex
 #, elixir-autogen, elixir-format
 msgid "invalid VAT rate"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "invoice %{number} from %{counterparty}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -15145,6 +15172,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/delegations_tab.ex
 #, elixir-autogen, elixir-format
 msgid "requires signature"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "salary of %{employee} for %{month}"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex

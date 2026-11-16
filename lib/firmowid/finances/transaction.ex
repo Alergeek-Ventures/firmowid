@@ -234,6 +234,16 @@ defmodule Firmowid.Finances.Transaction do
       run Firmowid.Finances.Transaction.Actions.DelegationSuggestions
     end
 
+    action :strong_matches, {:array, Types.StrongMatch} do
+      description "List the confident suggestion, an invoice, a salary or a business trip, of each given pending transaction that has one."
+
+      argument :transaction_ids, {:array, :uuid},
+        allow_nil?: false,
+        description: "IDs of the transactions to check; matched and skipped ones are left out."
+
+      run Firmowid.Finances.Transaction.Actions.StrongMatches
+    end
+
     action :invoice_suggestions, {:array, Types.InvoiceSuggestion} do
       description "Score unresolved invoices against a pending transaction, best match first."
 

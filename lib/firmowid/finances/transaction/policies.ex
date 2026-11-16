@@ -25,7 +25,7 @@ defmodule Firmowid.Finances.Transaction.Policies do
       authorize_if always()
     end
 
-    policy [action(:invoice_suggestions), {AtLeastRole, role: :invoicing}] do
+    policy [action([:invoice_suggestions, :strong_matches]), {AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 
