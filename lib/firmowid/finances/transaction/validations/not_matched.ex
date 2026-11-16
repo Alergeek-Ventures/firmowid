@@ -1,5 +1,5 @@
 defmodule Firmowid.Finances.Transaction.Validations.NotMatched do
-  @moduledoc "Rejects changes to a transaction already linked to an invoice or a salary."
+  @moduledoc "Rejects changes to a transaction already linked to an invoice, a salary or a business trip."
   use Ash.Resource.Validation
   use Gettext, backend: Firmowid.Gettext
 
@@ -13,7 +13,8 @@ defmodule Firmowid.Finances.Transaction.Validations.NotMatched do
       {:error,
        InvalidChanges.exception(
          fields: [:skip_invoicing],
-         message: gettext_noop("The transaction is already linked to an invoice or a salary. Unlink it first.")
+         message:
+           gettext_noop("The transaction is already linked to an invoice, a salary or a business trip. Unlink it first.")
        )}
     else
       :ok

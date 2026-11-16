@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   @moduledoc """
-  Transaction details page with source account information and invoice matching.
+  Transaction details page with source account information and matching to invoices, salaries and business trips.
   """
 
   use FirmowidWeb, :live_view
@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Payroll
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
+  alias FirmowidWeb.Invoicing.Transactions.Components.DelegationComponents
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
   alias FirmowidWeb.Invoicing.Transactions.Components.ShowComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -27,6 +28,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     :direction,
     :signed_amount,
     :has_salary?,
+    :has_delegation?,
     :reconciliation_status,
     :counterparty_display_name,
     cost_invoices: [
@@ -59,7 +61,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
      |> assign(:no_padding, true)
      |> assign(:page_title, gettext("Transaction"))
      |> assign(:return_to, nil)
-     |> assign(:salary_admin?, socket.assigns.current_user.member.role == :admin)}
+     |> assign(:admin?, socket.assigns.current_user.member.role == :admin)}
   end
 
   @impl true
@@ -90,6 +92,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
           <.live_component
             :if={
               flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary? and
+                not @transaction.has_delegation? and
                 @transaction.reconciliation_status in [:matched, :skipped]
             }
             module={FirmowidWeb.Analysis.Components.EntryCategories}
@@ -104,8 +107,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 transaction={@transaction}
                 expected_amount={@expected_salary_amount}
                 payout_variant={@salary_payout_variant}
-                admin?={@salary_admin?}
+                admin?={@admin?}
               />
+            <% @transaction.has_delegation? -> %>
+              <DelegationComponents.confirmation transaction={@transaction} admin?={@admin?} />
             <% @transaction.reconciliation_status == :skipped -> %>
               <ShowComponents.transaction_skipped_view can_write={
                 Ash.can?({Transaction, :set_skip_invoicing}, @current_user)
@@ -116,10 +121,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
               <div class="flex flex-col gap-18">
                 <ShowComponents.invoice_suggestions suggestions={@invoice_suggestions} />
                 <SalaryComponents.suggestions suggestions={@salary_suggestions} />
+                <DelegationComponents.suggestions suggestions={@delegation_suggestions} />
                 <ShowComponents.empty_state
                   transaction={@transaction}
                   can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
-                  show_no_recommendations={@invoice_suggestions == [] and @salary_suggestions == []}
+                  show_no_recommendations={
+                    @invoice_suggestions == [] and @salary_suggestions == [] and
+                      @delegation_suggestions == []
+                  }
                 />
               </div>
           <% end %>
@@ -230,6 +239,43 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     end
   end
 
+  def handle_event("connect_delegation", %{"delegation_id" => delegation_id}, socket) do
+    result =
+      Finances.connect_transaction_delegation(
+        socket.assigns.transaction,
+        %{delegation_id: delegation_id},
+        scope: socket.assigns.ash_scope
+      )
+
+    case result do
+      {:ok, transaction} ->
+        {:noreply, assign_transaction(socket, reload_transaction(transaction.id, socket.assigns.ash_scope))}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Could not link this transaction to the business trip.")
+         )}
+    end
+  end
+
+  def handle_event("disconnect_delegation", _params, socket) do
+    case Finances.disconnect_transaction_delegation(socket.assigns.transaction, %{}, scope: socket.assigns.ash_scope) do
+      {:ok, transaction} ->
+        {:noreply, assign_transaction(socket, reload_transaction(transaction.id, socket.assigns.ash_scope))}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Could not unlink this transaction from the business trip.")
+         )}
+    end
+  end
+
   @impl true
   def handle_info(
         %Broadcast{payload: %Notification{resource: Transaction, data: %{id: id}}},
@@ -260,7 +306,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
   defp reload_transaction(id, scope) do
     Finances.get_transaction!(id,
-      load: [{:salary_user, :member} | @transaction_loads],
+      load: [{:salary_user, :member}, {:delegation, member: :user} | @transaction_loads],
       scope: scope
     )
   end
@@ -269,7 +315,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     scope = socket.assigns.ash_scope
 
     estimate =
-      if socket.assigns.salary_admin? and transaction.has_salary? do
+      if socket.assigns.admin? and transaction.has_salary? do
         salary =
           %{
             user_id: transaction.salary_user_id,
@@ -293,11 +339,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
         end
       end
 
-    salary_suggestions =
-      if socket.assigns.salary_admin? do
-        Finances.suggest_transaction_salaries!(transaction.id, scope: scope).suggestions
+    {salary_suggestions, delegation_suggestions} =
+      if socket.assigns.admin? do
+        {Finances.suggest_transaction_salaries!(transaction.id, scope: scope).suggestions,
+         Finances.suggest_transaction_delegations!(transaction.id, scope: scope)}
       else
-        []
+        {[], []}
       end
 
     socket
@@ -309,5 +356,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
       InvoiceMatching.get_potential_invoices_for_transaction(transaction, scope)
     )
     |> assign(:salary_suggestions, salary_suggestions)
+    |> assign(:delegation_suggestions, delegation_suggestions)
   end
 end

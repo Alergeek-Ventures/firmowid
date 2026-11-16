@@ -90,7 +90,7 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
     do: gettext_noop("Only an outgoing PLN transfer can pay a salary.")
 
   defp reason_message(%{reason: :transaction_matched}, _user_id, _month, _scope),
-    do: gettext_noop("The transaction is already linked to an invoice or a salary. Unlink it first.")
+    do: gettext_noop("The transaction is already linked to an invoice, a salary or a business trip. Unlink it first.")
 
   defp reason_message(%{reason: :month_out_of_range}, _user_id, _month, _scope),
     do: gettext_noop("The salary month must fall within six months before the transfer.")

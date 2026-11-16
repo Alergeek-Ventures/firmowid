@@ -10,7 +10,8 @@ defmodule Firmowid.Finances.Transaction.Calculations do
               :atom,
               expr(
                 cond do
-                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? ->
+                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? or
+                      has_delegation? ->
                     :matched
 
                   skip_invoicing == true ->
@@ -23,7 +24,7 @@ defmodule Firmowid.Finances.Transaction.Calculations do
       public? true
       constraints one_of: [:pending, :matched, :skipped]
 
-      description "Transaction reconciliation state derived from invoice or salary links and the skip flag."
+      description "Transaction reconciliation state derived from invoice, salary or delegation links and the skip flag."
     end
 
     calculate :invoice_matchable?,
@@ -39,6 +40,12 @@ defmodule Firmowid.Finances.Transaction.Calculations do
       public? true
 
       description "Whether the transaction is settled by a monthly salary assignment."
+    end
+
+    calculate :has_delegation?, :boolean, expr(not is_nil(delegation_id)) do
+      public? true
+
+      description "Whether the transaction is an advance, settlement payout or returned advance of a delegation."
     end
 
     calculate :date, :date, expr(booking_date)

@@ -1169,6 +1169,7 @@ msgstr ""
 msgid "Address is required"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Advance"
@@ -1277,6 +1278,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/bank_transfer_modal.ex
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -2104,6 +2106,7 @@ msgid "Business address"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegations_list.ex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #, elixir-autogen, elixir-format
 msgctxt "business trips table"
 msgid "Business trip"
@@ -2905,6 +2908,7 @@ msgid "Completed"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
@@ -3649,6 +3653,11 @@ msgstr ""
 msgid "Could not link this transaction to a salary."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/views/show.ex
+#, elixir-autogen, elixir-format
+msgid "Could not link this transaction to the business trip."
+msgstr ""
+
 #: lib/firmowid/invoicing/changes/validate_transaction_availability.ex
 #: lib/firmowid_web/invoicing/transactions/views/show.ex
 #, elixir-autogen, elixir-format
@@ -3827,6 +3836,11 @@ msgstr[1] ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
 #, elixir-autogen, elixir-format
 msgid "Could not unlink the transaction."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/views/show.ex
+#, elixir-autogen, elixir-format
+msgid "Could not unlink this transaction from the business trip."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/views/show.ex
@@ -4089,6 +4103,7 @@ msgid "Date payment received"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegations_list.ex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #, elixir-autogen, elixir-format
 msgctxt "business trips table"
 msgid "Dates"
@@ -4297,6 +4312,7 @@ msgstr ""
 msgid "Didn't find your question?"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Difference from transfer: %{amount}"
@@ -4823,6 +4839,7 @@ msgid "Email, password, company name. Start with the free plan. No card required
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
@@ -8444,6 +8461,11 @@ msgstr ""
 msgid "Only an administrator can view invitations."
 msgstr ""
 
+#: lib/firmowid/finances/changes/connect_delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Only an approved delegation of this company can be linked."
+msgstr ""
+
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "Only an outgoing PLN transfer can pay a salary."
@@ -9191,6 +9213,11 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
+#, elixir-autogen, elixir-format
+msgid "Potential business trips for this transaction"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
@@ -9855,6 +9882,11 @@ msgstr ""
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Return to your account"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
+#, elixir-autogen, elixir-format
+msgid "Returned advance"
 msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
@@ -10571,6 +10603,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Settlement number"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement payout"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -12190,9 +12227,10 @@ msgstr ""
 #: lib/firmowid/finances/changes/connect_salary.ex
 #: lib/firmowid/finances/transaction/validations/not_matched.ex
 #, elixir-autogen, elixir-format
-msgid "The transaction is already linked to an invoice or a salary. Unlink it first."
+msgid "The transaction is already linked to an invoice, a salary or a business trip. Unlink it first."
 msgstr ""
 
+#: lib/firmowid/finances/changes/connect_delegation.ex
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "The transaction is skipped. Restore it for matching first."
@@ -12211,6 +12249,11 @@ msgstr ""
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
+#, elixir-autogen, elixir-format
+msgid "The transfer title names this business trip"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
@@ -12605,6 +12648,7 @@ msgid "Timesheet change request, %{month}"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/timetracker/controllers/csv.ex
 #, elixir-autogen, elixir-format
 msgid "Title"
@@ -12871,6 +12915,7 @@ msgstr ""
 msgid "Transfer title"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Transferred amount"
@@ -13049,6 +13094,11 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Unknown user role."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/delegation_components.ex
+#, elixir-autogen, elixir-format
+msgid "Unlink business trip"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
