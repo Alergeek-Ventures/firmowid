@@ -12,6 +12,22 @@ let
     nodejs-slim = pkgs.nodejs-slim_26;
   };
 
+  # The pinned nixpkgs ships Betterleaks 1.9.0, whose brotli is affected by GO-2026-6888.
+  # Keep in sync with the secret-scan image in elixir-build-and-test.yml.
+  # https://github.com/betterleaks/betterleaks/releases/tag/v1.10.1
+  betterleaks = pkgs.betterleaks.overrideAttrs (
+    finalAttrs: _: {
+      version = "1.10.1";
+      src = pkgs.fetchFromGitHub {
+        owner = "betterleaks";
+        repo = "betterleaks";
+        tag = "v${finalAttrs.version}";
+        hash = "sha256-27u8JVp6KRfY9ZFTdN7dSooW4nt6dCDhfjFSU3YKajE=";
+      };
+      vendorHash = "sha256-ro62XSWPEXLWxbs2iLZahlcZOaEYCLUZerat0PPtg34=";
+    }
+  );
+
   accent-cli-src = pkgs.fetchgit {
     url = "https://github.com/mirego/accent.git";
     rev = "43872af8578df4121e39ea17c679b5eebb08f3f4";

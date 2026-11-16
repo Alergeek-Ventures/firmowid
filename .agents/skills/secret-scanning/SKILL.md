@@ -10,7 +10,7 @@ description: Use when adding or moving credential-like literals (passwords, toke
   before pushing a change that adds or moves credential-like literals:
 
   ```bash
-  betterleaks git . --validation=false --redact --no-banner --no-color
+  betterleaks git . --config .betterleaks.toml --validation=false --redact --no-banner --no-color
   ```
 
   `betterleaks` comes from the devenv shell.
