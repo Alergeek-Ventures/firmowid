@@ -262,7 +262,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   attr :vat_id, :map,
     required: true,
-    doc: "EU VAT number status from `vat_id_status/1`, nil when not applicable"
+    doc: "EU VAT number or NIP status from `vat_id_status/1`, nil when not applicable"
 
   attr :params, :map, default: %{}
   attr :stats, :map, required: true
@@ -411,10 +411,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     """
   end
 
-  # The country format is checked live; VIES by VatIdCheckWorker, whose result is
-  # stored on the counterparty. A number that breaks its country format is never
-  # sent to VIES, so its VIES result is not shown. Archived counterparties are not
-  # checked, so they show no status.
+  # An EU VAT number's country format is checked live; VIES by VatIdCheckWorker,
+  # whose result is stored on the counterparty. A number that breaks its country
+  # format is never sent to VIES, so its VIES result is not shown. Archived
+  # counterparties are not checked, so they show no status.
   defp vat_id_status(%{tax_id_type: :eu_vat, tax_id: tax_id, archived_at: nil} = counterparty)
        when tax_id not in [nil, ""] do
     case EuVatNumber.check(counterparty.country, tax_id) do
@@ -423,7 +423,54 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     end
   end
 
+  # A NIP passed its checksum on save; the registers' answer comes from VatIdCheckWorker.
+  defp vat_id_status(%{tax_id_type: :nip, tax_id: tax_id, archived_at: nil} = counterparty) when tax_id not in [nil, ""],
+    do: nip_status(counterparty)
+
   defp vat_id_status(_counterparty), do: nil
+
+  defp nip_status(%{vat_id_status: :active, vat_id_checked_at: checked_at}),
+    do: registry_status(:active, "success", pgettext("NIP status", "Active VAT payer"), checked_at)
+
+  defp nip_status(%{vat_id_status: :exempt, vat_id_checked_at: checked_at}),
+    do: registry_status(:exempt, "success", pgettext("NIP status", "VAT-exempt"), checked_at)
+
+  defp nip_status(%{vat_id_status: :no_vat, vat_id_checked_at: checked_at}),
+    do: %{
+      registry_status(:no_vat, "neutral", pgettext("NIP status", "Not a VAT payer"), checked_at)
+      | meta: gettext("Operating business in REGON, checked on %{date}", date: format_date(checked_at))
+    }
+
+  defp nip_status(%{vat_id_status: :closed, vat_id_checked_at: checked_at}),
+    do: %{
+      registry_status(:closed, "danger", pgettext("NIP status", "Business closed"), checked_at)
+      | problem:
+          gettext(
+            "REGON shows this business as closed or its NIP as revoked. Before you issue the next invoice, confirm the details with the counterparty."
+          )
+    }
+
+  defp nip_status(%{vat_id_status: :unknown, vat_id_checked_at: checked_at}),
+    do: %{
+      registry_status(:unknown, "danger", pgettext("NIP status", "Not in registers"), checked_at)
+      | problem: gettext("Neither the VAT white list nor REGON knows this NIP. Check the number with the counterparty."),
+        fix?: true
+    }
+
+  # Not checked yet: the check queued on save is running, or a register did not
+  # answer and the next daily run tries again.
+  defp nip_status(_counterparty),
+    do: %{
+      result: :pending,
+      tone: "neutral",
+      badge: pgettext("NIP status", "Checking in registers"),
+      meta: nil,
+      problem: nil,
+      fix?: false
+    }
+
+  defp registry_status(result, tone, badge, checked_at),
+    do: %{result: result, tone: tone, badge: badge, meta: checked_on(checked_at), problem: nil, fix?: false}
 
   defp vies_status(%{vat_id_status: :active, vat_id_checked_at: checked_at}),
     do: %{

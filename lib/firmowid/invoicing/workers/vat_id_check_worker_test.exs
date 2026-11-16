@@ -11,7 +11,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
   alias Firmowid.Scope
   alias FirmowidWeb.Inbox.Utilities.Queue
 
-  # Synthetic numbers; Firmowid.Test.Support.ViesApiStub decides the VIES answers.
+  # Synthetic numbers; ViesApiStub and VatStatusApiStub decide the registers' answers.
   defp counterparty!(org_id, country, tax_id) do
     Ash.Seed.seed!(Counterparty, %{
       organization_id: org_id,
@@ -23,7 +23,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
     })
   end
 
-  test "stores each EU VAT number's status and lists the rejected ones in the inbox" do
+  test "stores each tax ID's status and lists the rejected ones in the inbox" do
     admin = admin_fixture()
     org_id = admin.member.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
@@ -46,7 +46,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
              active.id => :active,
              inactive.id => :inactive,
              vies_down.id => nil,
-             polish.id => nil
+             polish.id => :active
            }
 
     organization = Core.get_organization!(org_id, scope: scope)

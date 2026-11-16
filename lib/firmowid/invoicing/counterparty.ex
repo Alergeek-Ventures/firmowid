@@ -40,6 +40,8 @@ defmodule Firmowid.Invoicing.Counterparty do
 
   require Resource
 
+  @vat_id_statuses [:active, :inactive, :invalid, :exempt, :no_vat, :closed, :unknown]
+
   postgres do
     table "counterparties"
     repo Firmowid.Repo
@@ -82,11 +84,11 @@ defmodule Firmowid.Invoicing.Counterparty do
       end
 
       argument :vat_id_statuses, {:array, :atom},
-        constraints: [items: [one_of: [:active, :inactive, :invalid]]],
-        description: "Only counterparties whose last EU VAT number check gave one of these results."
+        constraints: [items: [one_of: @vat_id_statuses]],
+        description: "Only counterparties whose last tax ID check gave one of these results."
 
       argument :vat_id_due_before, :utc_datetime_usec,
-        description: "Only counterparties with an EU VAT number never checked or last checked before this time."
+        description: "Only counterparties with an EU VAT number or NIP never checked or last checked before this time."
 
       argument :website_unchecked, :boolean,
         default: false,
@@ -122,7 +124,7 @@ defmodule Firmowid.Invoicing.Counterparty do
       prepare build(
                 filter:
                   expr(
-                    tax_id_type == :eu_vat and not is_nil(tax_id) and
+                    tax_id_type in [:eu_vat, :nip] and not is_nil(tax_id) and
                       (is_nil(vat_id_checked_at) or vat_id_checked_at < ^arg(:vat_id_due_before))
                   )
               ) do
@@ -243,7 +245,7 @@ defmodule Firmowid.Invoicing.Counterparty do
     end
 
     update :record_vat_id_check do
-      description "Record the result of the periodic EU VAT number check."
+      description "Record the result of the periodic EU VAT number or NIP check."
       accept [:vat_id_status, :vat_id_checked_at]
     end
 
@@ -345,8 +347,8 @@ defmodule Firmowid.Invoicing.Counterparty do
 
     attribute :vat_id_status, :atom,
       public?: true,
-      constraints: [one_of: [:active, :inactive, :invalid]],
-      description: "Last EU VAT number check: active or inactive in VIES, or invalid for its country's rules."
+      constraints: [one_of: @vat_id_statuses],
+      description: "Last check of the EU VAT number (`EuVatReview`) or NIP (`NipRegistration`)."
 
     attribute :vat_id_checked_at, :utc_datetime_usec, public?: true
 
