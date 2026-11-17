@@ -70,9 +70,11 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 /* ---------- hero ---------- */
 .hero{padding:34px 0 64px}
 .hero__copy{display:flex;flex-direction:column;align-items:center;text-align:center}
-.badge{position:relative;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 18px 0 10px;font-size:13px;font-weight:500;border-radius:25px}
-.badge{border:1.5px solid var(--r400);background:var(--r50,#FEF9F7)}
-.badge em{font-style:normal;color:var(--r700)}
+.hero__meta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 22px;font-size:14px;font-weight:500;color:var(--g700)}
+.hero__meta a,.hero__meta span{display:inline-flex;align-items:center;gap:8px}
+.hero__meta a:hover{color:var(--r700)}
+.hero__meta span{padding-left:22px;border-left:1px solid var(--g300)}
+.hero__meta img{width:20px;height:20px}
 .hero h1{margin-top:26px;font-size:clamp(44px,8vw,104px);line-height:1;letter-spacing:-.04em}
 .hero__sub{margin-top:24px;max-width:44ch;font-size:clamp(17px,1.7vw,21px);line-height:1.45;color:var(--g700)}
 .hero__cta{margin-top:30px}
