@@ -60,11 +60,9 @@ defmodule FirmowidWeb.Core.Endpoint do
     gzip: false,
     only: FirmowidWeb.static_paths()
 
+  # Tidewave runs code in this app, so it answers only requests from this machine.
   if Code.ensure_loaded?(Tidewave) do
-    # Remote development access is protected by the dashboard's private tailnet.
-    # Keep Tidewave's origin validation and never enable remote access outside dev.
-    plug Tidewave,
-      allow_remote_access: Application.compile_env(:firmowid, :tidewave_remote_access, false)
+    plug Tidewave
   end
 
   # Code reloading can be explicitly enabled under the
