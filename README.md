@@ -52,19 +52,19 @@ z `main`.
     <td width="50%" valign="top">
       <strong>Bank i rozliczenia</strong><br>
       Przelewy z Open Bankingu parowane z fakturami: widać, co jest opłacone, a co czeka na dopasowanie.<br><br>
-      <img src=".github/readme/dashboard.png" alt="Pulpit fakturowania z transakcjami do dopasowania">
+      <img src=".github/readme/transactions.png" alt="Lista transakcji z banku ze statusem dopasowania do faktur">
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <strong>Analiza</strong><br>
       Przychody, koszty i wynik netto miesiąc po miesiącu, także w podziale na projekty.<br><br>
-      <img src=".github/readme/analysis.png" alt="Pulpit analizy z wynikiem netto według miesięcy">
+      <img src=".github/readme/analysis.png" alt="Trendy w analizie: wynik firmy miesiąc po miesiącu">
     </td>
     <td width="50%" valign="top">
       <strong>Czas pracy i zespół</strong><br>
       Ewidencja czasu w projektach (Czasośledź), urlopy, delegacje i płace pracowników.<br><br>
-      <img src=".github/readme/timetracker.png" alt="Czasośledź z dzisiejszymi sesjami pracy">
+      <img src=".github/readme/timetracker.png" alt="Czasośledź z sesjami pracy w projektach">
     </td>
   </tr>
 </table>
