@@ -88,6 +88,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        fresh: MapSet.new(),
        query: "",
        expanded: MapSet.new(),
+       shortcuts: [],
        session: Map.get(scenario, :session),
        last_session: Map.get(scenario, :last_session)
      )}
