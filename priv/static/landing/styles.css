@@ -430,6 +430,7 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 .av__logo img{width:44px;height:44px}
 .av p{font-size:16px;line-height:1.5;color:var(--g700)}
 .av p b{color:var(--ink)}
+.av p a{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--r400)}.av p a:hover{color:var(--r700)}
 .team figcaption small{display:block;margin-top:8px;font-size:13px;line-height:1.4;color:var(--g700)}
 .faq{padding-top:0}
 .faq__grid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);gap:48px}
