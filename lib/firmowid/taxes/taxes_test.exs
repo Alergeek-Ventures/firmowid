@@ -156,6 +156,40 @@ defmodule Firmowid.TaxesTest do
 
       refute Map.has_key?(suggestions, :cit_advances)
     end
+
+    test "reads periods that banks write out in the title", %{org_id: org_id, scope: scope} do
+      bank_account = bank_account_fixture_for_organization!(org_id)
+
+      for title <- [
+            "CIT-8 K 02 2026",
+            "CIT-8 K 03 2026",
+            "VAT M 09 2026",
+            "PIT-4 M 09 2026",
+            "urząd skarbowy, CIT-8 04 K - NIP 1234567890 - Kwartał 2025"
+          ] do
+        Ash.Seed.seed!(Transaction, %{
+          organization_id: org_id,
+          bank_account_id: bank_account.id,
+          creditor_account: @tax_account,
+          remittance_information_unstructured: title,
+          amount: Money.new(:PLN, "-500"),
+          booking_date: ~D[2026-10-20],
+          value_date: ~D[2026-10-20]
+        })
+      end
+
+      assert [
+               %{setting: :vat_period, value: :monthly, year: 2026, transfers: 1},
+               %{setting: :cit_advances, value: :quarterly, year: 2026, transfers: 2}
+             ] =
+               Enum.sort_by(
+                 Taxes.suggest_tax_settings!(2026, scope: scope),
+                 &(&1.setting != :vat_period)
+               )
+
+      assert [%{setting: :cit_advances, value: :quarterly, year: 2025, transfers: 1}] =
+               Taxes.suggest_tax_settings!(2025, scope: scope)
+    end
   end
 
   describe "pending_suggestions/3" do
