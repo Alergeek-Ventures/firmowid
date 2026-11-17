@@ -236,5 +236,31 @@
     cmpf.addEventListener('input', calc);
     cmpf.addEventListener('submit', e => e.preventDefault());
     calc();
+
+    // one question at a time: later steps stay blurred until the earlier one is answered
+    const steps = $$('.step', cmpf), out = $('#cmpout');
+    const things = n => n === 1 ? '1 rzecz' : n >= 2 && n <= 4 ? n + ' rzeczy' : n + ' rzeczy';
+    const summary = [
+      () => $('#q-team-out').textContent,
+      () => things($$('.opt > input:checked', cmpf).length),
+      () => $('#q-h-out').textContent + ' tygodniowo',
+    ];
+    let reached = 0;
+    const openStep = n => {
+      reached = Math.max(reached, n);
+      steps.forEach((s, i) => {
+        s.classList.toggle('is-open', i === n);
+        s.classList.toggle('is-locked', i > reached);
+        s.classList.toggle('is-done', i < reached || (i <= reached && i !== n));
+        $('.step__sum', s).textContent = i !== n && i <= reached ? summary[i]() : '';
+      });
+      if (reached === steps.length - 1) out.classList.remove('is-locked');
+    };
+    steps.forEach((s, i) => {
+      const next = $('.step__next', s);
+      if (next) next.addEventListener('click', () => openStep(i + 1));
+      $('legend', s).addEventListener('click', () => { if (i <= reached) openStep(i); });
+    });
+    openStep(0);
   }
 })();
