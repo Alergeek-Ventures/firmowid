@@ -2067,6 +2067,11 @@ msgstr ""
 msgid "Breakfasts"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Bring back"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
 msgid "Built by entrepreneurs for entrepreneurs."
@@ -2848,6 +2853,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Come back later"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Comes back on %{date}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5945,6 +5955,16 @@ msgstr ""
 msgid "Health insurance"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Hidden for everyone in the company."
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Hidden for good"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Hide"
@@ -5953,6 +5973,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
 #, elixir-autogen, elixir-format
 msgid "Hide description"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Hide for good"
 msgstr ""
 
 #: lib/firmowid_web/management/views/project.html.heex
@@ -9332,6 +9357,32 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Purpose:"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put aside"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "inbox section"
+msgid "Put aside"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put aside for 30 days"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put aside for 7 days"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put aside for 90 days"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex

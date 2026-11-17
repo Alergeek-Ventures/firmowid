@@ -11,6 +11,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   holds while the page stays open, live updates included, and resets when the
   layer changes. The search narrows the groups to matching items.
 
+  Any item can be put aside for the whole company, for some days or for good
+  (`Firmowid.Core.InboxSnooze`); those wait folded under the queue until they
+  come back or someone brings them back.
+
   Under the company's queue sit the actions the organization does most often
   (`FirmowidWeb.Inbox.Utilities.Shortcuts`); a cost invoice from outside KSeF
   is uploaded right from its tile.
@@ -26,6 +30,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.LeaveRequest
@@ -51,6 +56,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
        # The page sets its own padding (32px top and bottom, 40px at the sides).
        no_padding: true,
        items: [],
+       put_aside: [],
        shortcuts: [],
        fresh: MapSet.new(),
        query: "",
@@ -175,17 +181,26 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           )
       end
 
-    assign(socket,
-      layer: layer,
-      today: today,
-      items: Queue.items(layer, scope, socket.assigns.current_org, today, taxes?: flag_enabled?(:taxes, socket.assigns)),
-      presence: Session.team_presence!(today, scope: scope)
-    )
+    socket
+    |> assign(layer: layer, today: today, presence: Session.team_presence!(today, scope: scope))
+    |> assign_items()
+  end
+
+  defp assign_items(socket) do
+    %{layer: layer, ash_scope: scope, current_org: organization, today: today} = socket.assigns
+
+    {items, put_aside} =
+      layer
+      |> Queue.items(scope, organization, today, taxes?: flag_enabled?(:taxes, socket.assigns))
+      |> Queue.split_put_aside(scope)
+
+    assign(socket, items: items, put_aside: put_aside)
   end
 
   @impl true
   def handle_event("toggle_group", %{"tier" => tier}, socket) do
-    tier = Enum.find([:urgent, :people, :personal, :books], &(Atom.to_string(&1) == tier))
+    tier =
+      Enum.find([:urgent, :people, :personal, :books, :put_aside], &(Atom.to_string(&1) == tier))
 
     expanded =
       if tier in socket.assigns.expanded,
@@ -213,6 +228,27 @@ defmodule FirmowidWeb.Inbox.Views.Index do
       end)
 
     {:noreply, CostInvoiceUpload.assign_counts(socket)}
+  end
+
+  # Without `days` the item is put aside for good.
+  def handle_event("snooze_item", %{"id" => id} = params, socket) do
+    if Enum.any?(socket.assigns.items, &(&1.id == id)),
+      do:
+        Core.snooze_inbox_item!(id, params["days"] && String.to_integer(params["days"]), scope: socket.assigns.ash_scope)
+
+    refresh_queue(socket)
+  end
+
+  def handle_event("restore_item", %{"id" => id}, socket) do
+    scope = socket.assigns.ash_scope
+
+    # Someone else may have brought it back already; the refresh shows the queue as it is.
+    case Core.get_inbox_snooze!(id, scope: scope, not_found_error?: false) do
+      nil -> :ok
+      snooze -> Core.restore_inbox_item!(snooze, scope: scope)
+    end
+
+    refresh_queue(socket)
   end
 
   def handle_event("decide_item", %{"id" => id, "decision" => action}, socket) do
@@ -338,12 +374,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   defp refresh_queue(socket) do
     send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
 
-    %{layer: layer, ash_scope: scope, current_org: organization, today: today} = socket.assigns
-
-    items =
-      Queue.items(layer, scope, organization, today, taxes?: flag_enabled?(:taxes, socket.assigns))
-
-    {:noreply, assign(socket, :items, items)}
+    {:noreply, assign_items(socket)}
   end
 
   # Reloads the page and the sidebar, which shows whether the session runs; the
@@ -482,6 +513,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               </.button>
             </div>
           </section>
+          <.put_aside :if={@put_aside != []} entries={@put_aside} expanded={:put_aside in @expanded} />
           <.shortcuts
             :if={@shortcuts != []}
             shortcuts={@shortcuts}

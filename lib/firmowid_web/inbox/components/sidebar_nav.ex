@@ -60,7 +60,13 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
       {:ok, session} = Session.get_current(scope: scope)
 
       status = %{
-        company: length(Queue.attention_items(scope, organization, taxes?: taxes?)),
+        # Items the company put aside wait without being counted.
+        company:
+          scope
+          |> Queue.attention_items(organization, taxes?: taxes?)
+          |> Queue.split_put_aside(scope)
+          |> elem(0)
+          |> length(),
         running?: session != nil
       }
 

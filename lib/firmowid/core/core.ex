@@ -136,6 +136,13 @@ defmodule Firmowid.Core do
       define :register_company, action: :register
       define :look_up_company, action: :look_up, args: [:nip]
     end
+
+    resource Firmowid.Core.InboxSnooze do
+      define :get_inbox_snooze, action: :read, get_by: [:item_id]
+      define :list_inbox_snoozes, action: :list
+      define :snooze_inbox_item, action: :snooze, args: [:item_id, :days]
+      define :restore_inbox_item, action: :restore
+    end
   end
 
   authorization do

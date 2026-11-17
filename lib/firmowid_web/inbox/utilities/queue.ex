@@ -9,6 +9,10 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   invoices; usage above the billing plan comes from `Firmowid.Billing.PlanLimits`.
   Each item links to the page where it is dealt with; pending leave requests also
   offer inline decisions.
+
+  An item's id names its record and the stage or period of its problem, as the
+  company puts items aside by id (`Firmowid.Core.InboxSnooze`): putting one stage
+  aside must not hide the next one, such as a trip's settlement after its order.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -16,6 +20,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias Firmowid.Analysis
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
+  alias Firmowid.Core
+  alias Firmowid.Core.InboxSnooze
   alias Firmowid.Core.Organization
   alias Firmowid.Core.Organization.NipCheck
   alias Firmowid.Delegations
@@ -102,6 +108,20 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   def attention_items(_scope, _organization, _opts), do: []
 
+  @doc """
+  Splits items into those to show and those the company put aside
+  (`Firmowid.Core.InboxSnooze`), each of the latter with its snooze.
+  """
+  @spec split_put_aside([item()], Ash.Scope.t()) :: {[item()], [{item(), InboxSnooze.t()}]}
+  def split_put_aside([], _scope), do: {[], []}
+
+  def split_put_aside(items, scope) do
+    snoozes = Map.new(Core.list_inbox_snoozes!(scope: scope), &{&1.item_id, &1})
+
+    {put_aside, shown} = Enum.split_with(items, &Map.has_key?(snoozes, &1.id))
+    {shown, Enum.map(put_aside, &{&1, Map.fetch!(snoozes, &1.id)})}
+  end
+
   @doc "Groups items by tier, keeping tier order."
   @spec by_tier([item()]) :: [{tier(), [item()]}]
   def by_tier(items) do
@@ -139,7 +159,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       [limited | _others] ->
         [
           %{
-            id: "plan-limit",
+            id: "plan-limit-#{organization.plan_limit_decision_on}",
             tier: :urgent,
             icon: "gauge",
             title: gettext("Above the %{plan} plan", plan: Worksheet.plan_label(plan)),
@@ -162,7 +182,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       {:ok, %{status: status}} when status in [:disconnected, :expired] ->
         [
           %{
-            id: "ksef",
+            id: "ksef-#{status}",
             tier: :urgent,
             icon: "unplug",
             title:
@@ -202,6 +222,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       is_nil(tax_year) ->
         [
           tax_profile_item(
+            "tax-profile-#{year}-missing",
             gettext("Fill in taxes and ZUS for %{year}", year: year),
             gettext(
               "Without the legal form and how the company is taxed we cannot calculate the payments to the tax office and ZUS."
@@ -216,6 +237,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       |> Enum.any?() ->
         [
           tax_profile_item(
+            "tax-profile-#{year}-suggestions",
             gettext("Confirm taxes and ZUS for %{year}", year: year),
             gettext("New transactions suggest different settings than the saved ones."),
             gettext("Check")
@@ -227,9 +249,9 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     end
   end
 
-  defp tax_profile_item(title, context, action) do
+  defp tax_profile_item(id, title, context, action) do
     %{
-      id: "tax-profile",
+      id: id,
       tier: :urgent,
       icon: "clipboard-list",
       title: title,
@@ -268,7 +290,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     |> Invoicing.list_counterparties!(scope: scope, load: [:display_label])
     |> Enum.map(fn counterparty ->
       %{
-        id: "vat-id-#{counterparty.id}",
+        id: "vat-id-#{counterparty.id}-#{counterparty.vat_id_status}",
         tier: :urgent,
         icon: "id-card",
         title: vat_id_title(counterparty),
@@ -422,7 +444,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     |> Delegations.list_delegations!(scope: scope, load: [member: [:display_name]])
     |> Enum.map(fn trip ->
       %{
-        id: "delegation-#{trip.id}",
+        id: "delegation-#{trip.id}-#{trip.status}",
         tier: :people,
         icon: "plane",
         title: delegation_title(trip),
@@ -449,7 +471,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     # The trip's dates lead the meta line, where company items name the person.
     Enum.map(finished ++ unsigned, fn trip ->
       %{
-        id: "delegation-#{trip.id}",
+        id: "delegation-#{trip.id}-#{trip.status}",
         tier: :personal,
         icon: "plane",
         title: gettext("Business trip settlement: %{title}", title: trip.title),
