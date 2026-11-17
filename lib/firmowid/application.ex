@@ -43,7 +43,6 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :sidebar_status}, id: :sidebar_status_cache),
         Supervisor.child_spec({Cachex, name: :feature_flags}, id: :feature_flags_cache),
         Firmowid.Vault,
-        Gusex.SessionCache,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
         {AshAuthentication.Supervisor, otp_app: :firmowid},
         {AshAuthentication.Oauth2Server.Supervisor, [otp_app: :firmowid]}

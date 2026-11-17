@@ -2204,6 +2204,21 @@ msgstr ""
 msgid "Buyer type"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "CEIDG showed the business with NIP %{number} as deregistered on %{date}."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "CEIDG shows this business as deregistered. Before you issue the next invoice, confirm the details with the counterparty."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#, elixir-autogen, elixir-format
+msgid "CEIDG shows this business as deregistered. Confirm the details with the buyer before you issue the invoice."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "CEO of a television production company"
@@ -7728,12 +7743,12 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
-msgid "Neither the VAT white list nor REGON knows this NIP. Check the number with the counterparty."
+msgid "Neither the VAT white list nor CEIDG knows this NIP. Check the number with the counterparty."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
 #, elixir-autogen, elixir-format
-msgid "Neither the VAT white list nor REGON knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
+msgid "Neither the VAT white list nor CEIDG knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -8635,11 +8650,6 @@ msgstr ""
 msgid "Open the view"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty.ex
-#, elixir-autogen, elixir-format
-msgid "Operating business in REGON, checked on %{date}"
-msgstr ""
-
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Optional, but it helps us a lot."
@@ -9538,21 +9548,6 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "Questions for the assistant"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "REGON showed the business with NIP %{number} as closed on %{date}."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty.ex
-#, elixir-autogen, elixir-format
-msgid "REGON shows this business as closed or its NIP as revoked. Before you issue the next invoice, confirm the details with the counterparty."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
-#, elixir-autogen, elixir-format
-msgid "REGON shows this business as closed or its NIP as revoked. Confirm the details with the buyer before you issue the invoice."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_details.ex
