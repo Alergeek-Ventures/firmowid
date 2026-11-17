@@ -45,52 +45,27 @@
     </div>
     <div class="tabs reveal" id="tabs">
       <div class="tabs__nav" role="tablist">
-        <button role="tab" class="tab on" data-i="0" id="tab-0" aria-controls="panel-0" aria-selected="true"><b>Ile zostało z&nbsp;października?</b><small>Analiza · Podsumowanie</small><i></i></button>
-        <button role="tab" class="tab" data-i="1" id="tab-1" aria-controls="panel-1" aria-selected="false"><b>Który miesiąc był na minusie?</b><small>Analiza · Trendy</small><i></i></button>
-        <button role="tab" class="tab" data-i="2" id="tab-2" aria-controls="panel-2" aria-selected="false"><b>Czy ten projekt się opłaca?</b><small>Trendy · jeden projekt</small><i></i></button>
-        <button role="tab" class="tab" data-i="3" id="tab-3" aria-controls="panel-3" aria-selected="false"><b>Kto jeszcze nie zapłacił?</b><small>Skrzynka · Księgowość</small><i></i></button>
+        <button role="tab" class="tab on" data-i="0" id="tab-0" aria-controls="panel-0" aria-selected="true"><b>Ile zostało z&nbsp;października?</b><i></i></button>
+        <button role="tab" class="tab" data-i="1" id="tab-1" aria-controls="panel-1" aria-selected="false"><b>Który miesiąc był na minusie?</b><i></i></button>
+        <button role="tab" class="tab" data-i="2" id="tab-2" aria-controls="panel-2" aria-selected="false"><b>Czy ten projekt się opłaca?</b><i></i></button>
+        <button role="tab" class="tab" data-i="3" id="tab-3" aria-controls="panel-3" aria-selected="false"><b>Kto jeszcze nie zapłacił?</b><i></i></button>
       </div>
 
       <div class="app" aria-label="Poglądowy widok aplikacji">
-        <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6.5 1.5L10 19z"/></svg>
-        <aside class="app__side">
-          <span class="app__logo">Firmowid</span>
-          <span class="app__switch"><b>Firma</b><span>Ty</span></span>
-          <ul>
-            <li data-m="3">Skrzynka</li><li>Faktury</li><li>Transakcje</li><li>Asystent</li>
-            <li>Zespół</li><li>Kontrahenci</li><li>Projekty</li><li data-m="012">Analiza</li>
-          </ul>
-        </aside>
 
         <div class="app__main">
           <!-- P0: Podsumowanie -->
           <div class="panel on" data-p="0" id="panel-0" role="tabpanel" aria-labelledby="tab-0">
-            <div class="app__bar"><span class="pill on">PODSUMOWANIE</span><span class="pill">TRENDY</span><span class="chip">Październik 2026</span><span class="ask">Zapytaj asystenta</span></div>
+            <div class="app__bar"><span class="pill on">PODSUMOWANIE</span><span class="pill">TRENDY</span><span class="chip">Październik 2026</span></div>
             <p class="p0__line">Z każdych 100 zł przychodu zostało <b>23 zł</b>.</p>
             <div class="bar100 bar100--app">
               <span class="seg seg--a" style="--w:41"><em>41 zł</em></span><span class="seg seg--b" style="--w:18"><em>18 zł</em></span><span class="seg seg--c" style="--w:9"></span><span class="seg seg--d" style="--w:9"></span><span class="seg seg--keep" style="--w:23"><em>zostaje w firmie</em></span>
             </div>
             <div class="hnote" aria-hidden="true"><span>to zostaje!</span><svg viewBox="0 0 40 50" fill="none"><path d="M8 3 C 5 22, 13 36, 30 44"/><path d="M17 45 L31 45 L26 32"/></svg></div>
-            <div class="cmp"><span>Poprzedni mies.</span><div class="bar100 bar100--xs"><span class="seg seg--grey" style="--w:73"></span><span class="seg seg--keep" style="--w:27"></span></div><b>zostało 27 zł</b></div>
-            <div class="cols">
-              <div>
-                <h4>Koszty <b>61 600 zł</b></h4>
-                <ul class="cats">
-                  <li><i class="dot dot--a"></i><span>Wynagrodzenia i ZUS</span><svg viewBox="0 0 60 18"><polyline points="0,12 12,10 24,11 36,8 48,9 60,6"/></svg><b>32 800 zł</b></li>
-                  <li><i class="dot dot--b"></i><span>Podwykonawcy</span><svg viewBox="0 0 60 18"><polyline points="0,6 12,9 24,5 36,12 48,10 60,13"/></svg><b>14 400 zł</b></li>
-                  <li><i class="dot dot--c"></i><span>Oprogramowanie i IT</span><svg viewBox="0 0 60 18"><polyline points="0,10 12,10 24,9 36,9 48,8 60,8"/></svg><b>7 200 zł</b></li>
-                  <li><i class="dot dot--d"></i><span>Reszta · 5 kategorii</span><svg viewBox="0 0 60 18"><polyline points="0,9 12,11 24,8 36,10 48,9 60,10"/></svg><b>7 200 zł</b></li>
-                </ul>
-              </div>
-              <div>
-                <h4>Przychody <b>80 000 zł</b></h4>
-                <p class="unpaid">Poza sumą: nieopłacone faktury 12 300 zł</p>
-                <ul class="cats">
-                  <li><i class="dot dot--keep"></i><span>Sprzedaż</span><svg viewBox="0 0 60 18"><polyline points="0,13 12,11 24,12 36,7 48,5 60,6"/></svg><b>78 300 zł</b></li>
-                  <li><i class="dot dot--grey"></i><span>Pozostałe przychody</span><svg viewBox="0 0 60 18"><polyline points="0,9 12,9 24,10 36,9 48,9 60,9"/></svg><b>1 700 zł</b></li>
-                </ul>
-                <p class="kept"><span>Zostaje w firmie</span><b>18 400 zł</b></p>
-              </div>
+            <div class="trio">
+              <div><small>Przychody</small><b>80 000 zł</b></div>
+              <div><small>Koszty</small><b>61 600 zł</b></div>
+              <div class="trio__keep"><small>Zostaje w firmie</small><b>18 400 zł</b></div>
             </div>
           </div>
 
@@ -123,13 +98,6 @@
               <li class="due" id="duehit"><div><b>Zaległa faktura sprzedażowa BC/09/09/2026</b><small>Północny Kod sp. z o.o. · 17 473,38 zł · 53 dni zwłoki</small></div><span class="due__btn">Sprawdź</span><span class="due__ok">Dopasowano · 100% pewności</span></li>
               <li class="due"><div><b>Zaległa faktura sprzedażowa BC/11/09/2026</b><small>Samsung · 800,00 € · 52 dni zwłoki</small></div><span class="due__btn">Sprawdź</span></li>
               <li class="due"><div><b>Zaległa faktura sprzedażowa BC/12/09/2026</b><small>TacoOverflow Inc. · 123,00 € · 57 dni zwłoki</small></div><span class="due__btn">Sprawdź</span></li>
-            </ul>
-            <p class="short__cap">NA SKRÓTY</p>
-            <ul class="short">
-              <li>Wystaw fakturę<small>Sprzedażowa, do KSeF</small></li>
-              <li>Dodaj fakturę spoza KSeF<small>PDF lub zdjęcie</small></li>
-              <li>Dodaj kontrahenta<small>Firma lub osoba</small></li>
-              <li>Dodaj projekt<small>Do rozliczania czasu</small></li>
             </ul>
             <div class="wire" id="wire"><span class="tag tag--teal">Bank</span><b>+17 473,38 zł</b><small>PÓŁNOCNY KOD SP Z O O</small></div>
           </div>
