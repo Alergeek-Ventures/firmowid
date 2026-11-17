@@ -45,10 +45,10 @@
     </div>
     <div class="tabs reveal" id="tabs">
       <div class="tabs__nav" role="tablist">
-        <button role="tab" class="tab on" data-i="0"><b>Ile zostało z&nbsp;października?</b><small>Analiza · Podsumowanie</small><i></i></button>
-        <button role="tab" class="tab" data-i="1"><b>Który miesiąc był na minusie?</b><small>Analiza · Trendy</small><i></i></button>
-        <button role="tab" class="tab" data-i="2"><b>Czy ten projekt się opłaca?</b><small>Trendy · jeden projekt</small><i></i></button>
-        <button role="tab" class="tab" data-i="3"><b>Kto jeszcze nie zapłacił?</b><small>Skrzynka · Księgowość</small><i></i></button>
+        <button role="tab" class="tab on" data-i="0" id="tab-0" aria-controls="panel-0" aria-selected="true"><b>Ile zostało z&nbsp;października?</b><small>Analiza · Podsumowanie</small><i></i></button>
+        <button role="tab" class="tab" data-i="1" id="tab-1" aria-controls="panel-1" aria-selected="false"><b>Który miesiąc był na minusie?</b><small>Analiza · Trendy</small><i></i></button>
+        <button role="tab" class="tab" data-i="2" id="tab-2" aria-controls="panel-2" aria-selected="false"><b>Czy ten projekt się opłaca?</b><small>Trendy · jeden projekt</small><i></i></button>
+        <button role="tab" class="tab" data-i="3" id="tab-3" aria-controls="panel-3" aria-selected="false"><b>Kto jeszcze nie zapłacił?</b><small>Skrzynka · Księgowość</small><i></i></button>
       </div>
 
       <div class="app" aria-label="Poglądowy widok aplikacji">
@@ -64,7 +64,7 @@
 
         <div class="app__main">
           <!-- P0: Podsumowanie -->
-          <div class="panel on" data-p="0">
+          <div class="panel on" data-p="0" id="panel-0" role="tabpanel" aria-labelledby="tab-0">
             <div class="app__bar"><span class="pill on">PODSUMOWANIE</span><span class="pill">TRENDY</span><span class="chip">Październik 2026</span><span class="ask">Zapytaj asystenta</span></div>
             <p class="p0__line">Z każdych 100 zł przychodu zostało <b>23 zł</b>.</p>
             <div class="bar100 bar100--app">
@@ -94,14 +94,14 @@
           </div>
 
           <!-- P1: Trendy -->
-          <div class="panel" data-p="1">
+          <div class="panel" data-p="1" id="panel-1" role="tabpanel" aria-labelledby="tab-1">
             <div class="app__bar"><span class="pill">PODSUMOWANIE</span><span class="pill on">TRENDY</span><span class="chip">Cała firma</span><span class="chip">2026</span></div>
             <p class="chart__title">Wynik netto według miesięcy</p>
             <div class="chart" id="chart1"></div>
           </div>
 
           <!-- P2: Projekt -->
-          <div class="panel" data-p="2">
+          <div class="panel" data-p="2" id="panel-2" role="tabpanel" aria-labelledby="tab-2">
             <div class="app__bar"><span class="pill">PODSUMOWANIE</span><span class="pill on">TRENDY</span><span class="chip chip--pick" id="projchip">Pokaż: CODEXA</span><span class="chip">2026</span></div>
             <p class="chart__title">Wynik netto według miesięcy</p>
             <div class="chart" id="chart2"></div>
@@ -114,7 +114,7 @@
           </div>
 
           <!-- P3: Skrzynka -->
-          <div class="panel" data-p="3">
+          <div class="panel" data-p="3" id="panel-3" role="tabpanel" aria-labelledby="tab-3">
             <div class="app__bar app__bar--inbox"><b>Biuro Cyfrowe</b><span>wtorek, 17 listopada 2026</span></div>
             <p class="inbox__cap">KSIĘGOWOŚĆ <span id="duecount">3</span></p>
             <p class="inbox__sub">Faktury po terminie bez dopasowanej płatności.</p>
@@ -326,7 +326,8 @@
         </fieldset>
       </form>
 
-      <div class="calc__out" aria-live="polite">
+      <div class="calc__out">
+        <p class="sr" role="status" id="r-say"></p>
         <p>Z Firmowidem oszczędzasz rocznie</p>
         <strong><span id="r-total">18 072</span> zł</strong>
         <dl class="rows2">
@@ -348,7 +349,7 @@
     <p class="kicker">Cennik</p>
     <h2 class="reveal">Uczciwy cennik. Bez gwiazdek.</h2>
     <div class="toggle" id="billing" role="group" aria-label="Okres rozliczeniowy">
-      <button class="on" data-b="m">Miesięcznie</button><button data-b="y">Rocznie <em>−20%</em></button>
+      <button class="on" data-b="m" aria-pressed="true">Miesięcznie</button><button data-b="y" aria-pressed="false">Rocznie <em>−20%</em></button>
     </div>
     <p class="pricing__fine">Płatne funkcje są bezpłatne do końca przyszłego miesiąca. Bez karty.</p>
     <div class="plans">

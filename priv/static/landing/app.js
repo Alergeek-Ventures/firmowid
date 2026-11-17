@@ -2,7 +2,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const fmt = n => Math.round(n).toLocaleString('pl-PL').replace(/ | /g, ' ');
+  const fmt = n => Math.round(n).toLocaleString('pl-PL', { useGrouping: 'always' }).replace(/ | /g, ' ');
 
   function tween(el, from, to, ms = 900, format = fmt) {
     if (reduce || document.hidden) { el.textContent = format(to); return; }
@@ -14,28 +14,6 @@
     };
     requestAnimationFrame(step);
   }
-
-  /* ---------- hero: bar cycles through months ---------- */
-  const months = [
-    { name: 'Październik 2026', w: [41, 18, 9, 9, 23] },
-    { name: 'Sierpień 2026', w: [44, 21, 9, 10, 16] },
-    { name: 'Wrzesień 2026', w: [38, 17, 8, 8, 29] },
-  ];
-  const hSegs = $$('#h-bar .seg'), hNum = $('#h-num'), hMonth = $('#h-month');
-  let mi = 0, shown = 0;
-  function showMonth(i) {
-    const m = months[i];
-    hSegs.forEach((s, k) => s.style.setProperty('--w', m.w[k]));
-    hMonth.textContent = m.name;
-    tween(hNum, shown, m.w[4], 900);
-    shown = m.w[4];
-  }
-  if (hNum) {
-    setTimeout(() => { $('#h-bar').classList.add('go'); showMonth(0); }, 700);
-    if (!reduce) setInterval(() => { mi = (mi + 1) % months.length; showMonth(mi); }, 4200);
-  }
-  const signup = $('#signup');
-  if (signup) signup.addEventListener('submit', e => e.preventDefault());
 
   /* ---------- reveal + counters + bars ---------- */
   const io = new IntersectionObserver(es => es.forEach(e => {
@@ -129,7 +107,7 @@
 
   /* ---------- auto tabs ---------- */
   const tabs = $$('.tab'), panels = $$('.panel'), side = $$('.app__side li');
-  let cur = -1, tabsOn = false;
+  let cur = -1, tabsOn = false, advanceTimer;
   const CAPS = [
     'Liczą się tylko opłacone faktury. Nieopłacone widzisz osobno, poza sumą.',
     'Miesiąc pojawia się na wykresie, gdy się skończy i najwyżej dwie jego faktury czekają na zapłatę.',
@@ -138,6 +116,7 @@
   ];
   $('#tabcap').textContent = CAPS[0];
   function go(i) {
+    clearTimeout(advanceTimer);
     cur = i;
     tabs.forEach((t, k) => { t.classList.remove('on'); if (k === i) { void t.offsetWidth; t.classList.add('on'); } t.setAttribute('aria-selected', k === i); });
     panels.forEach((p, k) => p.classList.toggle('on', k === i));
@@ -176,11 +155,11 @@
     () => side.find(li => li.dataset.m === '3'),
   ][n]();
   function advance(n) {
-    if (point(clickFor(n), true)) setTimeout(() => go(n), 820); else go(n);
+    if (point(clickFor(n), true)) advanceTimer = setTimeout(() => go(n), 820); else go(n);
   }
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => go(i));
-    $('i', t).addEventListener('animationend', () => { if (tabsOn && cur === i) advance((i + 1) % tabs.length); });
+    $('i', t).addEventListener('animationend', () => { if (!reduce && tabsOn && cur === i) advance((i + 1) % tabs.length); });
   });
   function startTabs() { tabsOn = true; go(0); }
   side.forEach(li => li.classList.toggle('act', (li.dataset.m || '').includes('0')));
@@ -212,7 +191,7 @@
 
   /* ---------- pricing toggle ---------- */
   $$('#billing button').forEach(b => b.addEventListener('click', () => {
-    $$('#billing button').forEach(x => x.classList.toggle('on', x === b));
+    $$('#billing button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $('.plans').classList.toggle('yearly', b.dataset.b === 'y');
     $$('.plan__price b[data-m]').forEach(p => tween(p, +p.textContent, +p.dataset[b.dataset.b], 450));
   }));
@@ -231,7 +210,7 @@
       ['q-sheet', 'Wynik w arkuszu', 'Analiza: ile zostaje ze 100 zł'],
       ['q-leave', 'Urlopy w mailach', 'Wnioski z akceptacją'],
     ];
-    let shown = 0;
+    let shown = 0, sayTimer;
     const calc = () => {
       const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = v('q-s') / 100;
       // plan from the public price list, yearly billing
@@ -250,6 +229,8 @@
       $('#r-swap').innerHTML = SWAP.filter(s => on(s[0])).map(s => `<li><s>${s[1]}</s><i>→</i><b>${s[2]}</b></li>`).join('');
       tween($('#r-total'), shown, total, 350, n => (n < 0 ? '−' : '') + fmt(Math.abs(n)));
       shown = total;
+      clearTimeout(sayTimer);
+      sayTimer = setTimeout(() => { $('#r-say').textContent = 'Z Firmowidem oszczędzasz rocznie ' + zl(total); }, 600);
     };
     cmpf.addEventListener('input', calc);
     cmpf.addEventListener('submit', e => e.preventDefault());
