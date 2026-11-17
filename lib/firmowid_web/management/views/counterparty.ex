@@ -436,24 +436,21 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     do: registry_status(:exempt, "success", pgettext("NIP status", "VAT-exempt"), checked_at)
 
   defp nip_status(%{vat_id_status: :no_vat, vat_id_checked_at: checked_at}),
-    do: %{
-      registry_status(:no_vat, "neutral", pgettext("NIP status", "Not a VAT payer"), checked_at)
-      | meta: gettext("Operating business in REGON, checked on %{date}", date: format_date(checked_at))
-    }
+    do: registry_status(:no_vat, "neutral", pgettext("NIP status", "Not a VAT payer"), checked_at)
 
   defp nip_status(%{vat_id_status: :closed, vat_id_checked_at: checked_at}),
     do: %{
       registry_status(:closed, "danger", pgettext("NIP status", "Business closed"), checked_at)
       | problem:
           gettext(
-            "REGON shows this business as closed or its NIP as revoked. Before you issue the next invoice, confirm the details with the counterparty."
+            "CEIDG shows this business as deregistered. Before you issue the next invoice, confirm the details with the counterparty."
           )
     }
 
   defp nip_status(%{vat_id_status: :unknown, vat_id_checked_at: checked_at}),
     do: %{
       registry_status(:unknown, "danger", pgettext("NIP status", "Not in registers"), checked_at)
-      | problem: gettext("Neither the VAT white list nor REGON knows this NIP. Check the number with the counterparty."),
+      | problem: gettext("Neither the VAT white list nor CEIDG knows this NIP. Check the number with the counterparty."),
         fix?: true
     }
 

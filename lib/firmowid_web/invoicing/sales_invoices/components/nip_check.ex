@@ -77,12 +77,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck do
   defp text(:closed),
     do:
       gettext(
-        "REGON shows this business as closed or its NIP as revoked. Confirm the details with the buyer before you issue the invoice."
+        "CEIDG shows this business as deregistered. Confirm the details with the buyer before you issue the invoice."
       )
 
   defp text(:unknown),
     do:
       gettext(
-        "Neither the VAT white list nor REGON knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
+        "Neither the VAT white list nor CEIDG knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
       )
 end

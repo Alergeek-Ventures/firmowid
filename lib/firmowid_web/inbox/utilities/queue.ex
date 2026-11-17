@@ -196,7 +196,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   defp vat_id_context(%{vat_id_status: :closed, tax_id: tax_id, vat_id_checked_at: checked_at}),
     do:
-      gettext("REGON showed the business with NIP %{number} as closed on %{date}.",
+      gettext("CEIDG showed the business with NIP %{number} as deregistered on %{date}.",
         number: tax_id,
         date: Calendar.strftime(checked_at, "%d.%m")
       )

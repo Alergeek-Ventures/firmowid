@@ -4,7 +4,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   right after a number is saved (`EnqueueVatIdCheck`) and again every week.
 
   An EU VAT number is checked against its country's rules (`EuVatNumber`), then
-  in VIES; a NIP in the VAT white list and REGON (`NipRegistration`). The result
+  in VIES; a NIP in the VAT white list and CEIDG (`NipRegistration`). The result
   is stored on the counterparty, and the inbox lists the problems.
 
   The daily cron run (no `organization_id`) queues one job per organization,

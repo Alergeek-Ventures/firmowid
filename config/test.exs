@@ -84,9 +84,6 @@ config :firmowid, :start_gocardless_token_manager, false
 config :firmowid, :vat_status_api_request_options, plug: Firmowid.Test.Support.VatStatusApiStub
 config :firmowid, :vies_api_request_options, plug: Firmowid.Test.Support.ViesApiStub
 
-# No GUS register lookups in tests, so nothing reaches the GUS test server
-config :gusex, api_key: nil
-
 # Keep expected warning noise out of CI test logs.
 config :logger, level: :error
 
