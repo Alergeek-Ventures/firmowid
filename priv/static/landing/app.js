@@ -175,19 +175,21 @@
   ];
   const cq = $('#chat-q'), ca = $('#chat-a'), ct = $('#chat-text'), cm = $('#chat-mini'), chips = $$('#chat-chips button');
   let chatT = [], chatI = 0, chatStarted = false;
-  function ask(i) {
+  function ask(i, instant) {
     chatT.forEach(clearTimeout); chatT = []; chatI = i;
     const { q, a, mini } = QA[i];
     chips.forEach((c, k) => c.classList.toggle('on', k === i));
-    ca.classList.remove('show'); cq.textContent = '';
+    ca.classList.add('dim'); cq.textContent = '';
     const speed = reduce ? 0 : 32;
-    [...q].forEach((ch, k) => chatT.push(setTimeout(() => { cq.textContent += ch; }, 300 + k * speed)));
-    const done = 300 + q.length * speed + 500;
-    chatT.push(setTimeout(() => { ct.innerHTML = a; cm.innerHTML = ''; ca.classList.add('show'); mini(cm); }, done));
+    if (instant) cq.textContent = q;
+    else [...q].forEach((ch, k) => chatT.push(setTimeout(() => { cq.textContent += ch; }, 300 + k * speed)));
+    const done = instant ? 0 : 300 + q.length * speed + 500;
+    chatT.push(setTimeout(() => { ct.innerHTML = a; cm.innerHTML = ''; ca.classList.remove('dim'); ca.classList.add('show'); mini(cm); }, done));
     if (!reduce) chatT.push(setTimeout(() => ask((i + 1) % QA.length), done + 5200));
   }
-  function startChat() { if (chatStarted) return; chatStarted = true; ask(0); }
+  function startChat() { if (chatStarted) return; chatStarted = true; ask(0, true); }
   chips.forEach((c, i) => c.addEventListener('click', () => ask(i)));
+  startChat();
 
   /* ---------- pricing toggle ---------- */
   $$('#billing button').forEach(b => b.addEventListener('click', () => {
