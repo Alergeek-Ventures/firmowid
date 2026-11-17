@@ -32,7 +32,7 @@
 
 /* facts */
 .cs-facts{border-block:1px solid var(--r200);background:var(--g50)}
-.facts{display:grid;grid-template-columns:repeat(4,1fr);margin:0}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);margin:0}
 .facts>div{padding:22px 24px;border-left:1px solid var(--r200)}
 .facts>div:first-child{border-left:0;padding-left:0}
 .facts dt{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--r700)}
@@ -47,8 +47,9 @@
 
 /* quote */
 .cs-quote{padding:var(--sec) 0 0!important}
-.cs-quote blockquote{position:relative;margin:0 auto;max-width:880px;padding:clamp(36px,5vw,64px) clamp(28px,5vw,72px);background:var(--ink);color:var(--cream);border-radius:4px}
-.cs-quote blockquote::before{content:"„";position:absolute;left:clamp(14px,2.4vw,28px);top:-.18em;font-size:clamp(110px,14vw,180px);line-height:1;font-weight:700;color:var(--r500)}
+
+.cs-quote blockquote{position:relative;margin:0 auto;max-width:880px;padding:clamp(32px,4.4vw,56px) clamp(28px,5vw,64px);background:var(--ink);color:var(--cream);border-radius:4px}
+.cs-quote blockquote::before{content:"“";display:block;height:.42em;margin-bottom:12px;font-size:clamp(84px,9vw,120px);line-height:.8;font-weight:700;color:var(--r500)}
 .cs-quote blockquote p{font-size:clamp(24px,3vw,38px);line-height:1.2;font-weight:500;letter-spacing:-.015em}
 .cs-quote footer{margin-top:24px;font-size:15px;color:rgba(245,241,234,.7)}
 .cs-quote footer b{color:var(--cream)}
