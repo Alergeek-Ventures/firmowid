@@ -106,7 +106,7 @@
   }
 
   /* ---------- auto tabs ---------- */
-  const tabs = $$('.tab'), panels = $$('.panel'), side = $$('.app__side li');
+  const tabs = $$('.tab'), panels = $$('.panel');
   let cur = -1, tabsOn = false, advanceTimer;
   const CAPS = [
     'Liczą się tylko opłacone faktury. Nieopłacone widzisz osobno, poza sumą.',
@@ -120,7 +120,6 @@
     cur = i;
     tabs.forEach((t, k) => { t.classList.remove('on'); if (k === i) { void t.offsetWidth; t.classList.add('on'); } t.setAttribute('aria-selected', k === i); });
     panels.forEach((p, k) => p.classList.toggle('on', k === i));
-    side.forEach(li => li.classList.toggle('act', (li.dataset.m || '').includes(String(i))));
     $('#tabcap').textContent = CAPS[i];
     clearInterval(pjTimer); tip.classList.remove('show');
     if (i === 1) { zeroChart(c1); setTimeout(() => drawChart(c1, firm), 60); setTimeout(() => {
@@ -133,36 +132,14 @@
     if (i === 2) { pj = 0; pjPrev = { rev: 0, cost: 0 }; zeroChart(c2); setTimeout(() => showProject(0, true), 60);
       if (!reduce) pjTimer = setInterval(() => { pj = (pj + 1) % projects.length; showProject(pj); }, 2300); }
     if (i === 3) playInbox();
-    if (i === 0) setTimeout(() => { if (cur === 0) point($('.panel.on .bar100--app .seg--keep')); }, 1500);
-    if (i === 3) setTimeout(() => { if (cur === 3) point($('#duehit .due__ok')); }, 2600);
   }
 
-  /* cursor that "uses" the app between tabs */
-  const cursor = $('#cursor'), appEl = $('.app');
-  function point(el, click) {
-    if (!cursor || !el || !el.offsetParent || reduce) return false;
-    const r = el.getBoundingClientRect(), R = appEl.getBoundingClientRect();
-    cursor.style.opacity = 1;
-    cursor.style.transform = `translate(${r.left - R.left + r.width / 2}px, ${r.top - R.top + r.height / 2}px)`;
-    if (click) setTimeout(() => { cursor.classList.add('click'); setTimeout(() => cursor.classList.remove('click'), 260); }, 620);
-    return true;
-  }
-  // what the cursor clicks to get to panel n
-  const clickFor = n => [
-    () => side.find(li => (li.dataset.m || '').includes('0')),
-    () => $$('.panel.on .pill')[1],
-    () => $('.panel.on .chip'),
-    () => side.find(li => li.dataset.m === '3'),
-  ][n]();
-  function advance(n) {
-    if (point(clickFor(n), true)) advanceTimer = setTimeout(() => go(n), 820); else go(n);
-  }
+  const advance = n => go(n);
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => go(i));
     $('i', t).addEventListener('animationend', () => { if (!reduce && tabsOn && cur === i) advance((i + 1) % tabs.length); });
   });
   function startTabs() { tabsOn = true; go(0); }
-  side.forEach(li => li.classList.toggle('act', (li.dataset.m || '').includes('0')));
 
   /* ---------- assistant chat ---------- */
   const QA = [
