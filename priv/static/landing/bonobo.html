@@ -105,25 +105,33 @@
     <h2 class="reveal">Cztery kłopoty, zanim przyszedł Firmowid.</h2>
     <div class="probs reveal">
       <article class="prob">
+        <span class="prob__done">rozwiązane</span>
         <span class="prob__ico" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="10" y="22" width="28" height="20" rx="3"/><path d="M16 22v-6a8 8 0 0 1 16 0v6"/><circle cx="24" cy="32" r="2.5"/></svg></span>
         <h3>Logowanie do KSeF</h3>
         <p>Już samo wejście do systemu ministerstwa zabierało czas.</p>
       </article>
       <article class="prob">
+        <span class="prob__done">rozwiązane</span>
         <span class="prob__ico" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 8h18l6 6v22H10z"/><path d="M16 14h18l6 6v22H16" opacity=".55"/><path d="M15 18h10M15 24h12"/></svg></span>
         <h3>Ta sama faktura dwa razy</h3>
         <p>Dostawcy wysyłali ją na papierze i&nbsp;w&nbsp;KSeF.</p>
       </article>
       <article class="prob">
+        <span class="prob__done">rozwiązane</span>
         <span class="prob__ico" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M12 6h18l6 6v30H12z"/><path d="M20 22a4 4 0 1 1 6 3.5c-1.4.8-2 1.6-2 3"/><circle cx="24" cy="34" r="1.4"/></svg></span>
         <h3>Czy to już opłacone?</h3>
         <p>Przy każdej fakturze porównywanie wyciągu z&nbsp;segregatorem.</p>
       </article>
       <article class="prob">
+        <span class="prob__done">rozwiązane</span>
         <span class="prob__ico" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 24 24 8h14v14L22 38z"/><circle cx="31" cy="15" r="2.6"/><path d="M15 25l8 8"/></svg></span>
-        <h3>Drogi i&nbsp;skomplikowany program</h3>
-        <p>„Był zbyt drogi i&nbsp;skomplikowany. Interfejs nie był intuicyjny”, mówi Weronika o&nbsp;poprzednim programie do faktur.</p>
+        <h3>Drogi program do faktur</h3>
+        <p>„Był zbyt drogi i&nbsp;skomplikowany. Interfejs nie był intuicyjny.”</p>
       </article>
+    </div>
+    <div class="bridge" id="bridge" aria-hidden="true">
+      <p class="hand">a&nbsp;potem przyszedł Firmowid</p>
+      <svg viewBox="0 0 40 90" fill="none"><path d="M20 4 C 10 30, 30 52, 20 82"/><path d="M10 70 L20 84 L30 70"/></svg>
     </div>
   </div>
 </section>
@@ -173,45 +181,55 @@
         <h3>Przelew sam przypina się do faktury</h3>
         <p>Faktura dostaje status „Komplet”: opłacona i&nbsp;gotowa do zaksięgowania.</p>
       </article>
-    </div>
-
-    <div class="aha reveal">
-      <p class="hand">pierwsze „to działa!”</p>
-      <p>Pierwszy moment, w&nbsp;którym Weronika uznała, że to działa, był prosty: przelew do dostawcy sam przypiął się do właściwej faktury.</p>
-    </div>
-
-    <div class="acct reveal">
-      <div class="acct__card" aria-hidden="true">
-        <p class="acct__cap">Faktura kosztowa</p>
-        <p class="acct__seller">Palarnia kawy</p>
-        <p class="acct__desc"><span>Opis</span>kawa ziarnista, 12 kg</p>
-        <span class="acct__ok">Komplet</span>
-      </div>
-      <div>
+      <article class="fstep">
+        <span class="fstep__n">4</span>
+        <div class="fstep__pic" aria-hidden="true">
+          <div class="acct__card">
+            <p class="acct__cap">Faktura kosztowa</p>
+            <p class="acct__seller">Palarnia kawy</p>
+            <p class="acct__desc"><span>Opis</span>kawa ziarnista, 12&nbsp;kg</p>
+            <span class="acct__ok">Komplet</span>
+          </div>
+        </div>
         <h3>Księgowa dostaje dokumenty z&nbsp;opisem</h3>
-        <p>Każda faktura kosztowa dostaje krótki opis tego, co kupiono. Księgowa nie musi dopytywać, czego dotyczy dana pozycja.</p>
-      </div>
+        <p>Każda faktura kosztowa ma krótki opis tego, co kupiono.</p>
+      </article>
     </div>
+  </div>
+</section>
+
+<!-- ============ FIRST WIN ============ -->
+<section class="cs-aha">
+  <div class="wrap reveal">
+    <p class="hand">pierwsze „to działa!”</p>
+    <p class="cs-aha__text">Przelew do dostawcy sam przypiął się do właściwej faktury.</p>
+    <p class="cs-aha__sub">Tak Weronika zapamiętała moment, w&nbsp;którym uznała, że Firmowid działa.</p>
   </div>
 </section>
 
 <!-- ============ RESULT ============ -->
 <section class="cs-result">
-  <div class="wrap cs-result__grid reveal">
-    <div class="big">
-      <strong><span data-count="9">9</span> h</strong>
-      <p>tygodniowo mniej na papiery</p>
-    </div>
-    <div class="big">
-      <strong>0 zł</strong>
-      <p>Bonobo mieści się w&nbsp;planie Darmowym: dwie osoby i&nbsp;jedno konto bankowe</p>
-    </div>
-    <div class="big">
-      <strong>1</strong>
-      <p>lista wszystkich faktur kosztowych, przy każdej widać, czy jest opłacona</p>
+  <div class="wrap">
+    <p class="kicker">Wynik</p>
+    <h2 class="reveal">Co zostało po zmianie.</h2>
+    <div class="cs-result__grid reveal">
+      <article class="rsheet">
+        <p class="rsheet__cap">Czas</p>
+        <strong><span class="ul ul--sm">−9 h</span></strong>
+        <p>papierów w&nbsp;tygodniu</p>
+      </article>
+      <article class="rsheet">
+        <p class="rsheet__cap">Koszt</p>
+        <strong><span class="ul ul--sm">0 zł</span></strong>
+        <p>plan Darmowy: 2 osoby i&nbsp;1 konto</p>
+      </article>
+      <article class="rsheet">
+        <p class="rsheet__cap">Porządek</p>
+        <strong><span class="ul ul--sm">1 lista</span></strong>
+        <p>wszystkich faktur kosztowych ze statusem płatności</p>
+      </article>
     </div>
   </div>
-  <p class="wrap cs-note">Firmowid nie zastępuje księgowej. Nie prowadzi KPiR, nie rozlicza ZUS ani podatków. Porządkuje to, co trafia do księgowej: faktury, płatności i&nbsp;opisy.</p>
 </section>
 
 </main>
@@ -242,6 +260,16 @@
       });
     }, { threshold: 0.18 });
     document.querySelectorAll('.reveal, .hours').forEach(function (el) { io.observe(el); });
+
+    // once the reader passes the problems, stamp each one as solved
+    var probs = document.querySelector('.probs'), bridge = document.getElementById('bridge');
+    if (probs && bridge) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) { probs.classList.add('solved'); bridge.classList.add('in'); }
+        });
+      }, { rootMargin: '0px 0px -30% 0px' }).observe(bridge);
+    }
     if (reduce) document.querySelectorAll('.reveal, .hours').forEach(function (el) { el.classList.add('in'); });
   })();
 </script>
