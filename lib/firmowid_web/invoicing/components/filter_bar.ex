@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   @moduledoc """
   Filters of the invoicing lists: the side of the invoice or the direction of the
-  transaction, and a status sub-filter while one is active.
+  transaction.
   """
   use FirmowidWeb, :html
 
@@ -12,8 +12,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   @doc """
   Filters of the lists of invoices and of transactions, which list every month:
-  the side of the invoice or the direction of the transaction. A status
-  sub-filter given in the URL stays visible while it is active.
+  the side of the invoice or the direction of the transaction.
   """
   attr :params, :map, required: true
 
@@ -106,10 +105,6 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
           }
         </script>
       </nav>
-      <.sub_filters
-        :if={@params.subfilter in [:oplacone, :nieoplacone, :dopasowane, :bez_dokumentu]}
-        params={@params}
-      />
     </div>
     """
   end
@@ -126,61 +121,11 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       wydatki: {pgettext("transaction direction filter", "Outgoing"), :expenses}
     ]
 
-  defp side_filters(_filter), do: []
-
-  attr :params, :map, required: true
-
-  defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
-    ~H"""
-    <.filter_pills divider label={nil}>
-      <:pill
-        navigate={subfilter_url(@params, :oplacone)}
-        active={@params.subfilter == :oplacone}
-      >
-        {gettext("Paid")}
-      </:pill>
-      <:pill
-        navigate={subfilter_url(@params, :nieoplacone)}
-        active={@params.subfilter == :nieoplacone}
-      >
-        {gettext("Unpaid")}
-      </:pill>
-    </.filter_pills>
-    """
-  end
-
-  defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
-    ~H"""
-    <.filter_pills divider label={nil}>
-      <:pill
-        navigate={subfilter_url(@params, :dopasowane)}
-        active={@params.subfilter == :dopasowane}
-      >
-        {gettext("Matched")}
-      </:pill>
-      <:pill
-        navigate={subfilter_url(@params, :bez_dokumentu)}
-        active={@params.subfilter == :bez_dokumentu}
-      >
-        {gettext("Without document")}
-      </:pill>
-    </.filter_pills>
-    """
-  end
-
-  defp sub_filters(assigns), do: ~H""
-
-  defp subfilter_url(params, subfilter) do
-    next_subfilter = if params.subfilter == subfilter, do: nil, else: subfilter
-    build_url(params.month, params.filter, next_subfilter)
-  end
-
   defp build_url(month, filter, subfilter) do
     Navigation.invoicing_index_path(%{
       month: month,
       filter: filter,
-      subfilter: subfilter,
-      view_mode: :list
+      subfilter: subfilter
     })
   end
 end

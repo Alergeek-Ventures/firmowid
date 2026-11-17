@@ -82,7 +82,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
       conn = log_in_user(conn, admin)
 
       origin_return_to =
-        Navigation.return_to_path("/fakturowanie?miesiac=2026-01-15&filtr=faktury&widok=lista")
+        Navigation.return_to_path("/fakturowanie?miesiac=2026-01-15&filtr=faktury")
 
       transaction_return_to = Navigation.transaction_show_path("tx-123", origin_return_to)
 

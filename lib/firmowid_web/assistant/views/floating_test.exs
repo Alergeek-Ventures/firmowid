@@ -72,7 +72,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
         ])
 
       {:ok, invoices, _html} =
-        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury")
 
       assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
       assistant |> element("#assistant-launcher") |> render_click()
@@ -248,7 +248,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
         ])
 
       {:ok, invoices, _html} =
-        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury")
 
       assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
       assistant |> element("#assistant-launcher") |> render_click()
@@ -307,7 +307,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       ])
 
     {:ok, invoices, _html} =
-      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury")
 
     assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     assistant |> element("#assistant-launcher") |> render_click()
@@ -356,7 +356,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       ])
 
     {:ok, invoices, _html} =
-      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury")
 
     assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     assistant |> element("#assistant-launcher") |> render_click()
@@ -689,7 +689,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       ])
 
     {:ok, invoices, _html} =
-      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury")
 
     view = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     view |> element("#assistant-launcher") |> render_click()

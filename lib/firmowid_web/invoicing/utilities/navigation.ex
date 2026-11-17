@@ -17,8 +17,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
   @type invoicing_index_target :: %{
           month: Date.t(),
           filter: QueryCodec.filter(),
-          subfilter: QueryCodec.subfilter() | nil,
-          view_mode: QueryCodec.view_mode()
+          subfilter: QueryCodec.subfilter() | nil
         }
   @type return_target ::
           {:invoicing_index, invoicing_index_target()}
@@ -27,25 +26,31 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
   @type return_destination :: return_target() | String.t() | nil
 
   @doc """
-  Builds the canonical invoicing index path for the given params.
+  Builds the canonical path of the list of invoices or of transactions for the given params.
   """
-  @spec invoicing_index_path(%{
-          month: Date.t(),
-          filter: QueryCodec.filter(),
-          subfilter: QueryCodec.subfilter() | nil,
-          view_mode: QueryCodec.view_mode()
-        }) :: String.t()
-  def invoicing_index_path(%{month: month, filter: filter, subfilter: subfilter, view_mode: view_mode}) do
+  @spec invoicing_index_path(invoicing_index_target()) :: String.t()
+  def invoicing_index_path(%{month: month, filter: filter, subfilter: subfilter}) do
     query =
       QueryParams.compact(
         miesiac: month |> Date.beginning_of_month() |> Date.to_iso8601(),
         filtr: QueryCodec.encode_filter(filter),
-        podfiltr: encode_subfilter(subfilter),
-        widok: if(view_mode == :list, do: QueryCodec.encode_view_mode(:list))
+        podfiltr: encode_subfilter(subfilter)
       )
 
     ~p"/fakturowanie?#{query}"
   end
+
+  @doc """
+  Builds the path of the list of invoices of every month.
+  """
+  @spec invoices_list_path() :: String.t()
+  def invoices_list_path, do: ~p"/fakturowanie?#{[filtr: QueryCodec.encode_filter(:invoices)]}"
+
+  @doc """
+  Builds the path of the list of transactions of every month.
+  """
+  @spec transactions_list_path() :: String.t()
+  def transactions_list_path, do: ~p"/fakturowanie?#{[filtr: QueryCodec.encode_filter(:transactions)]}"
 
   @doc """
   Builds the canonical path to the recent sales invoices tab.
@@ -163,44 +168,21 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
   end
 
   @doc """
-  Returns the canonical default invoicing params for the given date.
+  Parses raw invoicing index query params into the canonical typed state. Without a
+  list asked for in `filtr`, the filter is `nil`.
   """
-  @spec default_invoicing_params(Date.t()) :: invoicing_index_target()
-  def default_invoicing_params(date) do
-    %{
-      month: Date.beginning_of_month(date),
-      filter: :all,
-      subfilter: nil,
-      view_mode: :inbox
-    }
-  end
-
-  @doc """
-  Parses raw invoicing index query params into the canonical typed state.
-  """
-  @spec parse_invoicing_index_params(map(), Date.t()) :: invoicing_index_target()
+  @spec parse_invoicing_index_params(map(), Date.t()) :: %{
+          month: Date.t(),
+          filter: QueryCodec.filter() | nil,
+          subfilter: QueryCodec.subfilter() | nil
+        }
   def parse_invoicing_index_params(params, date \\ Date.utc_today()) when is_map(params) do
-    defaults = default_invoicing_params(date)
-
     %{
-      month: QueryParams.parse_date(params, "miesiac", defaults.month),
-      filter: QueryCodec.parse_filter(Map.get(params, "filtr")) || defaults.filter,
-      subfilter: QueryCodec.parse_subfilter(Map.get(params, "podfiltr")) || defaults.subfilter,
-      view_mode: QueryCodec.parse_view_mode(Map.get(params, "widok")) || defaults.view_mode
+      month: QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(date)),
+      filter: QueryCodec.parse_filter(Map.get(params, "filtr")),
+      subfilter: QueryCodec.parse_subfilter(Map.get(params, "podfiltr"))
     }
   end
-
-  @doc """
-  Builds the default invoicing return target for a given date.
-  """
-  @spec default_invoicing_target(Date.t()) :: return_target()
-  def default_invoicing_target(date), do: {:invoicing_index, default_invoicing_params(date)}
-
-  @doc """
-  Builds the default invoicing return path for a given date.
-  """
-  @spec default_invoicing_path(Date.t()) :: String.t()
-  def default_invoicing_path(date), do: return_target_path(default_invoicing_target(date))
 
   @doc """
   Builds the canonical transaction details path with an optional return destination.
@@ -333,16 +315,8 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
     with true <- Enum.all?(Map.keys(params), &(&1 in QueryCodec.invoicing_index_param_keys())),
          {:ok, month} <- parse_month(params),
          {:ok, filter} <- parse_filter(params),
-         {:ok, subfilter} <- parse_subfilter(params),
-         {:ok, view_mode} <- parse_view_mode(params) do
-      {:ok,
-       {:invoicing_index,
-        %{
-          month: month,
-          filter: filter,
-          subfilter: subfilter,
-          view_mode: view_mode
-        }}}
+         {:ok, subfilter} <- parse_subfilter(params) do
+      {:ok, {:invoicing_index, %{month: month, filter: filter, subfilter: subfilter}}}
     else
       _ -> :error
     end
@@ -430,15 +404,6 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
   end
 
   defp parse_subfilter(_params), do: {:ok, nil}
-
-  defp parse_view_mode(%{"widok" => raw_view_mode}) do
-    case QueryCodec.parse_view_mode(raw_view_mode) do
-      nil -> :error
-      view_mode -> {:ok, view_mode}
-    end
-  end
-
-  defp parse_view_mode(_params), do: {:ok, :inbox}
 
   defp append_return_to(path, return_to) when is_binary(return_to) and return_to != "" do
     path <> "?" <> URI.encode_query(%{powrot_do: return_to})

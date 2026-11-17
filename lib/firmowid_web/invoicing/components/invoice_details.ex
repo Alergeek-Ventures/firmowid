@@ -22,7 +22,6 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   attr :is_cost_invoice, :boolean
   attr :variant, :string, required: true
-  attr :issue_date, Date, required: true
   attr :party_display_name, :string, required: true
   attr :description, :string
   attr :return_to, :string, default: nil
@@ -35,7 +34,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       !@is_cost_invoice && "bg-teal-200"
     ]}>
       <.back
-        navigate={@return_to || default_return_path(@issue_date)}
+        navigate={@return_to || Navigation.invoices_list_path()}
         icon_only
       />
       <div class="flex flex-col gap-2">
@@ -706,9 +705,5 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       };
     </script>
     """
-  end
-
-  defp default_return_path(issue_date) do
-    Navigation.default_invoicing_path(issue_date)
   end
 end

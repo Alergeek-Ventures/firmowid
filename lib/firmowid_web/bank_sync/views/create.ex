@@ -14,6 +14,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
@@ -163,7 +164,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
            gettext("We will keep trying to connect on your behalf."),
            title: gettext("The bank connection could not be created at this time.")
          )
-         |> push_patch(to: ~p"/fakturowanie")}
+         |> push_navigate(to: InboxNavigation.inbox_path(:company))}
       end
     end
   end

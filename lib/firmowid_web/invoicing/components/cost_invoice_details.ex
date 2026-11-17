@@ -73,7 +73,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       <InvoiceDetails.invoice_header
         variant={invoice_source_badge_variant(@invoice)}
         is_cost_invoice={true}
-        issue_date={@invoice.issue_date}
         party_display_name={@invoice.effective_seller_display_name}
         description={@invoice.description}
         return_to={@return_to}

@@ -2794,7 +2794,6 @@ msgid "Click to confirm the connection"
 msgstr ""
 
 #: lib/firmowid_web/feedback/components/form.ex
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -3064,11 +3063,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Confirming…"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "Congratulations!"
 msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
@@ -3447,12 +3441,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Correspondence country"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgctxt "invoice type badge"
-msgid "Cost"
 msgstr ""
 
 #: lib/firmowid_web/management/views/project.html.heex
@@ -5044,11 +5032,6 @@ msgstr ""
 msgid "Enter your full name."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "Enter – open • Esc – close"
-msgstr ""
-
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
@@ -5605,16 +5588,6 @@ msgstr ""
 msgid "For flights, use take-off from Poland and landing back in Poland. Otherwise, use the border crossing times."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex
-#, elixir-autogen, elixir-format
-msgid "For invoices this is the issue date, for transactions the execution date"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/entries_table.ex
-#, elixir-autogen, elixir-format
-msgid "For invoices this is the payment due date, for transactions the payment booking date"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "For service companies with 6–20 people"
@@ -5674,11 +5647,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Found by NIP / VAT ID:"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "Found: %{count}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6749,12 +6717,6 @@ msgctxt "entries table column"
 msgid "Issued"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex
-#, elixir-autogen, elixir-format
-msgctxt "entries table column"
-msgid "Issued / Performed"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex
 #, elixir-autogen, elixir-format
 msgid "Issuing an invoice requires a KSeF connection. You can save it as a draft."
@@ -7422,7 +7384,6 @@ msgstr ""
 msgid "Marketing"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/filter_bar.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Matched"
@@ -8028,11 +7989,6 @@ msgstr ""
 #: lib/firmowid_web/management/components/leaves_tab.ex
 #, elixir-autogen, elixir-format
 msgid "No requests awaiting approval."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "No results for:"
 msgstr ""
 
 #: lib/firmowid_web/management/views/employees.html.heex
@@ -8785,7 +8741,6 @@ msgid "Page not found"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex
-#: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgid "Paid"
 msgstr ""
@@ -8901,12 +8856,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "entries table column"
 msgid "Payment due date"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/entries_table.ex
-#, elixir-autogen, elixir-format
-msgctxt "entries table column"
-msgid "Payment due date / Booked"
 msgstr ""
 
 #: lib/firmowid/invoicing/wizard_state.ex
@@ -9959,12 +9908,6 @@ msgstr ""
 msgid "Sales"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgctxt "invoice type badge"
-msgid "Sales"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgctxt "invoice side filter"
@@ -10166,16 +10109,6 @@ msgstr ""
 msgid "Search cost invoices"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "Search cost or sales invoices"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "Search cost or sales invoices..."
-msgstr ""
-
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #, elixir-autogen, elixir-format
@@ -10210,11 +10143,6 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Search for your bank"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "Search invoices"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -12245,11 +12173,6 @@ msgstr ""
 msgid "Things waiting for you."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "This %{likely} means the month can be considered closed."
-msgstr ""
-
 #: lib/firmowid/blobs/changes/process_document_blob.ex
 #, elixir-autogen, elixir-format
 msgid "This KSeF invoice is already in the system."
@@ -12399,11 +12322,6 @@ msgstr ""
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "This month"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "This month is behind us, so no more transactions will appear."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
@@ -12903,11 +12821,6 @@ msgstr ""
 msgid "Type the exact organization name: %{name}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
-#, elixir-autogen, elixir-format
-msgid "Type what you want to find (e.g. counterparty, invoice number, description)..."
-msgstr ""
-
 #: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to issue the invoice. Check its details and try again."
@@ -12999,11 +12912,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "Unnamed member"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/filter_bar.ex
-#, elixir-autogen, elixir-format
-msgid "Unpaid"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -13784,11 +13692,6 @@ msgstr ""
 msgid "Without a choice, on %{date} we will switch off the newest items above the limit."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/filter_bar.ex
-#, elixir-autogen, elixir-format
-msgid "Without document"
-msgstr ""
-
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Without the legal form and how the company is taxed we cannot calculate the payments to the tax office and ZUS."
@@ -13991,16 +13894,6 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "You can connect the bank at any time in the settings."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "You can download a package of all invoices issued this month:"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "You can still add invoices paid from another account or in cash."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
@@ -14471,7 +14364,6 @@ msgid "does not match the %{country} VAT number format (%{pattern})"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex
-#: lib/firmowid_web/invoicing/components/search_overlay.ex
 #, elixir-autogen, elixir-format
 msgid "draft sales invoice"
 msgstr ""
@@ -14732,11 +14624,6 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "months ended at a loss"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
-#, elixir-autogen, elixir-format
-msgid "most likely*"
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/validate_country_code.ex
