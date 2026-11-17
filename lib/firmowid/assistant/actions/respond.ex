@@ -3,7 +3,6 @@ defmodule Firmowid.Assistant.Actions.Respond do
   use Ash.Resource.ManualUpdate
 
   alias AshAi.Transcript, as: AshTranscript
-  alias Firmowid.AiTools
   alias Firmowid.Assistant
   alias Firmowid.Assistant.Conversation
   alias Firmowid.Assistant.Prompt
@@ -43,7 +42,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
       |> AshAi.ToolLoop.stream(
         otp_app: :firmowid,
         model: "openai:gpt-6-luna",
-        tools: AiTools.assistant(),
+        tools: Enum.map(tools, & &1.name),
         actor: scope.actor,
         tenant: scope.tenant,
         # Never forward the worker's private AshOban authorization context.

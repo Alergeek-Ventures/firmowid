@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   alias FirmowidWeb.Analysis.Utilities.Industry
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
+  alias FirmowidWeb.Settings.Components.TaxSection
   alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Rendered
 
@@ -45,6 +46,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :selected_user, :any, default: nil
   attr :uploads, :map, required: true
   attr :ksef_fetching?, :boolean, required: true
+  attr :scope, :any, required: true
+
+  attr :taxes?, :boolean,
+    default: false,
+    doc: "whether the `taxes` flag shows the taxes and ZUS card"
 
   attr :section, :atom, default: :all
 
@@ -77,6 +83,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <.company_details_form :if={@section == :organization} company_form={@company_form} />
+
+      <%!-- Without the inbox flag every settings card shares one page (`:all`). --%>
+      <div :if={@section in [:organization, :all] and @taxes?} class="lg:col-span-2">
+        <.live_component
+          module={TaxSection}
+          id="tax-section"
+          organization={@current_org}
+          scope={@scope}
+          members={@organization_users}
+        />
+      </div>
 
       <section :if={@section == :ksef} class={card_styles()}>
         <.ksef_connection

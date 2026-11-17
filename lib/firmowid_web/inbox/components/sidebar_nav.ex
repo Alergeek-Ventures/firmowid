@@ -54,13 +54,13 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   end
 
   defp load_status(socket) do
-    %{scope: scope, organization: organization} = socket.assigns
+    %{scope: scope, organization: organization, taxes_enabled: taxes?} = socket.assigns
 
     assign_async(socket, :status, fn ->
       {:ok, session} = Session.get_current(scope: scope)
 
       status = %{
-        company: length(Queue.attention_items(scope, organization)),
+        company: length(Queue.attention_items(scope, organization, taxes?: taxes?)),
         running?: session != nil
       }
 

@@ -182,7 +182,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     assign(socket,
       layer: layer,
       today: today,
-      items: Queue.items(layer, scope, socket.assigns.current_org, today),
+      items: Queue.items(layer, scope, socket.assigns.current_org, today, taxes?: flag_enabled?(:taxes, socket.assigns)),
       presence: Session.team_presence!(today, scope: scope)
     )
   end
@@ -344,7 +344,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
 
     %{layer: layer, ash_scope: scope, current_org: organization, today: today} = socket.assigns
-    {:noreply, assign(socket, :items, Queue.items(layer, scope, organization, today))}
+
+    items =
+      Queue.items(layer, scope, organization, today, taxes?: flag_enabled?(:taxes, socket.assigns))
+
+    {:noreply, assign(socket, :items, items)}
   end
 
   # Reloads the page and the sidebar, which shows whether the session runs; the

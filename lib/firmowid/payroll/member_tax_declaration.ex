@@ -163,7 +163,7 @@ defmodule Firmowid.Payroll.MemberTaxDeclaration do
       where: [action_is([:create, :correct]), attribute_equals(:ppk, :participant)],
       message: "can't be blank"
 
-    validate Firmowid.Payroll.Validations.MemberInOrganization,
+    validate Firmowid.Core.Validations.MemberInOrganization,
       on: [:create],
       where: [present(:member_id)]
 

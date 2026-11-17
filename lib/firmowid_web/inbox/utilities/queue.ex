@@ -22,6 +22,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias Firmowid.Invoicing
   alias Firmowid.Ksef
   alias Firmowid.Payroll
+  alias Firmowid.Taxes
   alias Firmowid.Timetracker
   alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
@@ -59,34 +60,44 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   Items of one layer: the company's (`:company`) or the member's own (`:me`).
   Team approvals and integrations are for admins; books are for admins and
   accountants. Every role can see their own actionable items.
+
+  `opts` carry the interface's feature flags, see `attention_items/3`.
   """
-  @spec items(:company | :me, Ash.Scope.t(), Organization.t(), Date.t()) :: [item()]
-  def items(:company, %{actor: %{member: %{role: role}}} = scope, organization, today)
+  @spec items(:company | :me, Ash.Scope.t(), Organization.t(), Date.t(), keyword()) :: [item()]
+  def items(layer, scope, organization, today, opts \\ [])
+
+  def items(:company, %{actor: %{member: %{role: role}}} = scope, organization, today, opts)
       when role in [:admin, :accountant] do
-    attention_items(scope, organization) ++ overdue_invoice_items(scope, today)
+    attention_items(scope, organization, opts) ++ overdue_invoice_items(scope, today)
   end
 
-  def items(:me, %{actor: %{member: %{id: member_id}}} = scope, _organization, today) do
+  def items(:me, %{actor: %{member: %{id: member_id}}} = scope, _organization, today, _opts) do
     contract_items(member_id, scope) ++ personal_delegation_items(member_id, scope, today)
   end
 
-  def items(_layer, _scope, _organization, _today), do: []
+  def items(_layer, _scope, _organization, _today, _opts), do: []
 
   @doc """
   The company items that need someone now (urgent and approvals), without the
   books. The sidebar counts these on every page, so they skip the invoice reads
   and take the organization the page already loaded.
+
+  With `taxes?: true` (the `:taxes` feature flag) a missing tax profile, or tax
+  settings that new transfers contradict, are listed too.
   """
-  @spec attention_items(Ash.Scope.t(), Organization.t()) :: [item()]
-  def attention_items(%{actor: %{member: %{role: :admin}}} = scope, organization) do
+  @spec attention_items(Ash.Scope.t(), Organization.t(), keyword()) :: [item()]
+  def attention_items(scope, organization, opts \\ [])
+
+  def attention_items(%{actor: %{member: %{role: :admin}}} = scope, organization, opts) do
     plan_limit_items(organization) ++
       ksef_items(scope) ++
+      tax_profile_items(scope, organization, Keyword.get(opts, :taxes?, false)) ++
       bank_items(scope) ++
       vat_id_items(scope) ++
       leave_items(scope) ++ hours_change_items(scope) ++ company_delegation_items(scope)
   end
 
-  def attention_items(_scope, _organization), do: []
+  def attention_items(_scope, _organization, _opts), do: []
 
   @doc "Groups items by tier, keeping tier order."
   @spec by_tier([item()]) :: [{tier(), [item()]}]
@@ -169,6 +180,61 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       {:ok, _connected} ->
         []
     end
+  end
+
+  # Payments to the tax office and ZUS are calculated from the legal form and the
+  # current year's tax settings, so either one missing blocks them. Synced transfers
+  # that contradict the saved settings wait for a confirmation.
+  defp tax_profile_items(_scope, _organization, false = _taxes?), do: []
+
+  defp tax_profile_items(scope, organization, true = _taxes?) do
+    # The year turns at Polish midnight, as in the taxes card.
+    year = Firmowid.LocalDate.today().year
+
+    tax_year =
+      organization.legal_form &&
+        List.first(Taxes.list_tax_years!(%{year: year}, scope: scope, load: [:partners]))
+
+    cond do
+      is_nil(tax_year) ->
+        [
+          tax_profile_item(
+            gettext("Fill in taxes and ZUS for %{year}", year: year),
+            gettext(
+              "Without the legal form and how the company is taxed we cannot calculate the payments to the tax office and ZUS."
+            ),
+            gettext("Fill in")
+          )
+        ]
+
+      year
+      |> Taxes.suggest_tax_settings!(scope: scope)
+      |> Taxes.pending_suggestions(tax_year, organization)
+      |> Enum.any?() ->
+        [
+          tax_profile_item(
+            gettext("Confirm taxes and ZUS for %{year}", year: year),
+            gettext("New transactions suggest different settings than the saved ones."),
+            gettext("Check")
+          )
+        ]
+
+      true ->
+        []
+    end
+  end
+
+  defp tax_profile_item(title, context, action) do
+    %{
+      id: "tax-profile",
+      tier: :urgent,
+      icon: "clipboard-list",
+      title: title,
+      context: context,
+      person: nil,
+      action: action,
+      href: SettingsNavigation.canonical_path(:organization) <> "#podatki"
+    }
   end
 
   defp vat_id_items(scope) do

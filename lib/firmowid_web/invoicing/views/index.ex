@@ -100,7 +100,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("sales_invoice:destroyed:#{organization_id}")
       # Ash PubSub — finances
       Endpoint.subscribe("transaction:updated:#{organization_id}")
-      Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
+
+      if flag_enabled?(:taxes, socket.assigns),
+        do: Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
+
       Endpoint.subscribe("bank_account:synced:#{organization_id}")
       Endpoint.subscribe("bank_account:sync_failed:#{organization_id}")
       Endpoint.subscribe("requisition:linked:#{organization_id}")
@@ -130,7 +133,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:projects_loaded_at, nil)
 
     active_months =
-      get_active_months(socket.assigns.ash_scope) ++
+      get_active_months(socket.assigns.ash_scope, flag_enabled?(:taxes, socket.assigns)) ++
         [Date.beginning_of_month(Date.utc_today())]
 
     socket = assign(socket, :active_months, active_months)
@@ -578,7 +581,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   def handle_info(%Broadcast{payload: %Notification{resource: ExpectedTransaction}}, socket) do
     active_months =
-      get_active_months(socket.assigns.ash_scope) ++ [Date.beginning_of_month(Date.utc_today())]
+      get_active_months(socket.assigns.ash_scope, flag_enabled?(:taxes, socket.assigns)) ++
+        [Date.beginning_of_month(Date.utc_today())]
 
     {:noreply, socket |> assign(:active_months, active_months) |> refetch_invoicing_entries()}
   end
@@ -910,11 +914,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       socket.assigns
 
     scope = socket.assigns.ash_scope
+    expected? = flag_enabled?(:taxes, socket.assigns)
 
     socket
     |> CostInvoiceUpload.assign_counts()
     |> start_async(:invoicing_entries, fn ->
-      read_entries(month, filter, subfilter, all_months?, scope)
+      read_entries(month, filter, subfilter, all_months?, scope, expected?)
     end)
   end
 
@@ -965,12 +970,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp read_newest_entries(%{assigns: %{all_months?: true}} = socket) do
     %{params: params, active_months: active_months, ash_scope: scope} = socket.assigns
     from = Date.utc_today() |> Date.beginning_of_month() |> Date.shift(month: -1)
+    expected? = flag_enabled?(:taxes, socket.assigns)
 
     if Date.before?(Enum.min(active_months, Date), from) do
       start_async(socket, :newest_entries, fn ->
         entries =
           from
-          |> fetch_entries(nil, params.filter, params.subfilter, scope)
+          |> fetch_entries(nil, params.filter, params.subfilter, scope, expected?)
           |> with_month_separators()
 
         {params, entries}
@@ -984,18 +990,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   # The inbox lists of invoices and transactions show every month, newest first.
   # The month's status, which the ungrouped entries feed, is not read for these lists.
-  defp read_entries(_month, filter, subfilter, true = _all_months?, scope) do
-    {[], nil |> fetch_entries(nil, filter, subfilter, scope) |> with_month_separators()}
+  defp read_entries(_month, filter, subfilter, true = _all_months?, scope, expected?) do
+    {[], nil |> fetch_entries(nil, filter, subfilter, scope, expected?) |> with_month_separators()}
   end
 
-  defp read_entries(month, filter, subfilter, false = _all_months?, scope) do
+  defp read_entries(month, filter, subfilter, false = _all_months?, scope, expected?) do
     fetched_entries =
       fetch_entries(
         Date.beginning_of_month(month),
         Date.end_of_month(month),
         filter,
         subfilter,
-        scope
+        scope,
+        expected?
       )
 
     {fetched_entries, group_cost_transactions_by_party(fetched_entries)}
@@ -1020,6 +1027,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp read_month_status(socket, fetched_entries) do
     %{month: month, filter: filter} = socket.assigns.params
     scope = socket.assigns.ash_scope
+    expected? = flag_enabled?(:taxes, socket.assigns)
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
@@ -1027,7 +1035,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     pending_entries =
       if filter == :unmatched,
         do: fetched_entries,
-        else: fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
+        else: fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope, expected?)
 
     raw_pending_count = Enum.count(pending_entries)
 
@@ -1041,7 +1049,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       cond do
         raw_pending_count > 0 -> true
         filter == :all -> fetched_entries != []
-        true -> fetch_entries(date_range_from, date_range_to, :all, nil, scope) != []
+        true -> fetch_entries(date_range_from, date_range_to, :all, nil, scope, expected?) != []
       end
 
     # No new transactions can be added after month ends
@@ -1340,10 +1348,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     "group-#{kind}-#{:erlang.phash2({kind, party, month})}"
   end
 
-  # Unordered: the list orders its entries once they are grouped by party.
-  defp fetch_entries(from, to, filter, subfilter, scope) do
+  # Unordered: the list orders its entries once they are grouped by party. Expected
+  # transactions are read only when `expected?` (the `:taxes` flag) is on.
+  defp fetch_entries(from, to, filter, subfilter, scope, expected?) do
     filter
     |> entry_reads(subfilter)
+    |> Enum.filter(&(expected? or &1 != :expected_transactions))
     |> Enum.flat_map(fn
       {:cost_invoices, args} ->
         list_cost_invoices(from, to, args, scope)
@@ -1450,7 +1460,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp get_active_months(scope) do
+  defp get_active_months(scope, expected?) do
     sales_dates = Invoicing.list_sales_invoices!(query: [select: [:issue_date]], scope: scope)
     cost_dates = Invoicing.list_cost_invoices!(query: [select: [:issue_date]], scope: scope)
 
@@ -1458,10 +1468,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Finances.list_transactions!(query: [select: [:booking_date]], scope: scope)
 
     expected_dates =
-      Finances.list_expected_transactions!(%{fulfilled: false},
-        query: [select: [:date]],
-        scope: scope
-      )
+      if expected?,
+        do:
+          Finances.list_expected_transactions!(%{fulfilled: false},
+            query: [select: [:date]],
+            scope: scope
+          ),
+        else: []
 
     (Enum.map(sales_dates ++ cost_dates, & &1.issue_date) ++
        Enum.map(transaction_dates, & &1.booking_date) ++ Enum.map(expected_dates, & &1.date))
