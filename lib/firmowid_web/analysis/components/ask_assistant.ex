@@ -285,7 +285,8 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
   defp monthly_change(_category, _count), do: nil
 
   defp growing_cost(category, now, before, count) do
-    change = now |> Decimal.div(before) |> Decimal.sub(1) |> Number.to_string!(format: "+#,##0%")
+    change =
+      now |> Decimal.div(before) |> Decimal.sub(1) |> Number.to_string!(format: "+#,##0%;-#,##0%")
 
     {caption, prompt} =
       if count == 1,
