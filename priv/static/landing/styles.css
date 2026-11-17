@@ -354,14 +354,15 @@ section{position:relative}
 .cmpf fieldset{border:0;margin:0 0 26px;padding:0}
 .cmpf legend{display:flex;align-items:center;gap:12px;padding:0;margin-bottom:16px;font-size:19px;font-weight:600;letter-spacing:-.01em}
 .cmpf legend i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-size:14px}
-.opts{display:grid;gap:8px}
-.opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 14px;background:#fff;border:1.5px solid var(--g200);border-radius:4px;font-size:16px;cursor:pointer;transition:border-color .2s,background-color .2s}
-.opt:has(input:checked){border-color:var(--ink);background:var(--r50,#FEF9F7)}
-.opt>input{width:20px;height:20px;accent-color:var(--r600);flex:none}
+.opts{display:grid;border-top:1px solid var(--g200)}
+.opt{display:flex;align-items:center;gap:12px;min-height:48px;padding:10px 2px;border-bottom:1px solid var(--g200);font-size:16px;color:var(--g700);cursor:pointer;transition:color .2s}
+.opt:has(>input:checked){color:var(--ink)}
+.opt>input{appearance:none;-webkit-appearance:none;flex:none;width:18px;height:18px;margin:0;border:1.5px solid var(--g400,#B5B5B5);border-radius:50%;background:none;cursor:pointer;transition:border-color .2s,background .2s}
+.opt>input:checked{border-color:var(--r600);background:radial-gradient(circle,var(--r600) 0 42%,transparent 46%)}
 .opt>span{flex:1}
 .opt em{display:none;align-items:center;gap:6px;font-style:normal;font-size:13px;color:var(--g600);white-space:nowrap}
 .opt:has(>input:checked) em{display:flex}
-.opt em input{width:72px;height:34px;padding:0 8px;font:inherit;font-size:15px;text-align:right;border:1px solid var(--g300);border-radius:3px;background:#fff}
+.opt em input{width:72px;height:30px;padding:0 8px;font:inherit;font-size:15px;text-align:right;border:1px solid var(--g300);border-radius:3px;background:#fff}
 .rows2{margin:24px 0 0;border-top:1px solid rgba(245,241,234,.2);font-size:14px;text-align:left}
 .rows2 div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid rgba(245,241,234,.2)}
 .rows2 dt{color:rgba(245,241,234,.75)}.rows2 dd{margin:0;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
