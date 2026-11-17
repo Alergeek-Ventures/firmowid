@@ -238,7 +238,7 @@
     calc();
 
     // one question at a time: later steps stay blurred until the earlier one is answered
-    const steps = $$('.step', cmpf), out = $('#cmpout');
+    const steps = $$('.step', cmpf);
     const things = n => n === 1 ? '1 rzecz' : n >= 2 && n <= 4 ? n + ' rzeczy' : n + ' rzeczy';
     const summary = [
       () => $('#q-team-out').textContent,
@@ -254,7 +254,6 @@
         s.classList.toggle('is-done', i < reached || (i <= reached && i !== n));
         $('.step__sum', s).textContent = i !== n && i <= reached ? summary[i]() : '';
       });
-      if (reached === steps.length - 1) out.classList.remove('is-locked');
     };
     steps.forEach((s, i) => {
       const next = $('.step__next', s);
