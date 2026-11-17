@@ -32,6 +32,20 @@ defmodule Firmowid.Finances.Transaction.Types.SalarySuggestion do
           type: AshMoney.Types.Money,
           allow_nil?: false,
           description: "Absolute difference between the transfer and the expected amount."
+        ],
+        named_month?: [
+          type: :boolean,
+          allow_nil?: false,
+          description: "Whether the transfer title names this salary's month, e.g. Wynagrodzenie 09/26."
+        ],
+        confidence: [
+          type: :atom,
+          allow_nil?: false,
+          constraints: [one_of: [:high, :mid]],
+          description:
+            "high when the title names the month, the recipient is the employee by account or full name " <>
+              "and the amount is within the tolerance, or when the amount is exact and the recipient " <>
+              "resembles the employee; mid otherwise."
         ]
       ]
     ]

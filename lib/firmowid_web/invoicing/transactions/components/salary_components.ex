@@ -31,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
           :for={{suggestion, index} <- Enum.with_index(@suggestions)}
           id={"salary-suggestion-#{suggestion.user_id}-#{suggestion.month}"}
           name={suggestion.name}
+          navigate={Navigation.employee_path(suggestion.user_id, %{miesiac: suggestion.month})}
           description={
             Enum.join(
               [
@@ -53,17 +54,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
         >
           <MatchingComponents.score_indicator
             id={"salary-amount-match-#{suggestion.user_id}-#{suggestion.month}"}
-            level={if Money.zero?(suggestion.difference), do: :high, else: :mid}
-            tooltip={
-              gettext("Difference from transfer: %{amount}", amount: to_string(suggestion.difference))
-            }
+            level={suggestion.confidence}
+            tooltip={match_tooltip(suggestion)}
           />
           <.button
             type="button"
             phx-click="connect_salary"
             phx-value-user_id={suggestion.user_id}
             phx-value-month={Date.to_iso8601(suggestion.month)}
-            variant={if index == 0, do: "secondary", else: "tertiary"}
+            variant={
+              if index == 0 and suggestion.confidence == :high, do: "secondary", else: "tertiary"
+            }
             size="small"
           >
             {gettext("Confirm")}
@@ -137,6 +138,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
     </section>
     """
   end
+
+  # The row already shows the difference, so a named month is the news.
+  defp match_tooltip(%{named_month?: true}), do: gettext("The transfer title names this month")
+
+  defp match_tooltip(suggestion),
+    do: gettext("Difference from transfer: %{amount}", amount: to_string(suggestion.difference))
 
   defp month_label(month) do
     Firmowid.Cldr.Date.to_string!(month,

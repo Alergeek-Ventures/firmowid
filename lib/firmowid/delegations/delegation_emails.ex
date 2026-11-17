@@ -10,7 +10,7 @@ defmodule Firmowid.Delegations.DelegationEmails do
   alias Firmowid.Core.Member
   alias Firmowid.Core.User
   alias Firmowid.Delegations.Delegation
-  alias Firmowid.Delegations.PerDiem
+  alias Firmowid.Delegations.Settlement
   alias Firmowid.Mailer
   alias Firmowid.TimeFormatter
 
@@ -20,7 +20,7 @@ defmodule Firmowid.Delegations.DelegationEmails do
   def deliver_submitted_settlement(admins, delegation, employee) do
     name = employee_name(employee)
     url = url(~p"/zarzadzanie/pracownicy/#{employee.user_id}/delegacje/#{delegation.reference}")
-    total = settlement_total(delegation)
+    total = Settlement.total(delegation)
     {balance_label, balance} = settlement_balance(total, delegation.advance_amount)
 
     assigns = %{
@@ -52,7 +52,7 @@ defmodule Firmowid.Delegations.DelegationEmails do
         ) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_reviewed_settlement(delegation, employee, status, reason) do
-    total = settlement_total(delegation)
+    total = Settlement.total(delegation)
     {balance_label, balance} = settlement_balance(total, delegation.advance_amount)
 
     assigns = %{
@@ -259,16 +259,6 @@ defmodule Firmowid.Delegations.DelegationEmails do
     Otwórz rozliczenie:
     #{assigns.url}
     """
-  end
-
-  defp settlement_total(delegation) do
-    per_diem = PerDiem.for_delegation(delegation)
-    initial = if per_diem, do: per_diem.total, else: Money.new(:PLN, 0)
-
-    Enum.reduce(delegation.expenses, initial, fn expense, total ->
-      amount = expense.settlement_amount || expense.expense_amount
-      Money.add!(total, amount)
-    end)
   end
 
   defp settlement_balance(total, advance) do

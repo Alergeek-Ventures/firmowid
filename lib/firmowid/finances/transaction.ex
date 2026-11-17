@@ -1,5 +1,5 @@
 defmodule Firmowid.Finances.Transaction do
-  @moduledoc "Bank transaction synced from GoCardless, with internal notes and invoice matching."
+  @moduledoc "Bank transaction synced from GoCardless, with internal notes and matching to invoices, salaries and delegations."
   use Ash.Resource,
     domain: Firmowid.Finances,
     data_layer: AshPostgres.DataLayer,
@@ -22,6 +22,10 @@ defmodule Firmowid.Finances.Transaction do
   postgres do
     table "transactions"
     repo Firmowid.Repo
+
+    references do
+      reference :delegation, on_delete: :nilify
+    end
 
     custom_statements do
       statement :allow_pending_transaction_entity_tags do
@@ -86,7 +90,7 @@ defmodule Firmowid.Finances.Transaction do
       argument :reconciliation, :atom do
         constraints one_of: [:matched, :skipped, :pending]
 
-        description "matched is linked to an invoice or a monthly salary, pending is unresolved, " <>
+        description "matched is linked to an invoice, a monthly salary or a delegation, pending is unresolved, " <>
                       "skipped is excluded from matching."
       end
 
@@ -204,6 +208,42 @@ defmodule Firmowid.Finances.Transaction do
       change set_attribute(:salary_month, nil)
     end
 
+    update :connect_delegation do
+      description "Manually link a transaction to an employee's business trip: its advance, settlement payout or returned advance."
+      accept [:delegation_id]
+      require_attributes [:delegation_id]
+      require_atomic? false
+
+      change get_and_lock_for_update()
+      change Firmowid.Finances.Changes.ConnectDelegation
+    end
+
+    update :disconnect_delegation do
+      description "Remove a delegation link without changing the bank transaction."
+      accept []
+      change set_attribute(:delegation_id, nil)
+    end
+
+    action :delegation_suggestions, {:array, Types.DelegationSuggestion} do
+      description "Find approved business trips whose advance, settlement payout or returned advance a pending PLN transfer may be, best match first."
+
+      argument :transaction_id, :uuid,
+        allow_nil?: false,
+        description: "ID of a pending PLN transaction."
+
+      run Firmowid.Finances.Transaction.Actions.DelegationSuggestions
+    end
+
+    action :strong_matches, {:array, Types.StrongMatch} do
+      description "List the confident suggestion, an invoice, a salary or a business trip, of each given pending transaction that has one."
+
+      argument :transaction_ids, {:array, :uuid},
+        allow_nil?: false,
+        description: "IDs of the transactions to check; matched and skipped ones are left out."
+
+      run Firmowid.Finances.Transaction.Actions.StrongMatches
+    end
+
     action :invoice_suggestions, {:array, Types.InvoiceSuggestion} do
       description "Score unresolved invoices against a pending transaction, best match first."
 
@@ -298,6 +338,12 @@ defmodule Firmowid.Finances.Transaction do
       relationship_context %{data_layer: %{table: "transaction_entity_tags"}}
       source_attribute :id
       destination_attribute :resource_id
+    end
+
+    belongs_to :delegation, Firmowid.Delegations.Delegation do
+      description "The business trip whose advance, settlement payout or returned advance this transfer is."
+      allow_nil? true
+      attribute_writable? true
     end
 
     belongs_to :bank_account, Firmowid.Finances.BankAccount do

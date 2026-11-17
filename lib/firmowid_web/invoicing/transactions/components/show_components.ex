@@ -161,6 +161,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   attr :suggestions, :list, required: true
+  attr :transaction, Transaction, required: true
+  attr :return_to, :string, default: nil
 
   @doc "Renders invoice recommendations for a transaction with explicit manual confirmation."
   @spec invoice_suggestions(map()) :: Phoenix.LiveView.Rendered.t()
@@ -170,7 +172,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       |> assign(:green_idx, RecommendationThresholds.highest_green_index(assigns.suggestions))
       |> assign(
         :candidates,
-        Enum.map(assigns.suggestions, fn {invoice, score} -> invoice_candidate(invoice, score) end)
+        Enum.map(assigns.suggestions, fn {invoice, score} ->
+          invoice_candidate(
+            invoice,
+            score,
+            Navigation.transaction_show_path(assigns.transaction, assigns.return_to)
+          )
+        end)
       )
 
     ~H"""
@@ -184,6 +192,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
           :for={{candidate, index} <- Enum.with_index(@candidates)}
           id={"invoice-suggestion-#{candidate.id}"}
           name={candidate.name}
+          navigate={candidate.navigate}
           description={candidate.information}
           date={candidate.date}
           amount={candidate.amount}
@@ -436,9 +445,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       Enum.map(transaction.cost_invoices, &cost_invoice_card(&1, invoice_return_to))
   end
 
-  defp invoice_candidate(%CostInvoice{} = invoice, score) do
+  defp invoice_candidate(%CostInvoice{} = invoice, score, return_to) do
     %{
       id: invoice.id,
+      navigate: Navigation.cost_invoice_show_path(invoice, return_to),
       name: invoice.effective_seller_display_name,
       information: invoice_information(invoice.invoice_identifier, invoice.description),
       date: invoice.issue_date,
@@ -447,9 +457,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     }
   end
 
-  defp invoice_candidate(%SalesInvoice{} = invoice, score) do
+  defp invoice_candidate(%SalesInvoice{} = invoice, score, return_to) do
     %{
       id: invoice.id,
+      navigate: Navigation.sales_invoice_show_path(invoice, return_to),
       name: invoice.buyer_display_name_label,
       information: invoice_information(invoice.invoice_number, first_sales_item_name(invoice)),
       date: invoice.issue_date,

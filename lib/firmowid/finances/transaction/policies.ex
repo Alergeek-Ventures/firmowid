@@ -25,7 +25,7 @@ defmodule Firmowid.Finances.Transaction.Policies do
       authorize_if always()
     end
 
-    policy [action(:invoice_suggestions), {AtLeastRole, role: :invoicing}] do
+    policy [action([:invoice_suggestions, :strong_matches]), {AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 
@@ -37,7 +37,15 @@ defmodule Firmowid.Finances.Transaction.Policies do
       authorize_if always()
     end
 
-    policy action([:connect_salary, :disconnect_salary, :salary_suggestions, :monthly_salaries]) do
+    policy action([
+             :connect_salary,
+             :disconnect_salary,
+             :salary_suggestions,
+             :monthly_salaries,
+             :connect_delegation,
+             :disconnect_delegation,
+             :delegation_suggestions
+           ]) do
       authorize_if {ActorRole, role: :admin}
     end
 

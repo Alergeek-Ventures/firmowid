@@ -128,6 +128,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:page_title, "Fakturowanie")
       |> assign(:projects_column, nil)
       |> assign(:projects_loaded_at, nil)
+      |> assign(:strong_matches, %{})
 
     active_months =
       get_active_months(socket.assigns.ash_scope) ++
@@ -348,6 +349,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             }
             return_to={Navigation.invoicing_index_path(@params)}
             can_write_invoicing={can_write_invoicing?(@current_user)}
+            strong_matches={@strong_matches}
             projects={@projects_column}
             projects_loaded_at={@projects_loaded_at}
           />
@@ -928,10 +930,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
      |> assign(:newest_entries, nil)
      |> assign_projects_column(month, scope)
      |> assign_month_status(fetched_entries)
-     |> fetch_dashboard_data()}
+     |> fetch_dashboard_data()
+     |> read_strong_matches(entries)}
   end
 
   def handle_async(:invoicing_entries, {:exit, reason}, _socket), do: exit(reason)
+
+  def handle_async(:strong_matches, {:ok, strong_matches}, socket),
+    do: {:noreply, assign(socket, :strong_matches, strong_matches)}
+
+  def handle_async(:strong_matches, {:exit, {:shutdown, :cancel}}, socket), do: {:noreply, socket}
+  def handle_async(:strong_matches, {:exit, reason}, _socket), do: exit(reason)
 
   # The newest months show until every entry arrives, unless the params changed meanwhile or
   # every entry is already there. Without newest entries, the placeholders stay rather than
@@ -950,6 +959,37 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_async(:newest_entries, {:exit, reason}, _socket), do: exit(reason)
+
+  # Scoring pending transactions takes a while, so the rows show first and the confident
+  # suggestions mark them once found. Salary suggestions are read per transaction, so only the
+  # top of the list is scored: a company that never matches can have thousands pending.
+  @strong_match_limit 200
+
+  defp read_strong_matches(socket, entries) do
+    scope = socket.assigns.ash_scope
+
+    pending_ids =
+      for entry <- entries,
+          %Transaction{reconciliation_status: :pending, id: id} <- pending_candidates(entry),
+          do: id
+
+    socket = cancel_async(socket, :strong_matches)
+
+    if pending_ids == [] do
+      assign(socket, :strong_matches, %{})
+    else
+      pending_ids = Enum.take(pending_ids, @strong_match_limit)
+
+      start_async(socket, :strong_matches, fn ->
+        pending_ids
+        |> Finances.list_strong_transaction_matches!(scope: scope)
+        |> Map.new(&{&1.transaction_id, &1})
+      end)
+    end
+  end
+
+  defp pending_candidates(%TransactionGroup{transactions: transactions}), do: transactions
+  defp pending_candidates(entry), do: [entry]
 
   # Projects change without the entries changing (another session, the assistant, tracked
   # time), so every reload makes the rows on screen read theirs again.

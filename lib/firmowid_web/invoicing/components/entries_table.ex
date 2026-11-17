@@ -42,6 +42,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :return_to, :string, default: nil
   attr :can_write_invoicing, :boolean, default: true
 
+  attr :strong_matches, :map,
+    default: %{},
+    doc: "the confident suggestion of each pending transaction that has one, by transaction ID"
+
   attr :projects, :map,
     default: nil,
     doc: "project column settings (`projects`, `colors`, `scope`, `can_write`), or nil to hide it"
@@ -92,6 +96,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assigns
       |> assign_new(:return_to, fn -> nil end)
       |> assign_new(:can_write_invoicing, fn -> true end)
+      |> assign_new(:strong_matches, fn -> %{} end)
       |> assign_new(:projects, fn -> nil end)
       |> assign_new(:projects_loaded_at, fn -> nil end)
       |> assign_new(:load_newer, fn -> nil end)
@@ -189,6 +194,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             columns={columns(@mode, @projects)}
             return_to={@return_to}
             can_write_invoicing={@can_write_invoicing}
+            strong_matches={@strong_matches}
           />
           <.placeholder_rows :if={@more_loading} columns={columns(@mode, @projects)} by_month={false} />
         </tbody>
@@ -361,6 +367,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       columns={@columns}
       return_to={@return_to}
       can_write_invoicing={@can_write_invoicing}
+      strong_matches={@strong_matches}
     />
     """
   end
@@ -374,6 +381,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       invoicing_entry={@entry}
       return_to={@return_to}
       can_write_invoicing={@can_write_invoicing}
+      strong_matches={@strong_matches}
     />
     """
   end
@@ -583,6 +591,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             invoicing_entry={@invoicing_entry}
             return_to={@return_to}
             can_write_invoicing={@can_write_invoicing}
+            strong_matches={@strong_matches}
           />
         </div>
       </td>
@@ -875,6 +884,30 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  # A pending transaction with a confident suggestion only needs confirming, so its status
+  # leads to the transaction instead of offering to skip it.
+  defp render_cell(
+         %{column: "status", status: "unmatched", invoicing_entry: %Transaction{id: id}, strong_matches: strong_matches} =
+           assigns
+       )
+       when is_map_key(strong_matches, id) do
+    assigns = assign(assigns, :match_label, strong_match_label(strong_matches[id]))
+
+    ~H"""
+    <.link
+      id={"#{@invoicing_entry.id}-strong-match"}
+      kind="unstyled"
+      navigate={Navigation.transaction_show_path(@invoicing_entry, @return_to)}
+      phx-hook="Tippy"
+      data-tippy-content={gettext("Strong match: %{match}. Open to confirm.", match: @match_label)}
+      aria-label={gettext("Strong match: %{match}. Open to confirm.", match: @match_label)}
+      class="flex h-6 w-32 items-center justify-center rounded-md border border-dashed border-moss-600 bg-white px-2 text-caps-sm font-medium whitespace-nowrap text-moss-700 uppercase hover:bg-moss-100"
+    >
+      {gettext("To confirm")}
+    </.link>
+    """
+  end
+
   defp render_cell(%{column: "status", status: "unmatched"} = assigns) do
     ~H"""
     <div
@@ -951,6 +984,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       status={@status}
       invoicing_entry={@invoicing_entry}
       can_write_invoicing={@can_write_invoicing}
+      strong_matches={@strong_matches}
+      return_to={@return_to}
     />
     """
   end
@@ -1180,6 +1215,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :columns, :list, required: true
   attr :return_to, :string, default: nil
   attr :can_write_invoicing, :boolean, default: true
+  attr :strong_matches, :map, default: %{}
 
   attr :projects, :map,
     default: nil,
@@ -1245,6 +1281,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               group={@group}
               columns={@columns}
               can_write_invoicing={@can_write_invoicing}
+              strong_matches={@strong_matches}
             />
           <% end %>
         </div>
@@ -1285,6 +1322,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                   invoicing_entry={transaction}
                   return_to={@return_to}
                   can_write_invoicing={@can_write_invoicing}
+                  strong_matches={@strong_matches}
                 />
               </div>
             <% else %>
@@ -1295,6 +1333,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 invoicing_entry={transaction}
                 return_to={@return_to}
                 can_write_invoicing={@can_write_invoicing}
+                strong_matches={@strong_matches}
               />
             <% end %>
           </div>
@@ -1331,10 +1370,26 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assigns
       |> assign(:is_unmatched, "status" in assigns.columns)
       |> assign(:all_skipped, Enum.all?(assigns.group.transactions, & &1.skip_invoicing))
+      |> assign(
+        :strong_count,
+        Enum.count(
+          assigns.group.transactions,
+          &(&1.reconciliation_status == :pending and is_map_key(assigns.strong_matches, &1.id))
+        )
+      )
 
     ~H"""
     <%= cond do %>
       <% not @is_unmatched -> %>
+        <%!-- Skipping the whole group would also skip transactions that only need confirming,
+           so the group points at them and opens like any group. --%>
+      <% @strong_count > 0 -> %>
+        <div
+          id={"#{@group.id}-strong-matches"}
+          class="flex h-6 w-32 items-center justify-center rounded-md border border-dashed border-moss-600 bg-white px-2 text-caps-sm font-medium whitespace-nowrap text-moss-700 uppercase"
+        >
+          {ngettext("%{count} to confirm", "%{count} to confirm", @strong_count)}
+        </div>
       <% @all_skipped -> %>
         <div class="flex w-32 flex-row gap-2 overflow-hidden">
           <div
@@ -1421,6 +1476,27 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       </span>
     </div>
     """
+  end
+
+  defp strong_match_label(%{kind: :invoice} = match) do
+    gettext("invoice %{number} from %{counterparty}",
+      number: match.reference,
+      counterparty: match.name
+    )
+  end
+
+  defp strong_match_label(%{kind: :salary} = match) do
+    gettext("salary of %{employee} for %{month}",
+      employee: match.name,
+      month: Firmowid.Cldr.Date.to_string!(match.month, format: "LLLL y")
+    )
+  end
+
+  defp strong_match_label(%{kind: :delegation} = match) do
+    gettext("business trip %{reference} of %{employee}",
+      reference: match.reference,
+      employee: match.name
+    )
   end
 
   defp pluralize_transaction_count(count) do
