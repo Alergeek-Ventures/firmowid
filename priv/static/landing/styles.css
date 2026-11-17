@@ -531,3 +531,21 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none}
 }
+
+/* ---------- vertical rhythm ----------
+   One section gap everywhere: every section brings its own top padding and no
+   bottom padding, except where the background changes after it. */
+:root{--sec:clamp(72px,8.4vw,120px);--head:clamp(28px,3.4vw,48px)}
+.hero,.cost,.flow,.assist,.bento,.cases,.calc,.pricing,.faq,.team,.oss{padding-top:var(--sec);padding-bottom:0}
+.hero{padding-top:clamp(16px,4.4vw,64px)}
+.flow,.team,.assist,.oss{padding-bottom:var(--sec)}
+.proof{margin-top:var(--sec);padding-block:clamp(48px,5.6vw,80px)}
+.end__cta{padding-block:var(--sec)}
+.flow h2,.bento h2,.cases h2,.calc h2,.faq__grid h2{margin-bottom:var(--head)}
+.pricing h2{margin-bottom:clamp(20px,2.4vw,28px)}
+.hero h1{margin-top:clamp(22px,2.4vw,34px)}
+.hero__sub{margin-top:clamp(20px,2vw,28px)}
+.signup,.hero__cta{margin-top:clamp(26px,2.6vw,36px)}
+.hero__ticks{margin-top:20px}
+.hero .tabs{margin-top:clamp(56px,7vw,96px)}
+.bento__grid,.learn,.cases__grid,.plans{gap:16px}
