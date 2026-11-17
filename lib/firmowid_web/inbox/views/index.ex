@@ -419,7 +419,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     >
       <header class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex min-w-0 flex-col gap-1">
-          <p class="text-sm leading-[1.35] text-grey-600">
+          <p class="text-sm/[1.35] text-grey-600">
             {if @layer == :company, do: @current_org.display_name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
               @today,
               format: :full

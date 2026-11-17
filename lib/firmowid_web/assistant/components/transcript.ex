@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Assistant.Components.Transcript do
               phx-click="suggestion"
               phx-value-key={key}
               phx-value-conversation-id={@conversation_id}
-              class="flex cursor-pointer items-center justify-between gap-3 rounded-none py-3 text-start text-sm leading-[1.35] font-normal whitespace-normal text-grey-900 select-none inline-full min-block-11 active:opacity-80 pointer-fine:hover:underline phx-click-loading:opacity-75"
+              class="flex cursor-pointer items-center justify-between gap-3 rounded-none py-3 text-start text-sm/[1.35] font-normal whitespace-normal text-grey-900 select-none inline-full min-block-11 active:opacity-80 pointer-fine:hover:underline phx-click-loading:opacity-75"
             >
               <span>{label}</span><Lucideicons.arrow_right
                 class="size-4 flex-none text-grey-500"
@@ -149,7 +149,7 @@ defmodule FirmowidWeb.Assistant.Components.Transcript do
         phx-value-conversation-id={@conversation_id}
         class="group flex cursor-pointer flex-col items-stretch gap-1 rounded-md border border-grey-200 bg-white px-4 py-3.5 text-start font-normal whitespace-normal select-none min-inline-0 active:bg-grey-100 motion-safe:transition-colors motion-safe:duration-150 pointer-fine:hover:border-grey-400 pointer-fine:hover:bg-grey-50 phx-click-loading:opacity-75"
       >
-        <span class="flex items-baseline justify-between gap-2 text-sm leading-[1.35] font-medium text-grey-900">
+        <span class="flex items-baseline justify-between gap-2 text-sm/[1.35] font-medium text-grey-900">
           <span>{tile.title}</span>
           <Lucideicons.arrow_right
             class="size-3.5 flex-none translate-y-0.5 text-grey-500 pointer-fine:group-hover:text-grey-900"
