@@ -448,8 +448,9 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 .team figcaption small{display:block;margin-top:8px;font-size:13px;line-height:1.4;color:var(--g700)}
 .faq{padding-top:0}
 .faq__grid h2{margin-bottom:clamp(20px,2.6vw,32px)}
-.faq__list{columns:2;column-gap:56px;border-top:1px solid var(--g300)}
-details{break-inside:avoid;border-bottom:1px solid var(--g300)}
+.faq__list{display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}
+.faq__col{border-top:1px solid var(--g300)}
+details{border-bottom:1px solid var(--g300)}
 summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;padding:15px 2px;font-size:16.5px;font-weight:500}
 summary::-webkit-details-marker{display:none}
 summary::after{content:"";flex:none;width:20px;height:20px;background:url(/images/landing/icons/chevron-down.svg) center/contain no-repeat;transition:rotate .25s}
@@ -479,7 +480,7 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
   .cursor{display:none}
   .nav__links>a:not(.btn){display:none}
   .assist__grid,.calc__grid,.team__grid,.proof__grid{grid-template-columns:1fr}
-  .faq__list{columns:1}
+  .faq__list{grid-template-columns:1fr}.faq__col+.faq__col{border-top:0}
   .app{grid-template-columns:1fr}.app__side{display:none}
   .bento__grid{grid-template-columns:repeat(2,1fr)}
   .oss__top,.oss__facts{grid-template-columns:1fr}.oss__facts{gap:22px}
