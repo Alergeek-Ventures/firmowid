@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firmowid: faktury to nie zysk</title>
+<meta name="description" content="Firmowid łączy faktury z KSeF, bank i czas pracy zespołu. Pokazuje, ile zostaje w firmie: miesiąc po miesiącu i projekt po projekcie.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="Firmowid: faktury to nie zysk">
+<meta property="og:description" content="Faktury z KSeF, przelewy z banku i godziny zespołu w jednym miejscu. Zobacz, ile z każdych 100 zł zostaje w firmie.">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/landing/styles.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <nav class="nav__bar" aria-label="Nawigacja główna">
+    <a class="logo" href="#top">Firmowid</a>
+    <div class="nav__links">
+      <a href="#jak">Jak to działa</a>
+      <a href="#cennik">Cennik</a>
+      <a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn--nav-ghost" href="/zaloguj">Zaloguj się</a>
+      <a class="btn btn--nav" href="/zarejestruj">Wypróbuj</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero__copy">
+      <a class="badge" href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">
+        <img src="/images/github-mark.svg" width="22" height="22" alt="">
+        <span>Finanse firmy usługowej · <em>open source</em></span>
+      </a>
+      <h1 id="headline">Faktury to nie <span class="ul">zysk.</span></h1>
+      <p class="hero__sub">Firmowid łączy faktury z&nbsp;KSeF, przelewy z&nbsp;banku i&nbsp;godziny zespołu. Pokazuje, ile z&nbsp;każdych 100&nbsp;zł zostaje w&nbsp;firmie.</p>
+      <div class="hero__cta"><a class="btn btn--dark btn--big" href="/zarejestruj">Zacznij za darmo</a></div>
+      <ul class="hero__ticks">
+        <li>Plan darmowy na zawsze</li><li>Bez karty</li><li>Start w 2 minuty</li>
+      </ul>
+    </div>
+    <div class="tabs reveal" id="tabs">
+      <div class="tabs__nav" role="tablist">
+        <button role="tab" class="tab on" data-i="0"><b>Ile zostało z&nbsp;października?</b><small>Analiza · Podsumowanie</small><i></i></button>
+        <button role="tab" class="tab" data-i="1"><b>Który miesiąc był na minusie?</b><small>Analiza · Trendy</small><i></i></button>
+        <button role="tab" class="tab" data-i="2"><b>Czy ten projekt się opłaca?</b><small>Trendy · jeden projekt</small><i></i></button>
+        <button role="tab" class="tab" data-i="3"><b>Kto jeszcze nie zapłacił?</b><small>Skrzynka · Księgowość</small><i></i></button>
+      </div>
+
+      <div class="app" aria-label="Poglądowy widok aplikacji">
+        <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6.5 1.5L10 19z"/></svg>
+        <aside class="app__side">
+          <span class="app__logo">Firmowid</span>
+          <span class="app__switch"><b>Firma</b><span>Ty</span></span>
+          <ul>
+            <li data-m="3">Skrzynka</li><li>Faktury</li><li>Transakcje</li><li>Asystent</li>
+            <li>Zespół</li><li>Kontrahenci</li><li>Projekty</li><li data-m="012">Analiza</li>
+          </ul>
+        </aside>
+
+        <div class="app__main">
+          <!-- P0: Podsumowanie -->
+          <div class="panel on" data-p="0">
+            <div class="app__bar"><span class="pill on">PODSUMOWANIE</span><span class="pill">TRENDY</span><span class="chip">Październik 2026</span><span class="ask">Zapytaj asystenta</span></div>
+            <p class="p0__line">Z każdych 100 zł przychodu zostało <b>23 zł</b>.</p>
+            <div class="bar100 bar100--app">
+              <span class="seg seg--a" style="--w:41"><em>41 zł</em></span><span class="seg seg--b" style="--w:18"><em>18 zł</em></span><span class="seg seg--c" style="--w:9"></span><span class="seg seg--d" style="--w:9"></span><span class="seg seg--keep" style="--w:23"><em>zostaje w firmie</em></span>
+            </div>
+            <div class="hnote" aria-hidden="true"><span>to zostaje!</span><svg viewBox="0 0 40 50" fill="none"><path d="M8 3 C 5 22, 13 36, 30 44"/><path d="M17 45 L31 45 L26 32"/></svg></div>
+            <div class="cmp"><span>Poprzedni mies.</span><div class="bar100 bar100--xs"><span class="seg seg--grey" style="--w:73"></span><span class="seg seg--keep" style="--w:27"></span></div><b>zostało 27 zł</b></div>
+            <div class="cols">
+              <div>
+                <h4>Koszty <b>61 600 zł</b></h4>
+                <ul class="cats">
+                  <li><i class="dot dot--a"></i><span>Wynagrodzenia i ZUS</span><svg viewBox="0 0 60 18"><polyline points="0,12 12,10 24,11 36,8 48,9 60,6"/></svg><b>32 800 zł</b></li>
+                  <li><i class="dot dot--b"></i><span>Podwykonawcy</span><svg viewBox="0 0 60 18"><polyline points="0,6 12,9 24,5 36,12 48,10 60,13"/></svg><b>14 400 zł</b></li>
+                  <li><i class="dot dot--c"></i><span>Oprogramowanie i IT</span><svg viewBox="0 0 60 18"><polyline points="0,10 12,10 24,9 36,9 48,8 60,8"/></svg><b>7 200 zł</b></li>
+                  <li><i class="dot dot--d"></i><span>Reszta · 5 kategorii</span><svg viewBox="0 0 60 18"><polyline points="0,9 12,11 24,8 36,10 48,9 60,10"/></svg><b>7 200 zł</b></li>
+                </ul>
+              </div>
+              <div>
+                <h4>Przychody <b>80 000 zł</b></h4>
+                <p class="unpaid">Poza sumą: nieopłacone faktury 12 300 zł</p>
+                <ul class="cats">
+                  <li><i class="dot dot--keep"></i><span>Sprzedaż</span><svg viewBox="0 0 60 18"><polyline points="0,13 12,11 24,12 36,7 48,5 60,6"/></svg><b>78 300 zł</b></li>
+                  <li><i class="dot dot--grey"></i><span>Pozostałe przychody</span><svg viewBox="0 0 60 18"><polyline points="0,9 12,9 24,10 36,9 48,9 60,9"/></svg><b>1 700 zł</b></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- P1: Trendy -->
+          <div class="panel" data-p="1">
+            <div class="app__bar"><span class="pill">PODSUMOWANIE</span><span class="pill on">TRENDY</span><span class="chip">Cała firma</span><span class="chip">2026</span></div>
+            <p class="chart__title">Wynik netto według miesięcy</p>
+            <div class="chart" id="chart1"></div>
+          </div>
+
+          <!-- P2: Projekt -->
+          <div class="panel" data-p="2">
+            <div class="app__bar"><span class="pill">PODSUMOWANIE</span><span class="pill on">TRENDY</span><span class="chip chip--pick" id="projchip">Pokaż: CODEXA</span><span class="chip">2026</span></div>
+            <p class="chart__title">Wynik netto według miesięcy</p>
+            <div class="chart" id="chart2"></div>
+            <div class="proj">
+              <div><small>Przychody</small><b id="pj-rev">214 000 zł</b></div>
+              <div><small>Koszty</small><b id="pj-cost">139 100 zł</b></div>
+              <div><small>Wynik</small><b id="pj-res">74 900 zł</b></div>
+              <div><small>Z każdych 100 zł</small><b id="pj-keep" class="keep">zostało 35 zł</b></div>
+            </div>
+          </div>
+
+          <!-- P3: Skrzynka -->
+          <div class="panel" data-p="3">
+            <div class="app__bar app__bar--inbox"><b>Biuro Cyfrowe</b><span>wtorek, 17 listopada 2026</span></div>
+            <p class="inbox__cap">KSIĘGOWOŚĆ <span id="duecount">3</span></p>
+            <p class="inbox__sub">Faktury po terminie bez dopasowanej płatności.</p>
+            <ul class="inbox">
+              <li class="due" id="duehit"><div><b>Zaległa faktura sprzedażowa BC/09/09/2026</b><small>Północny Kod sp. z o.o. · 17 473,38 zł · 53 dni zwłoki</small></div><span class="due__btn">Sprawdź</span><span class="due__ok">Dopasowano · 100% pewności</span></li>
+              <li class="due"><div><b>Zaległa faktura sprzedażowa BC/11/09/2026</b><small>Samsung · 800,00 € · 52 dni zwłoki</small></div><span class="due__btn">Sprawdź</span></li>
+              <li class="due"><div><b>Zaległa faktura sprzedażowa BC/12/09/2026</b><small>TacoOverflow Inc. · 123,00 € · 57 dni zwłoki</small></div><span class="due__btn">Sprawdź</span></li>
+            </ul>
+            <div class="wire" id="wire"><span class="tag tag--teal">Bank</span><b>+17 473,38 zł</b><small>PÓŁNOCNY KOD SP Z O O</small></div>
+          </div>
+        </div>
+      </div>
+      <p class="tabs__cap" id="tabcap"></p>
+      <img class="hero__fig" src="/images/figurine.png" width="905" height="1280" alt="">
+    </div>
+  </div>
+</section>
+
+<!-- ============ COST TODAY ============ -->
+<section class="cost" id="koszt">
+  <div class="wrap">
+    <p class="kicker">Ile to kosztuje dziś</p>
+    <h2 class="reveal">Pieniądze pilnuje się ręcznie.</h2>
+    <div class="cost__grid reveal">
+      <div class="stat"><strong><span data-count="87">87</span>%</strong><p>firm w&nbsp;Polsce dostaje przelewy po terminie</p><small><a href="https://www.rp.pl/finanse/art44929971-zatory-platnicze-uderzaja-w-biznes-87-proc-firm-czeka-na-przelewy" target="_blank" rel="noopener">BIG InfoMonitor, Skaner MŚP, 2026</a> · w usługach 79%</small></div>
+      <div class="stat"><strong><span data-count="64">64</span>%</strong><p>firm traci 5 do 20 godzin tygodniowo na ściąganie płatności</p><small><a href="https://www.infor.pl/prawo/nowosci-prawne/7053439,widmo-bankructwa-wisi-nad-polskimi-firmami-co-trzeci-przedsiebiorca-o.html" target="_blank" rel="noopener">Intrum, European Payment Report 2025</a> · Polska</small></div>
+      <div class="stat"><strong><span data-count="37">37</span>%</strong><p>firm usługowych śledzi rentowność projektów na bieżąco</p><small><a href="https://dayshape.com/insights/connecting-the-dots-the-strategic-link-between-resource-management-and-profitability" target="_blank" rel="noopener">Dayshape i RMI, 2025</a> · badanie międzynarodowe</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLOW ============ -->
+<section class="flow" id="jak">
+  <div class="wrap">
+    <p class="kicker">Skąd są liczby</p>
+    <h2 class="reveal">Niczego nie przepisujesz <span class="ul ul--sm">do arkusza.</span></h2>
+
+    <div class="flow__grid reveal">
+      <div class="flow__srcs">
+        <article class="card fsrc">
+          <header><span class="tag">KSeF</span><b>Faktury</b></header>
+          <ul class="rows rows--in">
+            <li><span>BC/14/10/2026</span><span>Północny Kod</span><b>+17 473 zł</b></li>
+            <li><span>BC/15/10/2026</span><span>Samsung</span><b>+3 420 zł</b></li>
+            <li><span>FV/2210/26</span><span>OVH</span><b class="neg">−486 zł</b></li>
+          </ul>
+          <footer>sprzedażowe i kosztowe, pobierane co 2 godziny</footer>
+        </article>
+        <article class="card fsrc">
+          <header><span class="tag tag--teal">Bank</span><b>Przelewy</b></header>
+          <ul class="rows rows--in rows--d2">
+            <li><span>14.10</span><span>PÓŁNOCNY KOD SP Z O O</span><b>+17 473 zł</b></li>
+            <li><span>15.10</span><span>ZUS</span><b class="neg">−6 912 zł</b></li>
+            <li><span>16.10</span><span>Figma</span><b class="neg">−312 zł</b></li>
+          </ul>
+          <footer>29 banków i fintechów</footer>
+        </article>
+        <article class="card fsrc">
+          <header><span class="tag tag--dark">Czas</span><b>Godziny zespołu</b></header>
+          <div class="timer"><span class="timer__dot"></span><span id="timer">02:14:07</span><small>CODEXA · Migracja bazy</small></div>
+          <footer>każda osoba włącza licznik na swoim projekcie</footer>
+        </article>
+      </div>
+
+      <svg class="flow__wires" viewBox="0 0 200 420" preserveAspectRatio="none" fill="none" aria-hidden="true">
+        <path id="w1" d="M0 62 C 90 62, 90 210, 200 210"/>
+        <path id="w2" d="M0 210 L 200 210"/>
+        <path id="w3" d="M0 358 C 90 358, 90 210, 200 210"/>
+        <circle r="5"><animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#w1"/></animateMotion></circle>
+        <circle r="5"><animateMotion dur="2.4s" begin=".8s" repeatCount="indefinite"><mpath href="#w2"/></animateMotion></circle>
+        <circle r="5"><animateMotion dur="2.4s" begin="1.6s" repeatCount="indefinite"><mpath href="#w3"/></animateMotion></circle>
+      </svg>
+
+      <article class="card result">
+        <img src="/images/landing/character-head.png" width="70" height="103" alt="">
+        <p class="result__cap">Wynik · październik</p>
+        <p class="result__num">+<span data-count="18400">18 400</span>&nbsp;zł</p>
+        <div class="bar100 bar100--sm">
+          <span class="seg seg--a" style="--w:41"></span><span class="seg seg--b" style="--w:18"></span><span class="seg seg--c" style="--w:9"></span><span class="seg seg--d" style="--w:9"></span><span class="seg seg--keep" style="--w:23"></span>
+        </div>
+        <p class="result__foot">zostało 23&nbsp;zł ze 100</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ASSISTANT ============ -->
+<section class="assist" id="asystent">
+  <div class="wrap assist__grid">
+    <div>
+      <p class="kicker">Asystent</p>
+      <h2 class="reveal">Zapytaj o&nbsp;swoje liczby.</h2>
+      <p class="assist__also reveal">Działa też w
+        <span><img src="/images/landing/chatgpt.svg" width="26" height="26" alt=""> ChatGPT</span>
+        <span><img src="/images/landing/claude.svg" width="26" height="26" alt=""> Claude</span>
+      </p>
+      <ul class="assist__facts reveal">
+        <li>Czyta te same faktury, przelewy i godziny co Analiza.</li>
+        <li>Wystawi fakturę albo dopasuje przelew. Każdą zmianę zatwierdzasz sam.</li>
+      </ul>
+    </div>
+    <div class="chat reveal" id="chat" aria-label="Przykładowa rozmowa z asystentem">
+      <div class="chat__q"><span id="chat-q"></span><i class="caret"></i></div>
+      <div class="chat__a" id="chat-a">
+        <img src="/images/landing/character-head.png" width="35" height="52" alt="">
+        <div>
+          <p id="chat-text"></p>
+          <div class="mini" id="chat-mini"></div>
+        </div>
+      </div>
+      <div class="chat__chips" id="chat-chips">
+        <button class="on">Który miesiąc był najsłabszy i dlaczego?</button>
+        <button>Na co idzie najwięcej moich pieniędzy?</button>
+        <button>Które koszty odbiegają od zwykłych?</button>
+      </div>
+      <p class="chat__fine">Przykładowa rozmowa</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BENTO ============ -->
+<section class="bento" id="funkcje">
+  <div class="wrap">
+    <p class="kicker">Co jeszcze robi</p>
+    <h2 class="reveal">Faktury, bank, czas i&nbsp;zespół. Jeden program.</h2>
+    <div class="bento__grid">
+      <article class="tile tile--wide reveal">
+        <div class="t-inv" aria-hidden="true">
+          <div class="t-inv__sheet"><i></i><i></i><i></i><b>26 568,00 zł</b></div>
+          <svg class="t-inv__plane" viewBox="0 0 60 40"><path d="M2 20 L58 3 L40 37 L28 24 Z M28 24 L58 3"/></svg>
+          <span class="stamp">KSeF&nbsp;✓</span>
+        </div>
+        <h3>Faktury do KSeF</h3><p>Bez limitu, także w&nbsp;planie darmowym.</p>
+      </article>
+      <article class="tile reveal">
+        <div class="t-match" aria-hidden="true">
+          <span class="t-match__a">Faktura · 4 272,75 zł</span>
+          <span class="t-match__b">Przelew · 4 272,75 zł</span>
+          <span class="t-match__ok">✓</span>
+        </div>
+        <h3>Bank</h3><p>Przelew sam przypina się do faktury.</p>
+      </article>
+      <article class="tile reveal">
+        <div class="t-time" aria-hidden="true"><span class="t-time__btn"></span><b id="timer2">00:51:12</b></div>
+        <h3>Czasośledź</h3><p>Z godzin liczy się koszt pracy na projekcie.</p>
+      </article>
+      <article class="tile reveal">
+        <div class="t-ocr" aria-hidden="true"><div class="t-ocr__doc"><i></i><i></i><i></i></div><div class="t-ocr__out"><span>NIP</span><span>Kwota</span><span>Termin</span></div></div>
+        <h3>Koszty</h3><p>Spływają z&nbsp;KSeF. Resztę dodajesz zdjęciem.</p>
+      </article>
+      <article class="tile reveal">
+        <div class="t-leave" aria-hidden="true"><span>Urlop · 12–16.01</span><b>Zaakceptowano</b></div>
+        <h3>Zespół</h3><p>Urlopy, delegacje, umowy. Pracownik nie widzi finansów.</p>
+      </article>
+      <article class="tile tile--wide reveal">
+        <div class="t-zip" aria-hidden="true"><span>PDF</span><span>PDF</span><span>PDF</span><b>ZIP</b></div>
+        <h3>Paczka dla księgowej</h3><p>ZIP z&nbsp;fakturami za miesiąc. Firmowid to nie księgowość, tylko to, co wysyłasz księgowemu.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROOF ============ -->
+<section class="proof">
+  <div class="wrap proof__grid reveal">
+    <blockquote>
+      <p>Przez dwa lata łataliśmy Excelem trzy różne programy. Teraz raporty są gotowe na koniec miesiąca, nie tydzień później.</p>
+      <footer><b>Prezes spółki produkcji telewizyjnej</b> · uczestnik programu beta</footer>
+    </blockquote>
+    <div class="proof__nums">
+      <p><strong>−12 h</strong>mniej pracy administracyjnej w tygodniu, czyli ponad 600 godzin rocznie</p>
+      <p><strong>0</strong>błędów w KSeF od wdrożenia</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section class="calc" id="porownaj">
+  <div class="wrap">
+    <p class="kicker">Porównaj</p>
+    <h2 class="reveal">Firmowid kontra to, czego używasz dziś.</h2>
+    <div class="calc__grid reveal">
+      <form class="cmpf" id="cmpf">
+        <fieldset>
+          <legend><i>1</i>Ile osób pracuje w&nbsp;firmie?</legend>
+          <label class="slider"><span>Zespół <b id="q-team-out">6 osób</b></span>
+            <input type="range" id="q-team" min="1" max="20" step="1" value="6"></label>
+        </fieldset>
+        <fieldset>
+          <legend><i>2</i>Czego używasz dziś?</legend>
+          <div class="opts">
+            <label class="opt"><input type="checkbox" id="q-inv" checked><span>Program do faktur</span>
+              <em><input type="number" id="q-inv-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do faktur"> zł / mies.</em></label>
+            <label class="opt"><input type="checkbox" id="q-time"><span>Program do czasu pracy</span>
+              <em><input type="number" id="q-time-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do czasu pracy"> zł / mies.</em></label>
+            <label class="opt"><input type="checkbox" id="q-bank" checked><span>Sprawdzam wpłaty ręcznie w&nbsp;banku</span></label>
+            <label class="opt"><input type="checkbox" id="q-sheet" checked><span>Liczę wynik w&nbsp;arkuszu</span></label>
+            <label class="opt"><input type="checkbox" id="q-leave"><span>Urlopy i&nbsp;delegacje w&nbsp;mailach</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend><i>3</i>Ile czasu to zajmuje?</legend>
+          <label class="slider"><span>Godzin tygodniowo <b id="q-h-out">5 h</b></span>
+            <input type="range" id="q-h" min="1" max="25" step="0.5" value="5"></label>
+          <label class="slider"><span>Koszt godziny pracy <b id="q-r-out">150 zł</b></span>
+            <input type="range" id="q-r" min="40" max="400" step="10" value="150"></label>
+          <label class="slider"><span>Ile z&nbsp;tego czasu odzyskasz <b id="q-s-out">50%</b></span>
+            <input type="range" id="q-s" min="10" max="100" step="5" value="50"></label>
+        </fieldset>
+      </form>
+
+      <div class="calc__out" aria-live="polite">
+        <p>Z Firmowidem oszczędzasz rocznie</p>
+        <strong><span id="r-total">18 072</span> zł</strong>
+        <dl class="rows2">
+          <div><dt>Twoje abonamenty dziś</dt><dd id="r-now">0 zł</dd></div>
+          <div><dt>Firmowid, plan <span id="r-plan">Firma</span></dt><dd id="r-fw">1 428 zł</dd></div>
+          <div><dt>Odzyskany czas: <span id="r-hours">130</span> h</dt><dd id="r-time">19 500 zł</dd></div>
+        </dl>
+        <ul class="swap" id="r-swap"></ul>
+        <a class="btn btn--rust" href="/zarejestruj">Zacznij za darmo</a>
+        <p class="calc__fine">Szacunek z&nbsp;Twoich danych, nie gwarancja. Połowa odzyskanego czasu to nasze założenie, zmień je suwakiem. Firmowid nie zastąpi programu księgowego (KPiR, ZUS, deklaracje).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="pricing" id="cennik">
+  <div class="wrap">
+    <p class="kicker">Cennik</p>
+    <h2 class="reveal">Uczciwy cennik. Bez gwiazdek.</h2>
+    <div class="toggle" id="billing" role="group" aria-label="Okres rozliczeniowy">
+      <button class="on" data-b="m">Miesięcznie</button><button data-b="y">Rocznie <em>−20%</em></button>
+    </div>
+    <p class="pricing__fine">Płatne funkcje są bezpłatne do końca przyszłego miesiąca. Bez karty.</p>
+    <div class="plans">
+      <article class="plan reveal">
+        <h3>Darmowy</h3>
+        <p class="plan__price"><b>0</b> zł <span>na zawsze</span></p>
+        <ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li></ul>
+        <a class="btn btn--sketch" href="/zarejestruj">Załóż darmowe konto</a>
+      </article>
+      <article class="plan plan--top reveal">
+        <span class="plan__badge">Najczęściej wybierany</span>
+        <h3>Przedsiębiorca</h3>
+        <p class="plan__price"><b data-m="29" data-y="23">29</b> zł <span>/ mies. netto</span><em class="save">oszczędzasz 72 zł rocznie</em></p>
+        <ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>
+        <a class="btn btn--rust" href="/zarejestruj">Wypróbuj za darmo</a>
+      </article>
+      <article class="plan reveal">
+        <h3>Firma</h3>
+        <p class="plan__price"><b data-m="149" data-y="119">149</b> zł <span>/ mies. netto</span><em class="save">oszczędzasz 360 zł rocznie</em></p>
+        <ul><li>Wszystko bez limitu</li><li>Delegacje</li><li>Ewidencja czasu w PDF</li><li>Raport wypłat</li></ul>
+        <a class="btn btn--sketch" href="/zarejestruj">Wypróbuj za darmo</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq" id="faq">
+  <div class="wrap faq__grid">
+    <h2 class="reveal">Zanim założysz konto.</h2>
+    <div class="faq__list reveal">
+      <details><summary>Skąd biorą się liczby?</summary><p>Z faktur w KSeF, przelewów z banku i godzin zespołu. Firmowid liczy tylko opłacone faktury i zamknięte miesiące, więc widzisz pieniądze, które naprawdę przeszły przez konto.</p></details>
+      <details><summary>Czy Firmowid zastąpi księgowość?</summary><p>Nie. To wynik zarządczy, nie podatkowy. Księgowa dostaje od Ciebie paczkę faktur za miesiąc, a Ty wiesz, jak stoi firma, zanim przyjdzie rozliczenie.</p></details>
+      <details><summary>Czy muszę sam przypisywać koszty do kategorii?</summary><p>Firmowid proponuje kategorię dla każdego kontrahenta. Zatwierdzasz ją raz, kolejne faktury trafiają tam same.</p></details>
+      <details><summary>Czy zespół widzi finanse firmy?</summary><p>Nie. Pracownik widzi swój czas, urlopy i dokumenty. Faktury, przelewy i analiza są dla ról z dostępem do finansów.</p></details>
+      <details><summary>Jak często odświeżają się dane?</summary><p>Faktury z KSeF co 2 godziny, przelewy z banku co drugi dzień. Godziny zespołu widać od razu.</p></details>
+      <details><summary>Czy obsługujecie mój bank?</summary><p>Firmowid łączy się z 29 bankami i fintechami, między innymi PKO BP, Pekao, mBank, ING, Millennium, Alior, BNP Paribas, Revolut i Wise. Konto spoza listy dodasz ręcznie po numerze IBAN, bez synchronizacji.</p></details>
+      <details><summary>Gdzie są moje dane?</summary><p>Na serwerach OVH w Unii Europejskiej. Bank podłączasz tylko do odczytu, Firmowid nie zleca przelewów. Kod jest otwarty (AGPL-3.0), więc możesz też postawić go u siebie.</p></details>
+      <details><summary>Czy dalej wystawię fakturę do KSeF?</summary><p>Tak. Faktury sprzedażowe i kosztowe z KSeF są w każdym planie, także darmowym, bez limitu.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEAM ============ -->
+<section class="team" id="zespol">
+  <div class="wrap team__grid reveal">
+    <div>
+      <p class="kicker">Kto za tym stoi</p>
+      <h2>Dwie osoby. Jedno biuro w&nbsp;Krakowie.</h2>
+    </div>
+    <div class="team__people">
+      <figure><img src="/images/team-franek-madej.webp" alt="Franek Madej" loading="lazy"><figcaption><b>Franek Madej</b>CEO · Alergeek Ventures</figcaption></figure>
+      <figure><img src="/images/team-stanislaw-madej.webp" alt="Stanisław Madej" loading="lazy"><figcaption><b>Stanisław Madej</b>COO · Alergeek Ventures</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OPEN SOURCE ============ -->
+<section class="oss">
+  <div class="wrap oss__grid reveal">
+    <div>
+      <p class="kicker kicker--light">Open source</p>
+      <h2>Twoje dane na&nbsp;Twoim serwerze.</h2>
+      <ul class="oss__facts"><li>Kod jest publiczny, każdy może sprawdzić, jak liczymy.</li><li>Możesz postawić Firmowida u siebie i&nbsp;zabrać dane w&nbsp;każdej chwili.</li></ul>
+    </div>
+    <div class="oss__cta">
+      <a class="btn btn--light" href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">Zobacz na GitHubie <img src="/images/github-mark.svg" width="22" height="22" alt=""></a>
+      <span>Licencja AGPL-3.0</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ CTA / FOOTER ============ -->
+<footer class="end">
+  <div class="wrap end__cta reveal">
+    <p class="hand">TWÓJ RUCH!</p>
+    <h2>Sprawdź, ile zostaje w&nbsp;Twojej firmie.</h2>
+    <a class="btn btn--rust btn--big" href="/zarejestruj">Zacznij za darmo</a>
+    <p class="end__note">Konto w 2 minuty. Bez karty. Plan darmowy na zawsze.</p>
+    <img class="end__fig" src="/images/figurine_timeracker.png" alt="" loading="lazy">
+  </div>
+  <div class="wrap end__foot">
+    <span class="logo logo--light">Firmowid</span>
+    <nav><a href="/cennik">Cennik</a><a href="/funkcje">Funkcje</a><a href="/faq">FAQ</a><a href="/poradnik">Poradnik</a><a href="/polityka-prywatnosci">Polityka prywatności</a><a href="/regulamin">Regulamin</a></nav>
+    <small>Alergeek Ventures sp. z o.o. · Kraków</small>
+  </div>
+</footer>
+
+<script src="/landing/app.js"></script>
+</body>
+</html>

@@ -392,6 +392,7 @@ defmodule FirmowidWeb.Core.Router do
 
     get "/index.html", Infrastructure.Controllers.LegacyIndex, :index
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
+    get "/landing", Landing.Controllers.Preview, :show
 
     ash_authentication_live_session :public,
       on_mount: [
