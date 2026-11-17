@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         :if={@icon_only}
         id="download-button"
         type="button"
-        variant="secondary"
+        variant="tertiary"
         phx-click={show_modal("download-modal")}
         data-tippy-content={gettext("Download")}
         phx-hook="Tippy"
