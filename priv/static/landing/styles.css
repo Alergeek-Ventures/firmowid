@@ -577,3 +577,11 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
 .hero__ticks{margin-top:20px}
 .hero .tabs{margin-top:clamp(56px,7vw,96px)}
 .bento__grid,.learn,.cases__grid,.plans{gap:16px}
+
+/* case cards in one column: picture beside the text */
+.case__pic--photo img{object-position:center 60%}
+@media (max-width:960px) and (min-width:561px){
+  .cases__grid .case:not(.case--dark){display:grid;grid-template-columns:220px minmax(0,1fr);column-gap:24px;align-items:center}
+  .cases__grid .case:not(.case--dark) .case__pic{grid-row:1 / span 3;height:150px;margin:0}
+  .cases__grid .case:not(.case--dark) .case__go{padding-top:12px}
+}
