@@ -437,7 +437,8 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
 /* ---------- end ---------- */
 .end{background:var(--ink);color:var(--cream);overflow:hidden;border-top:1px solid rgba(245,241,234,.2)}
 .end__cta{position:relative;padding:clamp(80px,10vw,140px) 0 clamp(72px,9vw,120px)}
-.end__cta h2{margin:18px 0 34px;max-width:21ch}
+.end__cta h2{margin:18px 0 14px;max-width:21ch}
+.end__sub{margin-bottom:32px;font-size:clamp(17px,1.7vw,21px);color:rgba(245,241,234,.75)}
 .end__fig{position:absolute;right:0;bottom:0;height:88%;width:auto;pointer-events:none}
 .end__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 32px;padding:28px 0 36px;border-top:1px solid rgba(245,241,234,.2);font-size:14px}
 .end__foot nav{display:flex;flex-wrap:wrap;gap:8px 22px;color:rgba(245,241,234,.75)}
