@@ -5,12 +5,13 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
   part `10100071222`.
 
   Banks show such a transfer's period and form symbol in its title, e.g.
-  `1234567890 26M04 VAT` or `/OKR/26K01/SFP/PPL/`: `M` is a month and `K` a
-  quarter. Income tax advances use `PIT` (tax scale), `PPL` (flat tax) and `PPE`
-  (lump sum), or the annual form's symbol (PIT-36, PIT-36L, PIT-28). Annual
-  settlements (`R` periods) are left out: they say nothing of how advances are
-  paid. PIT-4 and other withholding forms are the company paying for its
-  employees, so they are left out too.
+  `1234567890 26M04 VAT`, `/OKR/26K01/SFP/PPL/`, `CIT-8 K 01 2026` or
+  `CIT-8 04 K - Kwartał 2025`: `M` is a month and `K` a quarter. Income tax
+  advances use `PIT` (tax scale), `PPL` (flat tax) and `PPE` (lump sum), or the
+  annual form's symbol (PIT-36, PIT-36L, PIT-28). Annual settlements (`R`
+  periods) are left out: they say nothing of how advances are paid. PIT-4 and
+  other withholding forms are the company paying for its employees, so they are
+  left out too.
 
   Only transfers for periods of the year count; a year without them falls back
   to the year before. Each suggestion carries when the bank sync brought its
@@ -26,7 +27,13 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
 
   @tax_account "10100071222"
 
-  @period ~r/(?<!\d)(\d{2})([MK])\d{2}(?!\d)/
+  # The transfer form's own period field (`26M04`), and the period as banks write it out in a
+  # title they compose (`M 04 2026`, `04 M - Miesiąc 2026`).
+  @periods [
+    ~r/(?<!\d)(?<year>\d{2})(?<kind>[MK])\d{2}(?!\d)/,
+    ~r/(?<![\w-])(?<kind>[MK])\s+\d{2}\s+(?<year>\d{4})(?!\d)/,
+    ~r/(?<!\d)\d{2}\s+(?<kind>[MK])(?!\w).*?(?<!\d)(?<year>\d{4})(?!\d)/
+  ]
   @symbol ~r/(?<![\w-])(VAT-7K|VAT-7D|VAT-7|VAT|PIT-36L|PIT-36|PIT-28|PPL|PPE|PIT|CIT-8|CIT)(?![\w-])/i
 
   @income_tax %{
@@ -72,13 +79,13 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
   defp parse(%Transaction{remittance_information_unstructured: nil}), do: []
 
   defp parse(%Transaction{remittance_information_unstructured: title, inserted_at: synced_at}) do
-    with [_period, year, kind] <- Regex.run(@period, title),
+    with {year, kind} <- read_period(title),
          [_symbol, symbol] <- Regex.run(@symbol, title) do
       symbol = String.upcase(symbol)
 
       [
         %{
-          year: 2000 + String.to_integer(year),
+          year: year,
           period: period(kind, symbol),
           symbol: symbol,
           tax: tax(symbol),
@@ -89,6 +96,17 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
       nil -> []
     end
   end
+
+  defp read_period(title) do
+    Enum.find_value(@periods, fn pattern ->
+      with %{"year" => year, "kind" => kind} <- Regex.named_captures(pattern, title) do
+        {full_year(year), kind}
+      end
+    end)
+  end
+
+  defp full_year(<<year::binary-size(2)>>), do: 2000 + String.to_integer(year)
+  defp full_year(year), do: String.to_integer(year)
 
   # The quarterly VAT returns name the quarter even where a title's period says otherwise.
   defp period(_kind, symbol) when symbol in ["VAT-7K", "VAT-7D"], do: :quarterly
