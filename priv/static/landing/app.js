@@ -213,7 +213,7 @@
     ];
     let shown = 0, sayTimer;
     const calc = () => {
-      const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = v('q-s') / 100;
+      const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = 0.5; // half of the time comes back; Bonobo got back 9 of 10 hours
       // plan from the public price list, yearly billing
       const plan = team <= 2 && !on('q-leave') ? ['Darmowy', 0] : team <= 5 ? ['Przedsiębiorca', 276] : ['Firma', 1428];
       const now = ((on('q-inv') ? v('q-inv-p') : 0) + (on('q-time') ? v('q-time-p') : 0)) * 12;
@@ -221,7 +221,6 @@
       $('#q-team-out').textContent = people(team);
       $('#q-h-out').textContent = String(h).replace('.', ',') + ' h';
       $('#q-r-out').textContent = r + ' zł';
-      $('#q-s-out').textContent = Math.round(share * 100) + '%';
       $('#r-now').textContent = zl(now) + ' / rok';
       $('#r-plan').textContent = plan[0];
       $('#r-fw').textContent = zl(plan[1]) + ' / rok';
