@@ -425,6 +425,12 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 .team .ph img{position:absolute;max-width:none;height:auto;top:-22.4%;left:-6%;width:113%}
 .team figure:nth-child(2) .ph img{top:-12%;left:-26%;width:153%}
 .team figcaption{margin-top:12px;font-size:13px;color:var(--g700)}.team figcaption b{display:block;font-size:16px;color:var(--ink)}
+.av{display:flex;align-items:flex-start;gap:16px;margin-top:28px;max-width:46ch}
+.av__logo{flex:none;display:grid;place-items:center;width:56px;height:56px;background:var(--ink);border-radius:8px}
+.av__logo img{width:44px;height:44px}
+.av p{font-size:16px;line-height:1.5;color:var(--g700)}
+.av p b{color:var(--ink)}
+.team figcaption small{display:block;margin-top:8px;font-size:13px;line-height:1.4;color:var(--g700)}
 .faq{padding-top:0}
 .faq__grid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);gap:48px}
 details{border-top:1px solid var(--g300)}details:last-child{border-bottom:1px solid var(--g300)}
