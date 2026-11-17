@@ -187,3 +187,12 @@
 .fstep .acct__seller{margin-top:6px!important;font-size:15px!important;font-weight:600}
 .fstep .acct__desc{margin-top:10px!important;padding:8px 10px;font-size:12.5px!important}
 .fstep .acct__ok{top:12px;right:12px;font-size:10.5px;padding:3px 8px}
+
+/* photos */
+.cs-photo{margin:0}
+.cs-photo img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:4px;box-shadow:0 26px 50px -30px rgba(87,54,35,.45)}
+.cs-photo figcaption{margin-top:10px;font-size:12.5px;color:var(--g600)}
+.cs-quote__grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:stretch}
+.cs-quote__grid .cs-photo img{height:100%;aspect-ratio:auto;min-height:320px}
+.cs-quote__grid blockquote{max-width:none;margin:0;display:flex;flex-direction:column;justify-content:center}
+@media (max-width:900px){.cs-quote__grid{grid-template-columns:1fr}}
