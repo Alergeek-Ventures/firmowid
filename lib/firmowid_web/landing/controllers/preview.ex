@@ -19,6 +19,9 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
 
   @doc "Returns the preview page with a header that keeps it out of search indexes."
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  # sobelow_skip ["XSS.HTML"]
+  # The page is a file read at compile time and the only substitutions are
+  # static paths of our own assets; nothing comes from the request.
   def show(conn, _params) do
     page =
       Enum.reduce(@assets, @page, fn path, page ->
