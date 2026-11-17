@@ -7,7 +7,6 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Invoicing
@@ -28,10 +27,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
      socket
      |> assign(:page_title, gettext("Counterparty management"))
      |> assign(:zero_state?, zero_state?)
-     |> assign(
-       :suggestion_count,
-       if(flag_enabled?(:inbox, socket.assigns), do: length(CounterpartyDetection.list(scope)))
-     )
+     |> assign(:suggestion_count, length(CounterpartyDetection.list(scope)))
      |> assign(:counterparties_empty?, true)
      |> assign(:view, :standard)
      |> stream(:counterparties, [])}

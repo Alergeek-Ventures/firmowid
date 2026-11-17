@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags
   import Phoenix.Component, except: [link: 1]
 
@@ -61,8 +60,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   attr :organizations, :list, required: true
 
   @doc """
-  The account menu: email, organization switcher, settings and logging out.
-  Shared by the navbar dropdown and the sidebar.
+  The sidebar's account menu: email, organization switcher, settings and logging out.
   """
   def account_menu(assigns) do
     ~H"""
@@ -165,12 +163,6 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     """
   end
 
-  # A company that does not bill by the hour does not see time tracking.
-  defp time_tracking_enabled?(organization), do: not match?(%{bills_hourly: false}, organization)
-
-  # Members of organizations with the `inbox` flag get the sidebar instead of the navbar.
-  defp inbox_sidebar?(assigns), do: app_navigation?(assigns) and flag_enabled?(:inbox, assigns)
-
   # A member works inside the app navigation, except on a `focused` page of its own (onboarding).
   defp app_navigation?(assigns) do
     match?(%{member: %{organization_id: _}}, assigns[:current_user]) and is_nil(assigns[:focused])
@@ -187,100 +179,6 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       false
     ) and
       not impersonating?(current_user)
-  end
-
-  attr :current_user, :map, required: true
-  attr :current_org, :map, default: nil
-  attr :current_uri, URI, required: true
-  attr :analysis_enabled, :boolean, required: true
-
-  attr :variant, :atom,
-    default: :bar,
-    values: [:bar, :menu],
-    doc: "`:bar` for the desktop navbar row, `:menu` for the mobile menu list"
-
-  defp main_navigation_links(assigns) do
-    path = assigns.current_uri.path
-
-    assigns =
-      assign(assigns,
-        invoicing?:
-          not Enum.any?(
-            ["/analiza", "/czasosledz", "/zarzadzanie"],
-            &String.starts_with?(path, &1)
-          ),
-        management?: String.starts_with?(path, "/zarzadzanie"),
-        analysis?: String.starts_with?(path, "/analiza"),
-        time_tracking?: String.starts_with?(path, "/czasosledz")
-      )
-
-    ~H"""
-    <.link
-      :if={@current_user.member.role != :employee}
-      kind="unstyled"
-      navigate={~p"/fakturowanie"}
-      class={navigation_link_styles(@variant, @invoicing?)}
-    >
-      <.icon name="hero-clipboard-document-list" class="size-5" />{pgettext(
-        "main navigation",
-        "Invoicing"
-      )}
-    </.link>
-    <%= if @current_user.member.role == :admin do %>
-      <.link
-        kind="unstyled"
-        navigate={~p"/zarzadzanie/pracownicy"}
-        class={navigation_link_styles(@variant, @management?)}
-      >
-        <.icon name="hero-presentation-chart-line" class="size-5" />{pgettext(
-          "main navigation",
-          "Management"
-        )}
-      </.link>
-      <.link
-        :if={@analysis_enabled}
-        kind="unstyled"
-        navigate={~p"/analiza"}
-        class={navigation_link_styles(@variant, @analysis?)}
-      >
-        <.icon name="hero-scale" class="size-5" />{pgettext("main navigation", "Analysis")}
-        <span
-          id={"analiza-beta-#{@variant}"}
-          class="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs"
-          phx-hook="Tippy"
-          data-tippy-content={
-            gettext(
-              "This feature is still in progress! Your feedback will help us make it even better."
-            )
-          }
-        >
-          BETA
-        </span>
-      </.link>
-    <% end %>
-    <.link
-      :if={time_tracking_enabled?(@current_org)}
-      kind="unstyled"
-      navigate={~p"/czasosledz"}
-      class={navigation_link_styles(@variant, @time_tracking?)}
-    >
-      <.icon name="hero-clock" class="size-5" />{pgettext("main navigation", "Time tracking")}
-    </.link>
-    """
-  end
-
-  defp navigation_link_styles(:bar, active?) do
-    [
-      active? && "opacity-90",
-      "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-    ]
-  end
-
-  defp navigation_link_styles(:menu, active?) do
-    [
-      active? && "bg-grey-700/50",
-      "flex items-center gap-2 rounded-md p-2 uppercase hover:bg-grey-700/50"
-    ]
   end
 
   @doc """

@@ -161,19 +161,16 @@ defmodule FirmowidWeb.Management.Views.Employees do
     assign(socket, :employees, employees)
   end
 
-  # The new UI moves roles and invitations from the settings to this page.
   defp assign_invites(socket) do
     invites =
-      if flag_enabled?(:inbox, socket.assigns),
-        do: active_invites(Core.list_invites!(load: @invite_load, scope: socket.assigns.ash_scope)),
-        else: []
+      active_invites(Core.list_invites!(load: @invite_load, scope: socket.assigns.ash_scope))
 
     assign(socket, :invites, invites)
   end
 
-  # Roles show in the active list of the new UI while the wages are hidden.
+  # Roles show in the active list while the wages are hidden.
   defp roles_column?(assigns) do
-    flag_enabled?(:inbox, assigns) and assigns.view == :standard and assigns.live_action == :index
+    assigns.view == :standard and assigns.live_action == :index
   end
 
   defp assign_form(socket) do

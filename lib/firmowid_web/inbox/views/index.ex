@@ -44,23 +44,19 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    if flag_enabled?(:inbox, socket.assigns) do
-      {:ok,
-       socket
-       |> assign(
-         page_title: pgettext("sidebar", "Inbox"),
-         # The page sets its own padding (32px top and bottom, 40px at the sides).
-         no_padding: true,
-         items: [],
-         shortcuts: [],
-         fresh: MapSet.new(),
-         query: "",
-         expanded: MapSet.new()
-       )
-       |> allow_cost_invoice_upload()}
-    else
-      {:ok, push_navigate(socket, to: ~p"/fakturowanie")}
-    end
+    {:ok,
+     socket
+     |> assign(
+       page_title: pgettext("sidebar", "Inbox"),
+       # The page sets its own padding (32px top and bottom, 40px at the sides).
+       no_padding: true,
+       items: [],
+       shortcuts: [],
+       fresh: MapSet.new(),
+       query: "",
+       expanded: MapSet.new()
+     )
+     |> allow_cost_invoice_upload()}
   end
 
   @impl true
@@ -221,8 +217,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   def handle_event("decide_item", %{"id" => id, "decision" => action}, socket) do
     decision =
-      with true <- flag_enabled?(:inbox, socket.assigns),
-           %{actor: %{member: %{role: :admin}}} <- socket.assigns.ash_scope,
+      with %{actor: %{member: %{role: :admin}}} <- socket.assigns.ash_scope,
            %{} = item <- Enum.find(socket.assigns.items, &(&1.id == id)) do
         Enum.find(Map.get(item, :decisions, []), &(Atom.to_string(&1.action) == action))
       else

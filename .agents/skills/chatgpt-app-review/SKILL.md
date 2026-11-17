@@ -45,12 +45,12 @@ guidelines. Two findings shaped the current design:
 
 An AI client starts at `/oauth/authorize`. A signed-out person signs in or signs
 up first; an account without a company, or an admin whose company has not
-finished the setup wizard (with the `inbox` flag), goes through the web setup
-and returns to the consent screen afterwards.
+finished the setup wizard, goes through the web setup and returns to the
+consent screen afterwards.
 `FirmowidWeb.Auth.Utilities.ConsentOrganization` decides this and
 `FirmowidWeb.Auth.Utilities.PendingAuthorization` keeps the client's name and
-the request in the session. `pending_authorization_test.exs` covers both flag
-variants and checks that the connected client gets no KSeF setup tool.
+the request in the session. `pending_authorization_test.exs` covers the setup
+and checks that the connected client gets no KSeF setup tool.
 
 ## Before resubmitting
 

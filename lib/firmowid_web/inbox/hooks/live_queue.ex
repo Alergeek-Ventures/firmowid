@@ -2,14 +2,12 @@ defmodule FirmowidWeb.Inbox.Hooks.LiveQueue do
   @moduledoc """
   Keeps the inbox and the sidebar's inbox badge current while the page is open.
 
-  Pages of members whose organization has the `inbox` flag subscribe to
-  `Firmowid.Core.Notifiers.InboxChanged`. Changes arriving close together, like
-  a batch of imported invoices, are gathered into one `:inbox_refresh` shortly
-  after the first; the sidebar then reloads its badge, and the inbox page
-  receives the message itself to reload its queue.
+  Pages of members subscribe to `Firmowid.Core.Notifiers.InboxChanged`.
+  Changes arriving close together, like a batch of imported invoices, are
+  gathered into one `:inbox_refresh` shortly after the first; the sidebar then
+  reloads its badge, and the inbox page receives the message itself to reload
+  its queue.
   """
-
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Core.Notifiers.InboxChanged
   alias FirmowidWeb.Inbox.Components.SidebarNav
@@ -28,7 +26,7 @@ defmodule FirmowidWeb.Inbox.Hooks.LiveQueue do
   def on_mount(:default, _params, _session, socket) do
     case socket.assigns[:current_user] do
       %{member: %{organization_id: organization_id}} when is_binary(organization_id) ->
-        if LiveView.connected?(socket) and flag_enabled?(:inbox, socket.assigns) do
+        if LiveView.connected?(socket) do
           InboxChanged.subscribe(organization_id)
           Process.send_after(self(), :inbox_tick, @tick_ms)
           {:cont, LiveView.attach_hook(socket, :inbox_live_queue, :handle_info, &handle_info/2)}

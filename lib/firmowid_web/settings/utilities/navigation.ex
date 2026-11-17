@@ -8,68 +8,42 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   alias Firmowid.Core.UserRole
 
-  @type role :: UserRole.t()
-  @type tab_id :: :account | :profile | :organization | :subscription
   @type page_id ::
-          tab_id() | :ksef | :bank_accounts | :roles | :documents | :delegations | :leaves
-  @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
+          :account
+          | :profile
+          | :organization
+          | :subscription
+          | :ksef
+          | :bank_accounts
+          | :roles
+          | :documents
+          | :delegations
+          | :leaves
   @type visibility_context :: %{
           required(:current_user) => %{
             required(:id) => term(),
-            required(:member) => %{required(:role) => role()}
+            required(:member) => %{required(:role) => UserRole.t()}
           },
           required(:current_org) => %{required(:owner_id) => term()}
         }
 
-  @all_roles UserRole.roles()
+  @slugs %{
+    "konto" => :account,
+    "profil" => :profile,
+    "firma" => :organization,
+    "abonament" => :subscription,
+    "ksef" => :ksef,
+    "konta-bankowe" => :bank_accounts,
+    "role" => :roles,
+    "dokumenty" => :documents,
+    "delegacje" => :delegations,
+    "nieobecnosci" => :leaves
+  }
 
-  @tabs [
-    %{
-      id: :account,
-      slug: "konto",
-      label: pgettext_noop("Firmowid account", "settings tab"),
-      roles: @all_roles,
-      legacy_slugs: ["bezpieczenstwo"]
-    },
-    %{
-      id: :profile,
-      slug: "profil",
-      label: pgettext_noop("Your profile", "settings tab"),
-      roles: @all_roles,
-      legacy_slugs: ["dokumenty"]
-    },
-    %{
-      id: :organization,
-      slug: "firma",
-      label: pgettext_noop("Your company", "settings tab"),
-      roles: [:admin],
-      legacy_slugs: ["organizacja", "konta-bankowe", "ksef", "role"]
-    },
-    %{
-      id: :subscription,
-      slug: "abonament",
-      label: pgettext_noop("Subscription", "settings tab"),
-      roles: @all_roles,
-      owner_only: true,
-      legacy_slugs: []
-    }
-  ]
+  # Former addresses of settings pages, so that old links still lead to them.
+  @legacy_slugs %{"bezpieczenstwo" => :account, "organizacja" => :organization}
 
-  @doc """
-  Returns visible settings tabs for the current user.
-  """
-  @spec tabs_for(visibility_context()) :: [tab()]
-  def tabs_for(%{current_user: _current_user, current_org: _current_org} = context) do
-    @tabs
-    |> Enum.filter(&visible_for_context?(&1, context))
-    |> Enum.map(
-      &%{
-        id: &1.id,
-        label: Gettext.pgettext(Firmowid.Gettext, "settings tab", &1.label),
-        path: canonical_path(&1.id)
-      }
-    )
-  end
+  @admin_pages [:organization, :ksef, :bank_accounts, :roles]
 
   @doc """
   Returns the default settings path.
@@ -78,7 +52,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def default_path, do: canonical_path(:account)
 
   @doc """
-  Returns the canonical path for a settings tab.
+  Returns the canonical path for a settings page.
   """
   @spec canonical_path(page_id()) :: String.t()
   def canonical_path(:account), do: ~p"/ustawienia/konto"
@@ -88,13 +62,13 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   def canonical_path(:ksef), do: ~p"/ustawienia/ksef"
   def canonical_path(:bank_accounts), do: ~p"/ustawienia/konta-bankowe"
-  # The new UI manages roles and invitations on the team page.
+  # Roles and invitations are managed on the team page.
   def canonical_path(:roles), do: ~p"/zarzadzanie/pracownicy"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
   def canonical_path(:delegations), do: ~p"/ustawienia/delegacje"
   def canonical_path(:leaves), do: ~p"/ustawienia/nieobecnosci"
 
-  @doc "Returns the title of a standalone settings page."
+  @doc "Returns the title of a settings page."
   @spec page_title(page_id()) :: String.t()
   def page_title(:account), do: pgettext("sidebar", "Account")
   def page_title(:profile), do: gettext("HR details")
@@ -109,58 +83,25 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   @doc """
   Resolves a settings section slug or legacy alias.
   """
-  @spec resolve_section(String.t(), boolean()) ::
+  @spec resolve_section(String.t()) ::
           {:ok, %{id: page_id(), canonical?: boolean(), canonical_path: String.t()}} | :error
-  def resolve_section(section, standalone? \\ false)
-
-  def resolve_section(section, true)
-      when section in ["ksef", "konta-bankowe", "role", "dokumenty", "delegacje", "nieobecnosci"] do
-    id =
-      %{
-        "ksef" => :ksef,
-        "konta-bankowe" => :bank_accounts,
-        "role" => :roles,
-        "dokumenty" => :documents,
-        "delegacje" => :delegations,
-        "nieobecnosci" => :leaves
-      }[section]
-
-    {:ok, %{id: id, canonical?: true, canonical_path: canonical_path(id)}}
-  end
-
-  def resolve_section(section, _standalone?) when is_binary(section) do
-    case Enum.find(@tabs, &(section == &1.slug or section in &1.legacy_slugs)) do
-      %{id: id, slug: slug} ->
-        {:ok, %{id: id, canonical?: section == slug, canonical_path: canonical_path(id)}}
-
-      nil ->
-        :error
+  def resolve_section(section) when is_binary(section) do
+    case {@slugs[section], @legacy_slugs[section]} do
+      {nil, nil} -> :error
+      {nil, id} -> {:ok, %{id: id, canonical?: false, canonical_path: canonical_path(id)}}
+      {id, nil} -> {:ok, %{id: id, canonical?: true, canonical_path: canonical_path(id)}}
     end
   end
 
   @doc """
-  Returns whether a settings tab is visible for the current user.
+  Returns whether a settings page is visible for the current user.
   """
   @spec visible?(page_id(), visibility_context()) :: boolean()
-  def visible?(tab_id, %{current_user: _current_user, current_org: _current_org} = context) do
-    tab_id
-    |> tab_definition()
-    |> visible_for_context?(context)
-  end
+  def visible?(page_id, %{current_user: current_user}) when page_id in @admin_pages,
+    do: current_user.member.role == :admin
 
-  defp tab_definition(id) when id in [:ksef, :bank_accounts, :roles], do: tab_definition(:organization)
+  def visible?(:subscription, %{current_user: current_user, current_org: current_org}),
+    do: current_org.owner_id == current_user.id
 
-  defp tab_definition(id) when id in [:documents, :delegations, :leaves], do: tab_definition(:profile)
-
-  defp tab_definition(tab_id), do: Enum.find(@tabs, &(&1.id == tab_id))
-
-  defp visible_for_context?(%{roles: roles} = tab, %{current_user: %{member: %{role: role}}} = context) do
-    role in roles and owner_requirement_met?(tab, context)
-  end
-
-  defp owner_requirement_met?(%{owner_only: true}, %{current_user: current_user, current_org: current_org}) do
-    current_org.owner_id == current_user.id
-  end
-
-  defp owner_requirement_met?(_tab, _context), do: true
+  def visible?(_page_id, %{current_user: _current_user, current_org: _current_org}), do: true
 end

@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
           | :zakupowe
           | :wplywy
           | :wydatki
-  @type view_mode :: :dashboard | :list
+  @type view_mode :: :inbox | :list
   @type creator_tab :: :last_counterparties | :last_invoices
   @type counterparty_type :: CounterpartyTypeCodec.counterparty_type()
   @type invoice_language :: :pl | :en

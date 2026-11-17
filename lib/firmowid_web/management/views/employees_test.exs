@@ -20,10 +20,6 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   alias Firmowid.Timetracker.HoursRecord
 
   test "deleting an invite already deleted in another tab refreshes the list", %{conn: conn} do
-    # Invites are listed on this page only with the team page of the inbox layout.
-    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-
     admin = admin_fixture()
     scope = %Scope{actor: admin, tenant: admin.member.organization_id}
     invite = Core.create_invite!(%{issued_by_id: admin.id}, scope: scope)
@@ -37,6 +33,26 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     lv |> element(delete_button) |> render_click()
 
     refute has_element?(lv, delete_button)
+  end
+
+  test "admin changes an employee's role and the employee gains its permissions", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+    employee_conn = log_in_user(build_conn(), employee)
+
+    assert {:error, {:redirect, _redirect}} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
+
+    {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/zarzadzanie/pracownicy")
+
+    view
+    |> element("button[phx-click='open_update_role_modal'][phx-value-user_id='#{employee.id}']")
+    |> render_click()
+
+    view
+    |> form("#update_role_form", %{"user_id" => employee.id, "role" => "admin"})
+    |> render_submit()
+
+    assert {:ok, _view, _html} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
   end
 
   test "employee list updates without refresh after invite consumption", %{conn: conn} do
@@ -699,7 +715,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         actor: admin
       )
 
-    {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja/formularz")
+    {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja?krok=dolacz")
 
     lv
     |> form("#join_form", %{"name" => "Ada Lovelace", "code" => invite.invite_code})

@@ -2,8 +2,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   @moduledoc """
   Settings: the member's account, HR details, documents and business trips, and
   for an admin the company details, KSeF and bank accounts, and for the owner the
-  subscription. Behind the `inbox` flag each is a page of its own; without it they
-  are tabs of one page.
+  subscription, each on a page of its own.
   """
   use FirmowidWeb, :live_view
 
@@ -24,7 +23,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
-  alias Firmowid.Core.UserRole
   alias Firmowid.Delegations
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
@@ -45,8 +43,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Phoenix.Socket.Broadcast
 
   require Logger
-
-  @invite_load [issued_by: [:email], consumed_by: [:email]]
 
   defp form_basic_info_form(organization, scope) do
     organization
@@ -127,18 +123,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     {:ok,
      socket
-     |> assign(:editing_basic_info, false)
      |> assign(:editing_account_name, false)
      |> assign(:editing_profile_employment, false)
      |> assign(:editing_profile_finance, false)
      |> assign(:editing_profile_contact, false)
      |> assign(:editing_credentials, false)
-     |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
-     |> assign(:selected_user, nil)
      |> assign(:member_form, form_member_form(current_user.member, scope))
-     |> assign(:no_padding, true)
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
@@ -161,8 +153,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:main_class, "bg-white")}
   end
 
-  # A page loads what it shows when it first opens; the combined page of the old UI
-  # keeps what it loaded while switching between its tabs.
+  # A page loads what it shows once, when it first opens.
   defp assign_tab_data(socket, tab) when tab in [:organization, :ksef, :bank_accounts],
     do: load_once(socket, :company_form, &assign_company/1)
 
@@ -184,8 +175,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> assign_bank_accounts()
     |> Connection.init(scope)
     |> assign(:company_form, form_basic_info_form(current_org, scope))
-    |> assign(:organization_users, list_organization_users(scope))
-    |> assign(:organization_invites, list_organization_invites(scope))
+    # The taxes card picks the company's partners from its members.
+    |> assign(
+      :organization_users,
+      Core.list_users!(%{status: :active}, load: [member: [avatar_blob: [:url]]], scope: scope)
+    )
   end
 
   defp assign_account(socket) do
@@ -215,9 +209,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       |> Ash.load!([accepted_leave_days_for_year: %{year: Date.utc_today().year}], scope: scope)
       |> Map.fetch!(:accepted_leave_days_for_year)
 
-    {profile_projects, profile_projects_total, profile_projects_date} =
-      load_profile_projects(member_id, scope)
-
     socket
     |> assign(:leave_requests, list_leave_requests(member_id, scope))
     |> assign(
@@ -227,9 +218,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> assign(:leave_days, leave_days || 0)
     |> assign(:leave_search, "")
     |> assign(:leave_request_form, leave_request_form(current_user, scope))
-    |> assign(:projects, profile_projects)
-    |> assign(:projects_total, profile_projects_total)
-    |> assign(:projects_date, profile_projects_date)
     |> assign_contracts()
   end
 
@@ -248,7 +236,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_params(%{"section" => section}, _uri, socket) do
-    case Navigation.resolve_section(section, flag_enabled?(:inbox, socket.assigns)) do
+    case Navigation.resolve_section(section) do
       {:ok, %{id: tab} = resolved} ->
         handle_resolved_section(tab, resolved, socket)
 
@@ -350,14 +338,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  defp list_organization_users(scope) do
-    Core.list_users!(%{status: :active}, load: [member: [avatar_blob: [:url]]], scope: scope)
-  end
-
-  defp list_organization_invites(scope) do
-    Core.list_invites!(load: @invite_load, scope: scope)
-  end
-
   def handle_event("delete_account", _params, socket) do
     case Core.destroy_user(socket.assigns.current_user, scope: socket.assigns.ash_scope) do
       :ok ->
@@ -438,13 +418,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-        # The new UI edits in place, so nothing else confirms the save.
-        if flag_enabled?(:inbox, socket.assigns),
-          do: LiveToast.send_toast(:success, gettext("Changes saved"))
+        # The details are edited in place, so nothing else confirms the save.
+        LiveToast.send_toast(:success, gettext("Changes saved"))
 
         {:noreply,
          socket
-         |> assign(:editing_basic_info, false)
          |> assign(:company_form, form_basic_info_form(updated_with_avatar, scope))
          |> assign(:current_org, updated_with_avatar)
          |> assign_subscription_preview_if_visible()}
@@ -504,79 +482,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     else
       LiveToast.send_toast(:error, gettext("Log in again to change your email address."))
       {:noreply, socket}
-    end
-  end
-
-  def handle_event("open_update_role_modal", %{"user_id" => user_id}, socket) do
-    case find_loaded_organization_user(socket.assigns.organization_users, user_id) do
-      {:ok, user} ->
-        {:noreply, assign(socket, :selected_user, user)}
-
-      {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("clear_selected_user", _params, socket) do
-    {:noreply, assign(socket, :selected_user, nil)}
-  end
-
-  def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
-    with {:ok, role} <- UserRole.from_param(role_param),
-         {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
-         {:ok, _member} <-
-           Core.update_member_role(user.member, %{role: role}, scope: socket.assigns.ash_scope) do
-      LiveToast.send_toast(:success, gettext("The user's role has been changed."))
-
-      {:noreply,
-       socket
-       |> assign(:organization_users, list_organization_users(socket.assigns.ash_scope))
-       |> assign(:selected_user, nil)
-       |> assign_subscription_preview_if_visible()}
-    else
-      {:error, :unknown_role} ->
-        LiveToast.send_toast(:error, gettext("Unknown user role."))
-        {:noreply, assign(socket, :selected_user, nil)}
-
-      {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
-        {:noreply, assign(socket, :selected_user, nil)}
-
-      {:error, _error} ->
-        LiveToast.send_toast(:error, gettext("Could not change the user's role."))
-        {:noreply, assign(socket, :selected_user, nil)}
-    end
-  end
-
-  def handle_event("archive_organization_user", %{"user_id" => user_id}, socket) do
-    current_user = socket.assigns.current_user
-
-    if current_user.member.role != :admin do
-      raise ForbiddenError, gettext("Only an administrator can archive users.")
-    end
-
-    with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
-         :ok <- prevent_self_user_management(current_user, user),
-         {:ok, _member} <- Core.archive_member(user.member, scope: socket.assigns.ash_scope) do
-      LiveToast.send_toast(:info, gettext("The user has been archived."))
-
-      {:noreply,
-       socket
-       |> assign(:organization_users, list_organization_users(socket.assigns.ash_scope))
-       |> assign_subscription_preview_if_visible()}
-    else
-      {:error, :self_user_management} ->
-        LiveToast.send_toast(:error, gettext("You cannot archive your own account from here."))
-        {:noreply, socket}
-
-      {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
-        {:noreply, socket}
-
-      {:error, _error} ->
-        LiveToast.send_toast(:error, gettext("Could not archive the user."))
-        {:noreply, socket}
     end
   end
 
@@ -661,10 +566,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     Connection.handle_event(event, params, socket, socket.assigns.ash_scope)
   end
 
-  def handle_event("toggle_editing_basic_info", _params, socket) do
-    {:noreply, assign(socket, :editing_basic_info, !socket.assigns.editing_basic_info)}
-  end
-
   def handle_event("toggle_editing_account_name", _params, socket) do
     {:noreply, assign(socket, :editing_account_name, !socket.assigns.editing_account_name)}
   end
@@ -679,54 +580,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("toggle_editing_profile_contact", _params, socket) do
     {:noreply, assign(socket, :editing_profile_contact, !socket.assigns.editing_profile_contact)}
-  end
-
-  def handle_event("toggle_active_invites", _params, socket) do
-    {:noreply, assign(socket, :show_active_invites, !socket.assigns.show_active_invites)}
-  end
-
-  def handle_event("create_organization_invite", %{"role" => role_param}, socket) do
-    current_user = socket.assigns.current_user
-    scope = socket.assigns.ash_scope
-
-    case UserRole.from_param(role_param) do
-      {:ok, role} ->
-        invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
-
-        LiveToast.send_toast(
-          :success,
-          gettext("The invitation code has been generated and copied to the clipboard.")
-        )
-
-        {:noreply,
-         socket
-         |> assign(:organization_invites, list_organization_invites(scope))
-         |> assign(:show_active_invites, true)
-         |> push_event("copy-to-clipboard", %{text: invite.invite_code})}
-
-      {:error, :unknown_role} ->
-        LiveToast.send_toast(:error, gettext("Invalid role."))
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("copy_organization_invite", %{"code" => invite_code}, socket) do
-    LiveToast.send_toast(:info, gettext("The invitation code has been copied to the clipboard."))
-
-    {:noreply, push_event(socket, "copy-to-clipboard", %{text: invite_code})}
-  end
-
-  def handle_event("delete_organization_invite", %{"id" => id}, socket) do
-    scope = socket.assigns.ash_scope
-
-    # Deleted or used in another tab: already gone, so only the list refreshes.
-    if invite = Core.get_invite!(id, scope: scope, not_found_error?: false) do
-      Core.destroy_invite!(invite, scope: scope)
-    end
-
-    LiveToast.send_toast(:info, gettext("The invitation has been deleted."))
-
-    {:noreply, assign(socket, :organization_invites, list_organization_invites(scope))}
   end
 
   def handle_event("toggle_editing_credentials", _params, socket) do
@@ -1136,43 +989,30 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def render(assigns) do
     ~H"""
-    <.settings_page
-      standalone={flag_enabled?(:inbox, assigns)}
-      title={@page_title}
-      current_user={@current_user}
-      current_org={@current_org}
-      current_tab={@settings_tab}
-      user_avatar_upload={@uploads.user_avatar}
-      organization_avatar_upload={Map.get(@uploads, :organization_avatar)}
-    >
+    <.settings_page title={@page_title}>
       <:actions :if={@settings_tab == :delegations}>
         <.plan_business_trip_link />
       </:actions>
-      <%= if flag_enabled?(:inbox, assigns) do %>
-        <.settings_avatar
-          :if={@settings_tab == :organization}
-          upload={@uploads.organization_avatar}
-          name={@current_org.display_name}
-          blob={@current_org.avatar_blob}
-          label={gettext("Change organization logo")}
-          class="rounded-md bg-white p-5"
-        />
-        <.settings_avatar
-          :if={@settings_tab == :account}
-          upload={@uploads.user_avatar}
-          name={@current_user.member.name || @current_user.email}
-          blob={@current_user.member.avatar_blob}
-          label={gettext("Change profile picture")}
-        />
-      <% end %>
+      <.settings_avatar
+        :if={@settings_tab == :organization}
+        upload={@uploads.organization_avatar}
+        name={@current_org.display_name}
+        blob={@current_org.avatar_blob}
+        label={gettext("Change organization logo")}
+        class="rounded-md bg-white p-5"
+      />
+      <.settings_avatar
+        :if={@settings_tab == :account}
+        upload={@uploads.user_avatar}
+        name={@current_user.member.name || @current_user.email}
+        blob={@current_user.member.avatar_blob}
+        label={gettext("Change profile picture")}
+      />
       <%= case @settings_tab do %>
         <% section when section in [:organization, :ksef, :bank_accounts] -> %>
           <.company_tab
-            section={if flag_enabled?(:inbox, assigns), do: @settings_tab, else: :all}
-            current_user={@current_user}
-            current_org={@current_org}
+            section={@settings_tab}
             company_form={@company_form}
-            editing_basic_info={@editing_basic_info}
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
             ksef_auth_status={@ksef_auth_status}
@@ -1181,22 +1021,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
             bank_accounts={@bank_accounts}
             bank_institutions={@bank_institutions}
             pending_requisitions={@pending_requisitions}
-            organization_users={@organization_users}
-            organization_invites={@organization_invites}
-            show_active_invites={@show_active_invites}
-            selected_user={@selected_user}
             uploads={@uploads}
+            current_org={@current_org}
+            organization_users={@organization_users}
             scope={@ash_scope}
             taxes?={flag_enabled?(:taxes, assigns)}
           />
         <% :subscription -> %>
-          <.subscription_tab
-            standalone={flag_enabled?(:inbox, assigns)}
-            worksheet={@subscription_worksheet}
-          />
+          <.subscription_tab worksheet={@subscription_worksheet} />
         <% :account -> %>
           <.account_tab
-            standalone={flag_enabled?(:inbox, assigns)}
             current_user={@current_user}
             owned_organizations={@owned_organizations}
             editing_account_name={@editing_account_name}
@@ -1216,7 +1050,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             leave_request_upload={@uploads.leave_request_attachment}
             leave_search={@leave_search}
             leave_days={@leave_days}
-            standalone
           />
         <% :documents -> %>
           <.live_component
@@ -1226,12 +1059,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
             scope={@ash_scope}
             feature_flags={@feature_flags}
             variant={:profile}
-            standalone
             current_contract_id={@current_contract && @current_contract.id}
           />
         <% :profile -> %>
           <.profile_tab
-            standalone={flag_enabled?(:inbox, assigns)}
             current_user={@current_user}
             ash_scope={@ash_scope}
             member_form={@member_form}
@@ -1239,20 +1070,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
             editing_profile_employment={@editing_profile_employment}
             editing_profile_finance={@editing_profile_finance}
             editing_profile_contact={@editing_profile_contact}
-            leave_requests={@leave_requests}
-            leave_request_form={@leave_request_form}
-            leave_request_upload={@uploads.leave_request_attachment}
-            leave_search={@leave_search}
-            leave_days={@leave_days}
-            projects={@projects}
-            projects_total={@projects_total}
-            projects_date={@projects_date}
             pending_contract={@pending_contract}
             current_contract={@current_contract}
             signed_contract_upload={@uploads.signed_contract}
             document_upload={Map.get(@uploads, :document_upload)}
-            delegations={@delegations}
-            feature_flags={@feature_flags}
           />
       <% end %>
     </.settings_page>
@@ -1328,7 +1149,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       tab == :delegations and not flag_enabled?(:delegations, socket.assigns) ->
         {:noreply, push_patch(socket, to: Navigation.default_path())}
 
-      # Roles and invitations moved to the team page in the new UI.
+      # Roles and invitations are managed on the team page.
       tab == :roles ->
         {:noreply, push_navigate(socket, to: canonical_path)}
 
@@ -1340,22 +1161,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign_tab_data(tab)
          |> assign(:settings_tab, tab)
-         |> assign(:no_padding, if(flag_enabled?(:inbox, socket.assigns), do: nil, else: true))
-         |> assign(:main_class, main_class(tab, flag_enabled?(:inbox, socket.assigns)))
-         |> assign(
-           :page_title,
-           if(flag_enabled?(:inbox, socket.assigns),
-             do: Navigation.page_title(tab),
-             else: Enum.find(Navigation.tabs_for(socket.assigns), &(&1.id == tab)).label
-           )
-         )
+         |> assign(:main_class, main_class(tab))
+         |> assign(:page_title, Navigation.page_title(tab))
          |> assign_subscription_preview_if_visible()}
     end
   end
 
-  # The company pages of the new UI show white cards on the grey background of the company layer.
-  defp main_class(tab, true) when tab in [:organization, :ksef, :bank_accounts], do: nil
-  defp main_class(_tab, _inbox?), do: "bg-white"
+  # The company pages show white cards on the grey background of the company layer.
+  defp main_class(tab) when tab in [:organization, :ksef, :bank_accounts], do: nil
+  defp main_class(_tab), do: "bg-white"
 
   defp assign_subscription_preview_if_visible(%{assigns: %{settings_tab: :subscription}} = socket) do
     assign_subscription_preview(socket)
@@ -1376,21 +1190,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       end
 
     assign(socket, :subscription_worksheet, worksheet)
-  end
-
-  defp find_loaded_organization_user(users, user_id) do
-    case Enum.find(users, &(to_string(&1.id) == user_id)) do
-      nil -> {:error, :unknown_user}
-      user -> {:ok, user}
-    end
-  end
-
-  defp prevent_self_user_management(current_user, user) do
-    if current_user.id == user.id do
-      {:error, :self_user_management}
-    else
-      :ok
-    end
   end
 
   defp save_member_form(socket, member_params, section_assign) do
@@ -1467,19 +1266,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp default_leave_reason, do: :rest
-
-  defp load_profile_projects(member_id, scope) do
-    date = Date.utc_today()
-
-    projects =
-      member_id
-      |> Timetracker.projects_duration_for_month(date, scope)
-      |> Enum.filter(&(&1.duration > 0))
-
-    total = Enum.reduce(projects, 0, fn project, acc -> acc + project.duration end)
-
-    {projects, total, date}
-  end
 
   defp form_contract_form(nil, _scope), do: nil
 

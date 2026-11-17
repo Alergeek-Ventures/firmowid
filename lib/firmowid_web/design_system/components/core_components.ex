@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   @moduledoc """
   Shared UI building blocks of the app: modals, forms, uploads, dropdowns,
-  avatars, tables, back links, popovers, switches, the navbar and the JS
+  avatars, back links, popovers, switches, the navbar and the JS
   commands that show and hide them.
   """
   use Phoenix.Component
@@ -448,58 +448,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       </div>
       <div class="flex-none">{render_slot(@actions)}</div>
     </header>
-    """
-  end
-
-  @doc ~S"""
-  Renders a table with generic styling.
-
-  ## Examples
-
-      <.table id="users" rows={@users}>
-        <:col :let={user} label="id"><%= user.id %></:col>
-        <:col :let={user} label="username"><%= user.username %></:col>
-      </.table>
-  """
-  attr :id, :string, required: true
-  attr :class, :any, default: nil
-  attr :rows, :list, required: true
-
-  slot :col, required: true do
-    attr :label, :string
-  end
-
-  slot :action, doc: "the slot for showing user actions in the last table column"
-
-  def table(assigns) do
-    ~H"""
-    <table class={[@class]}>
-      <thead class="text-left text-sm/6 text-grey-600">
-        <tr>
-          <th :for={col <- @col} class="p-0 pr-2 font-normal text-grey-700 uppercase">
-            {col[:label]}
-          </th>
-          <th :if={@action != []} class="relative p-0 pb-4">
-            <span class="sr-only">{gettext("Actions")}</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody
-        id={@id}
-        class="relative divide-y divide-grey-100 border-t border-grey-100 text-sm/6 text-grey-700"
-      >
-        <tr :for={row <- @rows} class="group transition-colors hover:bg-white">
-          <td :for={col <- @col} class="py-1">
-            {render_slot(col, row)}
-          </td>
-          <td :if={@action != []} class="relative w-14 p-0">
-            <span :for={action <- @action}>
-              {render_slot(action, row)}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
     """
   end
 

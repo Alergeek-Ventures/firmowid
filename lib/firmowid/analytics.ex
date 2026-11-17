@@ -21,7 +21,6 @@ defmodule Firmowid.Analytics do
     sales_invoice_edit_opened: "sales_invoice_edit_opened",
     sales_invoice_correction_opened: "sales_invoice_correction_opened",
     ksef_fetch_requested: "ksef_fetch_requested",
-    ksef_skipped_sales_invoices_banner_viewed: "ksef_skipped_sales_invoices_banner_viewed",
     bank_connection_completed: "bank_connection_completed",
     time_entry_created: "time_entry_created",
     payroll_rates_updated: "payroll_rates_updated",
@@ -213,9 +212,6 @@ defmodule Firmowid.Analytics do
 
   defp validate_properties(:ksef_fetch_requested, %{already_fetching: fetching?}) when is_boolean(fetching?),
     do: {:ok, %{"already_fetching" => fetching?}}
-
-  defp validate_properties(:ksef_skipped_sales_invoices_banner_viewed, %{skipped_invoice_count: count})
-       when is_integer(count) and count > 0, do: {:ok, %{"skipped_invoice_count" => count}}
 
   defp validate_properties(_event, _properties), do: :error
 end

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSectionTest do
   alias Firmowid.Taxes
 
   setup do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:taxes, :inbox])
+    Application.put_env(:firmowid, :enabled_feature_flags, [:taxes])
     on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
   end
 

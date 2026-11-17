@@ -15,8 +15,6 @@
 
   /* Extended spacing */
   --spacing-navbar: var(--navbar-height);
-  --spacing-navbar-management: var(--navbar-height-management);
-  --spacing-navbar-collapsed: var(--navbar-height-collapsed);
 
   /* Keyframes */
   /* A queue item that arrived while the page was open: lit up, then settles */

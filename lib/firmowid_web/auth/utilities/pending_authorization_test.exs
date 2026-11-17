@@ -1,12 +1,10 @@
 defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
   @moduledoc """
   Connecting an AI client from a new account: signing up, setting up the company
-  in the web app and returning to the consent, with and without the setup wizard.
+  in the web app and returning to the consent.
   """
 
-  # The setup wizard is behind the inbox flag. Flags are application config in
-  # tests, so this module runs alone.
-  use FirmowidWeb.ConnCase, async: false
+  use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
@@ -19,8 +17,6 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
   @redirect_uri "https://chatgpt.example/connector/oauth/callback"
 
   setup do
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-
     {:ok, client, _response} =
       Register.register(Oauth2Server, %{
         "client_name" => "ChatGPT",
@@ -40,38 +36,8 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     }
   end
 
-  test "a new account creates its company and returns to the consent, without the setup wizard",
-       %{authorize_path: authorize_path} = context do
-    conn = sign_up(context)
-
-    # Without a company the consent waits; the organization form says why.
-    conn = get(recycle(conn), authorize_path)
-    assert redirected_to(conn) == ~p"/organizacja"
-
-    assert {:error, {:live_redirect, %{to: "/organizacja/formularz"}}} =
-             live(recycle(conn), ~p"/organizacja")
-
-    {:ok, _form, html} = live(recycle(conn), ~p"/organizacja/formularz")
-    assert html =~ "ChatGPT"
-
-    user = Core.load_member(Core.get_user_by_email!(context.email, authorize?: false))
-
-    organization =
-      Core.create_organization!(
-        %{nip: unique_nip(), name: "Acme Sp. z o.o.", owner_name: "Jan Kowalski"},
-        actor: user
-      )
-
-    conn = post(recycle(conn), ~p"/organizacja/przelacz", %{"organizacja" => organization.id})
-    assert redirected_to(conn) == authorize_path
-
-    token = approve_and_exchange(recycle(conn), context, organization.id)
-    assert_no_ksef_setup_in_mcp(token)
-  end
-
   test "a new account sets up its company in the wizard and returns to the consent",
        %{authorize_path: authorize_path} = context do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
     Req.Test.stub(:nip_api, &Req.Test.json(&1, %{"result" => %{"subject" => nil}}))
 
     conn = sign_up(context)
@@ -155,7 +121,7 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     conn = get(conn, long_path)
     assert redirected_to(conn) == ~p"/organizacja"
 
-    {:ok, _form, html} = live(recycle(conn), ~p"/organizacja/formularz")
+    {:ok, _wizard, html} = live(recycle(conn), ~p"/organizacja")
     refute html =~ "ChatGPT"
   end
 

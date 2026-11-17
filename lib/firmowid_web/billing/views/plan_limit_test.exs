@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimitTest do
     assert Repo.reload!(dropped_account).suspended_by_plan_at
     refute Repo.reload!(kept_account).suspended_by_plan_at
 
-    assert {:ok, _view, _html} = live(conn, ~p"/fakturowanie")
+    assert {:ok, _view, _html} = live(conn, ~p"/skrzynka")
   end
 
   defp employee(org_id, joined_at) do

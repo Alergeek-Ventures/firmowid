@@ -1,17 +1,11 @@
 defmodule FirmowidWeb.Auth.Views.RegistrationTest do
-  use FirmowidWeb.ConnCase, async: false
+  use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Core
-
-  # The setup wizard is behind the inbox flag. Flags are application config in
-  # tests, so this module runs alone.
-  setup do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-  end
+  alias Firmowid.Scope
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -172,19 +166,10 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
     test "creates account and joins organization", %{conn: conn} do
       admin = admin_fixture()
 
-      admin_conn = log_in_user(conn, admin)
-
-      {:ok, invites_lv, invites_html} = live(admin_conn, ~p"/zaproszenia")
-
-      assert invites_html =~ "Zaproszenia do Twojej organizacji"
-
-      updated_invites_html =
-        invites_lv
-        |> element("button", "Przygotuj zaproszenie")
-        |> render_click()
-
-      [invite_code] =
-        Regex.run(~r{<code[^>]*>\s*([^<\s]+)\s*</code>}, updated_invites_html, capture: :all_but_first)
+      %{invite_code: invite_code} =
+        Core.create_invite!(%{issued_by_id: admin.id},
+          scope: %Scope{actor: admin, tenant: admin.member.organization_id}
+        )
 
       {:ok, registration_lv, _html} = live(conn, ~p"/zarejestruj")
 

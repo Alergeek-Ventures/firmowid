@@ -71,8 +71,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
           {:assistant, [%{"type" => "step"}, original_call]}
         ])
 
-      {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
-      assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+      {:ok, invoices, _html} =
+        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
+      assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
       assistant |> element("#assistant-launcher") |> render_click()
 
       button =
@@ -245,8 +247,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
           {:assistant, [%{"type" => "step"} | malformed_calls]}
         ])
 
-      {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
-      assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+      {:ok, invoices, _html} =
+        conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
+      assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
       assistant |> element("#assistant-launcher") |> render_click()
 
       plan = "#assistant-plan-#{conversation.version}"
@@ -302,8 +306,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
          ]}
       ])
 
-    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
-    assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    {:ok, invoices, _html} =
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
+    assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     assistant |> element("#assistant-launcher") |> render_click()
 
     plan = "#assistant-plan-#{conversation.version}"
@@ -349,8 +355,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
          ]}
       ])
 
-    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
-    assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    {:ok, invoices, _html} =
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
+    assistant = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     assistant |> element("#assistant-launcher") |> render_click()
 
     plan = "#assistant-plan-#{conversation.version}"
@@ -680,8 +688,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
          ]}
       ])
 
-    {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
-    view = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
+    {:ok, invoices, _html} =
+      conn |> log_in_user(owner) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
+    view = find_live_child(invoices, "floating-assistant-#{scope.tenant}")
     view |> element("#assistant-launcher") |> render_click()
 
     %{view: view, id: "#assistant-plan-#{conversation.version}"}

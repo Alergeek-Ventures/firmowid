@@ -224,7 +224,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     conn = log_in_user(conn, admin)
 
     assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
-    assert html =~ "Fakturowanie"
+    assert html =~ "Edytuj fakturę"
   end
 
   test "editing a KSeF invoice renders the correction preview amount", %{conn: conn} do

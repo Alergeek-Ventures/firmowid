@@ -11,9 +11,9 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
 
   An account that is not ready for the consent yet is led through the setup
   first and comes back to it (see `PendingAuthorization`): an account without a
-  company creates or joins one, and with the setup wizard (the `inbox` flag) an
-  admin finishes the company's setup. Signed out, the OAuth server sends the
-  person to sign in or sign up; the client is remembered so the pages can name it.
+  company creates or joins one, and an admin finishes the company's setup. Signed
+  out, the OAuth server sends the person to sign in or sign up; the client is
+  remembered so the pages can name it.
   """
 
   @behaviour Plug
@@ -31,7 +31,6 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   alias FirmowidWeb.Auth.Components.ClientLogo
   alias FirmowidWeb.Auth.Components.McpConsent
   alias FirmowidWeb.Auth.Utilities.PendingAuthorization
-  alias FirmowidWeb.Infrastructure.Flags
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
@@ -79,9 +78,8 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   defp setup_path(%User{member: nil}), do: OrganizationNavigation.onboarding_path()
 
   defp setup_path(%User{member: member} = selected) do
-    if UserAuth.first_steps_pending?(selected, member.organization) and
-         Flags.flag_enabled?(:inbox, %{feature_flags: Flags.evaluate_for_user(selected)}),
-       do: OrganizationNavigation.setup_path()
+    if UserAuth.first_steps_pending?(selected, member.organization),
+      do: OrganizationNavigation.setup_path()
   end
 
   defp continue_after_setup(conn, setup_path) do

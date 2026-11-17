@@ -1,18 +1,12 @@
 defmodule FirmowidWeb.Inbox.Views.IndexTest do
   @moduledoc false
-  # Flags are application config in tests, so this module runs alone.
-  use FirmowidWeb.ConnCase, async: false
+  use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Scope
   alias Firmowid.Timetracker
-
-  setup do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-  end
 
   test "an admin without KSeF lands on the inbox, which leads to the KSeF settings", %{conn: conn} do
     admin = admin_fixture()

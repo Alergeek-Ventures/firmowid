@@ -3,12 +3,7 @@ defmodule FirmowidWeb.Organization.Views.FirstStepsTest do
 
   import Phoenix.LiveViewTest
 
-  # The first steps are behind the inbox flag. Flags are application config in
-  # tests, so this module runs alone.
   setup %{conn: conn} do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-
     Cachex.clear!(:institutions)
 
     Req.Test.stub(:bank_data_institutions, fn conn ->

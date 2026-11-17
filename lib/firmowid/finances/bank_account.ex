@@ -14,8 +14,7 @@ defmodule Firmowid.Finances.BankAccount do
     domain: Firmowid.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshEvents.Events, AshOban],
-    notifiers: [Ash.Notifier.PubSub]
+    extensions: [AshEvents.Events, AshOban]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -253,13 +252,6 @@ defmodule Firmowid.Finances.BankAccount do
     policy action(:sync_from_bank) do
       forbid_if always()
     end
-  end
-
-  pub_sub do
-    module FirmowidWeb.Core.Endpoint
-    prefix "bank_account"
-    publish :sync_from_gocardless, ["synced", :_tenant]
-    publish :mark_sync_failed, ["sync_failed", :_tenant]
   end
 
   multitenancy do
