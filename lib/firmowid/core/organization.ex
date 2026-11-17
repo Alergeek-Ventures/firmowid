@@ -7,8 +7,8 @@ defmodule Firmowid.Core.Organization do
   """
   use Ash.Resource,
     domain: Firmowid.Core,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    fragments: [Firmowid.Core.Organization.Persistence]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -32,29 +32,6 @@ defmodule Firmowid.Core.Organization do
   require Resource
 
   @trial_days 30
-
-  postgres do
-    table "organizations"
-    repo Firmowid.Repo
-
-    custom_statements do
-      statement :organizations_paradedb_search_idx do
-        up """
-        CREATE INDEX IF NOT EXISTS organizations_search_idx
-        ON organizations
-        USING bm25 (id, name, nip)
-        WITH (key_field='id', text_fields='{
-          "name": {"tokenizer": {"type": "ngram", "min_gram": 2, "max_gram": 4, "prefix_only": false}},
-          "nip": {"tokenizer": {"type": "ngram", "min_gram": 2, "max_gram": 10, "prefix_only": true}}
-        }');
-        """
-
-        down """
-        DROP INDEX IF EXISTS organizations_search_idx;
-        """
-      end
-    end
-  end
 
   code_interface do
     define :destroy, action: :destroy
@@ -141,7 +118,8 @@ defmodule Firmowid.Core.Organization do
         :industry,
         :bills_hourly,
         :vat_exemption_type,
-        :vat_exemption_basis
+        :vat_exemption_basis,
+        :legal_form
       ]
 
       pipe_through [:company_details]
@@ -310,6 +288,13 @@ defmodule Firmowid.Core.Organization do
     attribute :address, :string, public?: true
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true
+
+    attribute :legal_form, :atom,
+      public?: true,
+      description:
+        "How the company is organized, which decides who pays income tax: a sole proprietorship (JDG) or civil " <>
+          "partnership (spółka cywilna) owner, or a limited company (sp. z o.o.); nil until answered.",
+      constraints: [one_of: [:sole_proprietorship, :civil_partnership, :limited_company]]
 
     attribute :industry, :atom,
       public?: true,

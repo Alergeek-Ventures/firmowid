@@ -54,11 +54,20 @@ defmodule Firmowid.AiTools do
   # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
   @assistant_only [:wait_for_ksef_submissions]
 
+  # The app hides tax settings behind the `taxes` flag, so the assistant offers these tools only
+  # once the company has chosen its legal form there (`Firmowid.Assistant.ToolPolicy.tools/1`);
+  # MCP gets them when the feature is public.
+  @taxes [:list_tax_years, :suggest_tax_settings]
+
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
   def mcp, do: @shared
 
   @doc "Returns the tools exposed to the in-app assistant."
   @spec assistant() :: [atom()]
-  def assistant, do: @shared ++ @assistant_only
+  def assistant, do: @shared ++ @assistant_only ++ @taxes
+
+  @doc "Returns the tax settings tools, which the assistant offers once the legal form is chosen."
+  @spec taxes() :: [atom()]
+  def taxes, do: @taxes
 end

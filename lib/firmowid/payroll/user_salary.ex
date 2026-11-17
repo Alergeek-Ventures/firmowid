@@ -129,7 +129,7 @@ defmodule Firmowid.Payroll.UserSalary do
   end
 
   validations do
-    validate Firmowid.Payroll.Validations.MemberInOrganization,
+    validate Firmowid.Core.Validations.MemberInOrganization,
       on: [:create],
       where: [present(:member_id)]
   end

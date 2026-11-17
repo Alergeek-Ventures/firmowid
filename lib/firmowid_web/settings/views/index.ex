@@ -38,6 +38,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
+  alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Settings.Utilities.Navigation
@@ -450,6 +451,29 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {:error, form} ->
         {:noreply, assign(socket, :company_form, form)}
+    end
+  end
+
+  # The taxes card saves the legal form at once, since its other rows depend on it.
+  def handle_event("set_legal_form", %{"legal_form" => legal_form}, socket) do
+    %{current_org: organization, ash_scope: scope} = socket.assigns
+
+    with true <- flag_enabled?(:taxes, socket.assigns),
+         {:ok, updated} <-
+           Core.update_organization(organization, %{legal_form: legal_form}, scope: scope) do
+      send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+      {:noreply, assign(socket, :current_org, %{organization | legal_form: updated.legal_form})}
+    else
+      false ->
+        {:noreply, socket}
+
+      {:error, _error} ->
+        LiveToast.send_toast(
+          :error,
+          gettext("Could not save the changes. Refresh the page and try again.")
+        )
+
+        {:noreply, socket}
     end
   end
 
@@ -1162,6 +1186,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             show_active_invites={@show_active_invites}
             selected_user={@selected_user}
             uploads={@uploads}
+            scope={@ash_scope}
+            taxes?={flag_enabled?(:taxes, assigns)}
           />
         <% :subscription -> %>
           <.subscription_tab

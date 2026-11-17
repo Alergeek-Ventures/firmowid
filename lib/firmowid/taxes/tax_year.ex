@@ -1,0 +1,186 @@
+defmodule Firmowid.Taxes.TaxYear do
+  @moduledoc """
+  How the company is taxed in one calendar year.
+
+  The income tax form is chosen per year, so each year has its own record and
+  past years keep the settings they were settled with. The organization's
+  `legal_form` decides which fields apply: a limited company pays CIT itself,
+  while the owners of a sole proprietorship or a civil partnership are its
+  `partners` and pay their own income tax and ZUS on its profit.
+  """
+  use Ash.Resource,
+    domain: Firmowid.Taxes,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
+
+  alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Resource
+  alias Firmowid.Taxes.TaxYear.Actions.SuggestSettings
+  alias Firmowid.Taxes.TaxYear.Changes.FitLegalForm
+
+  require Resource
+
+  @settings [:vat_period, :cit_rate, :cit_advances, :accident_insurance_rate]
+
+  postgres do
+    table "tax_years"
+    repo Firmowid.Repo
+
+    references do
+      reference :organization, on_delete: :delete
+    end
+  end
+
+  actions do
+    defaults [:read]
+
+    read :list do
+      description "List the organization's tax years, the latest first, optionally only one year."
+      argument :year, :integer
+
+      prepare build(sort: [year: :desc])
+
+      prepare build(filter: expr(year == ^arg(:year))) do
+        where present(:year)
+      end
+    end
+
+    create :create do
+      description "Set how the company is taxed in a new year, together with its partners."
+      accept [:year | @settings]
+
+      argument :partners, {:array, :map},
+        allow_nil?: false,
+        default: [],
+        description: "The owners paying their own income tax; see `Firmowid.Taxes.Partner` for the fields."
+
+      change manage_relationship(:partners,
+               type: :direct_control,
+               use_identities: [:_primary_key, :unique_member]
+             )
+
+      change FitLegalForm
+    end
+
+    update :update do
+      description "Replace how the company is taxed in the year, together with the full list of its partners."
+      require_atomic? false
+      accept @settings
+
+      # Required without a default: an update that leaves partners out must not remove them all.
+      argument :partners, {:array, :map},
+        allow_nil?: false,
+        description: "The complete list of partners; a partner left out is removed, one matched by member is updated."
+
+      change manage_relationship(:partners,
+               type: :direct_control,
+               use_identities: [:_primary_key, :unique_member]
+             )
+
+      change FitLegalForm
+
+      # Saving confirms the year's suggestions (`Firmowid.Taxes.pending_suggestions/3`) also when
+      # only partners change, which would leave the year's own timestamp as it was.
+      change set_attribute(:updated_at, &DateTime.utc_now/0)
+    end
+
+    action :suggest_settings, {:array, :map} do
+      description "Suggest the year's VAT period, income tax form and advances from the transfers to the tax " <>
+                    "micro-account. Not binding: an admin confirms them by saving the year. Saves nothing."
+
+      constraints items: [
+                    fields: [
+                      setting: [
+                        type: :atom,
+                        allow_nil?: false,
+                        constraints: [
+                          one_of: [:vat_period, :cit_advances, :income_tax, :pit_advances]
+                        ]
+                      ],
+                      value: [type: :atom, allow_nil?: false],
+                      year: [type: :integer, allow_nil?: false],
+                      transfers: [type: :integer, allow_nil?: false],
+                      latest_transfer_at: [type: :utc_datetime, allow_nil?: false]
+                    ]
+                  ]
+
+      argument :year, :integer, allow_nil?: false, constraints: [min: 2020, max: 2100]
+
+      run SuggestSettings
+    end
+  end
+
+  policies do
+    policy action_type([:read, :action]) do
+      authorize_if {AtLeastRole, role: :accountant}
+    end
+
+    policy action_type([:create, :update]) do
+      authorize_if {ActorRole, role: :admin}
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :year, :integer,
+      allow_nil?: false,
+      public?: true,
+      constraints: [min: 2020, max: 2100]
+
+    attribute :vat_period, :atom,
+      public?: true,
+      description: "How often a VAT payer settles VAT, due on the 25th; nil for a company outside VAT.",
+      constraints: [one_of: [:monthly, :quarterly]]
+
+    attribute :cit_rate, :atom,
+      public?: true,
+      description: "The CIT rate of a limited company: 9% for a small taxpayer (reduced) or 19% (standard).",
+      constraints: [one_of: [:reduced, :standard]]
+
+    attribute :cit_advances, :atom,
+      public?: true,
+      description: "How a limited company pays CIT advances: monthly, quarterly or simplified (fixed monthly).",
+      constraints: [one_of: [:monthly, :quarterly, :simplified]]
+
+    # The rate is the activity group's rate (0.67–3.33%) times the payer's correction
+    # factor (0.5–1.5), or the flat 1.67% for payers reporting fewer than 10 insured.
+    # ZUS may raise it to 150% for wrong IWA data or by 100% on a labour inspector's
+    # request, so 10% is the highest rate a decision can set.
+    attribute :accident_insurance_rate, :decimal,
+      allow_nil?: false,
+      public?: true,
+      default: Decimal.new("1.67"),
+      description: "The ZUS accident insurance rate in percent; 1.67 for employers reporting fewer than 10 insured.",
+      constraints: [min: "0.34", max: "10.00"]
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :organization, Firmowid.Core.Organization do
+      allow_nil? false
+    end
+
+    has_many :partners, Firmowid.Taxes.Partner do
+      public? true
+    end
+  end
+
+  calculations do
+    calculate :legal_form, :atom, expr(organization.legal_form) do
+      public? true
+      description "The organization's legal form, which decides the fields that apply."
+    end
+  end
+
+  identities do
+    identity :unique_year, [:year]
+  end
+end

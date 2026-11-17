@@ -8,8 +8,8 @@ defmodule Firmowid.Payroll.MemberPayrollInput do
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Core.Validations.MemberInOrganization
   alias Firmowid.Payroll.MemberPayrollInput.ImportFromDocument
-  alias Firmowid.Payroll.Validations.MemberInOrganization
   alias Firmowid.Resource
 
   require Resource
