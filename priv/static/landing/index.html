@@ -3,13 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Firmowid: faktury to nie zysk</title>
-<meta name="description" content="Firmowid łączy faktury z KSeF, bank i czas pracy zespołu. Pokazuje, ile zostaje w firmie: miesiąc po miesiącu i projekt po projekcie.">
+<title>Firmowid - rentowność firmy usługowej, faktury KSeF i bank</title>
+<meta name="description" content="Faktury KSeF za 0 zł, przelewy z banku i godziny zespołu w jednym miejscu. Zobacz, ile z każdych 100 zł zostaje w firmie.">
 <meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://firmowid.pl/landing">
 <meta property="og:title" content="Firmowid: faktury to nie zysk">
 <meta property="og:description" content="Faktury z KSeF, przelewy z banku i godziny zespołu w jednym miejscu. Zobacz, ile z każdych 100 zł zostaje w firmie.">
+<meta property="og:image" content="https://firmowid.pl/images/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.png">
 <link rel="stylesheet" href="/landing/styles.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Czy Firmowid zastąpi księgowość?", "acceptedAnswer": {"@type": "Answer", "text": "Nie. To wynik zarządczy, nie podatkowy. Biuro księgowe dostaje od Ciebie paczkę faktur za miesiąc, a Ty wiesz, jak stoi firma, zanim przyjdzie rozliczenie."}}, {"@type": "Question", "name": "Czy zespół widzi finanse firmy?", "acceptedAnswer": {"@type": "Answer", "text": "Nie. Pracownik widzi swój czas, urlopy i dokumenty. Faktury, przelewy i analiza są dla ról z dostępem do finansów."}}, {"@type": "Question", "name": "Jak często odświeżają się dane?", "acceptedAnswer": {"@type": "Answer", "text": "Faktury z KSeF co 2 godziny, przelewy z banku co drugi dzień. Godziny zespołu widać od razu."}}, {"@type": "Question", "name": "Czy obsługujecie mój bank?", "acceptedAnswer": {"@type": "Answer", "text": "Firmowid łączy się z 29 bankami i fintechami, między innymi PKO BP, Pekao, mBank, ING, Millennium, Alior, BNP Paribas, Revolut i Wise. Konto spoza listy dodasz ręcznie po numerze IBAN, bez synchronizacji."}}, {"@type": "Question", "name": "Gdzie są moje dane?", "acceptedAnswer": {"@type": "Answer", "text": "Na serwerach OVH w Unii Europejskiej. Bank podłączasz tylko do odczytu, Firmowid nie zleca przelewów."}}]}</script>
 </head>
 <body>
 
@@ -136,7 +143,7 @@
         </div>
       </div>
       <p class="tabs__cap" id="tabcap"></p>
-      <img class="hero__fig" src="/images/figurine.png" width="905" height="1280" alt="">
+      <img class="hero__fig" src="/images/landing/figurine.webp" width="566" height="800" alt="" loading="lazy" decoding="async">
     </div>
   </div>
 </section>
@@ -197,7 +204,7 @@
           </div>
           <p class="result__foot">Z każdych 100&nbsp;zł przychodu zostało <b>23&nbsp;zł</b></p>
         </article>
-        <img class="stage__fig" src="/images/figurine.png" width="905" height="1280" alt="" loading="lazy">
+        <img class="stage__fig" src="/images/landing/figurine.webp" width="566" height="800" alt="" loading="lazy">
       </div>
     </div>
     <div class="learn reveal">
@@ -420,8 +427,8 @@
       </div>
     </div>
     <div class="team__people">
-      <figure><div class="ph"><img src="/images/team-franek-madej.webp" alt="Franek Madej" loading="lazy"></div><figcaption><b>Franek Madej</b>CEO · Alergeek Ventures<small>Technical Lead w&nbsp;Scape (YC&nbsp;S24). Jeden z&nbsp;pierwszych inżynierów Legory.</small></figcaption></figure>
-      <figure><div class="ph"><img src="/images/team-stanislaw-madej.webp" alt="Stanisław Madej" loading="lazy"></div><figcaption><b>Stanisław Madej</b>COO · Alergeek Ventures<small>Wcześniej analityka danych w&nbsp;Accenture, PwC i&nbsp;Orange.</small></figcaption></figure>
+      <figure><div class="ph"><img src="/images/team-franek-madej.webp" width="832" height="1248" alt="Franek Madej" loading="lazy"></div><figcaption><b>Franek Madej</b>CEO · Alergeek Ventures<small>Technical Lead w&nbsp;Scape (YC&nbsp;S24). Jeden z&nbsp;pierwszych inżynierów Legory.</small></figcaption></figure>
+      <figure><div class="ph"><img src="/images/team-stanislaw-madej.webp" width="832" height="1248" alt="Stanisław Madej" loading="lazy"></div><figcaption><b>Stanisław Madej</b>COO · Alergeek Ventures<small>Wcześniej analityka danych w&nbsp;Accenture, PwC i&nbsp;Orange.</small></figcaption></figure>
     </div>
   </div>
 </section>
@@ -436,6 +443,7 @@
         <p class="oss__lead">Cały Firmowid jest publiczny. Możesz czytać kod, postawić go u&nbsp;siebie albo korzystać z&nbsp;naszej wersji hostowanej w&nbsp;UE.</p>
         <div class="oss__cta">
           <a class="btn btn--light" href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">Zobacz na GitHubie <img src="/images/github-mark.svg" width="22" height="22" alt=""></a>
+          <a class="oss__more" href="/open-source">Więcej o open source</a>
           <span>Licencja AGPL-3.0</span>
         </div>
       </div>
@@ -463,7 +471,7 @@
     <p class="end__sub">Sprawdź, ile zostaje w&nbsp;Twojej firmie.</p>
     <a class="btn btn--rust btn--big" href="/zarejestruj">Zacznij za darmo</a>
     <p class="end__note">Konto w 2 minuty. Bez karty. Plan darmowy na zawsze.</p>
-    <img class="end__fig" src="/images/figurine.png" alt="" loading="lazy">
+    <img class="end__fig" src="/images/landing/figurine.webp" alt="" loading="lazy">
   </div>
   <div class="wrap end__foot">
     <span class="logo logo--light">Firmowid</span>

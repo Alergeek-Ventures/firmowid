@@ -50,7 +50,7 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .btn--dark{background:var(--ink);color:#fff}.btn--dark:hover{background:var(--r700)}
 .btn--rust{background:var(--r500);color:var(--ink)}.btn--rust:hover{background:var(--r300)}
 .btn--sketch{background:url(/images/landing/frames/button-login.svg) center/100% 100% no-repeat}.btn--sketch:hover{color:var(--r700)}
-.btn--light{color:var(--cream);background:url(/images/landing/frames/button-light.svg) center/100% 100% no-repeat;padding:0 34px}
+.btn--light{color:var(--cream);border:1.5px solid var(--cream);padding:0 30px}
 .btn--light img{filter:invert(1)}
 .btn--light:hover{color:var(--r500)}
 .btn--big{min-height:64px;padding:0 44px;font-size:18px}
@@ -418,6 +418,7 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 /* ---------- oss / team / faq ---------- */
 .oss{background:var(--ink);color:var(--cream);padding:clamp(72px,9vw,120px) 0}
 .oss__top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:48px;align-items:center}
+.oss__more{color:var(--cream);text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--r500)}.oss__more:hover{color:var(--r500)}
 .oss__lead{margin-top:18px;max-width:38ch;font-size:clamp(17px,1.6vw,20px);line-height:1.45;color:rgba(245,241,234,.75)}
 .oss__cta{display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-top:30px;font-size:14px;color:rgba(245,241,234,.7)}
 .term{font-family:var(--mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);font-size:14px;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:8px;overflow:hidden}
