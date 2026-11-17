@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
     seed_cost_invoice!(admin.member.organization_id, current_month)
 
     {:ok, lv, _html} =
-      conn |> log_in_user(admin) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+      conn |> log_in_user(admin) |> live(~p"/fakturowanie?filtr=faktury")
 
     rendered = render_async(lv)
     assert rendered =~ "Pobierz dokumenty"

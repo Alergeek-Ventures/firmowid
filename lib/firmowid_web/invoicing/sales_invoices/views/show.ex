@@ -126,11 +126,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         {:noreply,
          socket
          |> put_flash(:info, gettext("The invoice has been deleted."))
-         |> push_navigate(
-           to:
-             socket.assigns.return_to ||
-               Navigation.default_invoicing_path(socket.assigns.invoice.issue_date)
-         )}
+         |> push_navigate(to: socket.assigns.return_to || Navigation.invoices_list_path())}
 
       {:error, _error} ->
         {:noreply,

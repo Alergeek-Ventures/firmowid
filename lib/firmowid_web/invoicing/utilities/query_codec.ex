@@ -7,27 +7,18 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
 
   @filter_values %{
-    "wszystkie" => :all,
     "faktury" => :invoices,
-    "transakcje" => :transactions,
-    "nieprzypisane" => :unmatched
+    "transakcje" => :transactions
   }
   @filter_params Map.new(@filter_values, fn {key, value} -> {value, key} end)
 
   @subfilter_values %{
-    "oplacone" => :oplacone,
-    "nieoplacone" => :nieoplacone,
-    "dopasowane" => :dopasowane,
-    "bez_dokumentu" => :bez_dokumentu,
     "sprzedazowe" => :sprzedazowe,
     "zakupowe" => :zakupowe,
     "wplywy" => :wplywy,
     "wydatki" => :wydatki
   }
   @subfilter_params Map.new(@subfilter_values, fn {key, value} -> {value, key} end)
-
-  @view_mode_values %{"lista" => :list}
-  @view_mode_params Map.new(@view_mode_values, fn {key, value} -> {value, key} end)
 
   @last_sales_invoices_tab_values %{"ostatnie_faktury" => :last_sales_invoices}
   @last_sales_invoices_tab_params Map.new(@last_sales_invoices_tab_values, fn {key, value} ->
@@ -40,19 +31,10 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   }
   @creator_tab_params Map.new(@creator_tab_values, fn {key, value} -> {value, key} end)
 
-  @invoicing_index_param_keys ~w(miesiac filtr podfiltr widok)
+  @invoicing_index_param_keys ~w(miesiac filtr podfiltr)
 
-  @type filter :: :all | :invoices | :transactions | :unmatched
-  @type subfilter ::
-          :oplacone
-          | :nieoplacone
-          | :dopasowane
-          | :bez_dokumentu
-          | :sprzedazowe
-          | :zakupowe
-          | :wplywy
-          | :wydatki
-  @type view_mode :: :inbox | :list
+  @type filter :: :invoices | :transactions
+  @type subfilter :: :sprzedazowe | :zakupowe | :wplywy | :wydatki
   @type creator_tab :: :last_counterparties | :last_invoices
   @type counterparty_type :: CounterpartyTypeCodec.counterparty_type()
   @type invoice_language :: :pl | :en
@@ -86,18 +68,6 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   """
   @spec encode_subfilter(subfilter()) :: String.t()
   def encode_subfilter(subfilter), do: PolishValues.encode_atom(subfilter, @subfilter_params)
-
-  @doc """
-  Parses the invoicing view-mode query value.
-  """
-  @spec parse_view_mode(String.t() | nil) :: view_mode() | nil
-  def parse_view_mode(raw_value), do: PolishValues.parse_atom(raw_value, @view_mode_values)
-
-  @doc """
-  Encodes the invoicing view-mode query value.
-  """
-  @spec encode_view_mode(:list) :: String.t()
-  def encode_view_mode(view_mode), do: PolishValues.encode_atom(view_mode, @view_mode_params)
 
   @doc """
   Parses the last-sales-invoices tab query value.

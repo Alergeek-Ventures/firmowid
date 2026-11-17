@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     ~H"""
     <header class={header_styles(@transaction)}>
       <.back
-        navigate={@return_to || default_return_path(@transaction)}
+        navigate={@return_to || Navigation.transactions_list_path()}
         icon_only
       />
 
@@ -507,8 +507,4 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   defp first_sales_item_name(%SalesInvoice{}), do: "—"
-
-  defp default_return_path(transaction) do
-    Navigation.default_invoicing_path(transaction.booking_date)
-  end
 end

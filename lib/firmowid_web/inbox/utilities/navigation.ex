@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
 
   alias Firmowid.Core.UserRole
   alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @type layer :: :main | :company | :me
@@ -99,7 +100,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: gettext("Invoices"),
         icon: "file-text",
-        path: ~p"/fakturowanie?#{[filtr: "faktury", widok: "lista"]}",
+        path: InvoicingNavigation.invoices_list_path(),
         roles: @managers
       },
       %{
@@ -107,7 +108,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: gettext("Transactions"),
         icon: "arrow-left-right",
-        path: ~p"/fakturowanie?#{[filtr: "transakcje", widok: "lista"]}",
+        path: InvoicingNavigation.transactions_list_path(),
         roles: @managers
       },
       %{

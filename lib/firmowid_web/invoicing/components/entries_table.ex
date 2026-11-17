@@ -50,8 +50,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     default: nil,
     doc: "changes with every reload of the list, so the rows on screen read their projects again"
 
-  @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
-
   @invoice_columns ["party", "issue_date", "due_date", "status", "amount"]
   @transaction_columns ["party", "value_date", "booking_date", "status", "amount"]
 
@@ -59,10 +57,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     party: pgettext_noop("Counterparty", "entries table column"),
     issue_date: pgettext_noop("Issued", "entries table column"),
     value_date: pgettext_noop("Performed", "entries table column"),
-    issue_or_value_date: pgettext_noop("Issued / Performed", "entries table column"),
     due_date: pgettext_noop("Payment due date", "entries table column"),
     booking_date: pgettext_noop("Booked", "entries table column"),
-    due_or_booking_date: pgettext_noop("Payment due date / Booked", "entries table column"),
     status: pgettext_noop("Status", "entries table column"),
     amount: pgettext_noop("Amount", "entries table column")
   ]
@@ -135,10 +131,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               "project" -> "w-48 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
               "issue_date" -> "w-36"
               "booking_date" -> "w-44"
-              "issue_or_value_date" -> "w-36"
               "due_date" -> "w-44"
               "value_date" -> "w-36"
-              "due_or_booking_date" -> "w-44"
               "status" -> "w-40"
               "amount" -> "w-44"
               _ -> ""
@@ -339,7 +333,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp mode_columns(:invoices), do: @invoice_columns
   defp mode_columns(:transactions), do: @transaction_columns
-  defp mode_columns(_mode), do: @default_columns
 
   defp entry_key({:month, month}), do: {:month, month}
   defp entry_key(%struct{id: id}), do: {struct, id}
@@ -446,39 +439,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         )
       )
 
-    is_special_column =
-      case assigns.column do
-        "issue_or_value_date" -> true
-        "due_or_booking_date" -> true
-        _ -> false
-      end
-
-    if is_special_column do
-      ~H"""
-      <span
-        id={"header-#{@column}-label"}
-        class="inline-block"
-        phx-hook="Tippy"
-        data-tippy-content={
-          case @column do
-            "issue_or_value_date" ->
-              gettext("For invoices this is the issue date, for transactions the execution date")
-
-            "due_or_booking_date" ->
-              gettext(
-                "For invoices this is the payment due date, for transactions the payment booking date"
-              )
-          end
-        }
-      >
-        {@label}
-      </span>
-      """
-    else
-      ~H"""
-      {@label}
-      """
-    end
+    ~H"""
+    {@label}
+    """
   end
 
   # Separates the months of a list that spans all of them with a line naming the month.
@@ -608,7 +571,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     do:
       "max-md:col-start-1 max-md:row-span-2 max-md:row-start-1 max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-4"
 
-  defp mobile_cell_styles(column) when column in ["issue_date", "value_date", "issue_or_value_date"],
+  defp mobile_cell_styles(column) when column in ["issue_date", "value_date"],
     do:
       "max-md:col-start-2 max-md:row-start-2 max-md:border-0 max-md:pt-0 max-md:pr-5 max-md:pb-4 max-md:pl-3 max-md:text-right max-md:text-sm max-md:text-grey-700"
 
@@ -672,7 +635,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp render_cell(%{column: column, invoicing_entry: %ExpectedTransaction{}} = assigns)
-       when column in ["issue_or_value_date", "due_or_booking_date", "value_date", "booking_date"] do
+       when column in ["value_date", "booking_date"] do
     ~H"""
     <.date_value date={@invoicing_entry.date} />
     """
@@ -969,18 +932,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp render_cell(%{invoicing_entry: %Transaction{}, column: "due_date"} = assigns),
     do: assigns |> assign(:column, "SKIPPED") |> render_cell()
 
-  defp render_cell(%{invoicing_entry: %Transaction{}, column: "issue_or_value_date"} = assigns),
-    do: assigns |> assign(:column, "booking_date") |> render_cell()
-
-  defp render_cell(%{invoicing_entry: %Transaction{}, column: "due_or_booking_date"} = assigns),
-    do: assigns |> assign(:column, "booking_date") |> render_cell()
-
-  defp render_cell(%{invoicing_entry: %CostInvoice{}, column: "due_or_booking_date"} = assigns),
-    do: assigns |> assign(:column, "due_date") |> render_cell()
-
-  defp render_cell(%{invoicing_entry: %SalesInvoice{}, column: "due_or_booking_date"} = assigns),
-    do: assigns |> assign(:column, "due_date") |> render_cell()
-
   defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "due_date"} = assigns) do
     assigns = assign(assigns, :value, invoice.effective_due_date)
 
@@ -1002,12 +953,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     <.date_value :if={@value} date={@value} />
     """
   end
-
-  defp render_cell(%{invoicing_entry: %CostInvoice{}, column: "issue_or_value_date"} = assigns),
-    do: assigns |> assign(:column, "issue_date") |> render_cell()
-
-  defp render_cell(%{invoicing_entry: %SalesInvoice{}, column: "issue_or_value_date"} = assigns),
-    do: assigns |> assign(:column, "issue_date") |> render_cell()
 
   defp render_cell(%{invoicing_entry: %Transaction{} = transaction, column: "party"} = assigns) do
     party = transaction.counterparty_display_name
@@ -1312,8 +1257,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
-  defp render_group_cell(%{column: column, group: _group} = assigns)
-       when column in ["issue_or_value_date", "value_date", "due_or_booking_date", "booking_date"] do
+  defp render_group_cell(%{column: column, group: _group} = assigns) when column in ["value_date", "booking_date"] do
     ~H"""
     <.date_value date={@group.date} />
     """

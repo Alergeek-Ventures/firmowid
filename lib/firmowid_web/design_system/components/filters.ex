@@ -56,11 +56,9 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
   @doc """
   Renders sub-filter pills that narrow a list, prefixed with a "Filters:" label. Pills
   are links (`navigate` or `patch`) or buttons with `phx-click`; clicking an active
-  pill is expected to clear it. With `divider`, a vertical rule separates the pills
-  from preceding tabs on wide screens.
+  pill is expected to clear it.
   """
   @spec filter_pills(map()) :: Rendered.t()
-  attr :divider, :boolean, default: false
   attr :class, :any, default: nil
 
   attr :label, :any, default: :default, doc: "Visible label before the pills; `nil` hides it."
@@ -76,7 +74,6 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
 
     ~H"""
     <div class={["flex items-center gap-6 max-md:w-full", @class]}>
-      <div :if={@divider} class="mx-2 h-7 w-px bg-grey-200 max-md:hidden"></div>
       <div role="group" aria-label={gettext("Filters")} class="flex items-center gap-3 max-md:w-full">
         <span :if={@label} class="text-sm font-normal text-grey-700/70">{@label}</span>
         <div class="flex flex-wrap items-center gap-2 max-md:flex-1">

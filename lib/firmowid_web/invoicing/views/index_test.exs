@@ -32,15 +32,16 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     conn = log_in_user(conn, user)
     invoice = corrected_cost_invoice_fixture!(user)
 
-    unpaid_path =
-      ~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury&podfiltr=nieoplacone&widok=lista"
-
-    {:ok, unpaid, _html} = live(conn, unpaid_path)
-    render_async(unpaid)
+    {:ok, purchases, _html} = live(conn, ~p"/fakturowanie?filtr=faktury&podfiltr=zakupowe")
+    render_async(purchases)
 
     # The correction has no row of its own.
-    assert has_element?(unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
-    refute has_element?(unpaid, "#invoicing-entries tr[id$='-row']:not([id='#{invoice.id}-row'])")
+    assert has_element?(purchases, "#invoicing-entries tr[id='#{invoice.id}-row']")
+
+    refute has_element?(
+             purchases,
+             "#invoicing-entries tr[id$='-row']:not([id='#{invoice.id}-row'])"
+           )
 
     first_payment =
       transaction_fixture!(user, invoice.seller, invoice.issue_date, "FIRST-INSTALLMENT")
@@ -55,26 +56,18 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert MapSet.new(paid.transactions, & &1.id) ==
              MapSet.new([first_payment.id, second_payment.id])
 
-    {:ok, paid_unpaid, _html} = live(conn, unpaid_path)
-    render_async(paid_unpaid)
-    refute has_element?(paid_unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
-
     {:ok, details, _html} = live(conn, ~p"/kosztowe/#{invoice.id}")
     details |> element("#invoice-show button[phx-click='disconnect']") |> render_click()
     details |> element("button", "Pomiń") |> render_click()
     assert has_element?(details, "div", "Transakcja pominięta")
 
     assert Invoicing.get_cost_invoice!(invoice.id, scope: scope).skip_invoicing
-
-    {:ok, skipped_unpaid, _html} = live(conn, unpaid_path)
-    render_async(skipped_unpaid)
-    refute has_element?(skipped_unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
   end
 
   test "opens when the month param is not a single value", %{conn: conn} do
     conn = log_in_user(conn, admin_fixture())
 
-    assert {:ok, _view, _html} = live(conn, "/fakturowanie?miesiac[]=2026-01-01&widok=lista")
+    assert {:ok, _view, _html} = live(conn, "/fakturowanie?miesiac[]=2026-01-01&filtr=faktury")
   end
 
   test "keeps the list open when a file unrelated to cost invoices is added and removed", %{
@@ -84,7 +77,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     scope = scope_for(user)
 
     {:ok, view, _html} =
-      conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+      conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury")
 
     render_async(view)
 
@@ -116,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         {:ok, view, _html} =
           conn
           |> log_in_user(user)
-          |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury&widok=lista")
+          |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury")
 
         render_async(view)
 
@@ -186,7 +179,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       # Mount the LiveView (subscribes to PubSub topics)
       {:ok, view, _html} =
-        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury")
 
       render_async(view)
 
@@ -215,7 +208,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       # Mount the LiveView
       {:ok, view, _html} =
-        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury")
 
       render_async(view)
 
@@ -241,7 +234,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=wszystkie&widok=lista")
+        |> live(~p"/fakturowanie?filtr=transakcje")
 
       render_async(view)
 
@@ -259,14 +252,14 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute Finances.get_transaction!(transaction.id, scope: scope_for(user)).skip_invoicing
     end
 
-    test "skips a single invoice from unmatched list", %{conn: conn} do
+    test "skips a single invoice from the list of invoices", %{conn: conn} do
       user = admin_fixture()
       invoice = sales_invoice_fixture!(user, "FV-LIST-SINGLE")
 
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
+        |> live(~p"/fakturowanie?filtr=faktury")
 
       render_async(view)
 
@@ -281,7 +274,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert skipped_invoice.skip_invoicing
     end
 
-    test "skips a group of transactions from unmatched list", %{conn: conn} do
+    test "skips a group of transactions from the list of transactions", %{conn: conn} do
       user = admin_fixture()
       tx1 = transaction_fixture!(user, "Grouped Party", ~D[2026-01-10], "PAYMENT-A")
       tx2 = transaction_fixture!(user, "Grouped Party", ~D[2026-01-10], "PAYMENT-B")
@@ -289,7 +282,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
+        |> live(~p"/fakturowanie?filtr=transakcje")
 
       render_async(view)
 
@@ -331,10 +324,11 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       # scheduling and cancellation are covered by PubSubDebounceTest.
       send(view.pid, {:debounced_refetch, :invoicing_entries})
 
-      html_after_debounce = render_async(view)
+      render_async(view)
 
-      refute html_after_debounce =~ "Grouped Party"
-      refute html_after_debounce =~ "2 transakcje"
+      for transaction <- [tx1, tx2] do
+        assert has_element?(view, "##{transaction.id}-button .hero-arrow-uturn-left-micro")
+      end
     end
 
     test "renders distinct income and cost group ids for the same party", %{conn: conn} do
@@ -348,7 +342,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-05-01&filtr=nieprzypisane&widok=lista")
+        |> live(~p"/fakturowanie?filtr=transakcje")
 
       render_async(view)
 
@@ -409,7 +403,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       assert render_async(view) =~ "Brak transakcji i dokumentów dla wybranej daty"
       subscribe_to_upload_notifications(user)
@@ -443,7 +437,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       render_async(view)
 
@@ -472,7 +466,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       render_async(view)
 
@@ -505,7 +499,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       render_async(view)
 
@@ -529,7 +523,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       render_async(view)
 
@@ -553,7 +547,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury")
 
       render_async(view)
 
