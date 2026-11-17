@@ -356,24 +356,20 @@ section{position:relative}
 .calc h2{margin-bottom:clamp(28px,3.4vw,44px)}
 .calc__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:48px;align-items:start}
 .cmpf{border-top:1px solid var(--g200)}
-.cmpf .step{border:0;border-bottom:1px solid var(--g200);margin:0;padding:18px 0;transition:opacity .3s,filter .3s}
+.cmpf .step{border:0;border-bottom:1px solid var(--g200);margin:0;padding:24px 0;transition:opacity .3s}
 .cmpf legend{float:left;width:100%;display:flex;align-items:center;gap:12px;padding:0;margin:0;font-size:19px;font-weight:600;letter-spacing:-.01em}
 .cmpf legend+*{clear:both}
 .cmpf legend i{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-size:14px;transition:background-color .2s}
 .step__sum{margin-left:auto;font-style:normal;font-size:15px;font-weight:500;color:var(--g600)}
-.step__body{padding-top:18px}
+.step__body{display:flex;flex-direction:column;gap:6px;padding-top:24px}
 .step:not(.is-open) .step__body{display:none}
-.step.is-locked{opacity:.4;filter:blur(1.5px);pointer-events:none;user-select:none}
+.step.is-locked{opacity:.38;pointer-events:none;user-select:none}
 .step.is-done legend{cursor:pointer}
 .step.is-done legend i{background:var(--keep)}
 .step.is-done:not(.is-open) legend:hover span{color:var(--r700)}
-.step__next{min-height:44px;padding:0 22px;margin-top:6px;font-size:15px}
-.step .slider:last-of-type{margin-bottom:14px}
+.step__next{align-self:flex-end;min-height:44px;padding:0 26px;margin-top:14px;font-size:15px}
+.step .slider{margin-bottom:18px}.step .slider:last-of-type{margin-bottom:6px}
 .calc__out{position:sticky;top:104px}
-.calc__hint{display:none}
-.calc__out.is-locked .calc__hint{display:block;margin:0 0 18px;font-size:16px;color:var(--cream)}
-.calc__reveal{transition:filter .5s,opacity .5s}
-.calc__out.is-locked .calc__reveal{filter:blur(9px);opacity:.45;pointer-events:none;user-select:none}
 .calc__reveal>p:first-child{font-size:14px;color:rgba(245,241,234,.7)}
 .opts{display:grid;border-top:1px solid var(--g200)}
 .opt{display:flex;align-items:center;gap:12px;min-height:48px;padding:10px 2px;border-bottom:1px solid var(--g200);font-size:16px;color:var(--g700);cursor:pointer;transition:color .2s}
