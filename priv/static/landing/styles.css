@@ -412,6 +412,32 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 .proof__nums{display:grid;gap:26px;font-size:14px;color:var(--g700);padding-left:40px;border-left:2px solid var(--r200)}
 .proof__nums strong{display:block;font-size:32px;line-height:1.1;color:var(--r700);margin-bottom:4px}
 
+/* ---------- case studies ---------- */
+.cases{padding:clamp(72px,9vw,128px) 0 0}
+.cases h2{margin-bottom:clamp(28px,3.4vw,44px)}
+.cases__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.case{display:flex;flex-direction:column;padding:18px 20px 22px;background:#fff;border:1px solid var(--g200);border-radius:4px;transition:translate .25s var(--ease),box-shadow .25s}
+a.case:hover{translate:0 -4px;box-shadow:0 18px 36px -20px rgba(87,54,35,.35)}
+.case__pic{display:grid;place-items:center;height:150px;margin-bottom:18px;border-radius:3px}
+.case__pic--rust{background:var(--r100)}
+.case__pic--rust svg{width:84px;stroke:var(--r700);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.case__pic--ink{background:var(--ink)}.case__pic--ink img{width:84px;height:84px}
+.case__tag{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--r700)}
+.case h3{margin-top:8px;font-size:clamp(20px,2vw,26px);line-height:1.15;font-weight:600;letter-spacing:-.02em}
+.case__go{margin-top:auto;padding-top:22px;font-weight:500}
+.case__go i{font-style:normal;display:inline-block;transition:translate .2s}
+a.case:hover .case__go{color:var(--r700)}a.case:hover .case__go i{translate:4px 0}
+.case--wide{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(20px,3vw,40px);align-items:center;padding:20px}
+.case--wide .case__pic{height:auto;aspect-ratio:4/3;margin:0}
+.case--wide .case__pic svg{width:38%}
+.case--wide .case__go{display:inline-block;margin-top:22px;padding-top:0}
+.case--wide h3{font-size:clamp(24px,2.8vw,36px);max-width:18ch}
+.case--wide p{margin-top:12px;max-width:44ch;font-size:16px;line-height:1.5;color:var(--g700)}
+.case__stats{display:flex;gap:28px;margin-top:20px}
+.case__stats b{display:block;font-size:clamp(28px,3vw,40px);line-height:1;letter-spacing:-.03em;color:var(--keep)}
+.case__stats span{font-size:13px;color:var(--g600)}
+@media (max-width:760px){.case--wide{grid-template-columns:1fr}}
+
 /* ---------- pricing ---------- */
 .pricing{text-align:center}
 .pricing h2{margin-inline:auto;margin-bottom:28px;max-width:none}
