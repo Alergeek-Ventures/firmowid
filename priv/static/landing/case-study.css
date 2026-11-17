@@ -57,7 +57,8 @@
 /* before */
 .cs-before{padding:var(--sec) 0 0!important}
 .cs-before h2,.cs-after h2{margin-bottom:var(--head)}
-.probs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.probs{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media (max-width:1100px){.probs{grid-template-columns:repeat(2,1fr)}}
 .prob{padding:24px 24px 26px;background:#fff;border:1px solid var(--g200);border-radius:4px}
 .prob__ico{display:grid;place-items:center;width:64px;height:64px;margin-bottom:18px;background:var(--r100);border-radius:50%}
 .prob__ico svg{width:34px;height:34px;fill:none;stroke:var(--r700);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -148,12 +149,6 @@
   .match__a{translate:-50% 26px}.match__b{translate:-50% -26px}
 }
 
-/* second quote, light */
-.cs-quote2{padding:var(--sec) 0 0!important}
-.cs-quote2 blockquote{margin:0 auto;max-width:900px;padding:clamp(28px,4vw,48px) 0;text-align:center;border-block:1px solid var(--r200)}
-.cs-quote2 blockquote p{font-size:clamp(26px,3.4vw,44px);line-height:1.18;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
-.cs-quote2 footer{margin-top:20px;font-size:15px;color:var(--g700)}
-.cs-quote2 footer b{color:var(--r700)}
 
 /* closing call to action: keep text clear of the mascot */
 .cs .end__cta>*:not(.end__fig){position:relative;z-index:1;max-width:min(100%,640px)}
