@@ -173,9 +173,9 @@
       mini: el => { el.className = 'mini cmp2'; el.innerHTML = '<span style="background:#D28F67;color:#000">Październik · 7 200 zł</span><span style="background:#555">Zwykle · 5 100 zł</span>'; setTimeout(() => { const s = $$('span', el); s[0].style.width = '92%'; s[1].style.width = '65%'; }, 60); } },
   ];
   const cq = $('#chat-q'), ca = $('#chat-a'), ct = $('#chat-text'), cm = $('#chat-mini'), chips = $$('#chat-chips button');
-  let chatT = [], chatI = 0, chatStarted = false;
+  let chatT = [], chatStarted = false;
   function ask(i, instant) {
-    chatT.forEach(clearTimeout); chatT = []; chatI = i;
+    chatT.forEach(clearTimeout); chatT = [];
     const { q, a, mini } = QA[i];
     chips.forEach((c, k) => c.classList.toggle('on', k === i));
     ca.classList.add('dim'); cq.textContent = '';
@@ -236,9 +236,9 @@
     cmpf.addEventListener('submit', e => e.preventDefault());
     calc();
 
-    // one question at a time: later steps stay blurred until the earlier one is answered
+    // one question at a time: later steps stay locked until the earlier one is answered
     const steps = $$('.step', cmpf);
-    const things = n => n === 1 ? '1 rzecz' : n >= 2 && n <= 4 ? n + ' rzeczy' : n + ' rzeczy';
+    const things = n => n === 1 ? '1 rzecz' : n + ' rzeczy';
     const summary = [
       () => $('#q-team-out').textContent,
       () => things($$('.opt > input:checked', cmpf).length),
