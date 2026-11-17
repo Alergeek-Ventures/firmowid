@@ -14,10 +14,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Analysis.Utilities.Industry
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Settings.Components.TaxSection
+  alias FirmowidWeb.Settings.Utilities.RegisterCheck
   alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Rendered
 
@@ -48,7 +50,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   def company_tab(assigns) do
     ~H"""
     <div class="flex flex-col gap-8">
-      <.company_details_form :if={@section == :organization} company_form={@company_form} />
+      <.company_details_form
+        :if={@section == :organization}
+        company_form={@company_form}
+        register={RegisterCheck.status(@current_org)}
+      />
 
       <div :if={@section == :organization and @taxes?}>
         <.live_component
@@ -84,6 +90,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :company_form, :map, required: true
+  attr :register, :map, required: true
 
   defp company_details_form(assigns) do
     ~H"""
@@ -109,9 +116,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         >
           <.input field={@company_form[:display_name]} type="text" input_class="w-full" />
         </Helpers.settings_field>
-        <Helpers.settings_field label="NIP" for={@company_form[:nip].id}>
-          <.input field={@company_form[:nip]} type="text" input_class="w-full" />
-        </Helpers.settings_field>
+        <div class="flex flex-col gap-2">
+          <Helpers.settings_field label="NIP" for={@company_form[:nip].id}>
+            <.input field={@company_form[:nip]} type="text" input_class="w-full" />
+          </Helpers.settings_field>
+          <.register_status register={@register} />
+          <.register_problem register={@register} field={:nip} />
+        </div>
         <Helpers.settings_field label={gettext("Industry")} for={@company_form[:industry].id}>
           <.input
             type="select"
@@ -135,6 +146,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           color="teal"
           class="sm:col-span-2"
         />
+        <.register_problem register={@register} field={:is_vat_payer} class="-mbs-3 sm:col-span-2" />
         <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
           <Helpers.settings_field
             label={gettext("VAT exemption")}
@@ -210,6 +222,36 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.button>
       </div>
     </.form>
+    """
+  end
+
+  attr :register, :map, required: true
+
+  # What the VAT white list and CEIDG last said about the NIP (`VatIdCheckWorker`),
+  # as a quiet line: only an answer that is itself a problem stands out.
+  defp register_status(assigns) do
+    ~H"""
+    <p
+      id="organization-register-status"
+      data-result={@register.result}
+      class="text-sm/snug text-grey-700"
+    >
+      <span class={[@register.danger? && "font-medium text-brick-700"]}>{@register.label}</span>
+      <span :if={@register.meta}>· {@register.meta}</span>
+    </p>
+    """
+  end
+
+  attr :register, :map, required: true
+  attr :field, :atom, required: true
+  attr :class, :any, default: nil
+
+  # The contradiction shows under the detail it concerns; the inbox links to it.
+  defp register_problem(assigns) do
+    ~H"""
+    <div :if={@register.problem && @register.field == @field} id="rejestry" class={@class}>
+      <Inputs.error>{@register.problem}</Inputs.error>
+    </div>
     """
   end
 
