@@ -324,46 +324,57 @@
     <h2 class="reveal">Porównaj Firmowida z&nbsp;tym,<br class="wide"> czego używasz dziś.</h2>
     <div class="calc__grid reveal">
       <form class="cmpf" id="cmpf">
-        <fieldset>
-          <legend><i>1</i>Ile osób pracuje w&nbsp;firmie?</legend>
-          <label class="slider"><span>Zespół <b id="q-team-out">6 osób</b></span>
-            <input type="range" id="q-team" min="1" max="20" step="1" value="6"></label>
-        </fieldset>
-        <fieldset>
-          <legend><i>2</i>Czego używasz dziś?</legend>
-          <div class="opts">
-            <label class="opt"><input type="checkbox" id="q-inv" checked><span>Program do faktur</span>
-              <em><input type="number" id="q-inv-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do faktur"> zł / mies.</em></label>
-            <label class="opt"><input type="checkbox" id="q-time"><span>Program do czasu pracy</span>
-              <em><input type="number" id="q-time-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do czasu pracy"> zł / mies.</em></label>
-            <label class="opt"><input type="checkbox" id="q-bank" checked><span>Sprawdzam wpłaty ręcznie w&nbsp;banku</span></label>
-            <label class="opt"><input type="checkbox" id="q-sheet" checked><span>Liczę wynik w&nbsp;Excelu</span></label>
-            <label class="opt"><input type="checkbox" id="q-leave"><span>Urlopy i&nbsp;delegacje w&nbsp;mailach</span></label>
+        <fieldset class="step is-open" data-step="0">
+          <legend><i>1</i><span>Ile osób pracuje w&nbsp;firmie?</span><em class="step__sum"></em></legend>
+          <div class="step__body">
+            <label class="slider"><span>Zespół <b id="q-team-out">6 osób</b></span>
+              <input type="range" id="q-team" min="1" max="20" step="1" value="6"></label>
+            <button type="button" class="btn btn--dark step__next">Dalej</button>
           </div>
         </fieldset>
-        <fieldset>
-          <legend><i>3</i>Ile czasu to zajmuje?</legend>
-          <label class="slider"><span>Godzin tygodniowo <b id="q-h-out">5 h</b></span>
-            <input type="range" id="q-h" min="1" max="25" step="0.5" value="5"></label>
-          <label class="slider"><span>Koszt godziny pracy <b id="q-r-out">150 zł</b></span>
-            <input type="range" id="q-r" min="40" max="400" step="10" value="150"></label>
-          <label class="slider"><span>Ile z&nbsp;tego czasu odzyskasz <b id="q-s-out">50%</b></span>
-            <input type="range" id="q-s" min="10" max="100" step="5" value="50"></label>
+        <fieldset class="step is-locked" data-step="1">
+          <legend><i>2</i><span>Czego używasz dziś?</span><em class="step__sum"></em></legend>
+          <div class="step__body">
+            <div class="opts">
+              <label class="opt"><input type="checkbox" id="q-inv" checked><span>Program do faktur</span>
+                <em><input type="number" id="q-inv-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do faktur"> zł / mies.</em></label>
+              <label class="opt"><input type="checkbox" id="q-time"><span>Program do czasu pracy</span>
+                <em><input type="number" id="q-time-p" min="0" step="1" inputmode="numeric" placeholder="0" aria-label="Koszt programu do czasu pracy"> zł / mies.</em></label>
+              <label class="opt"><input type="checkbox" id="q-bank" checked><span>Sprawdzam wpłaty ręcznie w&nbsp;banku</span></label>
+              <label class="opt"><input type="checkbox" id="q-sheet" checked><span>Liczę wynik w&nbsp;Excelu</span></label>
+              <label class="opt"><input type="checkbox" id="q-leave"><span>Urlopy i&nbsp;delegacje w&nbsp;mailach</span></label>
+            </div>
+            <button type="button" class="btn btn--dark step__next">Dalej</button>
+          </div>
+        </fieldset>
+        <fieldset class="step is-locked" data-step="2">
+          <legend><i>3</i><span>Ile czasu to zajmuje?</span><em class="step__sum"></em></legend>
+          <div class="step__body">
+            <label class="slider"><span>Godzin tygodniowo <b id="q-h-out">5 h</b></span>
+              <input type="range" id="q-h" min="1" max="25" step="0.5" value="5"></label>
+            <label class="slider"><span>Koszt godziny pracy <b id="q-r-out">150 zł</b></span>
+              <input type="range" id="q-r" min="40" max="400" step="10" value="150"></label>
+            <label class="slider"><span>Ile z&nbsp;tego czasu odzyskasz <b id="q-s-out">50%</b></span>
+              <input type="range" id="q-s" min="10" max="100" step="5" value="50"></label>
+          </div>
         </fieldset>
       </form>
 
-      <div class="calc__out">
+      <div class="calc__out is-locked" id="cmpout">
         <p class="sr" role="status" id="r-say"></p>
-        <p>Z Firmowidem oszczędzasz rocznie</p>
-        <strong><span id="r-total">18 072</span> zł</strong>
-        <dl class="rows2">
-          <div><dt>Twoje abonamenty dziś</dt><dd id="r-now">0 zł</dd></div>
-          <div><dt>Firmowid, plan <span id="r-plan">Firma</span></dt><dd id="r-fw">1 428 zł</dd></div>
-          <div><dt>Odzyskany czas: <span id="r-hours">130</span> h</dt><dd id="r-time">19 500 zł</dd></div>
-        </dl>
-        <ul class="swap" id="r-swap"></ul>
-        <a class="btn btn--rust" href="/zarejestruj">Zacznij za darmo</a>
-        <p class="calc__fine">Szacunek z&nbsp;Twoich danych, nie gwarancja. Połowa odzyskanego czasu to nasze założenie.</p>
+        <p class="calc__hint">Odpowiedz na trzy pytania, a&nbsp;policzymy, ile zyskasz.</p>
+        <div class="calc__reveal">
+          <p>Z Firmowidem oszczędzasz rocznie</p>
+          <strong><span id="r-total">18 072</span> zł</strong>
+          <dl class="rows2">
+            <div><dt>Twoje abonamenty dziś</dt><dd id="r-now">0 zł</dd></div>
+            <div><dt>Firmowid, plan <span id="r-plan">Firma</span></dt><dd id="r-fw">1 428 zł</dd></div>
+            <div><dt>Odzyskany czas: <span id="r-hours">130</span> h</dt><dd id="r-time">19 500 zł</dd></div>
+          </dl>
+          <ul class="swap" id="r-swap"></ul>
+          <a class="btn btn--rust" href="/zarejestruj">Zacznij za darmo</a>
+          <p class="calc__fine">Szacunek z&nbsp;Twoich danych, nie gwarancja. Połowa odzyskanego czasu to nasze założenie.</p>
+        </div>
       </div>
     </div>
   </div>
