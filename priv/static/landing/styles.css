@@ -24,6 +24,9 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 ul{list-style:none;margin:0;padding:0}
 p,h1,h2,h3,h4,figure,blockquote{margin:0}
+h1,h2,h3,.hero__sub,blockquote p,summary{text-wrap:balance}
+p{text-wrap:pretty}
+@media (max-width:640px){br.wide{display:none}}
 .wrap{width:min(1140px,calc(100% - 32px));margin-inline:auto}
 :focus-visible{outline:2px solid var(--r600);outline-offset:4px}
 
@@ -31,7 +34,7 @@ p,h1,h2,h3,h4,figure,blockquote{margin:0}
 
 /* ---------- type ---------- */
 h1{font-size:clamp(42px,6.1vw,72px);line-height:1.04;font-weight:700;letter-spacing:-.03em}
-h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spacing:-.03em;max-width:19ch}
+h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spacing:-.03em;max-width:27ch}
 .kicker{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--r700);margin-bottom:14px}
 .kicker--light{color:var(--r500)}
 .hand{font-family:var(--hand);color:var(--r500);font-size:30px;line-height:1;transform:rotate(-4deg);transform-origin:left}
@@ -124,10 +127,11 @@ section{position:relative}
 .rows li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;font-size:12.5px;padding:5px 0;border-top:1px solid var(--g100);color:var(--g700);white-space:nowrap}
 .rows li span:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .rows b{font-weight:600;color:var(--keep);font-variant-numeric:tabular-nums}.rows b.neg{color:var(--r600)}
-.in .rows--in li{animation:rowIn 6s var(--ease) infinite both}
+.in .rows--in li{animation:rowOnce .6s var(--ease) both}
 .in .rows--in li:nth-child(2){animation-delay:.5s}.in .rows--in li:nth-child(3){animation-delay:1s}
 .in .rows--d2 li{animation-delay:.25s}.in .rows--d2 li:nth-child(2){animation-delay:.75s}.in .rows--d2 li:nth-child(3){animation-delay:1.25s}
-@keyframes rowIn{0%{opacity:0;transform:translateX(-14px)}8%,88%{opacity:1;transform:none}96%,100%{opacity:0;transform:none}}
+@keyframes rowOnce{from{opacity:0;transform:translateX(-14px)}}
+@keyframes rowIn{0%{opacity:0;transform:translateX(-10px)}12%,100%{opacity:1;transform:none}}
 .timer{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .timer small{flex-basis:100%;font-size:12.5px;font-weight:400;color:var(--g600)}
 .timer__dot{width:10px;height:10px;border-radius:50%;background:var(--r600);animation:blink 1s steps(2) infinite}
@@ -187,6 +191,8 @@ section{position:relative}
 .cats span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cats svg{width:60px;height:18px;fill:none;stroke:var(--g500);stroke-width:1.5}
 .cats b{font-weight:600;font-variant-numeric:tabular-nums}
+.kept{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px;padding:14px 12px;background:var(--keep-soft);border-radius:3px;font-size:13px;color:var(--ink)}
+.kept b{font-size:clamp(16px,2.4cqw,22px);font-weight:700;color:var(--keep);font-variant-numeric:tabular-nums;white-space:nowrap}
 .panel.on .cats li{animation:rise .6s var(--ease) both}
 .panel.on .cats li:nth-child(2){animation-delay:.08s}.panel.on .cats li:nth-child(3){animation-delay:.16s}.panel.on .cats li:nth-child(4){animation-delay:.24s}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
@@ -223,6 +229,10 @@ section{position:relative}
 .due.hit{background:var(--t200)}.due.hit .due__btn{display:none}.due.hit .due__ok{display:block;animation:stamp .5s var(--ease)}
 .due.gone{max-height:0;opacity:0;padding-block:0;margin:0}
 @keyframes stamp{from{transform:scale(1.5) rotate(-6deg);opacity:0}}
+.short__cap{margin:22px 0 10px;font-size:11.5px;font-weight:700;letter-spacing:.06em}
+.short{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.short li{padding:12px 14px;background:#fff;border-radius:3px;font-size:13px;font-weight:600}
+.short small{display:block;margin-top:3px;font-size:11.5px;font-weight:400;color:var(--g600)}
 .wire{position:absolute;right:22px;top:112px;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1px solid var(--t700);border-radius:4px;font-size:13px;box-shadow:0 14px 28px -12px rgba(0,0,0,.3);opacity:0;transform:translate(120%,-40px) rotate(5deg);transition:transform .9s var(--ease),opacity .4s}
 .wire small{color:var(--g600);font-size:11.5px}
 .wire.go{opacity:1;transform:translate(-40%,6px) rotate(-2deg)}
@@ -240,7 +250,8 @@ section{position:relative}
 .caret{display:inline-block;width:2px;height:1em;background:var(--ink);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(2) infinite}
 .chat__a{display:flex;gap:12px;align-items:flex-start;opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s var(--ease)}
 .chat__a.show{opacity:1;transform:none}
-.chat__a img{height:44px;width:auto;filter:invert(1)}
+.chat__a.show.dim{opacity:.3}
+.chat__a img{flex:none;height:50px;width:auto}
 .chat__a>div{flex:1;background:#262626;border-radius:3px 14px 14px 14px;padding:13px 15px}
 .chat__a p{font-size:15px;line-height:1.5}
 .chat__a p b{color:var(--r400);font-weight:600}
@@ -269,9 +280,9 @@ section{position:relative}
 .t-inv__sheet b{font-size:12px}
 .t-inv__plane{position:absolute;left:12%;top:30%;width:60px;fill:#fff;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;opacity:0;animation:fly 5s var(--ease) infinite}
 .stamp{position:absolute;right:9%;top:34%;padding:7px 12px;border:2px solid var(--keep);color:var(--keep);font-weight:700;font-size:15px;border-radius:4px;transform:rotate(-8deg);opacity:0;animation:stampLoop 5s infinite}
-@keyframes fold{0%,30%{transform:none;opacity:1}42%{transform:scale(.3) rotate(-18deg);opacity:0}88%{transform:translateY(10px);opacity:0}100%{opacity:1;transform:none}}
+@keyframes fold{0%,30%{transform:none;opacity:1}42%{transform:scale(.3) rotate(-18deg);opacity:0}70%{transform:translateY(10px);opacity:0}80%,100%{opacity:1;transform:none}}
 @keyframes fly{0%,36%{opacity:0;transform:translate(0,0) rotate(-6deg)}44%{opacity:1}68%{opacity:1;transform:translate(260%,-14px) rotate(-10deg)}74%,100%{opacity:0;transform:translate(330%,-22px) rotate(-10deg)}}
-@keyframes stampLoop{0%,66%{opacity:0;transform:scale(1.6) rotate(-8deg)}72%,92%{opacity:1;transform:scale(1) rotate(-8deg)}100%{opacity:0}}
+@keyframes stampLoop{0%,64%{opacity:0;transform:scale(1.6) rotate(-8deg)}70%,96%{opacity:1;transform:scale(1) rotate(-8deg)}100%{opacity:0;transform:scale(1) rotate(-8deg)}}
 /* match */
 .t-match span{position:absolute;left:50%;padding:8px 12px;background:#fff;border:1px solid var(--g200);border-radius:3px;font-size:12px;white-space:nowrap;font-weight:500}
 .t-match__a{top:18%;animation:mA 4.5s var(--ease) infinite}.t-match__b{bottom:18%;border-color:var(--t700)!important;animation:mB 4.5s var(--ease) infinite}
@@ -320,7 +331,7 @@ section{position:relative}
 /* ---------- calculator ---------- */
 .calc{padding:clamp(72px,9vw,128px) 0 0}
 .calc__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:48px;align-items:start}
-.calc h2{margin-bottom:clamp(28px,3.4vw,44px);max-width:20ch}
+.calc h2{margin-bottom:clamp(28px,3.4vw,44px)}
 .cmpf fieldset{border:0;margin:0 0 26px;padding:0}
 .cmpf legend{display:flex;align-items:center;gap:12px;padding:0;margin-bottom:16px;font-size:19px;font-weight:600;letter-spacing:-.01em}
 .cmpf legend i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-size:14px}
@@ -393,7 +404,10 @@ blockquote footer{margin-top:20px;font-size:14px;color:var(--g700)}
 .team__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
 .team__people{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .team figure{background:#fff;border:1px solid var(--g200);border-radius:4px;padding:14px}
-.team img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:3px;filter:grayscale(1)}
+.team .ph{position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;background:var(--r500)}
+.team figure:nth-child(2) .ph{background:#578383}
+.team .ph img{position:absolute;max-width:none;height:auto;top:-22.4%;left:-6%;width:113%}
+.team figure:nth-child(2) .ph img{top:-12%;left:-26%;width:153%}
 .team figcaption{margin-top:12px;font-size:13px;color:var(--g700)}.team figcaption b{display:block;font-size:16px;color:var(--ink)}
 .faq{padding-top:0}
 .faq__grid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);gap:48px}
@@ -407,8 +421,8 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
 /* ---------- end ---------- */
 .end{background:var(--ink);color:var(--cream);overflow:hidden;border-top:1px solid rgba(245,241,234,.2)}
 .end__cta{position:relative;padding:clamp(80px,10vw,140px) 0 clamp(72px,9vw,120px)}
-.end__cta h2{margin:18px 0 34px;max-width:14ch}
-.end__fig{position:absolute;right:0;bottom:-8%;height:92%;width:auto;opacity:.5;pointer-events:none}
+.end__cta h2{margin:18px 0 34px;max-width:21ch}
+.end__fig{position:absolute;right:0;bottom:0;height:88%;width:auto;pointer-events:none}
 .end__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 32px;padding:28px 0 36px;border-top:1px solid rgba(245,241,234,.2);font-size:14px}
 .end__foot nav{display:flex;flex-wrap:wrap;gap:8px 22px;color:rgba(245,241,234,.75)}
 .end__foot nav a:hover{color:#fff}
@@ -435,7 +449,7 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
   .cost__grid{grid-template-columns:1fr}
   .plans{grid-template-columns:1fr;max-width:460px;margin-inline:auto;gap:24px}
   .proof__nums{padding-left:24px}
-  .end__fig{opacity:.22}
+  .end__fig{position:static;display:block;height:260px;margin:40px auto -40px}
 }
 @media (max-width:640px){
   .btn--nav-ghost{display:none}
@@ -450,6 +464,7 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
   .ask,.app__bar .pill:not(.on){display:none}
   .chart{height:230px;padding-inline:6px}.col__val{display:none}
   .proj{grid-template-columns:1fr 1fr}
+  .short{grid-template-columns:1fr 1fr}
   .due__btn{display:none}.wire{right:8px}
   .bento__grid{grid-template-columns:1fr}.tile--wide{grid-column:auto}
   .team__people{gap:10px}
