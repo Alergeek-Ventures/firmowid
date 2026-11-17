@@ -208,7 +208,7 @@
       ['q-inv', 'Program do faktur', 'Faktury i KSeF bez limitu'],
       ['q-time', 'Program do czasu pracy', 'Czasośledź'],
       ['q-bank', 'Wpłaty sprawdzane ręcznie', 'Przelew sam przypina się do faktury'],
-      ['q-sheet', 'Wynik w arkuszu', 'Analiza: ile zostaje ze 100 zł'],
+      ['q-sheet', 'Wynik w Excelu', 'Analiza: ile zostaje ze 100 zł'],
       ['q-leave', 'Urlopy w mailach', 'Wnioski z akceptacją'],
     ];
     let shown = 0, sayTimer;
