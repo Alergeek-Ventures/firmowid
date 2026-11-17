@@ -100,6 +100,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
       Endpoint.subscribe("blob:created:#{current_org.id}")
       Endpoint.subscribe("blob:updated:#{current_org.id}")
       Endpoint.subscribe("blob:destroyed:#{current_org.id}")
+      # VatIdCheckWorker checks a saved NIP right away; show its result when it lands.
+      Endpoint.subscribe("organization:nip_checked:#{current_org.id}")
     end
 
     socket =
@@ -415,11 +417,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case AshPhoenix.Form.submit(socket.assigns.company_form, params: org_params, scope: scope) do
       {:ok, updated_org} ->
+        # Read anew: the form holds the organization as it was at mount, which keeps
+        # stale the register check that arrived meanwhile.
         updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
+          Core.get_organization!(updated_org.id, scope: scope, load: [avatar_blob: [:url]])
 
-        # The details are edited in place, so nothing else confirms the save.
+        # The details are edited in place, so nothing else confirms the save. The sidebar
+        # counts a contradiction with the registers, which the VAT payer setting decides.
         LiveToast.send_toast(:success, gettext("Changes saved"))
+        send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
 
         {:noreply,
          socket
@@ -841,6 +847,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         {:noreply, socket}
     end
+  end
+
+  def handle_info(%Broadcast{topic: "organization:nip_checked:" <> _, payload: %Notification{data: checked}}, socket) do
+    current_org = %{
+      socket.assigns.current_org
+      | nip_status: checked.nip_status,
+        nip_checked_at: checked.nip_checked_at
+    }
+
+    # The inbox sidebar counts a contradiction with the registers.
+    send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+
+    {:noreply, assign(socket, :current_org, current_org)}
   end
 
   def handle_info(%Broadcast{topic: "credential:" <> _, payload: %Notification{resource: Credential}} = message, socket) do

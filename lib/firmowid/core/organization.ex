@@ -8,7 +8,7 @@ defmodule Firmowid.Core.Organization do
   use Ash.Resource,
     domain: Firmowid.Core,
     authorizers: [Ash.Policy.Authorizer],
-    fragments: [Firmowid.Core.Organization.Persistence]
+    fragments: [Firmowid.Core.Organization.Persistence, Firmowid.Core.Organization.NipCheck]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -23,6 +23,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Core.Changes.DefaultDisplayName
+  alias Firmowid.Core.Changes.EnqueueNipCheck
   alias Firmowid.Core.Changes.GenerateAvatarVariants
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
@@ -203,6 +204,13 @@ defmodule Firmowid.Core.Organization do
       authorize_if always()
     end
 
+    bypass [
+      {SystemActorRole, roles: [:vat_id_checker]},
+      action([:read, :record_nip_check])
+    ] do
+      authorize_if expr(id == ^actor(:org_id))
+    end
+
     bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
       authorize_if action_type(:read)
     end
@@ -372,6 +380,11 @@ defmodule Firmowid.Core.Organization do
       change DefaultDisplayName
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
+
+      # A changed NIP has not been checked yet; `VatIdCheckWorker` checks it right away.
+      change set_attribute(:nip_status, nil), where: [changing(:nip)]
+      change set_attribute(:nip_checked_at, nil), where: [changing(:nip)]
+      change EnqueueNipCheck, where: [changing(:nip)]
     end
   end
 

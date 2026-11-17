@@ -4,11 +4,11 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   month's income and costs.
 
   Uses policy-scoped domain reads for integration alerts, counterparty EU VAT
-  numbers that the periodic check rejected, team approvals,
-  personal signatures and settlements, and overdue invoices; usage above the
-  billing plan comes from `Firmowid.Billing.PlanLimits`. Each item links
-  to the page where it is dealt with; pending leave requests also offer inline
-  decisions.
+  numbers that the periodic check rejected, company details that contradict the
+  registers, team approvals, personal signatures and settlements, and overdue
+  invoices; usage above the billing plan comes from `Firmowid.Billing.PlanLimits`.
+  Each item links to the page where it is dealt with; pending leave requests also
+  offer inline decisions.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Core.Organization
+  alias Firmowid.Core.Organization.NipCheck
   alias Firmowid.Delegations
   alias Firmowid.Finances
   alias Firmowid.Invoicing
@@ -32,6 +33,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
+  alias FirmowidWeb.Settings.Utilities.RegisterCheck
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
   @type tier :: :urgent | :people | :personal | :books
@@ -90,6 +92,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   def attention_items(%{actor: %{member: %{role: :admin}}} = scope, organization, opts) do
     plan_limit_items(organization) ++
+      register_items(organization) ++
       ksef_items(scope) ++
       tax_profile_items(scope, organization, Keyword.get(opts, :taxes?, false)) ++
       bank_items(scope) ++
@@ -235,6 +238,29 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       action: action,
       href: SettingsNavigation.canonical_path(:organization) <> "#podatki"
     }
+  end
+
+  # The id names the contradiction, so a different one counts as a new item.
+  defp register_items(organization) do
+    case NipCheck.mismatch(organization) do
+      nil ->
+        []
+
+      mismatch ->
+        [
+          %{
+            id: "register-#{mismatch}",
+            tier: :urgent,
+            icon: "id-card",
+            title: gettext("Company details differ from the registers"),
+            context: RegisterCheck.problem(organization),
+            person: nil,
+            action: gettext("Check the company details"),
+            # Lands on the message under the detail it concerns.
+            href: SettingsNavigation.canonical_path(:organization) <> "#rejestry"
+          }
+        ]
+    end
   end
 
   defp vat_id_items(scope) do

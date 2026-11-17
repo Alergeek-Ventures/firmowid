@@ -1,19 +1,23 @@
 defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   @moduledoc """
-  Checks the tax IDs of saved counterparties, EU VAT numbers and Polish NIPs:
-  right after a number is saved (`EnqueueVatIdCheck`) and again every week.
+  Checks the tax IDs of saved counterparties, EU VAT numbers and Polish NIPs,
+  and the organization's own NIP: right after a number is saved
+  (`EnqueueVatIdCheck`, `EnqueueNipCheck`) and again every week.
 
   An EU VAT number is checked against its country's rules (`EuVatNumber`), then
   in VIES; a NIP in the VAT white list and CEIDG (`NipRegistration`). The result
-  is stored on the counterparty, and the inbox lists the problems.
+  is stored on the counterparty or the organization, and the inbox lists the
+  problems.
 
   The daily cron run (no `organization_id`) queues one job per organization,
-  which re-checks every counterparty never checked or last checked more than a
-  week ago. A job with `counterparty_id` checks that counterparty only. When VIES
-  does not answer, the previous result stays and the next daily run tries again.
+  which re-checks every counterparty and the organization's NIP never checked
+  or last checked more than a week ago. A job with `counterparty_id` checks that
+  counterparty only. When a register does not answer, the previous result stays
+  and the next daily run tries again.
   """
   use Oban.Worker, queue: :vat_id_checks, max_attempts: 3
 
+  alias Firmowid.Core
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.EuVatReview
@@ -44,6 +48,14 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
     %{vat_id_due_before: due_before}
     |> Invoicing.list_counterparties!(scope: scope)
     |> Enum.each(&check(&1, scope))
+
+    # After the counterparties, so a failure here does not hold up their checks.
+    organization = Core.get_organization!(organization_id, scope: scope)
+
+    if is_nil(organization.nip_checked_at) or
+         DateTime.before?(organization.nip_checked_at, due_before),
+       do: check_organization(organization, scope),
+       else: :ok
   end
 
   def perform(%Oban.Job{}), do: Firmowid.Oban.insert_per_organization(__MODULE__)
@@ -62,6 +74,26 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
           %{vat_id_status: status, vat_id_checked_at: DateTime.utc_now()},
           scope: scope
         )
+    end
+  end
+
+  defp check_organization(organization, scope) do
+    case NipRegistration.check(organization.nip) do
+      :unavailable ->
+        :ok
+
+      status ->
+        organization
+        |> Core.record_organization_nip_check(
+          %{nip_status: status, nip_checked_at: DateTime.utc_now()},
+          scope: scope
+        )
+        |> case do
+          {:ok, _organization} -> :ok
+          # The NIP changed meanwhile; its own check records the answer.
+          {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.StaleRecord{}]}} -> :ok
+          {:error, error} -> raise error
+        end
     end
   end
 

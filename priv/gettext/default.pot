@@ -954,6 +954,7 @@ msgid "Active VAT payer"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Active VAT payer"
@@ -2090,6 +2091,7 @@ msgid "Business address"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Business closed"
@@ -2181,6 +2183,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "CEIDG showed the business with NIP %{number} as deregistered on %{date}."
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "CEIDG shows the business with this NIP as deregistered. Check that the NIP is right."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -2484,6 +2491,11 @@ msgstr ""
 msgid "Check the KSeF connection"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Check the company details"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Check the company details."
@@ -2544,6 +2556,11 @@ msgstr ""
 msgid "Check-out"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "Checked in the registers on %{date}"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Checked on %{date}"
@@ -2556,6 +2573,7 @@ msgid "Checking in VIES"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Checking in registers"
@@ -2878,6 +2896,11 @@ msgstr ""
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Company details"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Company details differ from the registers"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
@@ -7613,6 +7636,11 @@ msgstr ""
 msgid "Needs your choice"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "Neither the VAT white list nor CEIDG knows this NIP. Check that it is right."
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Neither the VAT white list nor CEIDG knows this NIP. Check the number with the counterparty."
@@ -8082,6 +8110,7 @@ msgid "Northern Ireland"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Not a VAT payer"
@@ -8110,6 +8139,7 @@ msgid "Not connected to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Not in registers"
@@ -11345,6 +11375,21 @@ msgstr ""
 msgid "The VAT white list does not know this NIP. Enter the company details yourself."
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "The VAT white list does not show the company as a VAT payer, but here it is set as one."
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "The VAT white list shows the company as VAT-exempt, but here it is set as a VAT payer."
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "The VAT white list shows the company as an active VAT payer, but here it is not set as one."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
@@ -13257,6 +13302,7 @@ msgid "VAT white list"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "VAT-exempt"
