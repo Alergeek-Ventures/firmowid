@@ -160,51 +160,48 @@
     <p class="kicker">Skąd są liczby</p>
     <h2 class="reveal">Niczego nie przepisujesz <span class="ul ul--sm">do arkusza.</span></h2>
 
-    <div class="flow__grid reveal">
-      <div class="flow__srcs">
-        <article class="card fsrc">
-          <header><span class="tag">KSeF</span><b>Faktury</b></header>
-          <ul class="rows rows--in">
-            <li><span>BC/14/10/2026</span><span>Północny Kod</span><b>+17 473 zł</b></li>
-            <li><span>BC/15/10/2026</span><span>Samsung</span><b>+3 420 zł</b></li>
-            <li><span>FV/2210/26</span><span>OVH</span><b class="neg">−486 zł</b></li>
-          </ul>
-          <footer>sprzedażowe i kosztowe, pobierane co 2 godziny</footer>
+    <div class="stage reveal">
+      <div class="stage__srcs">
+        <article class="sheet">
+          <span class="sheet__ico"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h7"/></svg></span>
+          <h3>Faktury</h3>
+          <p>z KSeF, sprzedażowe i&nbsp;kosztowe</p>
+          <span class="sheet__live">BC/14/10/2026 <b>+17 473 zł</b></span>
         </article>
-        <article class="card fsrc">
-          <header><span class="tag tag--teal">Bank</span><b>Przelewy</b></header>
-          <ul class="rows rows--in rows--d2">
-            <li><span>14.10</span><span>PÓŁNOCNY KOD SP Z O O</span><b>+17 473 zł</b></li>
-            <li><span>15.10</span><span>ZUS</span><b class="neg">−6 912 zł</b></li>
-            <li><span>16.10</span><span>Figma</span><b class="neg">−312 zł</b></li>
-          </ul>
-          <footer>29 banków i fintechów</footer>
+        <article class="sheet">
+          <span class="sheet__ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 20h18"/></svg></span>
+          <h3>Przelewy</h3>
+          <p>z 29 banków i&nbsp;fintechów</p>
+          <span class="sheet__live">Północny Kod <b>+17 473 zł</b></span>
         </article>
-        <article class="card fsrc">
-          <header><span class="tag tag--dark">Czas</span><b>Godziny zespołu</b></header>
-          <div class="timer"><span class="timer__dot"></span><span id="timer">02:14:07</span><small>CODEXA · Migracja bazy</small></div>
-          <footer>każda osoba włącza licznik na swoim projekcie</footer>
+        <article class="sheet">
+          <span class="sheet__ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg></span>
+          <h3>Godziny zespołu</h3>
+          <p>z licznika na projektach</p>
+          <span class="sheet__live"><i class="rec"></i><span id="timer">02:14:07</span></span>
         </article>
       </div>
 
-      <svg class="flow__wires" viewBox="0 0 200 420" preserveAspectRatio="none" fill="none" aria-hidden="true">
-        <path id="w1" d="M0 62 C 90 62, 90 210, 200 210"/>
-        <path id="w2" d="M0 210 L 200 210"/>
-        <path id="w3" d="M0 358 C 90 358, 90 210, 200 210"/>
-        <circle r="5"><animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#w1"/></animateMotion></circle>
-        <circle r="5"><animateMotion dur="2.4s" begin=".8s" repeatCount="indefinite"><mpath href="#w2"/></animateMotion></circle>
-        <circle r="5"><animateMotion dur="2.4s" begin="1.6s" repeatCount="indefinite"><mpath href="#w3"/></animateMotion></circle>
+      <svg class="stage__wires" viewBox="0 0 900 150" fill="none" aria-hidden="true">
+        <path id="w1" d="M150 4 C 150 92, 410 58, 450 146"/>
+        <path id="w2" d="M450 4 L 450 146"/>
+        <path id="w3" d="M750 4 C 750 92, 490 58, 450 146"/>
+        <g><path d="M0 0 L22 -9 L15 9 L10 2 Z"/><animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#w1"/></animateMotion></g>
+        <g><path d="M0 0 L22 -9 L15 9 L10 2 Z"/><animateMotion dur="2.8s" begin=".9s" repeatCount="indefinite" rotate="auto"><mpath href="#w2"/></animateMotion></g>
+        <g><path d="M0 0 L22 -9 L15 9 L10 2 Z"/><animateMotion dur="2.8s" begin="1.8s" repeatCount="indefinite" rotate="auto"><mpath href="#w3"/></animateMotion></g>
       </svg>
 
-      <article class="card result">
-        <img src="/images/landing/character-head.png" width="70" height="103" alt="">
-        <p class="result__cap">Wynik · październik</p>
-        <p class="result__num">+<span data-count="18400">18 400</span>&nbsp;zł</p>
-        <div class="bar100 bar100--sm">
-          <span class="seg seg--a" style="--w:41"></span><span class="seg seg--b" style="--w:18"></span><span class="seg seg--c" style="--w:9"></span><span class="seg seg--d" style="--w:9"></span><span class="seg seg--keep" style="--w:23"></span>
-        </div>
-        <p class="result__foot">zostało 23&nbsp;zł ze 100</p>
-      </article>
+      <div class="stage__result">
+        <article class="sheet sheet--result">
+          <p class="result__cap">Październik 2026</p>
+          <p class="result__num">+<span data-count="18400">18 400</span>&nbsp;zł</p>
+          <div class="bar100 bar100--sm">
+            <span class="seg seg--a" style="--w:41"></span><span class="seg seg--b" style="--w:18"></span><span class="seg seg--c" style="--w:9"></span><span class="seg seg--d" style="--w:9"></span><span class="seg seg--keep" style="--w:23"></span>
+          </div>
+          <p class="result__foot">Z każdych 100&nbsp;zł przychodu zostało <b>23&nbsp;zł</b></p>
+        </article>
+        <img class="stage__fig" src="/images/figurine.png" width="905" height="1280" alt="" loading="lazy">
+      </div>
     </div>
     <div class="learn reveal">
       <article>
