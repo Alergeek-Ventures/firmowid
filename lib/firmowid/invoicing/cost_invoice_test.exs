@@ -217,6 +217,81 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
       assert orphaned_correction.id in invoice_ids
       refute Enum.any?(invoices, &(&1.invoice_identifier == "HIDDEN-UNMATCHED-CORRECTION"))
     end
+
+    test "query searches every indexed column of the organization's invoices only" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+      acme = %{
+        seller: "Acme Solutions",
+        seller_display_name: "Acmeware",
+        invoice_identifier: "CI-ACME-456",
+        description: "Software license"
+      }
+
+      invoice = insert_cost_invoice!(scope.tenant, acme)
+
+      insert_cost_invoice!(scope.tenant, %{
+        seller: "Other Supplier",
+        seller_display_name: "Other Supplier",
+        invoice_identifier: "CI-OTHER-987",
+        description: "Office supplies"
+      })
+
+      insert_cost_invoice!(admin_fixture().member.organization_id, acme)
+
+      for query <- ["Solutions", "Acmeware", "CI-ACME-456", "license"] do
+        assert Enum.map(Invoicing.list_cost_invoices!(%{query: query}, scope: scope), & &1.id) ==
+                 [invoice.id]
+      end
+
+      assert Invoicing.list_cost_invoices!(%{query: "NonExistent"}, scope: scope) == []
+    end
+
+    test "amount_from and amount_to compare the absolute amount" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+      insert_cost_invoice!(scope.tenant, %{amount: Money.new!("PLN", "-100.00")})
+      in_range = insert_cost_invoice!(scope.tenant, %{amount: Money.new!("PLN", "-230.00")})
+      insert_cost_invoice!(scope.tenant, %{amount: Money.new!("PLN", "-300.00")})
+
+      invoices =
+        Invoicing.list_cost_invoices!(
+          %{amount_from: Decimal.new("210.00"), amount_to: Decimal.new("250.00")},
+          scope: scope
+        )
+
+      assert Enum.map(invoices, & &1.id) == [in_range.id]
+    end
+
+    test "reconciliation :pending leaves out invoices paid in installments or skipped" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+      pending = insert_cost_invoice!(scope.tenant, %{})
+      paid = insert_cost_invoice!(scope.tenant, %{})
+      insert_cost_invoice!(scope.tenant, %{skip_invoicing: true})
+      bank_account_id = bank_account_fixture!(user).id
+
+      installment_ids =
+        for suffix <- ["FIRST-INSTALLMENT", "SECOND-INSTALLMENT"] do
+          Ash.Seed.seed!(Transaction, %{
+            transaction_id: "TX-#{suffix}-#{System.unique_integer([:positive])}",
+            internal_transaction_id: "INT-#{suffix}-#{System.unique_integer([:positive])}",
+            amount: Money.new!("PLN", "-61.73"),
+            booking_date: paid.issue_date,
+            value_date: paid.issue_date,
+            bank_account_id: bank_account_id,
+            organization_id: scope.tenant
+          }).id
+        end
+
+      Invoicing.connect_cost_invoice_transactions!(paid, installment_ids, scope: scope)
+
+      invoices = Invoicing.list_cost_invoices!(%{reconciliation: :pending}, scope: scope)
+
+      assert Enum.map(invoices, & &1.id) == [pending.id]
+    end
   end
 
   describe "update_blob_id" do

@@ -260,6 +260,55 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
     end
   end
 
+  describe "list filters" do
+    test "query searches the buyer and item names of the organization's invoices only" do
+      user = admin_fixture()
+
+      attrs =
+        Map.merge(base_invoice_attrs(), %{
+          buyer_full_name: "Acme Corp",
+          sales_invoice_items: [
+            base_item_attrs(%{name: "Consulting Services for Project X"}),
+            base_item_attrs(%{index: 1, name: "Software License Fee"})
+          ]
+        })
+
+      invoice = create_sales_invoice!(user, attrs)
+      create_sales_invoice!(user, base_invoice_attrs())
+      create_sales_invoice!(admin_fixture(), attrs)
+
+      for query <- ["Acme", "Project X", "Software License"] do
+        invoices = Invoicing.list_sales_invoices!(%{query: query}, scope: scope_for(user))
+        assert Enum.map(invoices, & &1.id) == [invoice.id]
+      end
+
+      assert Invoicing.list_sales_invoices!(%{query: "Hardware"}, scope: scope_for(user)) == []
+    end
+
+    test "buyer_type returns only invoices for that type of buyer" do
+      user = admin_fixture()
+      company = create_sales_invoice!(user, base_invoice_attrs())
+
+      individual =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            buyer_type: :individual,
+            buyer_full_name: nil,
+            buyer_given_name: "Jan",
+            buyer_surname: "Kowalski"
+          })
+        )
+
+      for {buyer_type, invoice} <- [company: company, individual: individual] do
+        invoices =
+          Invoicing.list_sales_invoices!(%{buyer_type: buyer_type}, scope: scope_for(user))
+
+        assert Enum.map(invoices, & &1.id) == [invoice.id]
+      end
+    end
+  end
+
   describe "by_share_token/2" do
     test "reads a shared invoice with the anonymous actor" do
       user = admin_fixture()
