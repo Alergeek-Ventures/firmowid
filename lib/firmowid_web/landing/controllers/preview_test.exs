@@ -21,6 +21,22 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
   end
 
+  test "describes the company and the app in valid structured data", %{conn: conn} do
+    html = conn |> get(~p"/landing") |> html_response(200)
+
+    types =
+      ~r{<script type="application/ld\+json">(.*?)</script>}s
+      |> Regex.scan(html, capture: :all_but_first)
+      |> Enum.flat_map(fn [json] ->
+        data = Jason.decode!(json)
+        Enum.map(data["@graph"] || [data], & &1["@type"])
+      end)
+
+    assert "FAQPage" in types
+    assert "Organization" in types
+    assert "WebApplication" in types
+  end
+
   test "links the stylesheet and script through the static path helper", %{conn: conn} do
     html = conn |> get(~p"/landing") |> html_response(200)
 
