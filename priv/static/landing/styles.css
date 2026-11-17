@@ -66,6 +66,20 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .nav__links{display:flex;align-items:center;gap:6px}
 .nav__links>a:not(.btn){padding:8px 14px;font-weight:500;font-size:15px;border-radius:4px}
 .nav__links>a:not(.btn):hover{color:var(--r600)}
+.lang{position:relative}
+.lang summary{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:4px;font-weight:500;font-size:15px;list-style:none;cursor:pointer}
+.lang summary::-webkit-details-marker{display:none}
+.lang summary:hover,.lang[open] summary{background:rgba(0,0,0,.06)}
+.lang summary img{width:18px;height:18px}
+.lang summary img:last-child{width:14px;height:14px;transition:rotate .2s}
+.lang[open] summary img:last-child{rotate:180deg}
+.lang__menu{position:absolute;right:0;top:calc(100% + 12px);z-index:5;display:grid;gap:2px;padding:6px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 8px 12px rgba(0,0,0,.1)}
+.lang__menu button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:206px;padding:9px 12px;border-radius:6px;text-align:left;font-size:15px}
+.lang__menu button:hover,.lang__menu button[aria-current]{background:#f0f0f0}
+.lang__menu button[aria-current]{font-weight:500}
+.lang__menu span{display:flex;align-items:center;gap:10px}
+.lang__menu span img{border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.lang__menu small{font-size:13px;color:#737373}
 
 /* ---------- hero ---------- */
 .hero{padding:34px 0 64px}
