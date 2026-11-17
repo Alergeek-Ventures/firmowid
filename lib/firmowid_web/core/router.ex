@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Core.Router do
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
+  alias Landing.Controllers.Preview
   alias Landing.Views.Guides
   alias Management.Controllers.EmploymentContract
   alias Management.Views.Counterparties
@@ -89,6 +90,9 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   pipeline :health do
+    ## Authentication routes (Ash Authentication)
+    # Consent must be registered before `forward "/oauth"` below. Phoenix
+    # first-match-wins, and the protocol router would 404 `/oauth/authorize`.
     plug :accepts, ["json"]
   end
 
@@ -135,11 +139,8 @@ defmodule FirmowidWeb.Core.Router do
     options "/mcp/server-card", AgentDiscovery, :preflight
   end
 
-  ## Authentication routes (Ash Authentication)
-  # Consent must be registered before `forward "/oauth"` below. Phoenix
-  # first-match-wins, and the protocol router would 404 `/oauth/authorize`.
-
   scope "/", FirmowidWeb do
+    ## MCP resource server
     pipe_through [:browser, :google_remember_me]
 
     auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
@@ -179,8 +180,6 @@ defmodule FirmowidWeb.Core.Router do
     forward "/", FirmowidWeb.Timetracker.Api
   end
 
-  ## MCP resource server
-
   scope "/mcp" do
     pipe_through :mcp
 
@@ -198,11 +197,17 @@ defmodule FirmowidWeb.Core.Router do
       live_dashboard "/dashboard",
         metrics: Telemetry,
         csp_nonce_assign_key: :csp_nonce,
+        # Canonical policy: Google accounts auto-link only when provider email is verified
+        # and matches an existing user email (enforced in User.register_with_google).
+        # TODO: Make this auto-link policy opt-in per organization.
+        # TODO: Add explicit UX flow for linking different-email Google and password accounts.
         on_mount: [
           LiveSession,
           {RequireOrganization, :default},
           {RequireSuperuser, :default}
         ]
+
+      ## Organization onboarding (authenticated, with or without an organization)
 
       oban_dashboard("/oban",
         oban_name: Oban,
@@ -240,13 +245,6 @@ defmodule FirmowidWeb.Core.Router do
       forward "/mailbox", Plug.Swoosh.MailboxPreview, csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
     end
   end
-
-  # Canonical policy: Google accounts auto-link only when provider email is verified
-  # and matches an existing user email (enforced in User.register_with_google).
-  # TODO: Make this auto-link policy opt-in per organization.
-  # TODO: Add explicit UX flow for linking different-email Google and password accounts.
-
-  ## Organization onboarding (authenticated, with or without an organization)
 
   scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_for_onboarding]
@@ -392,7 +390,8 @@ defmodule FirmowidWeb.Core.Router do
 
     get "/index.html", Infrastructure.Controllers.LegacyIndex, :index
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
-    get "/landing", Landing.Controllers.Preview, :show
+    get "/landing", Preview, :show
+    get "/landing/bonobo", Preview, :bonobo
 
     ash_authentication_live_session :public,
       on_mount: [

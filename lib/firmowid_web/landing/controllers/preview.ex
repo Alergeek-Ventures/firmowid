@@ -1,30 +1,41 @@
 defmodule FirmowidWeb.Landing.Controllers.Preview do
   @moduledoc """
-  Serves the preview of the new home page at `/landing`.
+  Serves the preview of the new home page at `/landing` and its case study
+  pages, such as `/landing/bonobo`.
 
-  The page is a self-contained static document kept in `priv/static/landing`.
-  It is not linked from anywhere and is excluded from search indexes.
+  The pages are self-contained static documents kept in `priv/static/landing`.
+  They are excluded from search indexes until they replace the home page.
   """
   use FirmowidWeb, :controller
 
   alias FirmowidWeb.Core.Endpoint
 
-  @page_path Application.app_dir(:firmowid, "priv/static/landing/index.html")
-  @external_resource @page_path
-  @page File.read!(@page_path)
+  @home_path Application.app_dir(:firmowid, "priv/static/landing/index.html")
+  @external_resource @home_path
+  @home File.read!(@home_path)
 
-  # The CDN keeps static files for hours, so the page links to digested copies
-  # of its stylesheet and script. Each deploy then changes their URLs.
-  @assets ["/landing/styles.css", "/landing/app.js"]
+  @bonobo_path Application.app_dir(:firmowid, "priv/static/landing/bonobo.html")
+  @external_resource @bonobo_path
+  @bonobo File.read!(@bonobo_path)
 
-  @doc "Returns the preview page with a header that keeps it out of search indexes."
+  # The CDN keeps static files for hours, so the pages link to digested copies
+  # of their stylesheets and script. Each deploy then changes their URLs.
+  @assets ["/landing/styles.css", "/landing/case-study.css", "/landing/app.js"]
+
+  @doc "Returns the preview of the new home page."
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, _params), do: render_page(conn, @home)
+
+  @doc "Returns the Bonobo case study."
+  @spec bonobo(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def bonobo(conn, _params), do: render_page(conn, @bonobo)
+
   # sobelow_skip ["XSS.HTML"]
-  # The page is a file read at compile time and the only substitutions are
+  # Each page is a file read at compile time and the only substitutions are
   # static paths of our own assets; nothing comes from the request.
-  def show(conn, _params) do
+  defp render_page(conn, page) do
     page =
-      Enum.reduce(@assets, @page, fn path, page ->
+      Enum.reduce(@assets, page, fn path, page ->
         String.replace(page, ~s("#{path}"), ~s("#{Endpoint.static_path(path)}"))
       end)
 

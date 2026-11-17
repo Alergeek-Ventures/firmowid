@@ -10,6 +10,17 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
   end
 
+  test "serves the Bonobo case study and keeps it out of search indexes", %{conn: conn} do
+    conn = get(conn, ~p"/landing/bonobo")
+
+    assert html_response(conn, 200) =~ "Bonobo"
+
+    assert html_response(conn, 200) =~
+             Endpoint.static_path("/landing/case-study.css")
+
+    assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+  end
+
   test "links the stylesheet and script through the static path helper", %{conn: conn} do
     html = conn |> get(~p"/landing") |> html_response(200)
 
