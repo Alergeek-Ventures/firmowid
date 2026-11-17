@@ -75,8 +75,8 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .hero__meta a:hover{color:var(--r700)}
 .hero__meta span{padding-left:22px;border-left:1px solid var(--g300)}
 .hero__meta img{width:20px;height:20px}
-.hero h1{margin-top:26px;font-size:clamp(44px,8vw,104px);line-height:1;letter-spacing:-.04em}
-.hero__sub{margin-top:24px;max-width:44ch;font-size:clamp(17px,1.7vw,21px);line-height:1.45;color:var(--g700)}
+.hero h1{margin-top:26px;max-width:15ch;margin-inline:auto;font-size:clamp(38px,6.2vw,84px);line-height:1.02;letter-spacing:-.04em}
+.hero__sub{margin-top:24px;max-width:52ch;font-size:clamp(17px,1.7vw,21px);line-height:1.45;color:var(--g700)}
 .hero__cta{margin-top:30px}
 .hero__ticks{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-size:13px;color:var(--g600)}
 .hero__ticks li{padding-left:20px;background:url(/images/landing/icons/check.svg) 0 3px/12px no-repeat}
