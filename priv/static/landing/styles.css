@@ -293,16 +293,15 @@ section{position:relative}
 
 /* ---------- cost today ---------- */
 .cost{padding:clamp(56px,7vw,96px) 0}
-.cost__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.stat{padding:26px 26px 22px;background:#fff;border:1px solid var(--g200);border-radius:4px}
-.stat strong{display:block;font-size:clamp(52px,7vw,92px);line-height:1;letter-spacing:-.04em;color:var(--r700);font-variant-numeric:tabular-nums}
-.stat p{margin-top:12px;font-size:17px;line-height:1.35;font-weight:500;max-width:22ch}
-.stat small{display:block;margin-top:14px;font-size:12px;color:var(--g600)}
-.cost h2{margin-bottom:clamp(28px,3.4vw,44px)}
-.stat small a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--g300)}.stat small a:hover{color:var(--r700)}
+.mission{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:center}
+.mission__num{font-size:clamp(110px,19vw,260px);line-height:.85;letter-spacing:-.06em;color:var(--r700);font-variant-numeric:tabular-nums}
+.mission__fact{font-size:clamp(22px,2.8vw,36px);line-height:1.2;font-weight:500;letter-spacing:-.015em;max-width:22ch;margin-bottom:18px}
+.mission__src{display:block;margin-top:22px;font-size:12px;color:var(--g600)}
+.mission__src a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--g300)}
+@media (max-width:760px){.mission{grid-template-columns:1fr;gap:10px}}
+
 .assist__facts{margin-top:28px;display:grid;gap:12px;max-width:40ch;font-size:16px;line-height:1.45;color:rgba(245,241,234,.8)}
 .assist__facts li{padding-left:22px;position:relative}.assist__facts li::before{content:"✓";position:absolute;left:0;color:var(--r500)}
-.cost__line{margin:30px auto 0;max-width:60ch;text-align:center;font-size:clamp(17px,1.6vw,20px);line-height:1.45;color:var(--g700)}
 
 /* ---------- calculator ---------- */
 .calc{padding:clamp(72px,9vw,128px) 0 0}
@@ -420,7 +419,6 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
   .flow__srcs::after{content:"";display:block;width:0;height:64px;margin:0 auto;border-left:2px dashed var(--r400)}
   .result{margin-top:44px}
   .bento__grid{grid-template-columns:repeat(2,1fr)}
-  .cost__grid{grid-template-columns:1fr}
   .plans{grid-template-columns:1fr;max-width:460px;margin-inline:auto;gap:24px}
   .proof__nums{padding-left:24px}
   .end__fig{position:static;display:block;height:260px;margin:40px auto -40px}
