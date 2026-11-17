@@ -51,9 +51,9 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
 
     organization = Core.get_organization!(org_id, scope: scope)
     inbox_ids = scope |> Queue.attention_items(organization) |> Enum.map(& &1.id)
-    assert "vat-id-#{org_number_only.id}" in inbox_ids
-    assert "vat-id-#{inactive.id}" in inbox_ids
-    refute "vat-id-#{active.id}" in inbox_ids
+    assert "vat-id-#{org_number_only.id}-invalid" in inbox_ids
+    assert "vat-id-#{inactive.id}-inactive" in inbox_ids
+    refute Enum.any?(inbox_ids, &String.starts_with?(&1, "vat-id-#{active.id}-"))
 
     Invoicing.update_counterparty!(
       Invoicing.get_counterparty!(inactive.id, scope: scope),

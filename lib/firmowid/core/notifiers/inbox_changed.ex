@@ -2,7 +2,8 @@ defmodule Firmowid.Core.Notifiers.InboxChanged do
   @moduledoc """
   Tells the organization's open pages that something the inbox shows changed:
   a leave request, a timesheet change request, a business trip, a contract, an
-  invoice, a bank connection, the KSeF connection or a work session.
+  invoice, a bank connection, the KSeF connection, a work session or an item the
+  company put aside.
 
   Resources list it in `simple_notifiers`; the kind of change follows from the
   resource. Subscribers get `{:inbox_changed, kind}` after the change commits and reload
@@ -26,7 +27,8 @@ defmodule Firmowid.Core.Notifiers.InboxChanged do
     Firmowid.Invoicing.SalesInvoice => :books,
     Firmowid.Invoicing.CostInvoice => :books,
     Firmowid.Payroll.UserEmploymentContract => :personal,
-    Firmowid.Timetracker.Session => :presence
+    Firmowid.Timetracker.Session => :presence,
+    Firmowid.Core.InboxSnooze => :attention
   }
 
   @doc "Subscribes the calling process to inbox changes of one organization."

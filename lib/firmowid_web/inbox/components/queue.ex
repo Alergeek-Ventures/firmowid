@@ -69,8 +69,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           </.link>
         <% else %>
           <div :if={@decisions != []} class="flex items-center gap-2">
-            <%!-- Holds the ✕'s place when an item cannot be rejected, so the buttons line up across rows. --%>
-            <span :if={length(@decisions) == 1} class="w-8 shrink-0" aria-hidden="true"></span>
+            <%!-- Holds the ✕'s place when an item cannot be rejected, so the buttons line up across rows;
+            on phones the actions sit right-aligned on their own line, where it would only crowd them. --%>
+            <span :if={length(@decisions) == 1} class="w-8 shrink-0 max-md:hidden" aria-hidden="true"></span>
             <%= for decision <- Enum.sort_by(@decisions, & &1.show_label?) do %>
               <.icon_button
                 :if={!decision.show_label?}
@@ -109,10 +110,113 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             {@item.action}
           </.link>
         <% end %>
+        <.snooze_menu item={@item} />
       </div>
     </article>
     """
   end
+
+  attr :item, :map, required: true
+
+  # Puts the item aside for the whole company (`Firmowid.Core.InboxSnooze`).
+  defp snooze_menu(assigns) do
+    ~H"""
+    <.menu id={"item-#{@item.id}-snooze"} label={gettext("Put aside")}>
+      <.menu_item
+        :for={{days, label} <- snooze_options()}
+        phx-click="snooze_item"
+        phx-value-id={@item.id}
+        phx-value-days={days}
+      >
+        {label}
+      </.menu_item>
+      <div class="my-1 h-px bg-grey-100" role="separator"></div>
+      <.menu_item phx-click="snooze_item" phx-value-id={@item.id}>
+        {gettext("Hide for good")}
+      </.menu_item>
+    </.menu>
+    """
+  end
+
+  defp snooze_options,
+    do: [
+      {7, gettext("Put aside for 7 days")},
+      {30, gettext("Put aside for 30 days")},
+      {90, gettext("Put aside for 90 days")}
+    ]
+
+  @doc """
+  Items the company put aside, folded under the queue: each says when it comes
+  back and can be brought back right away.
+  """
+  attr :entries, :list,
+    required: true,
+    doc: "`{item, snooze}` pairs from `Queue.split_put_aside/2`"
+
+  attr :expanded, :boolean, required: true
+
+  def put_aside(assigns) do
+    ~H"""
+    <section id="inbox-put-aside" class="flex flex-col gap-3">
+      <.button
+        type="button"
+        variant="unstyled"
+        id="inbox-put-aside-toggle"
+        aria-expanded={to_string(@expanded)}
+        aria-controls="inbox-put-aside-list"
+        phx-click="toggle_group"
+        phx-value-tier="put_aside"
+        class="flex cursor-pointer items-center gap-2 self-start text-grey-900 hover:text-black"
+      >
+        <h2 class="text-caps-sm font-medium uppercase">{pgettext("inbox section", "Put aside")}</h2>
+        <span class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 text-caps-sm font-semibold text-grey-700 tabular-nums">
+          {length(@entries)}
+        </span>
+        <Lucideicons.chevron_up :if={@expanded} class="size-4" aria-hidden="true" />
+        <Lucideicons.chevron_down :if={!@expanded} class="size-4" aria-hidden="true" />
+        <span class="truncate text-sm leading-[1.35] text-grey-600 max-md:hidden">
+          {gettext("Hidden for everyone in the company.")}
+        </span>
+      </.button>
+      <div :if={@expanded} id="inbox-put-aside-list" class="overflow-hidden rounded-sm bg-white">
+        <div
+          :for={{item, snooze} <- @entries}
+          id={"put-aside-#{item.id}"}
+          class="flex items-center gap-4 border-b border-grey-100 px-5 py-3 last:border-b-0 max-md:px-4"
+        >
+          <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <%!-- Like the queue row, the date range and the person tell apart items of one kind. --%>
+            <p class="truncate text-sm font-medium text-black">
+              {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
+            </p>
+            <p class="flex min-w-0 flex-wrap gap-x-1.5 text-sm text-grey-600">
+              <span :if={item.person} class="min-w-0 truncate text-black">{item.person}</span>
+              <span :if={item.person} aria-hidden="true">·</span>
+              <span>{put_aside_until(snooze)}</span>
+            </p>
+          </div>
+          <.button
+            type="button"
+            size="small"
+            variant="ghost"
+            phx-click="restore_item"
+            phx-value-id={item.id}
+          >
+            {gettext("Bring back")}
+          </.button>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
+  defp put_aside_until(%{until: nil}), do: gettext("Hidden for good")
+
+  defp put_aside_until(%{until: until}),
+    do:
+      gettext("Comes back on %{date}",
+        date: until |> DateTime.shift_zone!("Europe/Warsaw") |> Calendar.strftime("%d.%m.%Y")
+      )
 
   defp icon_styles(%{tier: :urgent}), do: "bg-brick-200 text-brick-700"
   defp icon_styles(%{tier: :books, side: :cost}), do: "bg-rust-200 text-rust-700"

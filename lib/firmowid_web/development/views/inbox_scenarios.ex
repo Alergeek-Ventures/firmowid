@@ -82,6 +82,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        layer: Map.get(scenario, :layer, :company),
        today: today,
        items: scenario.items,
+       put_aside: [],
        presence: scenario.presence,
        month: scenario.month,
        month_duration: Map.get(scenario, :month_duration),
@@ -149,6 +150,31 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   # A second click that arrives before the page shows the first one's result.
   def handle_event(event, _params, socket) when event in ["set_workplace", "stop_session", "start_session"],
     do: {:noreply, socket}
+
+  # Puts an item aside in the scenario only, as the inbox does for the whole company.
+  def handle_event("snooze_item", %{"id" => id} = params, socket) do
+    {snoozed, items} = Enum.split_with(socket.assigns.items, &(&1.id == id))
+
+    until =
+      params["days"] && DateTime.shift(DateTime.utc_now(), day: String.to_integer(params["days"]))
+
+    {:noreply,
+     assign(socket,
+       items: items,
+       put_aside: socket.assigns.put_aside ++ Enum.map(snoozed, &{&1, %{until: until}})
+     )}
+  end
+
+  def handle_event("restore_item", %{"id" => id}, socket) do
+    {restored, put_aside} =
+      Enum.split_with(socket.assigns.put_aside, fn {item, _snooze} -> item.id == id end)
+
+    {:noreply,
+     assign(socket,
+       items: Enum.map(restored, &elem(&1, 0)) ++ socket.assigns.items,
+       put_aside: put_aside
+     )}
+  end
 
   def handle_event("decide_item", %{"id" => id, "decision" => decision}, socket) do
     LiveToast.send_toast(
