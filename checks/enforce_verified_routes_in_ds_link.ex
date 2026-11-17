@@ -7,12 +7,12 @@ defmodule Checks.EnforceVerifiedRoutesInDsLink do
 
   ## Bad
 
-      <.link navigate="/zaproszenia">Dodaj pracownika</.link>
+      <.link navigate="/zarzadzanie/pracownicy">Pracownicy</.link>
       <.link redirect={"/auth/user/google"}>Google</.link>
 
   ## Good
 
-      <.link navigate={~p"/zaproszenia"}>Dodaj pracownika</.link>
+      <.link navigate={~p"/zarzadzanie/pracownicy"}>Pracownicy</.link>
       <.link patch={~p"/zarzadzanie/projekty"}>Projekty</.link>
       <.link patch={path}>Projekty</.link>
   """

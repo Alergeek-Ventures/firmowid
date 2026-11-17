@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Invoicing.Views.RoleAccessTest do
 
     conn = log_in_user(conn, invoicing_user)
 
-    assert {:ok, _view, html} = live(conn, ~p"/fakturowanie")
+    assert {:ok, _view, html} = live(conn, ~p"/fakturowanie?filtr=faktury&widok=lista")
     refute html =~ "Wystaw fakturę"
 
     assert {:error, {:live_redirect, %{to: to}}} = live(conn, ~p"/sprzedazowe")

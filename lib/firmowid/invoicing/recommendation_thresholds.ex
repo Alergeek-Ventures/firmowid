@@ -10,28 +10,6 @@ defmodule Firmowid.Invoicing.RecommendationThresholds do
   @confidence_mid_threshold 0.87
   @highest_green_threshold 0.69
 
-  @type confidence_level :: :manual | :high | :mid | :low | nil
-
-  @doc """
-  Classifies a match pair into a chip type and human-readable percentage.
-
-  Manual matches return `{:manual, 100}` regardless of score.
-  """
-  @spec match_chip_type(float() | nil, atom() | nil) :: {confidence_level(), integer() | nil}
-  def match_chip_type(_score, :manual), do: {:manual, 100}
-
-  def match_chip_type(nil, _source), do: {nil, nil}
-
-  def match_chip_type(score, _source) when is_number(score) do
-    cond do
-      score >= @confidence_high_threshold -> {:high, to_percent(score)}
-      score >= @confidence_mid_threshold -> {:mid, to_percent(score)}
-      true -> {:low, to_percent(score)}
-    end
-  end
-
-  def match_chip_type(_score, _source), do: {nil, nil}
-
   @doc """
   Returns the prediction visual level for a potential transaction candidate.
   """

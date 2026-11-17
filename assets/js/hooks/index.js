@@ -1,4 +1,3 @@
-import { Confetti } from "./confetti";
 import { ScrollStyle } from "./scroll_style";
 import { FileUploadDragNDrop } from "./file_upload_drag_n_drop";
 import { FileUploadDragState } from "./file_upload_drag_state";
@@ -9,7 +8,6 @@ import { Timer } from "./timer";
 import { FocusOnMount } from "./focus_on_mount";
 import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
-import { CollapsibleNavbar } from "./collapsible_navbar";
 import { CopyToClipboard } from "./copy_to_clipboard";
 import { PaperPlane } from "./paper_plane";
 import { UIHooks } from "../ui/hooks";
@@ -20,13 +18,11 @@ import { LandingHero } from "./landing_hero";
 import { LandingPricing } from "./landing_pricing";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
-import { KsefSkippedInvoicesBanner } from "./ksef_skipped_invoices_banner";
 import { AssistantChat } from "./assistant";
 
 export const Hooks = {
   ...UIHooks,
   AssistantChat,
-  Confetti,
   ScrollStyle,
   FileUploadDragNDrop,
   FileUploadDragState,
@@ -37,7 +33,6 @@ export const Hooks = {
   Timer,
   FocusOnMount,
   Popover,
-  CollapsibleNavbar,
   ConfirmLeave,
   CopyToClipboard,
   PaperPlane,
@@ -47,6 +42,5 @@ export const Hooks = {
   LandingHero,
   LandingPricing,
   NumberPopIn,
-  ImageLoadReveal,
-  KsefSkippedInvoicesBanner
+  ImageLoadReveal
 };

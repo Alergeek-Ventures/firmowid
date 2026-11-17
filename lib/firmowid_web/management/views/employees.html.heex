@@ -1,5 +1,5 @@
 <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
-  <div class="sticky top-navbar-collapsed z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
+  <div class="sticky top-0 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
     <div class="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
       <form class="flex gap-4 max-md:gap-3" phx-submit="search">
         <.month_picker
@@ -52,7 +52,6 @@
         <.page_actions>
           <:action>
             <.button
-              :if={flag_enabled?(:inbox, assigns)}
               type="button"
               variant="special"
               phx-click={show_modal("organization_invite_modal")}
@@ -61,16 +60,6 @@
               <.icon name="hero-plus-mini" class="size-6" />
               <span class="max-md:sr-only">{gettext("Add employee")}</span>
             </.button>
-            <.link
-              :if={!flag_enabled?(:inbox, assigns)}
-              navigate={~p"/zaproszenia"}
-              kind="button"
-              variant="special"
-              data-fab
-            >
-              <.icon name="hero-plus-mini" class="size-6" />
-              <span class="max-md:sr-only">{gettext("Add employee")}</span>
-            </.link>
           </:action>
         </.page_actions>
       </div>
@@ -103,8 +92,6 @@
       "grid gap-x-6 gap-y-2",
       roles_column?(assigns) &&
         "grid-cols-[1fr_max-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
-      !roles_column?(assigns) && @view == :standard && @live_action == :index &&
-        "grid-cols-[1fr_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
       @view == :standard && @live_action == :archive &&
         "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
       @view != :standard && @live_action == :index &&
@@ -125,7 +112,7 @@
   >
     <div
       id="employees-list-header"
-      class="sticky top-[calc(var(--spacing-navbar-collapsed)+var(--page-header-with-tabs-height))] z-1 col-span-full grid h-11 grid-cols-subgrid items-center bg-grey-100 px-4 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
+      class="sticky top-(--page-header-with-tabs-height) z-1 col-span-full grid h-11 grid-cols-subgrid items-center bg-grey-100 px-4 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
       phx-hook="ScrollStyle"
       data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
       data-scroll-offset="90"
@@ -221,9 +208,6 @@
           cond do
             roles_column?(assigns) ->
               "col-span-4 max-md:col-span-3"
-
-            @view == :standard and @live_action == :index ->
-              "col-span-3"
 
             @view == :standard and @live_action == :archive ->
               "col-span-4"
@@ -398,7 +382,6 @@
   </form>
 
   <section
-    :if={flag_enabled?(:inbox, assigns)}
     id="employees-invites"
     phx-hook="CopyToClipboard"
     class="flex flex-col gap-2 has-[h2]:pbe-14"
@@ -414,5 +397,5 @@
   </section>
 </div>
 
-<.invite_modal :if={flag_enabled?(:inbox, assigns)} />
+<.invite_modal />
 <.update_role_modal :if={@selected_user} user={@selected_user} />

@@ -97,8 +97,14 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
         assign(socket, :current_user, user)
 
       {user, organizations} ->
-        {loaded_user, org, _scope} = UserAuth.load_scope_and_avatars(user)
-        assign(socket, current_user: loaded_user, current_org: org, organizations: organizations)
+        {loaded_user, org, scope} = UserAuth.load_scope_and_avatars(user)
+
+        assign(socket,
+          current_user: loaded_user,
+          current_org: org,
+          organizations: organizations,
+          ash_scope: scope
+        )
     end
   end
 end

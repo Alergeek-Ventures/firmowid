@@ -15,7 +15,6 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.Numbering
-  alias Firmowid.Invoicing.Services.RecentMatchedEntries
   alias Firmowid.Ksef
   alias Firmowid.Scope
   alias Firmowid.SystemActor
@@ -594,14 +593,6 @@ defmodule Firmowid.Invoicing do
   defp interleave([], right), do: right
   defp interleave(left, []), do: left
   defp interleave([l | ls], [r | rs]), do: [l, r | interleave(ls, rs)]
-
-  @doc """
-  Returns recently matched invoice entries for the invoicing dashboard.
-  """
-  @spec list_recently_matched_entries(Date.t(), Date.t(), Scope.t(), keyword()) :: map()
-  def list_recently_matched_entries(from, to, scope, opts \\ []) do
-    RecentMatchedEntries.list(from, to, scope, opts)
-  end
 
   @doc """
   Disconnects a transaction from every linked sales and cost invoice atomically.

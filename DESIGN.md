@@ -189,6 +189,10 @@ components:
     backgroundColor: "{colors.white}"
     rounded: "{rounded.sm}"
     padding: "24px"
+  sidebar:
+    backgroundColor: "{colors.black}"
+    textColor: "{colors.white}"
+    width: "256px"
   navbar:
     backgroundColor: "{colors.black}"
     textColor: "{colors.white}"
@@ -212,7 +216,7 @@ Components are warm and tactile. Secondary actions and status pills use
 pastel tonal fills instead of hard outlines. Corners are gently rounded
 (8px on most controls). The page is flat by default: white surfaces sit on the
 grey canvas through tonal contrast, and a shadowed card is used only in the
-few places that group a self-contained record. A heavy black navigation bar
+few places that group a self-contained record. A heavy black sidebar
 frames the workspace like the spine of a ledger. The typeface is Geist
 throughout, a plain, compact sans that keeps dense financial tables calm and
 businesslike. Lexend survives in the "Firmowid" wordmark, where it keeps
@@ -267,7 +271,7 @@ Five palettes (`grey`, `rust`, `teal`, `moss`, `brick`) share one step naming,
 - **Brick** (`brick-700` on `brick-200`): errors, destructive actions and validation. Destructive buttons are a brick-tint fill with brick text, never a solid red block.
 
 ### Neutral
-- **Ink** (`black`): the navigation bar, the neutral "special" button and the back-link disc.
+- **Ink** (`black`): the sidebar and the phone top bar, the neutral "special" button and the back-link disc.
 - **Charcoal** (`grey-900`): the strongest body text and labels on light surfaces.
 - **Graphite** (`grey-700`): the workhorse text colour (by far the most used), neutral tertiary buttons, active filter chips and icon buttons.
 - **Pebble** (`grey-500`): secondary and meta text, placeholders and quiet labels.
@@ -307,7 +311,7 @@ becomes a CSS token. Weight and line height describe how each role is set.
 - **Body Large** (`text-base`, 16px): form controls and big buttons, set tight (1.25) so controls stay compact.
 - **Body** (`text-sm`, 14px): the default for the whole app. Tables, lists, descriptions and small buttons are 14px.
 - **Label** (`text-xs`, 12px, 500): meta text, table annotations and tooltip text.
-- **Caps** (`text-caps-sm`, 11px, 500): uppercase micro-labels, table column headers and navigation items. Table headers and main navigation are set in uppercase.
+- **Caps** (`text-caps-sm`, 11px, 500): uppercase micro-labels, table column headers and the sidebar's layer heading. Table headers and that heading are set in uppercase.
 - `text-xl` (23px) and `text-3xl` (40px) are larger steps for headings and big figures.
 
 Line heights come from the Tailwind scale through the size shorthand
@@ -321,23 +325,22 @@ the landing's 1.35 from the original Figma was folded into it.
 
 ## Layout
 
-The app is a single centred column on the grey canvas. A sticky black navbar
-66px tall (108px in the Management area, which adds a sub-navigation row)
-sits above `main`, which pads 16px on mobile, 24px from `sm`, and 32px from
-`lg`. Wide data views cap around 1140px (`max-w-284`) or 1280px (`max-w-7xl`).
+The app is a black sidebar on the left and a single centred column on the grey
+canvas. The sidebar is 256px wide and collapses to a 56px column of icons;
+`main` keeps its left margin in step with it and pads 16px on mobile, 24px
+from `sm`, and 32px from `lg`. Onboarding pages (`focused`) have no sidebar.
+Wide data views cap around 1140px (`max-w-284`) or 1280px (`max-w-7xl`).
 Forms and dialogs use narrow columns (`max-w-md` to `max-w-3xl`).
 
 Spacing follows a 4px rhythm. 8px and 16px gaps dominate, with 12px and 24px
 as secondary steps, and 32px or more only between major sections. Card
 interiors use 24px padding (16px on compact cards).
 
-Below 768px the centred navigation links and the feedback button are hidden
-and the account button becomes a menu (hamburger) button. It opens the account
-dropdown as a full-width black panel under the navbar, with the main
-navigation links and feedback listed above the account items. The Management
-sub-navigation stays as a left-aligned row. Page content must fit 390px
-without horizontal scrolling, because any overflow widens the layout viewport
-and pushes the menu button off-screen. Employee-facing flows (time tracking,
+Below 768px the sidebar is hidden and a sticky black top bar, 66px tall, shows
+the wordmark and a menu (hamburger) button, which slides the sidebar in over
+the page at full width. Page content must fit 390px without horizontal
+scrolling, because any overflow widens the layout viewport and pushes the menu
+button off-screen. Employee-facing flows (time tracking,
 leave, delegations) must be fully usable at phone widths.
 
 ## Elevation & Depth
@@ -365,9 +368,9 @@ Shadows belong to those cards and to overlays that float above the page.
 Every focusable element shows the same keyboard focus: a 2px solid outline,
 offset 2px, in `--focus-ring` (`grey-900`). This is one base rule in
 `assets/css/app.css`; components do not add their own focus colours. Dark
-surfaces (the navbar, the account menu, the cookie banner) set
-`[--focus-ring:var(--color-white)]` so the outline stays visible. Text fields
-signal focus with their border (`grey-700`) instead of an outline.
+surfaces (the sidebar with its account menu, the phone top bar, the cookie
+banner) set `[--focus-ring:var(--color-white)]` so the outline stays visible.
+Text fields signal focus with their border (`grey-700`) instead of an outline.
 
 **The One Focus Rule.** Never remove focus (`outline-none`, `focus:ring-0`) without the replacement above, and never colour it by ledger side.
 
@@ -481,9 +484,9 @@ expression of the Two Sides of the Ledger Rule.
 - **Switch:** a 38×24 pill. The grey track fills rust or teal when on, depending on the side it controls.
 
 ### Navigation
-- **Style:** a full-width black bar with off-white bold "Firmowid" wordmark on the left and centred uppercase 14px links with icons. Inactive links sit at 50% opacity, the active one at 90%, and hover reaches full opacity.
-- **Account cluster:** on the right, opening a black dropdown whose items highlight with graphite/50.
-- **Mobile:** below 768px a hamburger button opens one full-width black menu with the main links, feedback and account items (see Layout).
+- **Sidebar:** a black column with the "Firmowid" wordmark and the collapse button on top, then the layer switch (company or the member's own), the inbox and the places of the current layer. Rows are 32px tall with an 18px icon and the label in `grey-300`; the current page sits on a `grey-900` fill. Collapsed, only the icons stay and a label shows as a tooltip.
+- **Account:** feedback and the account button sit at the bottom; the account button opens a black menu with the organization switcher, settings and logging out, whose items highlight with graphite/50.
+- **Mobile:** below 768px the sticky top bar's menu button slides the sidebar in over the page at full width (see Layout).
 
 ### Modals
 A white surface with a 6px radius, generous 40px padding, overlay shadow plus

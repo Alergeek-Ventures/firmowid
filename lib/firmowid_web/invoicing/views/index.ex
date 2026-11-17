@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Blobs.Blob
   alias Firmowid.Finances
-  alias Firmowid.Finances.BankAccount
   alias Firmowid.Finances.ExpectedTransaction
   alias Firmowid.Finances.Requisition
   alias Firmowid.Finances.Transaction
@@ -33,11 +32,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.UserAuth
-  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
   alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-  alias FirmowidWeb.Invoicing.Utilities.QueryCodec
   alias Phoenix.Socket.Broadcast
 
   # Load definitions for invoice queries
@@ -104,8 +101,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       if flag_enabled?(:taxes, socket.assigns),
         do: Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
 
-      Endpoint.subscribe("bank_account:synced:#{organization_id}")
-      Endpoint.subscribe("bank_account:sync_failed:#{organization_id}")
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
       Endpoint.subscribe("requisition:expired:#{organization_id}")
@@ -138,11 +133,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     socket = assign(socket, :active_months, active_months)
 
-    skipped_ksef_sales_invoices =
-      Invoicing.list_skipped_ksef_sales_invoices!(scope: socket.assigns.ash_scope)
-
-    socket = assign(socket, :skipped_ksef_sales_invoices, skipped_ksef_sales_invoices)
-
     socket =
       socket
       |> assign(:show_search, false)
@@ -150,12 +140,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:search_results, [])
       |> assign(:transactions_debounce_timer, nil)
       |> assign(:refetch_gathering?, false)
-      # The month's status arrives with the entries; until then the month counts as untouched.
-      |> assign(
-        is_month_touched: false,
-        is_month_closed: false,
-        pending_invoicing_entries_count: 0
-      )
+      # The month's status arrives with the entries; until then the month counts as open.
+      |> assign(:is_month_closed, false)
 
     {:ok, socket}
   end
@@ -302,32 +288,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       search_results={@search_results}
     />
 
-    <%!-- With the inbox sidebar, invoices and transactions are separate places and the inbox takes the summary. --%>
-    <FirmowidWeb.Invoicing.Components.FilterBar.filter_bar
-      :if={not flag_enabled?(:inbox, assigns)}
-      params={@params}
-      pending_count={@pending_invoicing_entries_count}
-      is_month_closed={@is_month_closed}
-      is_month_touched={@is_month_touched}
-    />
     <div class="relative mt-2 flex flex-col gap-4">
       <%= cond do %>
-        <% @params.view_mode == :dashboard and @invoicing_entries != nil -> %>
-          <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
-            unpaid_invoices={@dashboard_unpaid_invoices}
-            unpaid_invoices_count={@dashboard_unpaid_invoices_count}
-            unmatched_transactions={@dashboard_unmatched_transactions}
-            unmatched_transactions_count={@dashboard_unmatched_transactions_count}
-            matched_entries={@dashboard_matched_entries}
-            matched_entries_count={@dashboard_matched_entries_count}
-            suggestions={@dashboard_suggestions}
-            suggestions_count={@dashboard_suggestions_count}
-            month={@params.month}
-            return_to={Navigation.invoicing_index_path(@params)}
-          />
-        <% @params.view_mode == :dashboard -> %>
-          <%!-- The column dashboard has no list headings to hold its place while it loads. --%>
-          <span role="status" class="sr-only">{gettext("Loading entries")}</span>
         <% @is_month_closed and @params.filter == :unmatched and @invoicing_entries != nil -> %>
           <.live_component
             id="month-closed-zero-state"
@@ -383,9 +345,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_params(params, _url, socket) do
     parsed = Navigation.parse_invoicing_index_params(params)
 
-    # The inbox replaces the column dashboard, which goes away with it; only the
-    # lists of invoices and transactions stay here.
-    if flag_enabled?(:inbox, socket.assigns) and parsed.view_mode == :dashboard do
+    # Without a list asked for, the page leads to the inbox; only the lists of invoices
+    # and transactions stay here.
+    if parsed.view_mode == :inbox do
       {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company), replace: true)}
     else
       socket =
@@ -405,19 +367,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     end
   end
 
-  @impl true
-  def handle_event("skipped-ksef-sales-invoices-viewed", _params, socket) do
-    if socket.assigns.skipped_ksef_sales_invoices != [] do
-      PosthogBusinessEvents.capture(socket, :ksef_skipped_sales_invoices_banner_viewed, %{
-        skipped_invoice_count: length(socket.assigns.skipped_ksef_sales_invoices)
-      })
-    end
-
-    {:noreply, socket}
-  end
-
   # The picker of the list of every month is live before the entries arrive; until then
   # there is nothing to scroll to.
+  @impl true
   def handle_event("change-month", _params, %{assigns: %{all_months?: true, invoicing_entries: nil}} = socket),
     do: {:noreply, socket}
 
@@ -472,39 +424,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
        newer = min(first, @window_rows)
        {first - newer, count + newer}
      end)}
-  end
-
-  def handle_event("change-filter", %{"filter" => filter}, socket) do
-    case QueryCodec.parse_filter(filter) do
-      nil ->
-        {:noreply, socket}
-
-      parsed_filter ->
-        params =
-          socket.assigns.params
-          |> Map.put(:filter, parsed_filter)
-          |> Map.put(:view_mode, :list)
-          |> Map.put(:subfilter, nil)
-
-        {:noreply, update_params(socket, params)}
-    end
-  end
-
-  def handle_event("change-subfilter", %{"subfilter" => subfilter}, socket) do
-    case QueryCodec.parse_subfilter(subfilter) do
-      nil ->
-        {:noreply, socket}
-
-      parsed_subfilter ->
-        next_subfilter =
-          if socket.assigns.params.subfilter == parsed_subfilter do
-            nil
-          else
-            parsed_subfilter
-          end
-
-        {:noreply, update_param(socket, :subfilter, next_subfilter)}
-    end
   end
 
   @impl true
@@ -735,7 +654,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               month: @issue_date,
               filter: :invoices,
               subfilter: nil,
-              view_mode: :dashboard
+              view_mode: :inbox
             })
           }
         >
@@ -765,10 +684,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, gather_refetch(socket)}
   end
 
-  def handle_info(%Broadcast{payload: %Notification{resource: BankAccount}}, socket) do
-    {:noreply, fetch_dashboard_data(socket)}
-  end
-
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
         %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
@@ -791,7 +706,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     LiveToast.send_toast(toast_type, message)
 
-    {:noreply, fetch_dashboard_data(socket)}
+    {:noreply, socket}
   end
 
   defp update_param(socket, key, value) do
@@ -932,8 +847,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
      |> assign(:invoicing_entries, entries)
      |> assign(:newest_entries, nil)
      |> assign_projects_column(month, scope)
-     |> assign_month_status(fetched_entries)
-     |> fetch_dashboard_data()}
+     |> assign_month_status(fetched_entries)}
   end
 
   def handle_async(:invoicing_entries, {:exit, reason}, _socket), do: exit(reason)
@@ -988,7 +902,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp read_newest_entries(socket), do: socket
 
-  # The inbox lists of invoices and transactions show every month, newest first.
+  # The lists of invoices and transactions show every month, newest first.
   # The month's status, which the ungrouped entries feed, is not read for these lists.
   defp read_entries(_month, filter, subfilter, true = _all_months?, scope, expected?) do
     {[], nil |> fetch_entries(nil, filter, subfilter, scope, expected?) |> with_month_separators()}
@@ -1008,49 +922,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {fetched_entries, group_cost_transactions_by_party(fetched_entries)}
   end
 
-  # Only the filter bar, which the inbox sidebar replaces, and the list of unmatched entries
-  # show the month's status, so elsewhere its reads are skipped.
-  defp assign_month_status(socket, fetched_entries) do
-    if flag_enabled?(:inbox, socket.assigns) and socket.assigns.params.filter != :unmatched do
-      assign(socket,
-        is_month_touched: false,
-        is_month_closed: false,
-        pending_invoicing_entries_count: 0
-      )
-    else
-      read_month_status(socket, fetched_entries)
-    end
-  end
-
-  # The month's lists of unmatched and of all entries ignore the subfilter, so the list
-  # read serves for them when it is one of the two.
-  defp read_month_status(socket, fetched_entries) do
-    %{month: month, filter: filter} = socket.assigns.params
+  # Only the list of unmatched entries shows the month's status, so elsewhere its reads are
+  # skipped. That list's own read holds the month's unmatched entries.
+  defp assign_month_status(%{assigns: %{params: %{filter: :unmatched}}} = socket, pending_entries) do
+    month = socket.assigns.params.month
     scope = socket.assigns.ash_scope
     expected? = flag_enabled?(:taxes, socket.assigns)
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    # Pending entries for badge count (no subfilter - we want all unmatched)
-    pending_entries =
-      if filter == :unmatched,
-        do: fetched_entries,
-        else: fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope, expected?)
-
-    raw_pending_count = Enum.count(pending_entries)
-
-    pending_invoicing_entries_count =
-      pending_entries
-      |> group_cost_transactions_by_party()
-      |> Enum.count()
-
     # Check if any entries exist this month (regardless of filter)
     is_month_touched =
-      cond do
-        raw_pending_count > 0 -> true
-        filter == :all -> fetched_entries != []
-        true -> fetch_entries(date_range_from, date_range_to, :all, nil, scope, expected?) != []
-      end
+      pending_entries != [] or
+        fetch_entries(date_range_from, date_range_to, :all, nil, scope, expected?) != []
 
     # No new transactions can be added after month ends
     has_month_ended =
@@ -1058,186 +942,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Date.end_of_month()
       |> Date.compare(Date.utc_today()) == :lt
 
-    socket
-    |> assign(:is_month_touched, is_month_touched)
-    |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
-    |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
-  end
-
-  @dashboard_tile_limit 5
-
-  # Only the dashboard shows its tiles; the lists leave them unread.
-  defp fetch_dashboard_data(%{assigns: %{params: %{view_mode: :dashboard}}} = socket) do
-    month = socket.assigns.params.month
-    scope = socket.assigns.ash_scope
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
-    unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
-    unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
-    matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-    # With the inbox sidebar, bank accounts have their own settings page.
-    bank_accounts_path =
-      if flag_enabled?(:inbox, socket.assigns),
-        do: ~p"/ustawienia/konta-bankowe",
-        else: ~p"/ustawienia/firma"
-
-    suggestions =
-      fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, bank_accounts_path)
-
-    socket
-    |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
-    |> assign(:dashboard_unpaid_invoices_count, unpaid_invoices.total_count)
-    |> assign(:dashboard_unmatched_transactions, unmatched_transactions.entries)
-    |> assign(:dashboard_unmatched_transactions_count, unmatched_transactions.total_count)
-    |> assign(:dashboard_matched_entries, matched_entries.entries)
-    |> assign(:dashboard_matched_entries_count, matched_entries.total_count)
-    |> assign(:dashboard_suggestions, suggestions.entries)
-    |> assign(:dashboard_suggestions_count, suggestions.total_count)
-  end
-
-  defp fetch_dashboard_data(socket), do: socket
-
-  defp fetch_unpaid_invoices(from, to, scope) do
-    cost_invoices =
-      Invoicing.list_cost_invoices!(
-        %{date_from: from, date_to: to, date_field: :due_date, reconciliation: :pending},
-        load: @cost_invoice_loads,
-        scope: scope
-      )
-
-    sales_invoices =
-      Invoicing.list_sales_invoices!(
-        %{
-          date_from: from,
-          date_to: to,
-          date_field: :due_date,
-          kind: :vat,
-          reconciliation: :pending,
-          submission: :confirmed
-        },
-        load: @sales_invoice_loads,
-        scope: scope
-      )
-
-    # Sorting by id first keeps invoices with the same due date in a stable order (sort_by is stable).
-    invoices =
-      (cost_invoices ++ sales_invoices)
-      |> Enum.sort_by(& &1.id)
-      |> Enum.sort_by(& &1.effective_due_date, Date)
-
-    %{entries: Enum.take(invoices, @dashboard_tile_limit), total_count: length(invoices)}
-  end
-
-  defp fetch_unmatched_transactions(from, to, scope) do
-    transactions =
-      Finances.list_transactions!(%{date_from: from, date_to: to, reconciliation: :pending},
-        load: [
-          :direction,
-          :signed_amount,
-          :counterparty_display_name
-        ],
-        query: [sort: [booking_date: :desc, id: :asc]],
-        scope: scope
-      )
-
-    %{entries: Enum.take(transactions, @dashboard_tile_limit), total_count: length(transactions)}
-  end
-
-  defp fetch_matched_entries(from, to, scope) do
-    Invoicing.list_recently_matched_entries(from, to, scope,
-      limit: @dashboard_tile_limit,
-      cost_invoice_loads: @cost_invoice_loads,
-      sales_invoice_loads: @sales_invoice_loads
+    assign(
+      socket,
+      :is_month_closed,
+      is_month_touched and has_month_ended and pending_entries == []
     )
   end
 
-  defp bank_attention_entries(scope, bank_accounts_path) do
-    [scope: scope, load: [:requisition, :sync_stopped?]]
-    |> Finances.list_bank_accounts!()
-    # Keep the latest outcome independent of the last-success aggregate's filter.
-    |> Ash.load!(:latest_successful_sync_at, scope: scope)
-    |> Enum.filter(fn account ->
-      not is_nil(account.gocardless_id) and
-        (account.sync_stopped? or awaiting_bank_sync?(account))
-    end)
-    |> Enum.group_by(&(&1.institution_id || &1.institution_name || &1.id))
-    |> Enum.map(fn {_institution, accounts} ->
-      account =
-        Enum.find(accounts, &match?(%Requisition{status: :expired}, &1.requisition)) ||
-          Enum.find(accounts, & &1.sync_stopped?) || hd(accounts)
-
-      # Show the oldest known gap among this bank's affected accounts.
-      unsynced_since =
-        accounts
-        |> Enum.map(& &1.latest_successful_sync_at)
-        |> Enum.reject(&is_nil/1)
-        |> Enum.sort(DateTime)
-        |> List.first()
-
-      %{
-        type: :bank_connection_attention,
-        account: account,
-        warning?: Enum.any?(accounts, & &1.sync_stopped?),
-        unsynced_since: unsynced_since,
-        navigate:
-          if(scope.actor.member.role == :admin,
-            do: "#{bank_accounts_path}#konto-bankowe-#{account.id}"
-          )
-      }
-    end)
-    |> Enum.sort_by(&{not &1.warning?, &1.account.institution_name || ""})
-  end
-
-  defp fetch_suggestions(scope, skipped_invoices, bank_accounts_path) do
-    bank_alerts = bank_attention_entries(scope, bank_accounts_path)
-
-    ksef_warnings =
-      if skipped_invoices == [] do
-        []
-      else
-        [
-          %{
-            type: :skipped_ksef_sales_invoices,
-            warning?: true,
-            invoice_numbers: Enum.map(skipped_invoices, & &1.invoice_number)
-          }
-        ]
-      end
-
-    suggestions = []
-
-    # Check bank connection
-    has_bank = Finances.list_requisitions!(%{status: :accepted}, scope: scope) != []
-
-    # Only an admin can connect a bank.
-    suggestions =
-      if has_bank or bank_alerts != [] or scope.actor.member.role != :admin do
-        suggestions
-      else
-        [%{type: :connect_bank} | suggestions]
-      end
-
-    # Check KSeF connection
-    has_ksef = Ksef.connected?(scope)
-
-    suggestions =
-      if has_ksef do
-        suggestions
-      else
-        [%{type: :connect_ksef} | suggestions]
-      end
-
-    suggestions = ksef_warnings ++ bank_alerts ++ suggestions
-    %{entries: suggestions, total_count: length(suggestions)}
-  end
-
-  defp awaiting_bank_sync?(%{requisition: %Requisition{status: :accepted, inserted_at: connected_at}} = account) do
-    is_nil(account.latest_successful_sync_at) or
-      DateTime.before?(account.latest_successful_sync_at, connected_at)
-  end
-
-  defp awaiting_bank_sync?(_account), do: false
+  defp assign_month_status(socket, _fetched_entries), do: assign(socket, :is_month_closed, false)
 
   # `count` entries from the `first` one. Starting within a month, they come under its
   # heading, which names the month on top; a list without headings has none to add.
@@ -1265,11 +977,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp older_entries?(entries, {first, count}), do: length(entries) > first + count
 
-  # The inbox lists of invoices and transactions show every month, each under its heading row.
-  defp all_months_list?(assigns) do
-    flag_enabled?(:inbox, assigns) and assigns.params.view_mode == :list and
-      assigns.params.filter in [:invoices, :transactions]
-  end
+  # The lists of invoices and transactions show every month, each under its heading row.
+  defp all_months_list?(assigns), do: assigns.params.filter in [:invoices, :transactions]
 
   # The picker on the list of every month names the month on screen; sized for the
   # longest name, it keeps its width, and the filters their place, while scrolling.
@@ -1377,7 +1086,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @issued_pending %{date_field: :issue_date, reconciliation: :pending}
   @due_pending %{date_field: :due_date, reconciliation: :pending}
 
-  # The side filters of the inbox lists: sales or purchase invoices, incoming or outgoing transactions.
+  # The side filters of the lists: sales or purchase invoices, incoming or outgoing transactions.
   defp entry_reads(:invoices, :sprzedazowe), do: [{:sales_invoices, @issued}]
   defp entry_reads(:invoices, :zakupowe), do: [{:cost_invoices, @issued}]
   defp entry_reads(:transactions, :wplywy), do: [{:transactions, %{}, :income}]

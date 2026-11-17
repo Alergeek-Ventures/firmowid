@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.NavigationTest do
 
   test "transaction_show_path/2 accepts typed return targets" do
     return_target =
-      {:invoicing_index, %{month: ~D[2026-01-15], filter: :all, subfilter: nil, view_mode: :dashboard}}
+      {:invoicing_index, %{month: ~D[2026-01-15], filter: :all, subfilter: nil, view_mode: :inbox}}
 
     assert Navigation.transaction_show_path("tx-123", return_target) ==
              "/transakcje/tx-123?powrot_do=%2Ffakturowanie%3Fmiesiac%3D2026-01-01%26filtr%3Dwszystkie"
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.NavigationTest do
     assert Navigation.transaction_show_path("tx-123", "") == "/transakcje/tx-123"
   end
 
-  test "default_invoicing_path/1 returns the dashboard view for the month" do
+  test "default_invoicing_path/1 returns the month without a list" do
     assert Navigation.default_invoicing_path(~D[2026-01-15]) ==
              "/fakturowanie?miesiac=2026-01-01&filtr=wszystkie"
   end

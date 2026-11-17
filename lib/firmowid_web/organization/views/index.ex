@@ -15,7 +15,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Inputs
   import FirmowidUI.Components.Link
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
   import FirmowidWeb.Organization.Components.OnboardingStep
@@ -32,7 +31,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
-  alias Phoenix.LiveView.Socket
 
   @impl true
   def render(assigns) do
@@ -564,15 +562,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   @impl true
   def mount(_params, session, socket) do
-    # Without the flag the user keeps the organization form from before the wizard.
-    if flag_enabled?(:inbox, socket.assigns) do
-      mount_wizard(assign(socket, :connecting_client, PendingAuthorization.client(session)))
-    else
-      {:ok, push_navigate(socket, to: OrganizationNavigation.legacy_form_path())}
-    end
-  end
-
-  defp mount_wizard(socket) do
+    socket = assign(socket, :connecting_client, PendingAuthorization.client(session))
     user = socket.assigns.current_user
     # A user adding another company is prefilled with the name they use in the current one.
     name = if user.member, do: user.member.name, else: ""
@@ -1000,9 +990,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
     end
   end
 
-  @doc "Joins the company of an invite code; the organization form from before the wizard shares it."
-  @spec join(String.t(), String.t(), Socket.t()) :: {:noreply, Socket.t()}
-  def join(invite_code, name, socket) do
+  defp join(invite_code, name, socket) do
     user = socket.assigns.current_user
     Logger.metadata(user_id: user.id)
 

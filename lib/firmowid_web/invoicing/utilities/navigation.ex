@@ -171,7 +171,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
       month: Date.beginning_of_month(date),
       filter: :all,
       subfilter: nil,
-      view_mode: :dashboard
+      view_mode: :inbox
     }
   end
 
@@ -438,7 +438,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
     end
   end
 
-  defp parse_view_mode(_params), do: {:ok, :dashboard}
+  defp parse_view_mode(_params), do: {:ok, :inbox}
 
   defp append_return_to(path, return_to) when is_binary(return_to) and return_to != "" do
     path <> "?" <> URI.encode_query(%{powrot_do: return_to})

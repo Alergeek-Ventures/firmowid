@@ -1,4 +1,4 @@
-<%= if inbox_sidebar?(assigns) do %>
+<%= if app_navigation?(assigns) do %>
   <FirmowidWeb.Inbox.Components.Sidebar.sidebar
     current_user={@current_user}
     current_org={@current_org}
@@ -16,226 +16,9 @@
     current_uri={@current_uri}
   />
 <% end %>
-<%= if app_navigation?(assigns) and not inbox_sidebar?(assigns) do %>
-  <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
-  <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-    <div class={[
-      "w-full bg-grey-100",
-      cond do
-        String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
-            not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
-          "h-10.5 max-md:h-navbar-management"
-
-        true ->
-          "h-navbar-management"
-      end
-    ]} />
-  <% end %>
-  <.navbar class={[
-    if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
-    "group inset-x-0 top-0 z-50"
-  ]}>
-    <div
-      class={
-        [
-          cond do
-            String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
-                not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
-              "h-0 overflow-hidden py-0 opacity-0 group-hover:h-navbar group-hover:py-4 group-hover:opacity-100"
-
-            true ->
-              "flex h-navbar py-4 opacity-100"
-          end,
-          "flex text-white",
-          "items-center justify-between",
-          "text-sm transition-all duration-150",
-          # phones have no hover to re-expand a collapsed row, so the menu row always stays visible
-          "max-md:h-navbar! max-md:overflow-visible max-md:py-4! max-md:opacity-100"
-        ]
-      }
-      id="navbar-main"
-      phx-hook="CollapsibleNavbar"
-      data-classes={
-        String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-          "!h-0 !py-0 overflow-hidden"
-      }
-    >
-      <.navbar_logo navigate={~p"/"} class="mt-0.5 flex-1" />
-      <div class={[
-        String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-          "border-b px-4 py-4.5",
-        "flex items-center gap-16 border-grey-700 uppercase max-md:hidden"
-      ]}>
-        <.main_navigation_links
-          current_user={@current_user}
-          current_org={assigns[:current_org]}
-          current_uri={@current_uri}
-          analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
-        />
-      </div>
-
-      <div class="relative flex flex-1 items-center justify-end gap-3 text-right">
-        <FirmowidUI.Components.Button.button
-          type="button"
-          phx-click={show_modal("feedback-modal")}
-          variant="unstyled"
-          class="inline-flex items-center justify-center text-white transition-colors hover:text-white/80 active:text-white/70 max-md:hidden"
-        >
-          <span class="flex items-center gap-1.5">
-            <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
-          </span>
-        </FirmowidUI.Components.Button.button>
-        <div class="relative">
-          <.button
-            type="button"
-            phx-click={
-              JS.toggle(
-                to: "#dropdown_content",
-                in:
-                  {"transition-all transform ease-in", "opacity-0 scale-95",
-                   "opacity-100 duration-50 scale-100"},
-                out:
-                  {"transition-all transform ease-in duration-50",
-                   "opacity-100 translate-y-0 sm:scale-100",
-                   "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
-                display: "flex"
-              )
-            }
-            id="dropdown_button"
-            phx-click-away={hide("#dropdown_content")}
-            phx-window-keydown={hide("#dropdown_content")}
-            phx-key="Escape"
-            variant="unstyled"
-            class="overflow-hidden rounded-full text-white transition hover:bg-white hover:text-black active:bg-white/80"
-            style="border-radius: 9999px"
-            title={@current_user.email}
-          >
-            <span class="flex items-center p-1 md:hidden">
-              <.icon name="hero-bars-3" class="size-6" />
-              <span class="sr-only">{pgettext("main navigation", "Navigation menu")}</span>
-            </span>
-            <span class="flex items-center p-1 px-2 max-md:hidden">
-              <%= if @current_user.member && @current_user.member.avatar_blob do %>
-                <.avatar class="size-9 rounded-full border-2 border-white/20">
-                  <.avatar_image
-                    blob={@current_user.member.avatar_blob}
-                    sizes="36px"
-                    alt={@current_user.email}
-                  />
-                  <.avatar_fallback bg_color="grey-700" class="text-white">
-                    <.icon name="hero-user" class="size-5" />
-                  </.avatar_fallback>
-                </.avatar>
-              <% else %>
-                <.icon name="hero-user" class="size-5" />
-              <% end %>
-            </span>
-          </.button>
-          <div
-            id="dropdown_content"
-            style="display: none"
-            class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold [--focus-ring:var(--color-white)] max-lg:w-auto max-md:fixed max-md:inset-x-0 max-md:top-navbar max-md:max-h-[calc(100dvh-var(--spacing-navbar))] max-md:overflow-y-auto max-md:rounded-none max-md:px-4 max-md:pt-1 max-md:pb-4"
-          >
-            <div class="flex flex-col gap-2 border-b border-grey-700/50 pb-2 md:hidden">
-              <.main_navigation_links
-                current_user={@current_user}
-                current_org={assigns[:current_org]}
-                current_uri={@current_uri}
-                analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
-                variant={:menu}
-              />
-              <FirmowidUI.Components.Button.button
-                type="button"
-                phx-click={hide("#dropdown_content") |> show_modal("feedback-modal")}
-                variant="unstyled"
-                class="flex w-full cursor-pointer items-center gap-2 rounded-md p-2 text-white uppercase hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
-              >
-                <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
-              </FirmowidUI.Components.Button.button>
-            </div>
-            <.account_menu
-              current_user={@current_user}
-              current_org={@current_org}
-              organizations={@organizations}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-    <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="grid h-10.5 w-full grid-cols-3 items-center gap-4 text-white/50 max-md:flex">
-        <.navbar_logo
-          navigate={~p"/"}
-          class="invisible mt-0.5 mr-auto opacity-0 transition-opacity max-md:hidden"
-          id="firmowid-logo-management"
-          phx-hook="CollapsibleNavbar"
-          data-classes="opacity-100"
-        />
-        <div class="flex justify-center gap-14 text-sm uppercase max-md:grid max-md:flex-1 max-md:grid-cols-3 max-md:gap-0 max-md:text-center">
-          <.link
-            kind="unstyled"
-            navigate={~p"/zarzadzanie/pracownicy"}
-            class={[
-              "transition-colors hover:text-white",
-              String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy") &&
-                "text-white/90"
-            ]}
-          >
-            {pgettext("management navigation", "Employees")}
-          </.link>
-          <.link
-            :if={time_tracking_enabled?(assigns[:current_org])}
-            kind="unstyled"
-            navigate={~p"/zarzadzanie/projekty"}
-            class={[
-              "transition-colors hover:text-white",
-              String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"
-            ]}
-          >
-            {pgettext("management navigation", "Projects")}
-          </.link>
-          <.link
-            kind="unstyled"
-            navigate={~p"/zarzadzanie/kontrahenci"}
-            class={[
-              "transition-colors hover:text-white",
-              String.starts_with?(@current_uri.path, "/zarzadzanie/kontrahenci") &&
-                "text-white/90"
-            ]}
-          >
-            {pgettext("management navigation", "Counterparties")}
-          </.link>
-        </div>
-        <.button
-          type="button"
-          variant="unstyled"
-          class="relative ml-auto inline-flex size-6 cursor-pointer items-center justify-center text-white opacity-0 transition-opacity max-md:hidden"
-          id="navbar-burger-button"
-          phx-hook="CollapsibleNavbar"
-          data-classes="opacity-100"
-          data-is-override-button="true"
-          aria-label={pgettext("main navigation", "Navigation menu")}
-        >
-          <span class="burger-icon">
-            <.icon name="hero-bars-3" />
-          </span>
-          <span class="x-icon absolute inset-0 hidden">
-            <.icon name="hero-x-mark" />
-          </span>
-        </.button>
-      </div>
-    <% end %>
-  </.navbar>
-  <.live_component
-    module={FirmowidWeb.Feedback.Components.Form}
-    id="feedback-form"
-    current_user={@current_user}
-    current_uri={@current_uri}
-  />
-<% end %>
 
 <main
-  data-layout={inbox_sidebar?(assigns) && "sidebar"}
+  data-layout={app_navigation?(assigns) && "sidebar"}
   class={
     [
       is_nil(assigns[:no_padding]) &&
@@ -245,8 +28,8 @@
       "max-md:has-data-page-actions:pb-28",
       # the sidebar replaces the navbar on desktop, so sticky headers stick to the top;
       # the margin follows the sidebar's width as it collapses
-      inbox_sidebar?(assigns) &&
-        "md:ms-64 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar-collapsed:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start] motion-safe:md:duration-250",
+      app_navigation?(assigns) &&
+        "md:ms-64 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start] motion-safe:md:duration-250",
       assigns[:main_class]
     ]
   }
@@ -282,10 +65,7 @@
     container: {:div, []},
     session: %{
       "organization_id" => @current_user.member.organization_id,
-      "page_path" =>
-        if(flag_enabled?(:inbox, assigns),
-          do: FirmowidWeb.Assistant.Utilities.Navigation.page_path()
-        )
+      "page_path" => FirmowidWeb.Assistant.Utilities.Navigation.page_path()
     }
   )}
 <% end %>

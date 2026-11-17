@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   @moduledoc """
   Buyers of issued invoices without a counterparty, each with a proposal to
   link an existing counterparty or create one prefilled from the invoices and
-  the VAT white list. Part of the new interface behind the `inbox` flag.
+  the VAT white list.
   """
   use FirmowidWeb, :live_view
 
@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.Badge
   import FirmowidWeb.DesignSystem.Components.IconButton
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Invalid
@@ -25,16 +24,12 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
 
   @impl true
   def mount(_params, _session, socket) do
-    if flag_enabled?(:inbox, socket.assigns) do
-      {:ok,
-       socket
-       |> assign(:page_title, gettext("Counterparties to review"))
-       |> assign(:create_instead, MapSet.new())
-       |> assign(:edits, %{})
-       |> load_groups()}
-    else
-      {:ok, push_navigate(socket, to: Navigation.counterparties_path(:index))}
-    end
+    {:ok,
+     socket
+     |> assign(:page_title, gettext("Counterparties to review"))
+     |> assign(:create_instead, MapSet.new())
+     |> assign(:edits, %{})
+     |> load_groups()}
   end
 
   @impl true
@@ -247,7 +242,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
       <%!-- Same header geometry as the counterparty list, so switching tabs does not jump. --%>
-      <div class="sticky top-navbar-collapsed z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
+      <div class="sticky top-0 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
         <%!-- The button overlaps the row's margins, so the tabs sit where the list has them. --%>
         <div class="flex h-8 items-center justify-between gap-4">
           <.filter_tabs label={gettext("Counterparty scope")}>

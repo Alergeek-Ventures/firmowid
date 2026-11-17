@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy do
         # Presigned storage URLs (invoice previews, logos) and bank logos from GoCardless.
         "img-src 'self' data: blob: #{storage} #{@bank_logos}",
         "connect-src 'self' #{storage}#{dev_sources(:connect)}",
-        # PDF.js runs its worker from /assets; Sentry Replay and canvas-confetti start blob: workers.
+        # PDF.js runs its worker from /assets; Sentry Replay starts blob: workers.
         "worker-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",

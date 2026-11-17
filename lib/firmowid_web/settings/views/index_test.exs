@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     conn = log_in_user(conn, admin)
 
-    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konta-bankowe")
 
     assert iban_position(html, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html, "PL44 1140 2004 0000 3002 0135 5362")
@@ -46,7 +46,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _updated} =
              Finances.update_bank_account(account_1, %{name: "ZZZ renamed"}, scope: scope)
 
-    assert {:ok, _view, html_after_rename} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, _view, html_after_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
 
     assert iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5362")
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _updated} =
              Finances.update_bank_account(account_3, %{name: "AAA renamed"}, scope: scope)
 
-    assert {:ok, _view, html_after_second_rename} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, _view, html_after_second_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
 
     assert iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5362")
@@ -80,32 +80,11 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     conn = log_in_user(conn, admin)
 
-    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konta-bankowe")
 
     assert html =~ "Trwa konfiguracja połączenia bankowego."
     assert html =~ "Konto pojawi się na liście"
     assert html =~ "po zakończeniu autoryzacji"
-  end
-
-  test "admin changes an employee's role and the employee gains its permissions", %{conn: conn} do
-    admin = admin_fixture()
-    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
-    employee_conn = log_in_user(build_conn(), employee)
-
-    assert {:error, {:redirect, _redirect}} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
-
-    {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/ustawienia/firma")
-
-    view
-    |> element("button[phx-click='open_update_role_modal'][phx-value-user_id='#{employee.id}']")
-    |> render_click()
-
-    view
-    |> form("#update_role_form", %{"user_id" => employee.id, "role" => "admin"})
-    |> render_submit()
-
-    assert render(view) =~ "Rola użytkownika została zmieniona."
-    assert {:ok, _view, _html} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
   end
 
   test "an employee saves their contact details on their organization member", %{conn: conn} do
@@ -173,12 +152,10 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     {:ok, lv, _html} = live(log_in_user(conn, employee), ~p"/ustawienia/konto")
     render_click(lv, "toggle_editing_account_name")
 
-    html =
-      render_submit(lv, "save", %{
-        "user" => %{"first_name" => "Grace", "last_name" => "Hopper", "birthday" => ""}
-      })
+    render_submit(lv, "save", %{
+      "user" => %{"first_name" => "Grace", "last_name" => "Hopper", "birthday" => ""}
+    })
 
-    assert html =~ "Cześć, <span class=\"font-bold\">Grace Hopper</span>!"
     assert Core.load_member(employee).member.name == "Grace Hopper"
     assert Core.load_member(admin).member.name != "Grace Hopper"
   end
@@ -255,7 +232,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     conn = log_in_user(conn, admin)
 
-    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/ksef")
     assert has_element?(view, "section", "Trwa odnawianie certyfikatu KSeF")
   end
 
@@ -265,7 +242,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)
 
-    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/firma")
+    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/ksef")
     view |> element("#ksef-auth-tab-certificate") |> render_click()
 
     upload =

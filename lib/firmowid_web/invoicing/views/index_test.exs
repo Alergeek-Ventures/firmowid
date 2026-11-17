@@ -16,12 +16,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Finances
-  alias Firmowid.Finances.BankAccount
   alias Firmowid.Finances.Requisition
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
-  alias Firmowid.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Scope
   alias Firmowid.SystemActor
@@ -34,16 +32,15 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     conn = log_in_user(conn, user)
     invoice = corrected_cost_invoice_fixture!(user)
 
-    {:ok, dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
-    render_async(dashboard)
+    unpaid_path =
+      ~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury&podfiltr=nieoplacone&widok=lista"
 
-    assert has_element?(
-             dashboard,
-             "a[href='/kosztowe/#{invoice.id}']",
-             invoice.invoice_identifier
-           )
+    {:ok, unpaid, _html} = live(conn, unpaid_path)
+    render_async(unpaid)
 
-    refute has_element?(dashboard, "a", "KOR-PAYMENT-METHOD")
+    # The correction has no row of its own.
+    assert has_element?(unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
+    refute has_element?(unpaid, "#invoicing-entries tr[id$='-row']:not([id='#{invoice.id}-row'])")
 
     first_payment =
       transaction_fixture!(user, invoice.seller, invoice.issue_date, "FIRST-INSTALLMENT")
@@ -58,9 +55,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert MapSet.new(paid.transactions, & &1.id) ==
              MapSet.new([first_payment.id, second_payment.id])
 
-    {:ok, paid_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
-    render_async(paid_dashboard)
-    assert has_element?(paid_dashboard, "p", "Brak nieopłaconych faktur.")
+    {:ok, paid_unpaid, _html} = live(conn, unpaid_path)
+    render_async(paid_unpaid)
+    refute has_element?(paid_unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
 
     {:ok, details, _html} = live(conn, ~p"/kosztowe/#{invoice.id}")
     details |> element("#invoice-show button[phx-click='disconnect']") |> render_click()
@@ -69,15 +66,15 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
     assert Invoicing.get_cost_invoice!(invoice.id, scope: scope).skip_invoicing
 
-    {:ok, skipped_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
-    render_async(skipped_dashboard)
-    assert has_element?(skipped_dashboard, "p", "Brak nieopłaconych faktur.")
+    {:ok, skipped_unpaid, _html} = live(conn, unpaid_path)
+    render_async(skipped_unpaid)
+    refute has_element?(skipped_unpaid, "#invoicing-entries tr[id='#{invoice.id}-row']")
   end
 
   test "opens when the month param is not a single value", %{conn: conn} do
     conn = log_in_user(conn, admin_fixture())
 
-    assert {:ok, _dashboard, _html} = live(conn, "/fakturowanie?miesiac[]=2026-01-01")
+    assert {:ok, _view, _html} = live(conn, "/fakturowanie?miesiac[]=2026-01-01&widok=lista")
   end
 
   test "keeps the list open when a file unrelated to cost invoices is added and removed", %{
@@ -85,7 +82,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   } do
     user = admin_fixture()
     scope = scope_for(user)
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+
+    {:ok, view, _html} =
+      conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
     render_async(view)
 
     {:ok, path} = Briefly.create()
@@ -94,16 +94,6 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     :ok = Ash.destroy(blob, scope: scope)
 
     assert has_element?(view, "#upload-form")
-  end
-
-  test "without the inbox, a member without KSeF sees on the dashboard that invoices need it", %{
-    conn: conn
-  } do
-    {:ok, view, _html} = conn |> log_in_user(admin_fixture()) |> live(~p"/fakturowanie")
-    render_async(view)
-
-    assert has_element?(view, "#connect-ksef", "nie wystawisz faktur sprzedażowych")
-    assert has_element?(view, ~s(#connect-ksef a[href="/ustawienia/ksef"]))
   end
 
   describe "invoicing access" do
@@ -150,225 +140,6 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   end
 
   describe "requisition status PubSub notifications" do
-    test "shows an expired bank in suggestions and never exposes another organization's account",
-         %{conn: conn} do
-      user = admin_fixture()
-      other_user = admin_fixture()
-
-      requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.member.organization_id)
-
-      account =
-        bank_account_fixture!(user, %{
-          requisition_id: requisition.id,
-          gocardless_id: "synthetic-bank-account",
-          institution_id: "ING_PL_INGBPLPW",
-          institution_name: "Synthetic Bank"
-        })
-
-      other_requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired},
-          tenant: other_user.member.organization_id
-        )
-
-      other_account =
-        bank_account_fixture!(other_user, %{
-          requisition_id: other_requisition.id,
-          gocardless_id: "synthetic-other-account"
-        })
-
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-      render_async(view)
-      assert has_element?(view, "#dashboard-attention h2", "Warte uwagi")
-      refute has_element?(view, "#dashboard-attention .bg-brick-200")
-
-      assert has_element?(
-               view,
-               "#bank-connection-alert-#{account.id}",
-               "Transakcje nie są aktualizowane."
-             )
-
-      assert {:ok, _} =
-               BankAccount.sync_from_gocardless(account, ash_oban_opts(user))
-
-      refute has_element?(view, "#bank-connection-alert-#{account.id}")
-
-      assert {:ok, _} =
-               Requisition.expire(requisition, bank_sync_opts(user))
-
-      assert has_element?(
-               view,
-               "#bank-connection-alert-#{account.id}",
-               "Połączenie z Synthetic Bank wygasło"
-             )
-
-      assert has_element?(view, "#dashboard-attention .bg-brick-200")
-
-      assert has_element?(
-               view,
-               "#dashboard-attention #bank-connection-alert-#{account.id} [data-bank='ING']"
-             )
-
-      assert has_element?(
-               view,
-               "#dashboard-attention a[href='/ustawienia/firma#konto-bankowe-#{account.id}']",
-               "Połączenie z Synthetic Bank wygasło"
-             )
-
-      refute has_element?(view, "#bank-connection-alert-#{other_account.id}")
-
-      assert {:ok, _} =
-               BankAccount.mark_sync_failed(account, ash_oban_opts(user))
-
-      renewed =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.member.organization_id)
-
-      assert {:ok, reconnected} =
-               account
-               |> Map.take([:iban, :currency, :name, :institution_name])
-               |> Map.merge(%{
-                 gocardless_id: "synthetic-renewed-account",
-                 requisition_id: renewed.id
-               })
-               |> Finances.sync_bank_account(bank_sync_opts(user))
-
-      assert reconnected.id == account.id
-
-      {:ok, renewed_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-      render_async(renewed_view)
-      assert has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
-
-      refute has_element?(
-               renewed_view,
-               "#bank-connection-alert-#{account.id}",
-               "Połączenie z Synthetic Bank wygasło"
-             )
-
-      assert {:ok, _} =
-               BankAccount.sync_from_gocardless(reconnected, ash_oban_opts(user))
-
-      refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
-      refute has_element?(renewed_view, "#dashboard-attention .bg-brick-200")
-    end
-
-    test "shows one concise warning per bank using the earliest known synchronization gap", %{
-      conn: conn,
-      user: user
-    } do
-      requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired}, tenant: user.member.organization_id)
-
-      for {currency, synced_at} <- [
-            {"PLN", ~U[2026-01-12 10:00:00Z]},
-            {"EUR", ~U[2026-01-15 10:00:00Z]}
-          ] do
-        account =
-          bank_account_fixture!(user, %{
-            requisition_id: requisition.id,
-            gocardless_id: "synthetic-grouped-#{currency}",
-            institution_id: "ING_PL_INGBPLPW",
-            institution_name: "Synthetic Bank",
-            currency: currency
-          })
-
-        Ash.Seed.seed!(
-          Firmowid.Events.Event,
-          %{
-            organization_id: user.member.organization_id,
-            record_id: account.id,
-            resource: BankAccount,
-            action: :sync_from_gocardless,
-            action_type: :update,
-            occurred_at: synced_at,
-            metadata: %{},
-            data: %{},
-            changed_attributes: %{},
-            version: 1
-          },
-          tenant: user.member.organization_id
-        )
-      end
-
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-      render_async(view)
-      warning = view |> element("#dashboard-attention [id^='bank-connection-alert-']") |> render()
-      assert warning =~ "Połączenie z Synthetic Bank wygasło"
-      assert warning =~ "Od 12.01.2026 transakcje nie są synchronizowane"
-    end
-
-    test "keeps skipped KSeF invoices inside the attention column and scoped to the organization",
-         %{conn: conn, user: user} do
-      other_user = admin_fixture()
-
-      attributes = %{
-        issue_date: ~D[2026-10-01],
-        buyer_name: "Synthetic buyer",
-        gross_total: Decimal.new("123.00"),
-        currency: "PLN",
-        reason: "synthetic unsupported invoice",
-        ksef_permanent_storage_date: ~N[2026-10-01 10:00:00]
-      }
-
-      for {owner, suffix} <- [{user, "own"}, {user, "second"}, {other_user, "other"}] do
-        Ash.Seed.seed!(
-          SkippedKsefSalesInvoice,
-          Map.merge(attributes, %{
-            ksef_number: "synthetic-skipped-#{suffix}",
-            invoice_number: "SYNTHETIC-#{suffix}"
-          }),
-          tenant: owner.member.organization_id
-        )
-      end
-
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-      render_async(view)
-
-      assert has_element?(
-               view,
-               "#dashboard-attention #skipped-ksef-sales-invoices li",
-               "SYNTHETIC-own"
-             )
-
-      refute has_element?(view, "#skipped-ksef-sales-invoices li", "SYNTHETIC-other")
-      assert has_element?(view, "#skipped-ksef-sales-invoices li", "SYNTHETIC-second")
-
-      Ash.Seed.seed!(
-        SkippedKsefSalesInvoice,
-        Map.merge(attributes, %{
-          ksef_number: "synthetic-skipped-third",
-          invoice_number: "SYNTHETIC-third"
-        }),
-        tenant: user.member.organization_id
-      )
-
-      {:ok, summary_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-      render_async(summary_view)
-
-      assert has_element?(
-               summary_view,
-               "#skipped-ksef-sales-invoices p",
-               "Nie udało się zsynchronizować 3 faktur."
-             )
-
-      refute has_element?(summary_view, "#skipped-ksef-sales-invoices li")
-
-      assert has_element?(
-               summary_view,
-               "#skipped-ksef-sales-invoices p",
-               "Wykryliśmy problem z importem."
-             )
-
-      {:ok, list_view, _html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/fakturowanie?filtr=nieprzypisane&widok=lista")
-
-      render_async(list_view)
-
-      refute has_element?(list_view, "#dashboard-attention")
-      refute has_element?(list_view, "#skipped-ksef-sales-invoices")
-    end
-
     setup do
       user = admin_fixture()
 
@@ -414,7 +185,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, requisition} = create_requisition(user, requisition_id)
 
       # Mount the LiveView (subscribes to PubSub topics)
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      {:ok, view, _html} =
+        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
       render_async(view)
 
       # Accept the requisition - triggers Ash.Notifier.PubSub broadcast
@@ -432,7 +205,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       Process.sleep(50)
 
       # Verify LiveView is still alive and responsive
-      assert render(view) =~ "Fakturowanie"
+      assert has_element?(view, "#sales-invoice-link")
     end
 
     test "handles reject notification without crashing", %{conn: conn, user: user} do
@@ -441,7 +214,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, requisition} = create_requisition(user, requisition_id)
 
       # Mount the LiveView
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      {:ok, view, _html} =
+        conn |> log_in_user(user) |> live(~p"/fakturowanie?filtr=faktury&widok=lista")
+
       render_async(view)
 
       # Reject the requisition - triggers Ash.Notifier.PubSub broadcast
@@ -454,7 +229,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       Process.sleep(50)
 
       # Verify LiveView is still alive and responsive
-      assert render(view) =~ "Fakturowanie"
+      assert has_element?(view, "#sales-invoice-link")
     end
   end
 
@@ -805,11 +580,6 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       assert length(invoices) == 1
     end
-  end
-
-  # The options AshOban runs trigger actions with.
-  defp ash_oban_opts(user) do
-    [actor: user, tenant: user.member.organization_id, context: %{private: %{ash_oban?: true}}]
   end
 
   # Requisition transitions and synced accounts run as the bank sync system actor.

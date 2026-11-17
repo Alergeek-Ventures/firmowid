@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireUser do
 
   Used during onboarding, where the user creates or joins an organization, also
   next to the ones they already belong to. Loads the member selected in the
-  session (`nil` for a user without one) and, with one, what the navbar shows
-  (see `RequireOrganization`).
+  session (`nil` for a user without one) and, with one, its organization, the
+  organizations to switch between and the Ash scope (see `RequireOrganization`).
   """
 
   use FirmowidWeb, :verified_routes

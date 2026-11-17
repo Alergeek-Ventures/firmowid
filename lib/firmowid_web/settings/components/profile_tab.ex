@@ -8,9 +8,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidUI.Components.UploadErrors
-  import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.CoreComponents
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   import FirmowidWeb.Settings.Components.Helpers,
     only: [settings_section: 1, detail_row: 1, row_input: 1, present: 1]
@@ -21,7 +19,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
-  alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias Phoenix.LiveView.Rendered
 
   @doc """
@@ -36,34 +33,17 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
   attr :editing_profile_contact, :boolean, required: true
-  attr :leave_requests, :list, required: true
-  attr :leave_request_form, :map, required: true
-  attr :leave_request_upload, :map, required: true
-  attr :leave_search, :string, required: true
-  attr :leave_days, :integer, required: true
-  attr :projects, :list, required: true
-  attr :projects_total, :integer, required: true
-  attr :projects_date, :any, required: true
   attr :pending_contract, :map, default: nil
   attr :current_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
-  attr :delegations, :list, required: true
-  attr :feature_flags, :map, required: true
 
   attr :document_upload, :map,
     default: nil,
     doc: "Contract document upload, only allowed for admins viewing their own profile."
 
-  attr :standalone, :boolean, default: false
-
   def profile_tab(assigns) do
     ~H"""
-    <div class={[
-      if(@standalone,
-        do: "flex flex-col gap-8",
-        else: "grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-16"
-      )
-    ]}>
+    <div class="flex flex-col gap-8">
       <div class="space-y-14">
         <.employment_section
           current_user={@current_user}
@@ -86,63 +66,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           editing_profile_contact={@editing_profile_contact}
         />
       </div>
-
-      <.projects_section
-        :if={!@standalone}
-        projects={@projects}
-        total_duration={@projects_total}
-        date={@projects_date}
-      />
-
-      <%!-- Behind the `inbox` flag documents and absences have pages of their own. --%>
-      <div
-        :if={!@standalone}
-        class="grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2"
-      >
-        <.live_component
-          module={FirmowidWeb.Documents.Components.DocumentsSection}
-          id="profile-documents"
-          user={@current_user}
-          scope={@ash_scope}
-          feature_flags={@feature_flags}
-          variant={:profile}
-          current_contract_id={@current_contract && @current_contract.id}
-        />
-        <.leave_section
-          leave_requests={@leave_requests}
-          leave_request_form={@leave_request_form}
-          leave_request_upload={@leave_request_upload}
-          leave_search={@leave_search}
-          leave_days={@leave_days}
-        />
-      </div>
-      <.delegations_section
-        :if={!@standalone and flag_enabled?(:delegations, assigns)}
-        delegations={@delegations}
-      />
     </div>
     """
   end
 
-  attr :delegations, :list, required: true
-
-  defp delegations_section(assigns) do
-    ~H"""
-    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
-      <div class="flex items-start justify-between gap-3">
-        <h2 class="text-base leading-none font-medium text-grey-900">
-          {gettext("Business trips")}
-        </h2>
-        <.plan_business_trip_link />
-      </div>
-      <.delegations_list delegations={@delegations} />
-    </section>
-    """
-  end
-
   @doc """
-  Opens the form for a new business trip. Behind the `inbox` flag the trips have
-  their own page, which shows it next to the page title.
+  Opens the form for a new business trip, next to the title of the business trips page.
   """
   @spec plan_business_trip_link(map()) :: Rendered.t()
   def plan_business_trip_link(assigns) do
@@ -618,13 +547,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :leave_search, :string, required: true
   attr :leave_days, :integer, required: true
 
-  attr :standalone, :boolean,
-    default: false,
-    doc: "On its own page the page title names it, so it drops its heading, card and fixed height."
-
   @doc """
-  The member's absence requests with a way to submit one. Behind the `inbox` flag it
-  is a page of its own with the requests in a table; without it, a card of the profile.
+  The member's absence requests in a table, with a way to submit one.
   """
   @spec leave_section(map()) :: Rendered.t()
   def leave_section(assigns) do
@@ -636,22 +560,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       )
 
     ~H"""
-    <section class={[
-      "flex flex-col gap-6",
-      !@standalone && "size-full rounded-lg bg-white p-6 shadow"
-    ]}>
-      <div class={[
-        if(@standalone,
-          do: "flex flex-wrap items-end justify-between gap-x-3 gap-y-4",
-          else: "flex items-start justify-between gap-3"
-        )
-      ]}>
-        <h2 :if={!@standalone} class="text-base leading-none font-medium text-grey-900">
-          {gettext("Absences")}
-        </h2>
-        <.leave_days_used :if={@standalone} leave_days={@leave_days} />
-        <%!-- On its own page on a phone the actions fill the row: the request button takes what the search leaves. --%>
-        <div class={["flex items-center gap-3", @standalone && "max-md:w-full"]}>
+    <section class="flex flex-col gap-6">
+      <div class="flex flex-wrap items-end justify-between gap-x-3 gap-y-4">
+        <.leave_days_used leave_days={@leave_days} />
+        <%!-- On a phone the actions fill the row: the request button takes what the search leaves. --%>
+        <div class="flex items-center gap-3 max-md:w-full">
           <form class="flex gap-4" phx-submit="search_leave_requests">
             <div
               id="profile-leave-search-container"
@@ -672,10 +585,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 type="button"
                 size="small"
                 variant="outline"
-                class={[
-                  "py-2 group-data-[expanded=true]:rounded-r-lg",
-                  @standalone && "max-md:size-10"
-                ]}
+                class="py-2 group-data-[expanded=true]:rounded-r-lg max-md:size-10"
                 phx-click={
                   JS.toggle_attribute({"data-expanded", "true", "false"},
                     to: "#profile-leave-search-container"
@@ -692,53 +602,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             variant="tertiary"
             size="small"
             phx-click={show_modal("leave-request-modal")}
-            class={["py-1.75", @standalone && "max-md:h-10 max-md:flex-1 max-md:text-base"]}
+            class="py-1.75 max-md:h-10 max-md:flex-1 max-md:text-base"
           >
             <.icon name="hero-paper-airplane" class="size-4" /> {gettext("Submit a request")}
           </.button>
         </div>
       </div>
-      <%= if @standalone do %>
-        <.leave_requests_table requests={@filtered_leave_requests} />
-      <% else %>
-        <div class="flex items-center gap-3">
-          <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
-            {pgettext("leave days", "Used this year:")}
-            <span class="pl-1 font-medium text-grey-700">
-              {ngettext("%{count} day", "%{count} days", @leave_days)}
-            </span>
-          </div>
-        </div>
-        <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
-          <ul class="divide-y divide-grey-100">
-            <li
-              :for={request <- @filtered_leave_requests}
-              class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-            >
-              <span class="flex size-6.5 items-center justify-center rounded bg-grey-100 text-grey-700">
-                <.reason_icon reason={request.reason} />
-              </span>
-              <span class="min-w-0 flex-1 truncate">
-                {LeavePresentation.reason_label(request.reason, :short)}
-              </span>
-              <span class="shrink-0 tabular-nums">
-                {LeavePresentation.format_range(request.starts_on, request.ends_on)}
-              </span>
-              <span class={leave_status_badge_styles(request.status)}>
-                {LeavePresentation.status_label(request.status)}
-              </span>
-            </li>
-          </ul>
-          <div
-            :if={Enum.empty?(@filtered_leave_requests)}
-            class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
-          >
-            <p>
-              {gettext("No absence requests.")}
-            </p>
-          </div>
-        </div>
-      <% end %>
+      <.leave_requests_table requests={@filtered_leave_requests} />
 
       <.modal id="leave-request-modal" class="max-w-xl">
         <h2 class="mb-8 text-xl font-medium">
@@ -861,65 +731,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       </.modal>
     </section>
     """
-  end
-
-  attr :projects, :list, required: true
-  attr :total_duration, :integer, required: true
-  attr :date, :integer, required: true
-
-  defp projects_section(assigns) do
-    ~H"""
-    <div class="flex flex-col items-end gap-4">
-      <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 class="text-base leading-none font-medium text-grey-900">
-              {gettext("Your projects")}
-            </h2>
-            <span class="text-sm text-grey-500">
-              {TimeFormatter.format_date(@date, "LLLL y")}
-            </span>
-          </div>
-          <span class="shrink-0 text-grey-700 tabular-nums">
-            {format_project_duration(@total_duration)}
-          </span>
-        </div>
-
-        <ul :if={@projects != []} class="space-y-3">
-          <li :for={project <- @projects} class="flex items-center justify-between gap-3">
-            <span class="rounded-full bg-teal-200 px-3 py-1 text-sm/snug font-medium text-teal-700">
-              {project.name}
-            </span>
-            <span class="shrink-0 text-sm text-grey-500 tabular-nums">
-              {format_project_duration(project.duration)}
-            </span>
-          </li>
-        </ul>
-
-        <p :if={@projects == []} class="text-sm text-grey-500">
-          {gettext("No time worked this month.")}
-        </p>
-      </section>
-      <.link
-        kind="unstyled"
-        navigate={Navigation.hours_record_index_path(@date)}
-        class="inline-flex items-center gap-1 text-sm font-medium text-grey-700 hover:text-grey-900"
-      >
-        {pgettext("profile tab link", "View timesheet")}
-        <.icon name="hero-chevron-right-mini" class="size-4" />
-      </.link>
-    </div>
-    """
-  end
-
-  defp format_project_duration(seconds) when seconds < 60 do
-    pgettext("compact duration", "%{hours}h %{minutes}min", hours: 0, minutes: 0)
-  end
-
-  defp format_project_duration(seconds) do
-    hours = div(seconds, 3600)
-    minutes = div(rem(seconds, 3600), 60)
-    pgettext("compact duration", "%{hours}h %{minutes}min", hours: hours, minutes: minutes)
   end
 
   attr :leave_days, :integer, required: true

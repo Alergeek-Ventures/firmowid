@@ -29,13 +29,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   attr :password_form, :map, required: true
   attr :current_password, :string, default: nil
 
-  attr :standalone, :boolean, default: false
-
   def account_tab(assigns) do
     ~H"""
-    <div class={[
-      if(@standalone, do: "flex w-full flex-col", else: "grid w-full grid-cols-1 lg:grid-cols-2")
-    ]}>
+    <div class="flex w-full flex-col">
       <div class="flex flex-col gap-14">
         <.name_section
           current_user={@current_user}
@@ -63,7 +59,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           owned_organizations={@owned_organizations}
         />
       </div>
-      <div :if={!@standalone}></div>
     </div>
     """
   end

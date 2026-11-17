@@ -259,7 +259,6 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri}
       ] do
       live "/organizacja", Organization.Views.Index, :index
-      live "/organizacja/formularz", Organization.Views.LegacyForm, :index
     end
   end
 
@@ -313,8 +312,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/sprzedazowe/:id/edytuj", Invoicing.SalesInvoices.Views.Edit, :edit
       live "/sprzedazowe/:id", Invoicing.SalesInvoices.Views.Show, :show
       live "/transakcje/:id", Invoicing.Transactions.Views.Show, :show
-
-      live "/zaproszenia", Organization.Invites.Views.Index, :index
 
       live "/analiza", Analysis.Views.Dashboard, :index
 

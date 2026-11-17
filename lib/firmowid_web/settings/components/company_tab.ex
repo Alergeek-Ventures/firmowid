@@ -10,11 +10,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.Management.Components.Roles
-
-  import FirmowidWeb.Settings.Components.Helpers,
-    only: [settings_section: 1, detail_row: 1, row_input: 1, present: 1, initial: 1]
-
+  import FirmowidWeb.Settings.Components.Helpers, only: [present: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
@@ -29,10 +25,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   Renders the company settings route.
   """
   @spec company_tab(map()) :: Rendered.t()
-  attr :current_user, :map, required: true
-  attr :current_org, :map, required: true
   attr :company_form, :map, required: true
-  attr :editing_basic_info, :boolean, required: true
   attr :ksef_credential, :any, required: true
   attr :ksef_auth_method, :atom, required: true
   attr :ksef_auth_status, :atom, required: true
@@ -40,52 +33,24 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
-  attr :organization_users, :list, required: true
-  attr :organization_invites, :list, required: true
-  attr :show_active_invites, :boolean, required: true
-  attr :selected_user, :any, default: nil
   attr :uploads, :map, required: true
   attr :ksef_fetching?, :boolean, required: true
+  attr :current_org, :map, required: true
+  attr :organization_users, :list, required: true
   attr :scope, :any, required: true
 
   attr :taxes?, :boolean,
     default: false,
     doc: "whether the `taxes` flag shows the taxes and ZUS card"
 
-  attr :section, :atom, default: :all
+  attr :section, :atom, required: true, values: [:organization, :ksef, :bank_accounts]
 
   def company_tab(assigns) do
     ~H"""
-    <div class={[
-      if(@section == :all,
-        do: "grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-14",
-        else: "flex flex-col gap-8"
-      )
-    ]}>
-      <div :if={@section == :all} class="space-y-14">
-        <.company_basic_info_section
-          current_org={@current_org}
-          company_form={@company_form}
-          editing_basic_info={@editing_basic_info}
-        />
-
-        <.settings_section title={gettext("KSeF integration")}>
-          <.ksef_connection
-            ksef_credential={@ksef_credential}
-            ksef_auth_method={@ksef_auth_method}
-            ksef_auth_status={@ksef_auth_status}
-            ksef_failure={@ksef_failure}
-            uploads={@uploads}
-            allow_fetch?
-            fetching?={@ksef_fetching?}
-          />
-        </.settings_section>
-      </div>
-
+    <div class="flex flex-col gap-8">
       <.company_details_form :if={@section == :organization} company_form={@company_form} />
 
-      <%!-- Without the inbox flag every settings card shares one page (`:all`). --%>
-      <div :if={@section in [:organization, :all] and @taxes?} class="lg:col-span-2">
+      <div :if={@section == :organization and @taxes?}>
         <.live_component
           module={TaxSection}
           id="tax-section"
@@ -109,208 +74,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </section>
 
       <.bank_accounts_section
-        :if={@section in [:all, :bank_accounts]}
-        standalone={@section == :bank_accounts}
+        :if={@section == :bank_accounts}
         bank_accounts={@bank_accounts}
         bank_institutions={@bank_institutions}
         pending_requisitions={@pending_requisitions}
-        class={[if(@section == :all, do: "col-span-2")]}
-      />
-
-      <.administrators_section
-        :if={@section == :all}
-        organization_users={@organization_users}
-        organization_invites={@organization_invites}
-        show_active_invites={@show_active_invites}
-        selected_user={@selected_user}
-        current_user={@current_user}
       />
     </div>
     """
   end
 
-  attr :current_org, :map, required: true
-  attr :company_form, :map, required: true
-  attr :editing_basic_info, :boolean, required: true
-
-  defp company_basic_info_section(assigns) do
-    ~H"""
-    <.settings_section
-      title={gettext("Company details")}
-      action={if(!@editing_basic_info, do: "toggle_editing_basic_info")}
-      action_label={gettext("Edit company details")}
-    >
-      <%= if @editing_basic_info do %>
-        <.form
-          for={@company_form}
-          phx-submit="save"
-          phx-change="validate_company_form"
-          class="space-y-4"
-        >
-          <div class="space-y-2">
-            <.row_input field={@company_form[:name]} label={gettext("Name on invoices")} type="text" />
-            <.row_input
-              field={@company_form[:display_name]}
-              label={gettext("Name in the app")}
-              type="text"
-            />
-            <.row_input field={@company_form[:nip]} label="NIP" type="text" />
-
-            <Helpers.settings_field
-              label={gettext("VAT payer")}
-              layout={:row}
-              block_class="flex items-center my-1"
-              for={@company_form[:is_vat_payer].id}
-            >
-              <.switch field={@company_form[:is_vat_payer]} color="teal" />
-            </Helpers.settings_field>
-            <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
-              <Helpers.settings_field
-                label={gettext("VAT exemption")}
-                layout={:row}
-                block_class="flex items-center"
-                for={@company_form[:vat_exemption_type].id}
-              >
-                <.input
-                  type="select"
-                  field={@company_form[:vat_exemption_type]}
-                  options={VatExemption.options()}
-                  input_class="w-full"
-                />
-              </Helpers.settings_field>
-
-              <%= if to_string(@company_form[:vat_exemption_type].value) == "other" do %>
-                <Helpers.settings_field
-                  label={gettext("Legal basis for the VAT exemption")}
-                  layout={:row}
-                  for={@company_form[:vat_exemption_basis].id}
-                >
-                  <.input
-                    type="text"
-                    field={@company_form[:vat_exemption_basis]}
-                    required
-                    show_error={false}
-                    input_class="w-full"
-                  />
-                </Helpers.settings_field>
-              <% else %>
-                <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
-              <% end %>
-            <% else %>
-              <input type="hidden" name={@company_form[:vat_exemption_type].name} value="" />
-              <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
-            <% end %>
-            <Helpers.settings_field
-              label={gettext("Industry")}
-              layout={:row}
-              block_class="flex items-center"
-              for={@company_form[:industry].id}
-            >
-              <.input
-                type="select"
-                field={@company_form[:industry]}
-                options={Industry.options()}
-                input_class="w-full"
-              />
-            </Helpers.settings_field>
-            <Helpers.settings_field
-              label={gettext("Billing by the hour")}
-              layout={:row}
-              block_class="flex items-center my-1"
-              for={@company_form[:bills_hourly].id}
-            >
-              <.switch field={@company_form[:bills_hourly]} color="teal" />
-            </Helpers.settings_field>
-            <.row_input
-              field={@company_form[:address]}
-              label={gettext("Address")}
-              type="textarea"
-              label_class="pt-1.5 self-start"
-            />
-
-            <Helpers.settings_field
-              label={gettext("The correspondence address is the same as the company address")}
-              label_class="max-w-50 ml-auto"
-              layout={:row}
-              for={@company_form[:is_same_correspondence_address].id}
-            >
-              <.switch
-                field={@company_form[:is_same_correspondence_address]}
-                class="w-12"
-                color="teal"
-              />
-            </Helpers.settings_field>
-
-            <%= if not Phoenix.HTML.Form.normalize_value(
-                  "switch",
-                  @company_form[:is_same_correspondence_address].value
-                ) do %>
-              <.row_input
-                field={@company_form[:correspondence_address]}
-                label={gettext("Correspondence address")}
-                type="textarea"
-                label_class="pt-1.5 self-start"
-              />
-            <% end %>
-          </div>
-
-          <div class="flex w-full justify-end gap-3">
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_editing_basic_info"
-            >
-              {gettext("Cancel")}
-            </.button>
-            <.button type="submit" variant="success" size="small">
-              {gettext("Save")}
-            </.button>
-          </div>
-        </.form>
-      <% else %>
-        <div class="space-y-2">
-          <.detail_row label={gettext("Name on invoices")}>
-            {present(@current_org.name)}
-          </.detail_row>
-          <.detail_row label={gettext("Name in the app")}>
-            {present(@current_org.display_name)}
-          </.detail_row>
-          <.detail_row label="NIP">{present(@current_org.nip)}</.detail_row>
-          <.detail_row label={gettext("VAT payer")}>
-            {yes_no(@current_org.is_vat_payer)}
-          </.detail_row>
-          <.detail_row
-            :if={exemption = present_vat_exemption(@current_org)}
-            label={gettext("VAT exemption")}
-          >
-            {exemption}
-          </.detail_row>
-          <.detail_row label={gettext("Industry")}>
-            {Industry.label(@current_org.industry)}
-          </.detail_row>
-          <.detail_row label={gettext("Billing by the hour")}>
-            {yes_no(@current_org.bills_hourly)}
-          </.detail_row>
-          <.detail_row label={gettext("Address")}>
-            {multiline_address(@current_org.address)}
-          </.detail_row>
-          <.detail_row
-            :if={@current_org.correspondence_address not in [nil, ""]}
-            label={gettext("Correspondence address")}
-          >
-            {multiline_address(@current_org.correspondence_address)}
-          </.detail_row>
-        </div>
-      <% end %>
-    </.settings_section>
-    """
-  end
-
   attr :company_form, :map, required: true
 
-  # The standalone page edits the details in place; the combined settings page
-  # keeps the read-only view behind its edit button.
   defp company_details_form(assigns) do
     ~H"""
     <.form
@@ -442,23 +216,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
-  attr :standalone, :boolean, default: false
-  attr :class, :any, default: nil
 
   defp bank_accounts_section(assigns) do
     ~H"""
-    <section class={["space-y-4", @class]}>
+    <section class="space-y-4">
       <.pending_requisition_banner :if={Enum.any?(@pending_requisitions)} />
 
-      <div class={[
-        "flex flex-col gap-3 sm:flex-row sm:items-center",
-        if(@standalone, do: "sm:justify-end", else: "sm:justify-between")
-      ]}>
-        <%!-- The standalone page title already names the section. --%>
-        <h2 :if={!@standalone} class="text-base leading-none font-semibold text-grey-900">
-          {gettext("Bank accounts")}
-        </h2>
-
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         <div class="flex flex-wrap items-center gap-2.5">
           <.button
             type="button"
@@ -489,7 +253,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       >
         <.bank_card
           :for={account <- @bank_accounts}
-          standalone={@standalone}
           account={account}
           bank_institutions={@bank_institutions}
           status={bank_account_status(account, account.requisition && account.requisition.status)}
@@ -522,158 +285,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  attr :organization_users, :list, required: true
-  attr :organization_invites, :list, required: true
-  attr :show_active_invites, :boolean, required: true
-  attr :selected_user, :any, default: nil
-  attr :current_user, :map, required: true
-
-  defp administrators_section(assigns) do
-    assigns = assign(assigns, :active_invites, active_invites(assigns.organization_invites))
-
-    ~H"""
-    <section
-      id="settings-organization-invites"
-      phx-hook="CopyToClipboard"
-      class="col-span-2 space-y-4"
-    >
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h2 class="text-base/normal font-semibold text-grey-900">
-          {gettext("Organization members")}
-        </h2>
-
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <.button
-            type="button"
-            variant="unstyled"
-            phx-click="toggle_active_invites"
-            role="switch"
-            size="small"
-            aria-checked={to_string(@show_active_invites)}
-            class="inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium text-grey-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
-          >
-            <span>{gettext("Active invitations")}</span>
-            <span class={invite_toggle_track_styles(@show_active_invites)}>
-              <span class={invite_toggle_thumb_styles(@show_active_invites)}></span>
-            </span>
-          </.button>
-          <.button
-            type="button"
-            variant="tertiary"
-            size="small"
-            phx-click={show_modal("organization_invite_modal")}
-          >
-            {gettext("Generate invitation")}
-          </.button>
-        </div>
-      </div>
-
-      <div
-        :if={@show_active_invites}
-        class="scrollbar-card h-151 overflow-y-auto rounded-lg border border-grey-200 bg-white p-6 shadow-sm"
-      >
-        <div
-          :if={@active_invites == []}
-          class="flex min-h-96 items-center justify-center text-sm leading-[1.35] text-grey-700"
-        >
-          {gettext("No active invitations.")}
-        </div>
-
-        <div :if={@active_invites != []} class="space-y-6">
-          <.invite_row :for={invite <- @active_invites} invite={invite} />
-        </div>
-      </div>
-
-      <div
-        :if={not @show_active_invites}
-        class="scrollbar-card h-151 overflow-y-auto rounded-lg border border-grey-200 bg-white p-6 shadow-sm"
-      >
-        <div class="flex flex-col gap-6">
-          <div
-            :for={user <- @organization_users}
-            class="flex min-h-12 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div class="flex min-w-0 items-center gap-4 sm:max-w-sm sm:flex-1">
-              <.avatar class="size-12 rounded-full bg-grey-100">
-                <.avatar_image
-                  :if={user.member.avatar_blob}
-                  blob={user.member.avatar_blob}
-                  sizes="48px"
-                  alt={user.member.name || user.email}
-                />
-                <.avatar_fallback class="text-sm font-medium text-grey-700">
-                  {initial(user.member.name || user.email)}
-                </.avatar_fallback>
-              </.avatar>
-
-              <div class="flex min-w-0 flex-col gap-0.5">
-                <p class="truncate text-base/snug text-grey-900">
-                  {present(user.member.name)}
-                </p>
-                <p class="truncate text-sm/snug text-grey-700">{user.email}</p>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2">
-              <.role_badge role={user.member.role} />
-
-              <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
-                <:trigger>
-                  <span class="flex size-10 items-center justify-center rounded-lg text-grey-700 transition hover:bg-grey-100">
-                    <span class="sr-only">
-                      {gettext("User options for %{email}", email: present(user.email))}
-                    </span>
-                    <.icon name="hero-ellipsis-vertical" class="size-6" />
-                  </span>
-                </:trigger>
-
-                <div class="mt-10 flex w-40 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white p-1 shadow-lg">
-                  <.button
-                    type="button"
-                    variant="unstyled"
-                    phx-click="open_update_role_modal"
-                    phx-value-user_id={user.id}
-                    class={menu_item_styles()}
-                  >
-                    {gettext("Change role")}
-                  </.button>
-
-                  <.link
-                    kind="unstyled"
-                    navigate={~p"/zarzadzanie/pracownicy/#{user.id}"}
-                    class={menu_item_styles()}
-                  >
-                    {gettext("Show profile")}
-                  </.link>
-
-                  <.button
-                    type="button"
-                    variant="unstyled"
-                    phx-click="archive_organization_user"
-                    phx-value-user_id={user.id}
-                    class={["text-brick-800 hover:bg-brick-100", menu_item_styles()]}
-                  >
-                    {gettext("Archive")}
-                  </.button>
-                </div>
-              </.dropdown>
-
-              <span :if={user.id == @current_user.id} class="size-10 shrink-0" aria-hidden="true" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <.invite_modal />
-    <.update_role_modal :if={@selected_user} user={@selected_user} />
-    """
-  end
-
   attr :account, :map, required: true
   attr :bank_institutions, :map, required: true
   attr :status, :atom, default: nil
-  attr :standalone, :boolean, default: false
 
   defp bank_card(assigns) do
     assigns =
@@ -688,10 +302,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <article
       id={"konto-bankowe-#{@account.id}"}
-      class={[
-        "relative flex flex-col gap-4 bg-white",
-        if(@standalone, do: "rounded-md p-5", else: "rounded-lg border border-grey-200 p-4")
-      ]}
+      class="relative flex flex-col gap-4 rounded-md bg-white p-5"
     >
       <div class="flex items-center justify-start gap-4">
         <.bank_badge institution={@account} />
@@ -730,16 +341,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
             <div class="flex w-48 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white py-1 text-sm font-medium text-grey-700 shadow-lg">
               <.button
-                :if={!@standalone}
-                type="button"
-                variant="unstyled"
-                phx-click={show_modal("rename_bank_account_#{@account.id}")}
-                class={menu_item_styles()}
-              >
-                {gettext("Rename")}
-              </.button>
-
-              <.button
                 :if={!is_nil(@account.institution_id)}
                 type="button"
                 variant="unstyled"
@@ -775,15 +376,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <div class="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3">
-        <.bank_detail_row :if={!@standalone and !is_nil(@account.name)} label={gettext("Name")}>
-          {present(@account.name)}
-        </.bank_detail_row>
-        <%!-- The standalone page renames in place and saves when the field loses focus or on Enter. --%>
-        <.bank_detail_row
-          :if={@standalone}
-          label={gettext("Name")}
-          for={"bank_account_name_#{@account.id}"}
-        >
+        <%!-- Renames in place and saves when the field loses focus or on Enter. --%>
+        <.bank_detail_row label={gettext("Name")} for={"bank_account_name_#{@account.id}"}>
           <.form
             for={%{}}
             id={"bank_account_name_form_#{@account.id}"}
@@ -823,8 +417,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <.button
             :if={@status in [:broken, :disconnected]}
             variant="outline"
-            size={if(@standalone, do: "small", else: "big")}
-            class={[if(!@standalone, do: "w-full")]}
+            size="small"
             phx-click="reconnect_bank_account"
             phx-value-account_id={@account.id}
             aria-label={gettext("Reconnect account")}
@@ -835,39 +428,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
     </article>
-
-    <.modal :if={!@standalone} id={"rename_bank_account_#{@account.id}"}>
-      <.form for={%{}} phx-submit="rename_bank_account" id={"rename_form_#{@account.id}"}>
-        <input type="hidden" name="account_id" value={@account.id} />
-        <.input
-          name="name"
-          id={"rename_bank_account_name_#{@account.id}"}
-          label={gettext("New name")}
-          value={@account.name}
-        />
-
-        <div class="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <.button
-            type="button"
-            variant="tertiary"
-            size="small"
-            phx-click={hide_modal("rename_bank_account_#{@account.id}")}
-          >
-            {gettext("Cancel")}
-          </.button>
-
-          <.button
-            type="submit"
-            variant="success"
-            size="small"
-            phx-click={hide_modal("rename_bank_account_#{@account.id}")}
-            phx-disable-with={pgettext("settings", "Saving...")}
-          >
-            {gettext("Save")}
-          </.button>
-        </div>
-      </.form>
-    </.modal>
 
     <.modal id={"confirm_delete_bank_account_#{@account.id}"}>
       <h3 class="text-lg font-semibold text-grey-900">
@@ -983,19 +543,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  defp invite_toggle_track_styles(true), do: "bg-teal-700 relative inline-flex h-[24px] w-[44px] rounded-full"
-
-  defp invite_toggle_track_styles(false), do: "bg-grey-200 relative inline-flex h-[24px] w-[44px] rounded-full"
-
-  defp invite_toggle_thumb_styles(true) do
-    "absolute top-[3px] left-[3px] size-[18px] translate-x-5 rounded-full bg-white transition"
-  end
-
-  defp invite_toggle_thumb_styles(false) do
-    "absolute top-[3px] left-[3px] size-[18px] rounded-full bg-white transition"
-  end
-
-  # The white card of the standalone settings pages, as in the inbox.
+  # The white card of the company settings pages, as in the inbox.
   defp card_styles, do: "flex flex-col gap-5 rounded-md bg-white p-5"
 
   defp menu_item_styles do
@@ -1039,25 +587,5 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     |> String.graphemes()
     |> Enum.chunk_every(4)
     |> Enum.map_join(" ", &Enum.join/1)
-  end
-
-  defp yes_no(true), do: gettext("Yes")
-  defp yes_no(false), do: gettext("No")
-  defp yes_no(_), do: "—"
-
-  defp multiline_address(nil), do: "—"
-  defp multiline_address(""), do: "—"
-  defp multiline_address(address), do: to_string(address)
-
-  defp present_vat_exemption(%{vat_exemption_type: nil}), do: nil
-
-  defp present_vat_exemption(%{vat_exemption_type: type} = org) do
-    case type do
-      :other ->
-        org.vat_exemption_basis
-
-      _ ->
-        VatExemption.label(type)
-    end
   end
 end

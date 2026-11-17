@@ -183,47 +183,4 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert redirected_to(confirm_conn) == ~p"/czasosledz"
     assert to_string(Core.get_user!(user.id, authorize?: false).email) == new_email
   end
-
-  for avatar_tenant <- [:own, :foreign] do
-    @avatar_tenant avatar_tenant
-    test "email confirmation scopes the #{@avatar_tenant} tenant avatar", %{conn: conn} do
-      user = user_fixture()
-      token = extract_token_from_email!("/potwierdz-email/")
-
-      organization_id =
-        case @avatar_tenant do
-          :own -> user.member.organization_id
-          :foreign -> user_fixture().member.organization_id
-        end
-
-      blob =
-        Ash.Seed.seed!(Blob, %{
-          organization_id: organization_id,
-          blob_path: "#{organization_id}/confirmation-avatar.png",
-          blob_checksum: "confirmation-avatar",
-          original_filename: "confirmation-avatar.png"
-        })
-
-      Ash.Seed.update!(user.member, %{avatar_blob_id: blob.id})
-      authenticated_conn = log_in_user(conn, user)
-
-      assert {:ok, view, _html} = live(authenticated_conn, ~p"/potwierdz-email/#{token}")
-      assert has_element?(view, "#confirm_email_form button", "Potwierdź założenie konta")
-
-      avatar_selector = "img[src*='#{blob.blob_path}']"
-
-      case @avatar_tenant do
-        :own -> assert has_element?(view, avatar_selector)
-        :foreign -> refute has_element?(view, avatar_selector)
-      end
-
-      confirmed_conn =
-        view
-        |> form("#confirm_email_form", user: %{"confirm" => token})
-        |> submit_form(authenticated_conn)
-
-      assert redirected_to(confirmed_conn) == ~p"/czasosledz"
-      assert Core.get_user!(user.id, actor: user).confirmed_at
-    end
-  end
 end

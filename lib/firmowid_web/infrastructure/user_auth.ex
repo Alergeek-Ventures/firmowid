@@ -146,9 +146,9 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   @doc """
   Whether the admin of a company still has its setup ahead, a new company or one
-  that existed before the setup; with the `inbox` flag every page
-  leads them back to it until they finish (see `RequireOrganization`). Other
-  members are not sent there, since the setup is the admin's.
+  that existed before the setup; every page leads them back to it until they
+  finish (see `RequireOrganization`). Other members are not sent there, since the
+  setup is the admin's.
   """
   @spec first_steps_pending?(User.t(), Organization.t()) :: boolean()
   def first_steps_pending?(%User{member: %Member{role: :admin}}, %Organization{onboarding_completed_at: nil}), do: true

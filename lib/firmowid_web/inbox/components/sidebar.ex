@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.Inbox.Components.Sidebar do
   @moduledoc """
-  The app's sidebar behind the `inbox` flag: the inbox, then the places of one
-  layer listed flat. The switch at the top moves between the company layer and
-  the member's own layer, landing in that layer's inbox.
+  The app's sidebar: the inbox, then the places of one layer listed flat. The
+  switch at the top moves between the company layer and the member's own layer,
+  landing in that layer's inbox.
 
   The panel button right of the wordmark collapses it to icons on desktop; the
   state lives on `<html data-sidebar>` (restored from local storage in the root
