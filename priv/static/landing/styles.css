@@ -27,6 +27,8 @@ p,h1,h2,h3,h4,figure,blockquote{margin:0}
 .wrap{width:min(1140px,calc(100% - 32px));margin-inline:auto}
 :focus-visible{outline:2px solid var(--r600);outline-offset:4px}
 
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
 /* ---------- type ---------- */
 h1{font-size:clamp(42px,6.1vw,72px);line-height:1.04;font-weight:700;letter-spacing:-.03em}
 h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spacing:-.03em;max-width:19ch}
@@ -71,9 +73,6 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .hero h1{margin-top:26px;font-size:clamp(44px,8vw,104px);line-height:1;letter-spacing:-.04em}
 .hero__sub{margin-top:24px;max-width:44ch;font-size:clamp(17px,1.7vw,21px);line-height:1.45;color:var(--g700)}
 .hero__cta{margin-top:30px}
-.signup{margin-top:30px;display:flex;gap:10px;width:min(100%,520px)}
-.signup input{flex:1;min-width:0;height:56px;padding:0 18px;font:inherit;font-size:16px;background:#fff;border:1.5px solid var(--ink);border-radius:4px}
-.signup input::placeholder{color:var(--g500)}
 .hero__ticks{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-size:13px;color:var(--g600)}
 .hero__ticks li{padding-left:20px;background:url(/images/landing/icons/check.svg) 0 3px/12px no-repeat}
 .hero .tabs{position:relative;margin-top:48px}
@@ -87,34 +86,8 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .hnote span{display:block;font-family:var(--hand);font-size:25px;line-height:1;transform:rotate(-7deg);white-space:nowrap}
 .hnote svg{width:34px;margin:4px 0 0 46px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-/* hero scene */
-.scene{position:relative;container-type:inline-size;aspect-ratio:640/600;width:100%;max-width:680px;justify-self:end}
-.scene__paths{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.scene__paths>path{stroke:var(--r400);stroke-width:1.6;stroke-dasharray:5 7;animation:dash 1.2s linear infinite}
-.plane path{fill:var(--ink);stroke:none}
 @keyframes dash{to{stroke-dashoffset:-12}}
-.src{position:absolute;display:flex;align-items:center;gap:1.6cqw;padding:1.5cqw 2.4cqw 1.5cqw 1.6cqw;background:#fff;border:1px solid var(--g200);border-radius:4px;font-family:var(--app);animation:pop .7s var(--ease) both, bob 5s ease-in-out infinite}
-.src b{display:block;font-size:2.35cqw;font-weight:600;line-height:1.2}
-.src small{display:block;font-size:1.85cqw;color:var(--g600)}
-.src__ico{display:grid;place-items:center;width:5.4cqw;height:5.4cqw;background:var(--r100);border-radius:4px}
-.src__ico svg{width:3.3cqw;height:3.3cqw;fill:none;stroke:var(--r700);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.src--1{left:1%;top:5%;animation-delay:.1s,0s}
-.src--2{left:35%;top:0;animation-delay:.25s,-1.6s}
-.src--3{right:3%;top:5%;animation-delay:.4s,-3.2s}
-@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.94)}}
-@keyframes bob{50%{translate:0 -6px}}
-.sheet{position:absolute;left:1%;top:41%;width:66%;padding:4cqw 4.2cqw 3.6cqw;background:#fff;border-radius:4px;box-shadow:0 1px 0 var(--g200),0 22px 44px -18px rgba(87,54,35,.28);transform:rotate(-2.2deg);font-family:var(--app);animation:sheetIn 1s .2s var(--ease) both}
-@keyframes sheetIn{from{opacity:0;transform:translateY(30px) rotate(-6deg)}}
-.sheet__cap{font-size:1.75cqw;letter-spacing:.08em;text-transform:uppercase;color:var(--g600);font-weight:600}
-.sheet__line{margin-top:1.4cqw;font-size:2.9cqw;line-height:1.25;color:var(--g900)}
-.sheet__big{font-size:10.5cqw;line-height:1;font-weight:700;letter-spacing:-.03em;color:var(--keep);font-variant-numeric:tabular-nums;margin-top:.6cqw}
-.legend{display:flex;flex-wrap:wrap;gap:.8cqw 2.2cqw;margin-top:2.2cqw;font-size:1.75cqw;color:var(--g700)}
-.legend li{display:flex;align-items:center;gap:.9cqw}
-.note{position:absolute;right:3cqw;top:13cqw;width:17cqw;color:var(--r600);opacity:0;animation:fade .6s 2.2s both}
-.note span{display:block;font-family:var(--hand);font-size:3.9cqw;line-height:1;transform:rotate(-7deg);white-space:nowrap}
-.note svg{width:7cqw;margin:1cqw 0 0 7cqw;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @keyframes fade{to{opacity:1}}
-.scene__fig{position:absolute;right:-5%;bottom:0;height:63%;width:auto;animation:sheetIn 1s .45s var(--ease) both;filter:drop-shadow(0 18px 18px rgba(87,54,35,.12))}
 
 /* 100 zł bar */
 .bar100{display:flex;gap:2px;height:4.6cqw;margin-top:2.6cqw;border-radius:3px;overflow:hidden}
@@ -453,7 +426,6 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
   .cursor{display:none}
   .nav__links>a:not(.btn){display:none}
   .assist__grid,.calc__grid,.team__grid,.faq__grid,.proof__grid{grid-template-columns:1fr}
-  .scene{justify-self:center;margin-top:12px}
   .flow__grid{grid-template-columns:1fr;gap:0}
   .flow__wires{display:none}
   .flow__srcs::after{content:"";display:block;width:0;height:64px;margin:0 auto;border-left:2px dashed var(--r400)}
@@ -468,16 +440,8 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
 @media (max-width:640px){
   .btn--nav-ghost{display:none}
   .hero{padding-top:12px}
-  .signup{flex-direction:column}.signup input{flex:none}.signup .btn{width:100%}
   .hnote{display:none}
   .hero__cta .btn{flex:1 1 100%}
-  .sheet{width:72%;top:38%;padding:5cqw}
-  .sheet__cap{font-size:2.6cqw}.sheet__line{font-size:3.7cqw}.sheet__big{font-size:13cqw}
-  .legend{display:none}.bar100{height:6.5cqw}
-  .note{top:17cqw;right:1cqw}.note span{font-size:4.6cqw}
-  .src b{font-size:3.2cqw}.src small{display:none}.src__ico{width:7cqw;height:7cqw}.src__ico svg{width:4.4cqw;height:4.4cqw}
-  .src--2{left:33%}
-  .scene__fig{height:58%;right:-6%}
   .metrics__row{flex-direction:column;align-items:center;text-align:center}
   .tabs__nav{grid-template-columns:1fr 1fr}.tab small{display:none}.tab{padding:12px 12px 14px}
   .app__main{padding:14px;min-height:500px}
@@ -495,5 +459,5 @@ details p{padding:0 40px 22px 2px;color:var(--g700);line-height:1.55;max-width:6
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none}
-  .scene__paths g,.flow__wires circle{display:none}
+  .in .rows--in li,.t-ocr__out span{animation:none!important}
 }
