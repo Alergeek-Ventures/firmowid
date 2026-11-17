@@ -10,7 +10,9 @@ defmodule Firmowid.Core.OrganizationCleanup do
 
   alias Ash.BulkResult
   alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Billing.Payment
   alias Firmowid.Billing.Snapshot
+  alias Firmowid.Billing.Subscription
   alias Firmowid.Core.Member
   alias Firmowid.Core.OauthAuthorizationCode
   alias Firmowid.Core.OauthConsent
@@ -31,6 +33,10 @@ defmodule Firmowid.Core.OrganizationCleanup do
   @spec remove_dependents(Scope.t()) :: :ok | {:error, term()}
   def remove_dependents(scope) do
     with :ok <- destroy_records(Snapshot.list(%{}, scope: scope), &Snapshot.destroy/2, scope),
+         # Payments refer to their subscription, so they go first.
+         :ok <- destroy_records(Payment.list(%{}, scope: scope), &Payment.destroy/2, scope),
+         :ok <-
+           destroy_records(Subscription.list(%{}, scope: scope), &Subscription.destroy/2, scope),
          :ok <-
            destroy_records(
              KsefInvoiceDigestItem.read(%{}, scope: scope),

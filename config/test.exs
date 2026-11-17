@@ -58,6 +58,10 @@ config :firmowid, :bank_data_api_client,
     retry_delay: 0
   ]
 
+# The seller id of the dev seeds (priv/repo/seeds/bytecraft.exs); a test issuing an advance
+# invoice creates its seller organization with it. BILLING_SELLER_ORGANIZATION_ID overrides it.
+config :firmowid, :billing, seller_organization_id: "00000000-0000-0000-0000-000000000001"
+
 # Gotenberg is not running during tests, so it is excluded from /health.
 config :firmowid, :health_checks, [:database, :oban]
 config :firmowid, :krs_api_request_options, plug: {Req.Test, :krs_api}
@@ -81,6 +85,8 @@ config :firmowid, :s3,
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "test")
 
 config :firmowid, :start_gocardless_token_manager, false
+# Tests never reach Tpay; a test that calls it stubs `:tpay_api` (API and certificate downloads).
+config :firmowid, :tpay, request_options: [plug: {Req.Test, :tpay_api}]
 config :firmowid, :vat_status_api_request_options, plug: Firmowid.Test.Support.VatStatusApiStub
 config :firmowid, :vies_api_request_options, plug: Firmowid.Test.Support.ViesApiStub
 

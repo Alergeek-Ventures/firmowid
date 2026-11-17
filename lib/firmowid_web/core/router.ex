@@ -111,6 +111,11 @@ defmodule FirmowidWeb.Core.Router do
     get "/health", Infrastructure.Controllers.Health, :check
   end
 
+  # Tpay signs its notifications instead of sending a session or a CSRF token.
+  scope "/", FirmowidWeb do
+    post "/webhooks/tpay", Billing.Controllers.TpayNotification, :create
+  end
+
   pipeline :agent_discovery_links do
     plug :put_agent_discovery_links
   end
@@ -329,6 +334,7 @@ defmodule FirmowidWeb.Core.Router do
       # Admin-only pages require the admin themselves (see RequireAdmin).
       live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
       live "/limit-planu", Billing.Views.PlanLimit, :index
+      live "/abonament/karta", Billing.Views.CardReturn, :index
       live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive

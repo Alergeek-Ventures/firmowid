@@ -403,8 +403,10 @@ defmodule Firmowid.Ksef.Credential do
     end
 
     # All other human access remains implicitly denied, including credential reads.
+    # The action itself answers only for the actor's own organization.
     policy action(:connection_status) do
       authorize_if {AtLeastRole, role: :invoicing}
+      authorize_if {SystemActorRole, roles: [:sales_invoice_processor]}
     end
   end
 

@@ -8,6 +8,7 @@ defmodule Firmowid.Billing.PlanLimitsTest do
 
   alias Ash.Error.Forbidden
   alias Firmowid.Billing.PlanLimits
+  alias Firmowid.BillingFixtures
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Scope
@@ -71,6 +72,27 @@ defmodule Firmowid.Billing.PlanLimitsTest do
                reload(above_free.newest_project)
 
       assert_email_sent(to: [to_string(admin.email)])
+    end
+
+    test "leaves a granted plan's usage alone and enforces the same plan once it is paid for" do
+      %{org_id: org_id} = above_free = above_free_plan()
+      # Four banks are above Przedsiębiorca's three.
+      newest_bank = synced_account(org_id, "NEWEST_BANK", ~U[2026-01-07 10:00:00Z])
+      synced_account(org_id, "THIRD_BANK", ~U[2026-01-06 10:00:00Z])
+      Ash.Seed.update!(organization(org_id), %{billing_plan: :przedsiebiorca})
+      AuthEmailHelpers.drain_sent_emails()
+
+      deciding = decide_on(org_id, ~D[2026-11-01])
+      assert {:ok, %{plan_limit_decision_on: nil}} = PlanLimits.check(deciding, ~D[2026-11-08])
+      refute reload(newest_bank).suspended_by_plan_at
+      refute reload(above_free.newer_bank).suspended_by_plan_at
+      refute_email_sent()
+
+      BillingFixtures.active_subscription!(org_id)
+      paid_for = decide_on(org_id, ~D[2026-11-01])
+
+      assert {:ok, %{plan_limit_decision_on: nil}} = PlanLimits.check(paid_for, ~D[2026-11-08])
+      assert reload(newest_bank).suspended_by_plan_at
     end
 
     test "skips an organization without a plan" do

@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Ash.Error.Forbidden.Policy
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
+  alias Firmowid.Billing
   alias Firmowid.Billing.Month
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
@@ -135,6 +136,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
+     |> assign(:active_subscription, nil)
+     |> assign(:plan_granted?, false)
      |> assign(:selected_user, nil)
      |> assign(:member_form, form_member_form(current_user.member, scope))
      |> assign(:no_padding, true)
@@ -1167,6 +1170,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
           <.subscription_tab
             standalone={flag_enabled?(:inbox, assigns)}
             worksheet={@subscription_worksheet}
+            subscription={@active_subscription}
+            plan_granted?={@plan_granted?}
+            trial_ends_on={@current_org.trial_ends_on}
           />
         <% :account -> %>
           <.account_tab
@@ -1342,14 +1348,27 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
     current_user = socket.assigns.current_user
 
-    worksheet =
-      if current_org.owner_id == current_user.id do
+    if current_org.owner_id == current_user.id do
+      scope = socket.assigns.ash_scope
+
+      worksheet =
         current_org
         |> MonthContext.load(month, current_user, current_month: month)
         |> Map.fetch!(:worksheet)
-      end
 
-    assign(socket, :subscription_worksheet, worksheet)
+      %{plan_granted?: plan_granted?} = Ash.load!(current_org, :plan_granted?, scope: scope)
+
+      socket
+      |> assign(:subscription_worksheet, worksheet)
+      # At most one subscription is not ended.
+      |> assign(
+        :active_subscription,
+        %{status: :active} |> Billing.list_subscriptions!(scope: scope) |> List.first()
+      )
+      |> assign(:plan_granted?, plan_granted?)
+    else
+      assign(socket, :subscription_worksheet, nil)
+    end
   end
 
   defp find_loaded_organization_user(users, user_id) do

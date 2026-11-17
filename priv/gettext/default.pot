@@ -526,6 +526,21 @@ msgstr ""
 msgid "%{percent}% confidence"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "%{plan} plan · %{period}"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{price} + VAT / month"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{price} + VAT / year"
+msgstr ""
+
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "%{price} PLN net / month"
@@ -2042,6 +2057,7 @@ msgstr ""
 msgid "Billing month"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Billing period"
@@ -2187,6 +2203,11 @@ msgstr ""
 msgid "Business trips in progress"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Buy the %{plan} plan"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -2293,6 +2314,7 @@ msgid "Cancelling..."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/billing/views/card_return.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Card"
@@ -2461,6 +2483,11 @@ msgstr ""
 msgid "Changing your password:"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Charged to the card ending in %{tail}."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "ChatGPT and integrations"
@@ -2571,6 +2598,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Checking in registers"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Checking the card..."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -5337,6 +5369,16 @@ msgstr ""
 msgid "Fill in the accommodation details correctly."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Fill in the company address to buy"
+msgstr ""
+
+#: lib/firmowid/billing/subscription/validations/organization_can_buy.ex
+#, elixir-autogen, elixir-format
+msgid "Fill in the company address to buy a plan."
+msgstr ""
+
 #: lib/firmowid/delegations/validations/expense_details_complete.ex
 #, elixir-autogen, elixir-format
 msgid "Fill in the description."
@@ -5742,6 +5784,16 @@ msgstr ""
 msgid "Free KSeF invoicing with no invoice limit, automatic bank payment matching and project time tracking. Open source (AGPL-3.0), self-hosting available."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Free until %{last_day}. Then %{amount} gross every month, first on %{date}."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Free until %{last_day}. Then %{amount} gross once a year, first on %{date}."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Friday"
@@ -5917,6 +5969,11 @@ msgstr ""
 msgid "Go to signature"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Go to the app"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #, elixir-autogen, elixir-format
 msgid "Go to the invoice"
@@ -5950,6 +6007,11 @@ msgstr ""
 #: lib/firmowid/core/user.ex
 #, elixir-autogen, elixir-format
 msgid "Google sign-in failed: the Google email is not verified."
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Grant trial"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
@@ -7605,7 +7667,10 @@ msgstr ""
 msgid "Month closed"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgctxt "billing period"
 msgid "Monthly"
@@ -7626,6 +7691,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Monthly, no commitment"
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Months"
 msgstr ""
 
 #: lib/firmowid_web/management/components/work_distribution.ex
@@ -7853,6 +7923,21 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "sales invoice creator"
 msgid "Next"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/subscription_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Next payment on %{date}: %{amount} gross"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Next you enter the card on Tpay's page. Nothing is charged today."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Next you enter the card on Tpay's page. The payment follows right after."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -8312,12 +8397,22 @@ msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
+msgid "Nothing is charged today."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
 msgid "Nothing is deleted. Whatever is switched off comes back once you buy a higher plan."
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Nothing is waiting for your decision."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Nothing was charged and your plan has not changed."
 msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
@@ -8633,6 +8728,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/analysis_context.ex
 #, elixir-autogen, elixir-format
 msgid "Open the view"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Opening the card page..."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -11128,6 +11228,16 @@ msgstr ""
 msgid "Step %{step}."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Still free until %{last_day}, so the switch costs nothing now. Then %{price} gross every month, from %{date}."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Still free until %{last_day}, so the switch costs nothing now. Then %{price} gross once a year, from %{date}."
+msgstr ""
+
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Stop"
@@ -11286,12 +11396,27 @@ msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
+msgid "Switch to the %{plan} plan"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
 msgid "Switched off after saving: %{items}."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Switching the plan..."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "Synchronizing and viewing company bank accounts (Open Banking)"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Taking the payment..."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
@@ -11408,6 +11533,16 @@ msgstr ""
 #: lib/firmowid_web/feedback/components/form.ex
 #, elixir-autogen, elixir-format
 msgid "Thank you for your feedback!"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The %{plan} plan is on. First payment on %{date}."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The %{plan} plan is on. Next payment on %{date}."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -11629,6 +11764,26 @@ msgstr ""
 msgid "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty, cancel this invoice and issue a new one."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The card is not confirmed yet"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The card is saved and Tpay is taking the payment. This page moves on by itself once Tpay answers."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The card was not changed"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The card was not saved"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "The check digit does not match, probably because of a typo. We will check the number in VIES once it is corrected."
@@ -11639,6 +11794,11 @@ msgstr ""
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
 msgstr ""
 
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "The company gets the plan at once, without a card, and returns to the Free plan after the last month. A trial replaces the free month of the first purchase."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "The company is almost ready."
@@ -11647,6 +11807,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "The company is ready to work."
+msgstr ""
+
+#: lib/firmowid/billing/subscription/validations/organization_can_buy.ex
+#, elixir-autogen, elixir-format
+msgid "The company that sells Firmowid cannot buy a plan."
 msgstr ""
 
 #: lib/firmowid_web/auth/views/confirm_email.ex
@@ -11717,6 +11882,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "The counterparty was archived on %{date}. The data remains available historically, but the counterparty will not appear in new selections."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The current card stays."
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/prepare_invoice_seller.ex
@@ -12019,6 +12189,11 @@ msgstr ""
 msgid "The new session overlaps existing ones. Saving requires the changes below:"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The next payments use it once Tpay confirms it, which usually takes a few seconds."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "The number does not match the %{country} format (%{pattern}). The invoice cannot be issued."
@@ -12089,6 +12264,16 @@ msgstr ""
 msgid "The payment date of an advance invoice cannot be after its issue date."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "The payment did not go through"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "The payment did not go through. Your plan has not changed."
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "The payment was made much later than the invoice was issued"
@@ -12102,6 +12287,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "The plan assigned to your organization and what it includes."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "The plan's invoice needs it. Then come back here to buy."
 msgstr ""
 
 #: lib/firmowid_web/management/views/project.ex
@@ -12299,6 +12489,11 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
 msgstr ""
 
+#: lib/firmowid_web/admin/views/settlement.ex
+#, elixir-autogen, elixir-format
+msgid "The trial was granted."
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "The usage is above the limits of the assigned plan."
@@ -12404,6 +12599,17 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "This changes nothing. Reject the plan."
+msgstr ""
+
+#: lib/firmowid/core/validations/no_active_subscription.ex
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "This company pays for its plan, so it cannot get a trial."
+msgstr ""
+
+#: lib/firmowid/billing/subscription/validations/organization_can_buy.ex
+#, elixir-autogen, elixir-format
+msgid "This company's plan was granted, so there is nothing to buy."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -12551,6 +12757,11 @@ msgstr ""
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "This plan includes everything your company uses now."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/subscription_tab.ex
+#, elixir-autogen, elixir-format
+msgid "This plan is granted to your organization. Nothing is charged for it."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -12848,6 +13059,21 @@ msgstr ""
 msgid "Total to pay"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Tpay is confirming the card. It usually takes a few seconds."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Tpay is saving the new card"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Tpay is still confirming the payment. The plan changes once it goes through."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Tracked hours ready for payroll"
@@ -12978,9 +13204,29 @@ msgctxt "analysis view"
 msgid "Trends"
 msgstr ""
 
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Trial of the %{plan} plan until %{date}."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/subscription_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Trial of the %{plan} plan until %{date}. Nothing is charged."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Trial period"
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Trial plan"
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Trial used."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_pdf.ex
@@ -13002,6 +13248,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "KSeF signing link"
 msgid "Trusted Profile"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Try again"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -13571,6 +13822,11 @@ msgstr ""
 msgid "We always monitor application errors to keep the service reliable. After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "We are still waiting for Tpay to confirm the card. This page moves on by itself once Tpay confirms it. You can also come back later."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "We believe in your success. We want your company to grow, and we want to grow with it."
@@ -14060,7 +14316,10 @@ msgstr ""
 msgid "Year before"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgctxt "billing period"
 msgid "Yearly"
@@ -14135,6 +14394,11 @@ msgstr ""
 msgid "You are not tracking time now."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You are on the %{plan} plan now."
+msgstr ""
+
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "You are using the app as %{email}. Analytics are not recorded."
@@ -14174,6 +14438,22 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/month_closed_zero_state.ex
 #, elixir-autogen, elixir-format
 msgid "You can still add invoices paid from another account or in cash."
+msgstr ""
+
+#: lib/firmowid/billing/subscription/validations/period_settled.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You can switch plans once this month's payment goes through."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "You can try again with another card."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "You can try again with the same or another card."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
@@ -14305,6 +14585,26 @@ msgstr ""
 msgid "You must log in."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You pay %{amount} gross now for a year, until %{last_day}, then once a year."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You pay %{amount} gross now for this month, then every month on the 1st."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You pay %{amount} gross now, the difference for this month. Then %{price} gross every month, from %{date}."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "You pay %{amount} gross now, the difference until %{last_day}. Then %{price} gross once a year, from %{date}."
+msgstr ""
+
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #, elixir-autogen, elixir-format
 msgid "You receive this email as an organization administrator in Firmowid."
@@ -14371,6 +14671,11 @@ msgstr ""
 msgid "Your company"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Your company has no paid plan whose card could change."
+msgstr ""
+
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "Your company uses more than the %{plan} plan includes."
@@ -14431,6 +14736,16 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Your password"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Your plan has changed. Check what stays switched on again."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/card_return.ex
+#, elixir-autogen, elixir-format
+msgid "Your plan has not changed."
 msgstr ""
 
 #: lib/firmowid_web/settings/utilities/navigation.ex

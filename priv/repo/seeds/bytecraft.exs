@@ -134,6 +134,8 @@ defmodule Firmowid.Seeds.Bytecraft do
     Ash.Seed.seed!(
       CoreOrganization,
       %{
+        # Fixed so config/dev.exs and config/test.exs can name it as the Firmowid seller.
+        id: "00000000-0000-0000-0000-000000000001",
         name: "Biuro Cyfrowe spółka z ograniczoną odpowiedzialnością",
         display_name: "Biuro Cyfrowe",
         onboarding_completed_at: DateTime.utc_now(),
