@@ -553,6 +553,7 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
   .calc__out{position:static}
   .oss__top,.oss__facts{grid-template-columns:1fr}.oss__facts{gap:22px}
   .learn{grid-template-columns:1fr}
+  .cases__grid{grid-template-columns:1fr}
   .plans{grid-template-columns:1fr;max-width:460px;margin-inline:auto;gap:24px}
   .proof__nums{padding-left:24px}
   .end__fig{position:static;display:block;height:260px;margin:40px auto -40px}
