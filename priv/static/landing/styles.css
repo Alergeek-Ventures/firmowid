@@ -508,10 +508,33 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
 .end__cta h2{margin:18px 0 14px;max-width:21ch}
 .end__sub{margin-bottom:32px;font-size:clamp(17px,1.7vw,21px);color:rgba(245,241,234,.75)}
 .end__fig{position:absolute;right:0;bottom:0;height:88%;width:auto;pointer-events:none}
-.end__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 32px;padding:28px 0 36px;border-top:1px solid rgba(245,241,234,.2);font-size:14px}
-.end__foot nav{display:flex;flex-wrap:wrap;gap:8px 22px;color:rgba(245,241,234,.75)}
-.end__foot nav a:hover{color:#fff}
-.end__foot small{color:rgba(245,241,234,.55)}
+/* footer: the same as on the current home page */
+.end__btns{display:flex;flex-wrap:wrap;gap:16px 24px}
+.end__foot{position:relative;padding:40px 0 32px;display:flex;flex-direction:column}
+.end__foot::before{content:"";position:absolute;top:0;left:50%;width:100vw;translate:-50% 0;border-top:1px solid rgba(245,241,234,.2)}
+.end__brand{order:1;margin-top:32px;padding-top:8px;border-top:1px solid rgba(245,241,234,.2)}
+.end__brand .logo{font-size:18px}
+.end__brand p{margin-top:12px;font-size:14px;line-height:1.5;color:rgba(245,241,234,.6)}
+.end__cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.end__cols p{margin-bottom:16px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.end__cols a{display:block;padding:4px 0;font-size:16px;color:rgba(245,241,234,.75)}
+.end__cols a:hover{color:#fff}
+.end__legal{order:2;margin-top:8px;display:flex;flex-direction:column-reverse;gap:8px;font-size:11px;line-height:1.6;color:rgba(245,241,234,.6)}
+.end__legal p{font-weight:300}
+.end__legal div{display:flex;gap:18px;font-size:14px}
+.end__legal a:hover{color:#fff}
+@media (min-width:1024px){
+  .end__foot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:68px;padding:102px 0 40px}
+  .end__brand{order:0;grid-column:1;grid-row:1;margin:0;padding:0;border:0}
+  .end__brand .logo{font-size:22px}
+  .end__brand p{margin-top:4px;line-height:20px}
+  .end__cols{grid-column:2;grid-row:1;gap:68px}
+  .end__cols p{margin-bottom:12px}
+  .end__cols a{font-size:14px;line-height:18px}
+  .end__legal{grid-column:1 / -1;grid-row:2;margin-top:32px;padding-top:40px;flex-direction:row;align-items:center;justify-content:space-between;gap:32px;font-size:12px;background:url(/images/landing/decorations/dark-separator.svg) top/100% 2px no-repeat}
+  .end__legal div{font-size:12px}
+}
+@media (max-width:640px){.end__btns .btn{flex:1 1 100%}}
 
 /* ---------- prototype tool ---------- */
 .proto{position:fixed;left:14px;bottom:14px;z-index:60;display:flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;background:rgba(15,15,15,.88);color:#fff;border-radius:30px;font:500 12px var(--app);backdrop-filter:blur(8px)}

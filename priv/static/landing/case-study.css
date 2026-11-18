@@ -122,7 +122,6 @@
 
 .cs .end{margin-top:var(--sec)}
 .cs .end__sub a{color:var(--cream);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--r500)}
-.cs .end__foot small{max-width:60ch}
 
 @media (max-width:900px){
   .cs-hero__grid,.cs-story__grid,.acct{grid-template-columns:1fr}
