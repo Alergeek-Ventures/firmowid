@@ -3,6 +3,13 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ---------- content stays visible without JavaScript; the script turns on the scroll reveal.
+     If the page has already been painted, what is on screen stays put instead of blinking. ---------- */
+  if (performance.getEntriesByType('paint').length) {
+    $$('.reveal').forEach(el => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); });
+  }
+  document.documentElement.classList.add('js');
+
   /* ---------- texts in the page language (<html lang>) ---------- */
   const slavic = (one, few, many) => n => {
     const d = n % 10, t = n % 100;

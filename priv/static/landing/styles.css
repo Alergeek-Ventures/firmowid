@@ -111,8 +111,8 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 
 /* 100 zł bar */
 .bar100{display:flex;gap:2px;height:4.6cqw;margin-top:2.6cqw;border-radius:3px;overflow:hidden}
-.seg{display:block;height:100%;width:0;flex:none;transition:width 1s var(--ease);position:relative}
-.go .seg,.panel.on .seg{width:calc(var(--w)*1% - 2px)}
+.seg{display:block;height:100%;width:calc(var(--w)*1% - 2px);flex:none;transition:width 1s var(--ease);position:relative}
+.js .reveal:not(.in) .seg{width:0}
 .seg--a{background:var(--r600)}.seg--b{background:var(--r400)}.seg--c{background:var(--r300)}.seg--d{background:var(--g300)}.seg--grey{background:var(--g300)}.seg--keep{background:var(--keep)}
 .seg:nth-child(2){transition-delay:.12s}.seg:nth-child(3){transition-delay:.24s}.seg:nth-child(4){transition-delay:.36s}.seg:nth-child(5){transition-delay:.48s}
 .dot{width:1.3cqw;height:1.3cqw;min-width:8px;min-height:8px;border-radius:2px;display:inline-block;flex:none}
@@ -126,8 +126,9 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .metrics em{font-style:normal;color:var(--r700);font-weight:500}
 
 /* ---------- reveal ---------- */
-.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
-.reveal.in{opacity:1;transform:none}
+/* hidden only once a script has marked the page, so the content shows without JavaScript */
+.reveal{transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.js .reveal:not(.in){opacity:0;transform:translateY(26px)}
 
 /* ---------- flow ---------- */
 section{position:relative}
@@ -602,7 +603,8 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   html{scroll-behavior:auto}
-  .reveal{opacity:1;transform:none}
+  .js .reveal:not(.in){opacity:1;transform:none}
+  .js .reveal:not(.in) .seg{width:calc(var(--w)*1% - 2px)}
 }
 
 /* ---------- vertical rhythm ----------
