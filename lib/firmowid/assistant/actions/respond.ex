@@ -6,6 +6,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
   alias Firmowid.Assistant
   alias Firmowid.Assistant.Conversation
   alias Firmowid.Assistant.Prompt
+  alias Firmowid.Assistant.Telemetry
   alias Firmowid.Assistant.ToolPolicy
   alias Firmowid.Assistant.Transcript
 
@@ -51,6 +52,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
         approve_tool_call: fn call, _context -> ToolPolicy.approve(call, tools) end,
         on_tool_start: fn _event -> ToolPolicy.ensure_current!(scope) end,
         approvals: ToolPolicy.approvals(conversation.approvals),
+        req_llm_opts: Telemetry.request_options(conversation, scope),
         max_iterations: 20
       )
       |> Enum.reduce_while(
