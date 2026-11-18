@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Inbox.Utilities.Shortcuts do
   @moduledoc """
-  The actions offered as tiles under the company inbox: what the organization
+  The actions offered as buttons under the company inbox: what the organization
   does most often comes first.
 
   "Most often" is how many records each action created in the last
@@ -34,9 +34,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Shortcuts do
   @type shortcut :: %{
           id: atom(),
           label: String.t(),
-          hint: String.t(),
           icon: String.t(),
-          side: :sales | :cost | nil,
           target: {:navigate, String.t()} | :upload
         }
 
@@ -74,42 +72,32 @@ defmodule FirmowidWeb.Inbox.Utilities.Shortcuts do
         {%{
            id: :issue_sales_invoice,
            label: gettext("Issue invoice"),
-           hint: gettext("A sales invoice for KSeF"),
-           icon: "file-plus",
-           side: :sales,
+           icon: "file-chart-column",
            target: {:navigate, InvoicingNavigation.sales_invoice_creator_path()}
          }, {SalesInvoice, :draft}, &issued_sales_invoices/2},
         {%{
            id: :upload_cost_invoice,
            label: gettext("Add an invoice from outside KSeF"),
-           hint: gettext("A PDF or a photo"),
-           icon: "file-up",
-           side: :cost,
+           icon: "cloud-upload",
            target: :upload
          }, {CostInvoice, :create}, &uploaded_cost_invoices/2},
         {%{
            id: :add_counterparty,
            label: gettext("Add counterparty"),
-           hint: gettext("A company or a person"),
            icon: "building-2",
-           side: nil,
            target: {:navigate, ManagementNavigation.counterparty_new_path()}
          }, {Counterparty, :create}, &added_counterparties/2},
         organization.bills_hourly &&
           {%{
              id: :add_project,
              label: gettext("Add project"),
-             hint: gettext("For time tracking"),
-             icon: "folder-plus",
-             side: nil,
+             icon: "folder-kanban",
              target: {:navigate, ManagementNavigation.project_new_path()}
            }, {Project, :create}, &added_projects/2},
         {%{
            id: :invite_employee,
            label: gettext("Invite an employee"),
-           hint: gettext("A new person on the team"),
-           icon: "user-plus",
-           side: nil,
+           icon: "user",
            target: {:navigate, ManagementNavigation.employees_path(:index)}
          }, {OrganizationInvite, :create}, &sent_invites/2}
       ],
