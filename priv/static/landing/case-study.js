@@ -1,6 +1,14 @@
 // reveal on scroll, counters, and the hours bars
 (function () {
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // content stays visible without JavaScript; the script turns on the scroll reveal.
+  // If the page has already been painted, what is on screen stays put instead of blinking.
+  if (performance.getEntriesByType('paint').length) {
+    document.querySelectorAll('.reveal, .hours').forEach(function (el) {
+      if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in');
+    });
+  }
+  document.documentElement.classList.add('js');
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (e) {
       if (!e.isIntersecting) return;
