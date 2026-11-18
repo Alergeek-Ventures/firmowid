@@ -405,10 +405,13 @@ defmodule FirmowidWeb.Core.Router do
       live "/", Landing.Views.Index, :home
       live "/cennik", Landing.Views.Index, :pricing
       live "/funkcje", Landing.Views.Index, :features
+      live "/funkcje/:slug", Guides, :feature
       live "/faq", Landing.Views.Index, :faq
       live "/open-source", Landing.Views.Index, :open_source
       live "/poradnik", Guides, :index
       live "/poradnik/:slug", Guides, :show
+      live "/pomoc", Guides, :help_index
+      live "/pomoc/:slug", Guides, :help
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService
     end

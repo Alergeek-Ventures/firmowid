@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.Landing.Views.Guides do
   @moduledoc """
-  Public guide list (`/poradnik`) and guide articles (`/poradnik/:slug`).
+  Public guide list (`/poradnik`) and guide articles (`/poradnik/:slug`), feature
+  pages (`/funkcje/:slug`), the help list (`/pomoc`) and help articles
+  (`/pomoc/:slug`).
   """
 
   use FirmowidWeb, :live_view
@@ -25,12 +27,25 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     )
   end
 
-  defp assign_page(socket, :show, %{"slug" => slug}) do
-    case Guides.fetch(slug) do
+  defp assign_page(socket, :help_index, _params) do
+    index_page = Guides.help_index_page()
+
+    assign(socket,
+      guide_categories: Guides.by_category(:help),
+      index_page: index_page,
+      page_title: index_page.heading,
+      meta_description: index_page.intro
+    )
+  end
+
+  defp assign_page(socket, action, %{"slug" => slug}) do
+    section = Map.fetch!(%{show: :guide, feature: :feature, help: :help}, action)
+
+    case Guides.fetch(slug, section) do
       {:ok, guide} ->
         assign(socket,
           article: guide,
-          share_url: Endpoint.url() <> ~p"/poradnik/#{guide.slug}",
+          share_url: Endpoint.url() <> guide.path,
           page_title: guide.title,
           meta_description: guide.description
         )
@@ -42,7 +57,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
 
   @impl true
   @spec render(map()) :: Phoenix.LiveView.Rendered.t()
-  def render(%{live_action: :index} = assigns) do
+  def render(%{live_action: action} = assigns) when action in [:index, :help_index] do
     ~H"""
     <.legal_page>
       <h1>{@index_page.heading}</h1>
@@ -56,7 +71,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         <h2>{category.name}</h2>
         <p>{category.description}</p>
         <article :for={guide <- guides}>
-          <h3><a href={~p"/poradnik/#{guide.slug}"}>{guide.title}</a></h3>
+          <h3><a href={guide.path}>{guide.title}</a></h3>
           <p>{guide.description}</p>
           <p class="text-sm text-grey-600">
             <time datetime={Date.to_iso8601(guide.updated)}>
@@ -71,18 +86,15 @@ defmodule FirmowidWeb.Landing.Views.Guides do
 
   # sobelow_skip ["XSS.Raw"]
   # Guide HTML is compiled from Markdown committed in priv/guides with raw HTML disabled.
-  def render(%{live_action: :show} = assigns) do
+  def render(assigns) do
     ~H"""
     <.legal_page>
       <nav class="not-prose text-sm">
         <ol class="flex flex-wrap gap-x-2 text-grey-600">
-          <li><a href={~p"/poradnik"} class="underline">{gettext("Guides")}</a></li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <a href={~p"/poradnik" <> "#" <> @article.category.slug} class="underline">
-              {@article.category.name}
-            </a>
-          </li>
+          <%= for {crumb, index} <- Enum.with_index(@article.breadcrumbs) do %>
+            <li :if={index > 0} aria-hidden="true">/</li>
+            <li><a href={crumb.path} class="underline">{crumb.name}</a></li>
+          <% end %>
         </ol>
       </nav>
       <h1>{@article.title}</h1>
