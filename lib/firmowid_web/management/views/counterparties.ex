@@ -7,6 +7,9 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.EmptyState
+  import FirmowidWeb.Management.Components.ListToolbar
+  import FirmowidWeb.Management.Components.SidePanel
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Invoicing
@@ -18,19 +21,13 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
   @impl true
   def mount(_params, _session, socket) do
-    scope = socket.assigns.ash_scope
-
-    zero_state? =
-      Invoicing.list_counterparties!(%{status: :all, limit: 1}, scope: scope) == []
-
     {:ok,
      socket
      |> assign(:page_title, gettext("Counterparty management"))
-     |> assign(:zero_state?, zero_state?)
-     |> assign(:suggestion_count, length(CounterpartyDetection.list(scope)))
-     |> assign(:counterparties_empty?, true)
-     |> assign(:view, :standard)
-     |> stream(:counterparties, [])}
+     # The page spaces itself, as in the design (see `counterparties.html.heex`).
+     |> assign(:no_padding, true)
+     |> assign(:suggestions, CounterpartyDetection.waiting_count(socket.assigns.ash_scope))
+     |> assign(:view, :standard)}
   end
 
   @impl true
@@ -78,13 +75,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
     with {:ok, counterparty} when not is_nil(counterparty) <-
            Invoicing.get_counterparty(id, scope: scope, not_found_error?: false),
          {:ok, _counterparty} <- Invoicing.unarchive_counterparty(counterparty, %{}, scope: scope) do
-      {:noreply,
-       socket
-       |> stream_delete(:counterparties, counterparty)
-       |> assign(
-         :counterparties_empty?,
-         length(socket.assigns.streams.counterparties.inserts) == 1
-       )}
+      {:noreply, assign_counterparties(socket)}
     else
       _ -> {:noreply, put_flash(socket, :error, gettext("Could not restore the counterparty"))}
     end
@@ -120,9 +111,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
         scope: scope
       )
 
-    socket
-    |> assign(:counterparties_empty?, counterparties == [])
-    |> stream(:counterparties, counterparties, reset: true)
+    assign(socket, :counterparties, counterparties)
   end
 
   defp assign_form(socket) do
@@ -147,16 +136,124 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value
 
-  attr :counterparty, :map, required: true
+  defp grid_columns(:index, :standard), do: "grid-cols-[minmax(0,1fr)_12.5rem_min-content]"
 
-  defp counterparty_identifier(assigns) do
+  defp grid_columns(:index, :cooperation_value), do: "grid-cols-[minmax(0,1fr)_12.5rem_12.5rem_min-content]"
+
+  defp grid_columns(:archive, :standard), do: "grid-cols-[minmax(0,1fr)_12.5rem_7.5rem_max-content_min-content]"
+
+  defp grid_columns(:archive, :cooperation_value),
+    do: "grid-cols-[minmax(0,1fr)_12.5rem_12.5rem_7.5rem_max-content_min-content]"
+
+  # A missing identifier ("—") is lighter than one in place (Figma "Wiersz kontrahenta").
+  defp identifier_color(counterparty, live_action) do
+    cond do
+      CounterpartyHelpers.identifier(counterparty) == "—" -> "text-grey-400"
+      live_action == :archive -> "text-grey-500"
+      true -> "text-grey-700"
+    end
+  end
+
+  defp counterparty_path(counterparty, live_action, params) do
+    Navigation.counterparty_path(counterparty.id, %{
+      powrot_do: Navigation.counterparties_path(live_action, params)
+    })
+  end
+
+  attr :counterparties, :list, required: true
+
+  # Figma "Kontrahenci": the active list in numbers.
+  defp active_summary(assigns) do
+    assigns =
+      assign(assigns,
+        rows: [
+          {pgettext("counterparties summary", "Active"), length(assigns.counterparties)}
+          | type_rows(assigns.counterparties)
+        ]
+      )
+
     ~H"""
-    {CounterpartyHelpers.identifier(@counterparty)}
+    <.summary_card title={pgettext("management navigation", "Counterparties")} rows={@rows} />
+    """
+  end
+
+  attr :counterparties, :list, required: true
+
+  # Figma "Archiwum": the archive in numbers.
+  defp archive_summary(assigns) do
+    last_archived_on = assigns.counterparties |> Enum.map(& &1.archived_at) |> Enum.max(Date)
+
+    assigns =
+      assign(assigns,
+        rows:
+          [
+            {pgettext("counterparties archive", "Archived counterparties"), length(assigns.counterparties)}
+          ] ++
+            type_rows(assigns.counterparties) ++
+            [
+              {pgettext("counterparties archive", "Last archived"), Calendar.strftime(last_archived_on, "%d.%m.%Y")}
+            ]
+      )
+
+    ~H"""
+    <.summary_card title={pgettext("counterparties archive", "Archive")} rows={@rows} />
+    """
+  end
+
+  defp type_rows(counterparties) do
+    companies = Enum.count(counterparties, &(&1.type == :company))
+
+    [
+      {pgettext("counterparties summary", "Companies"), companies},
+      {gettext("Individuals"), length(counterparties) - companies}
+    ]
+  end
+
+  attr :counterparties, :list, required: true
+  attr :live_action, :atom, required: true
+  attr :params, :map, required: true
+
+  # Figma "Bez identyfikatora": the companies to complete, so their invoices carry a tax
+  # identifier. Hidden when every company has one.
+  defp companies_without_identifier(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :missing,
+        Enum.filter(
+          assigns.counterparties,
+          &(&1.type == :company and CounterpartyHelpers.identifier(&1) == "—")
+        )
+      )
+
+    ~H"""
+    <.panel_card
+      :if={@missing != []}
+      title={pgettext("counterparties summary", "Companies without an identifier")}
+      count={length(@missing)}
+    >
+      <ul class="flex flex-col gap-3">
+        <li :for={counterparty <- @missing} class="min-w-0">
+          <.link
+            kind="unstyled"
+            navigate={counterparty_path(counterparty, @live_action, @params)}
+            class="block truncate text-sm/[1.35] font-medium text-grey-900 hover:underline"
+          >
+            {counterparty.display_label}
+          </.link>
+        </li>
+      </ul>
+      <p class="text-sm/[1.35] text-grey-500">
+        {gettext("Fill in the identifier in the counterparty's profile.")}
+      </p>
+    </.panel_card>
     """
   end
 
   attr :counterparty, :map, required: true
+  attr :archived, :boolean, required: true
 
+  # Figma "Icons" Company / User: Lucide building-2 and user, black, grey once archived.
   # The website icon fades in over the type icon once loaded; one that fails stays
   # hidden (the `data-progressive` script in the root layout). Its white background
   # covers the type icon behind a transparent logo, on the white row. Only companies
@@ -164,7 +261,11 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   defp counterparty_icon(assigns) do
     ~H"""
     <span class="relative flex size-6 shrink-0">
-      <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="size-6 text-grey-500" />
+      <Lucideicons.render!
+        name={if(@counterparty.type == :company, do: "building-2", else: "user")}
+        class={["size-6", if(@archived, do: "text-grey-500", else: "text-black")]}
+        aria-hidden="true"
+      />
       <img
         :if={@counterparty.website_domain}
         data-progressive

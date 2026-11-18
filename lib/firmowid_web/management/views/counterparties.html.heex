@@ -1,39 +1,54 @@
-<div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="sticky top-0 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
-    <.filter_tabs label={gettext("Counterparty scope")}>
-      <:tab
-        patch={Navigation.counterparties_path(:index, @params)}
-        active={@live_action == :index}
-      >
-        {pgettext("people list tab", "Active")}
-      </:tab>
-      <:tab
-        patch={Navigation.counterparties_path(:archive, @params)}
-        active={@live_action == :archive}
-      >
-        {pgettext("people list tab", "Archived")}
-      </:tab>
-      <:tab navigate={Navigation.counterparty_suggestions_path()} count={@suggestion_count}>
-        {pgettext("people list tab", "To review")}
-      </:tab>
-    </.filter_tabs>
+<div class="flex w-full flex-col px-4 py-6 md:px-10 md:pt-8 md:pb-12">
+  <header class="flex items-end justify-between gap-4">
+    <h1 class="text-3xl/[1.3] font-bold text-grey-900">
+      {pgettext("management navigation", "Counterparties")}
+    </h1>
+    <.page_actions>
+      <:action>
+        <.link
+          navigate={
+            Navigation.counterparty_new_path(%{
+              powrot_do: Navigation.counterparties_path(@live_action, @params)
+            })
+          }
+          kind="button"
+          variant="special"
+          data-fab
+        >
+          <Lucideicons.plus class="size-5" aria-hidden="true" />
+          <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
+        </.link>
+      </:action>
+    </.page_actions>
+  </header>
 
-    <div class="flex items-center gap-4 max-md:flex-wrap">
-      <form class="flex min-w-40 flex-1 max-md:w-full md:max-w-[360px]" phx-submit="search">
-        <div class="flex h-9 w-full items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
-          <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
-          <.input
-            type="text"
-            name="szukaj"
-            value={@search}
-            placeholder={gettext("Search counterparties")}
-            phx-change="search"
-            phx-debounce="300"
-            input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
-            class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
-          />
-        </div>
-      </form>
+  <%!-- 24px around the toolbar, as between the title, the toolbar and the table. --%>
+  <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-grey-100 py-6 max-md:static max-md:z-auto max-md:flex-col max-md:items-stretch">
+    <form class="flex items-center gap-4 max-md:flex-wrap max-md:gap-3" phx-submit="search">
+      <.scope_switch label={gettext("Counterparty scope")}>
+        <:option
+          patch={Navigation.counterparties_path(:index, @params)}
+          active={@live_action == :index}
+        >
+          {pgettext("people list tab", "Active")}
+        </:option>
+        <:option
+          patch={Navigation.counterparties_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          {pgettext("people list tab", "Archived")}
+        </:option>
+        <%!-- Figma "Przełącznik „Do przejrzenia”": the third option counts the new buyers, stays
+             without a count while only skipped ones are left, and goes away with neither. --%>
+        <:option
+          :if={@suggestions.waiting + @suggestions.skipped > 0}
+          navigate={Navigation.counterparty_suggestions_path()}
+          active={false}
+          count={if(@suggestions.waiting > 0, do: @suggestions.waiting)}
+        >
+          {pgettext("people list tab", "New counterparties")}
+        </:option>
+      </.scope_switch>
 
       <.filter_pills label={nil} class="w-auto shrink-0">
         <:pill
@@ -52,236 +67,181 @@
         </:pill>
       </.filter_pills>
 
-      <div class="ml-auto flex shrink-0 items-center gap-6">
-        <.switch
-          class="flex-row-reverse gap-4 select-none max-md:hidden"
-          label={gettext("Total paid")}
-          field={@form[:view_cooperation_value]}
-          phx-click="toggle_cooperation_value_view"
-        />
-        <.page_actions>
-          <:action>
-            <.link
-              navigate={
-                Navigation.counterparty_new_path(%{
-                  powrot_do: Navigation.counterparties_path(@live_action, @params)
-                })
-              }
-              kind="button"
-              variant="special"
-              data-fab
-            >
-              <Lucideicons.plus />
-              <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
-            </.link>
-          </:action>
-        </.page_actions>
-      </div>
-    </div>
+      <.expanding_search search={@search} search_label={gettext("Search counterparties")} />
+    </form>
+
+    <.switch
+      class="flex-row-reverse max-md:hidden"
+      field={@form[:view_cooperation_value]}
+      phx-click="toggle_cooperation_value_view"
+    >
+      <:label_slot>
+        <span class="text-sm/[1.35] text-grey-700">{gettext("Total paid")}</span>
+      </:label_slot>
+    </.switch>
   </div>
 
-  <%= cond do %>
-    <% @counterparties_empty? -> %>
-      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
-        <%= if @search != "" or not is_nil(@type_filter) do %>
-          <Lucideicons.file_x class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">
-            {gettext("We could not find the counterparty you are looking for.")}
-          </p>
-        <% else %>
-          <Lucideicons.building_2 class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">
-            {case @live_action do
-              :index -> gettext("You have no active counterparties to show.")
-              :archive -> gettext("You have no archived counterparties to show.")
-            end}
-          </p>
+  <%!-- Figma "Wiersz kontrahenta": the counterparty fills the row, the identifier and the
+       cooperation value take 200px each, the archive date 120px, 24px apart. On phones the
+       identifier goes under the name. --%>
+  <%!-- Figma "duży ekran (1920)": from 1800px the list in numbers stands beside the table,
+       24px apart, level with the first row. --%>
+  <div class="flex min-[1800px]:gap-6">
+    <div
+      id="counterparties-list"
+      class={[
+        "grid min-w-0 flex-1 content-start gap-x-6 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_min-content]",
+        grid_columns(@live_action, @view)
+      ]}
+    >
+      <div
+        id="counterparties-list-header"
+        class={
+          [
+            "sticky top-21 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 py-1 text-sm/[1.35] text-grey-500 transition-all duration-75 max-md:static",
+            # An empty list keeps the heading's room, so the empty state stays in place.
+            @counterparties == [] && "invisible"
+          ]
+        }
+        phx-hook="ScrollStyle"
+        data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
+        data-scroll-offset="90"
+      >
+        <p>{gettext("Counterparty")}</p>
+        <p class="text-right max-md:hidden">{gettext("Identifier")}</p>
+        <%!-- The column slides in as in the Team's payroll view. --%>
+        <p
+          :if={@view == :cooperation_value}
+          class="text-right transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none max-md:hidden starting:translate-x-1 starting:opacity-0"
+        >
+          {gettext("Total paid")}
+        </p>
+        <%= if @live_action == :archive do %>
+          <p class="text-right text-nowrap max-md:hidden">{gettext("Archived on")}</p>
+          <span class="max-md:hidden" />
         <% end %>
+        <span />
       </div>
-    <% @live_action == :index -> %>
-      <div
-        id="counterparties-list"
-        data-view={@view}
-        class={[
-          "group mt-4 grid gap-x-6 gap-y-2",
-          if(@view == :cooperation_value,
-            do: "grid-cols-[3fr_1.2fr_1.2fr_min-content]",
-            else: "grid-cols-[3fr_1.2fr_min-content]"
-          )
-        ]}
-      >
-        <div
-          id="counterparties-list-header-active"
-          class="sticky top-(--page-header-with-tabs-height) z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
-          phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
-          data-scroll-offset="90"
+
+      <%= if @counterparties == [] do %>
+        <.empty_state
+          size="small"
+          title={
+            cond do
+              @search != "" or not is_nil(@type_filter) ->
+                gettext("We could not find the counterparty you are looking for.")
+
+              @live_action == :archive ->
+                gettext("You have no archived counterparties to show.")
+
+              true ->
+                gettext("You have no active counterparties to show.")
+            end
+          }
+          class="col-span-full gap-4! py-16! [&>div>p]:leading-[normal]"
         >
-          <p>{gettext("Counterparty")}</p>
-
-          <p class="text-right">{gettext("Identifier")}</p>
-
-          <%= if @view == :cooperation_value do %>
-            <p class="text-right">{gettext("Total paid")}</p>
-          <% end %>
-        </div>
-
+          <:icon><Lucideicons.building_2 class="text-grey-400" /></:icon>
+        </.empty_state>
+      <% else %>
+        <%!-- An archived counterparty is greyed out, all but its archive date. --%>
         <div
-          id="counterparties-stream-active"
-          phx-update="stream"
-          class="col-span-full grid grid-cols-subgrid gap-y-2"
+          :for={{counterparty, index} <- Enum.with_index(@counterparties)}
+          :key={counterparty.id}
+          style={"--row: #{min(index, 12)}"}
+          class={[
+            "col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 max-md:py-3 md:h-[57px]",
+            if(@live_action == :archive, do: "text-grey-500", else: "text-grey-900")
+          ]}
         >
-          <div
-            :for={{dom_id, counterparty} <- @streams.counterparties}
-            id={dom_id}
-            class="col-span-full grid h-14 grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
-          >
-            <div class="flex items-center gap-4 truncate">
-              <.counterparty_icon counterparty={counterparty} />
+          <div class="flex min-w-0 items-center gap-4">
+            <.counterparty_icon counterparty={counterparty} archived={@live_action == :archive} />
+            <div class="min-w-0">
               <.link
                 kind="unstyled"
-                navigate={
-                  Navigation.counterparty_path(counterparty.id, %{
-                    powrot_do: Navigation.counterparties_path(@live_action, @params)
-                  })
-                }
-                class="truncate hover:underline"
+                navigate={counterparty_path(counterparty, @live_action, @params)}
+                class="block truncate text-base/[1.35] hover:underline"
+                title={counterparty.display_label}
               >
                 {counterparty.display_label}
               </.link>
+              <p
+                :if={CounterpartyHelpers.identifier(counterparty) != "—"}
+                class={[
+                  "truncate text-sm/[1.35] md:hidden",
+                  if(@live_action == :archive, do: "text-grey-500", else: "text-grey-700")
+                ]}
+              >
+                {CounterpartyHelpers.identifier(counterparty)}
+              </p>
             </div>
-            <p class="text-right text-grey-700">
-              <.counterparty_identifier counterparty={counterparty} />
-            </p>
-            <p class="hidden text-right text-grey-700 group-data-[view=cooperation\_value]:block">
-              {cooperation_value_cell(counterparty.cooperation_value)}
-            </p>
-            <.link
-              kind="unstyled"
-              navigate={
-                Navigation.counterparty_path(counterparty.id, %{
-                  powrot_do: Navigation.counterparties_path(@live_action, @params)
-                })
-              }
-              class="text-grey-500 hover:text-grey-700"
-              aria-label={gettext("Open counterparty %{name}", name: counterparty.display_label)}
-            >
-              <Lucideicons.chevron_right class="size-4" />
-            </.link>
           </div>
-        </div>
-      </div>
-    <% true -> %>
-      <div
-        data-view={@view}
-        class={[
-          "group mt-4 grid gap-x-6 gap-y-2",
-          if(@view == :cooperation_value,
-            do: "grid-cols-[3fr_1.2fr_1fr_1.2fr_min-content]",
-            else: "grid-cols-[3fr_1.2fr_1fr_min-content]"
-          )
-        ]}
-        id="counterparties-list"
-      >
-        <div
-          id="counterparties-list-header-archive"
-          class="sticky top-(--page-header-with-tabs-height) z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
-          phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
-          data-scroll-offset="90"
-        >
-          <p>{gettext("Counterparty")}</p>
-          <p class="text-right">{gettext("Identifier")}</p>
-          <p class="text-right text-nowrap">{gettext("Archived on")}</p>
-          <%= if @view == :cooperation_value do %>
-            <p class="text-right">{gettext("Total paid")}</p>
-          <% end %>
-        </div>
 
-        <div
-          id="counterparties-stream-archive"
-          phx-update="stream"
-          class="col-span-full grid grid-cols-subgrid gap-y-2"
-        >
-          <div
-            :for={{dom_id, counterparty} <- @streams.counterparties}
-            id={dom_id}
-            class="col-span-full grid h-14 grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
+          <p class={[
+            "truncate text-right text-base/[1.35] max-md:hidden",
+            identifier_color(counterparty, @live_action)
+          ]}>
+            {CounterpartyHelpers.identifier(counterparty)}
+          </p>
+
+          <p
+            :if={@view == :cooperation_value}
+            class={[
+              "text-right text-base/[1.35] text-nowrap tabular-nums transition-[opacity,translate] delay-[calc(var(--row)*20ms)] duration-300 ease-out motion-reduce:transition-none max-md:hidden starting:translate-x-1 starting:opacity-0",
+              if(@live_action == :archive, do: "text-grey-500", else: "text-grey-700")
+            ]}
           >
-            <div class="flex items-center gap-4 truncate">
-              <.counterparty_icon counterparty={counterparty} />
-              <.link
-                kind="unstyled"
-                navigate={
-                  Navigation.counterparty_path(counterparty.id, %{
-                    powrot_do: Navigation.counterparties_path(@live_action, @params)
-                  })
-                }
-                class="truncate hover:underline"
-              >
-                {counterparty.display_label}
-              </.link>
-            </div>
-            <p class="text-right text-grey-700">
-              <.counterparty_identifier counterparty={counterparty} />
-            </p>
-            <p class="text-right text-grey-700">
+            {cooperation_value_cell(counterparty.cooperation_value)}
+          </p>
+
+          <%= if @live_action == :archive do %>
+            <p class="text-right text-base/[1.35] text-grey-900 max-md:hidden">
               {Calendar.strftime(counterparty.archived_at, "%d.%m.%Y")}
             </p>
-            <p class="hidden text-right text-grey-700 group-data-[view=cooperation\_value]:block">
-              {cooperation_value_cell(counterparty.cooperation_value)}
-            </p>
-            <div class="flex items-center gap-3 justify-self-end">
-              <.button
-                type="button"
-                variant="tertiary"
-                size="small"
-                phx-click="unarchive_counterparty"
-                phx-value-id={counterparty.id}
-              >
-                {gettext("Restore")}
-              </.button>
-              <.link
-                kind="unstyled"
-                navigate={
-                  Navigation.counterparty_path(counterparty.id, %{
-                    powrot_do: Navigation.counterparties_path(@live_action, @params)
-                  })
-                }
-                class="text-grey-500 hover:text-grey-700"
-                aria-label={
-                  gettext("Open counterparty %{name}", name: counterparty.display_label)
-                }
-              >
-                <Lucideicons.chevron_right class="size-4" />
-              </.link>
-            </div>
-          </div>
+            <.button
+              type="button"
+              variant="tertiary"
+              size="small"
+              class="max-md:hidden"
+              phx-click="unarchive_counterparty"
+              phx-value-id={counterparty.id}
+            >
+              {gettext("Restore")}
+            </.button>
+          <% end %>
+
+          <.link
+            kind="unstyled"
+            navigate={counterparty_path(counterparty, @live_action, @params)}
+            class="flex items-center"
+            aria-label={gettext("Open counterparty %{name}", name: counterparty.display_label)}
+          >
+            <Lucideicons.chevron_right class="size-4 shrink-0 text-black" />
+          </.link>
         </div>
-      </div>
-  <% end %>
-</div>
+      <% end %>
+    </div>
 
-<div
-  :if={@zero_state?}
-  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
->
-  <Lucideicons.building_2 class="size-26 text-grey-300" size={48} />
-
-  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
-    {gettext("You do not have any counterparties yet. Add the first one by clicking below.")}
-  </p>
-
-  <.link
-    navigate={
-      Navigation.counterparty_new_path(%{
-        powrot_do: Navigation.counterparties_path(@live_action, @params)
-      })
-    }
-    kind="button"
-    variant="tertiary"
-    class="mt-6"
-  >
-    <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
-  </.link>
+    <aside
+      :if={@counterparties != []}
+      class="hidden w-80 shrink-0 flex-col gap-2.5 pt-8.75 min-[1800px]:flex"
+    >
+      <%= if @live_action == :archive do %>
+        <.archive_summary counterparties={@counterparties} />
+        <.panel_card title={pgettext("counterparties archive", "Restoring")}>
+          <p class="text-sm/[1.35] text-grey-500">
+            {gettext(
+              "A restored counterparty returns to the active list with its whole history of invoices and transactions."
+            )}
+          </p>
+        </.panel_card>
+      <% else %>
+        <.active_summary counterparties={@counterparties} />
+        <.companies_without_identifier
+          counterparties={@counterparties}
+          live_action={@live_action}
+          params={@params}
+        />
+      <% end %>
+    </aside>
+  </div>
 </div>
