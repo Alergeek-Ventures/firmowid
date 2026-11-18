@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
   import FirmowidWeb.Landing.Components.Primitives, only: [landing_button: 1]
 
+  alias FirmowidWeb.Landing.Utilities.Guides
   alias Phoenix.LiveView.Rendered
 
   @repository "https://github.com/Alergeek-Ventures/firmowid"
@@ -49,7 +50,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Integration with business accounts, including foreign accounts"),
         gettext_noop("Error notifications before documents reach the tax office")
       ],
-      visual: :invoices
+      visual: :invoices,
+      page: "faktury-ksef"
     },
     %{
       tags: [gettext_noop("invoicing"), gettext_noop("bank accounts")],
@@ -64,7 +66,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("One-click export for accounting"),
         gettext_noop("Alerts for unpaid invoices")
       ],
-      visual: :banking
+      visual: :banking,
+      page: "bank"
     },
     %{
       tags: [gettext_noop("costs"), gettext_noop("accounting office")],
@@ -79,7 +82,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Internal comment on every document"),
         gettext_noop("Monthly ZIP package for your accounting office")
       ],
-      visual: :costs
+      visual: :costs,
+      page: nil
     },
     %{
       tags: [gettext_noop("analysis"), gettext_noop("profitability")],
@@ -94,7 +98,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("How much of every 100 PLN of income stayed"),
         gettext_noop("Unpaid invoices shown separately")
       ],
-      visual: :analysis
+      visual: :analysis,
+      page: "analiza"
     },
     %{
       tags: [gettext_noop("record-keeping"), gettext_noop("working hours")],
@@ -109,7 +114,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Labor costs visible in reports immediately"),
         gettext_noop("One-click time tracking export")
       ],
-      visual: :time
+      visual: :time,
+      page: "czas-pracy"
     },
     %{
       tags: [gettext_noop("HR"), gettext_noop("leave and business trips")],
@@ -124,7 +130,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Employee contracts and documents"),
         gettext_noop("Tracked hours ready for payroll")
       ],
-      visual: :team
+      visual: :team,
+      page: nil
     },
     %{
       tags: [gettext_noop("inbox"), gettext_noop("everyday work")],
@@ -139,7 +146,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Overdue invoices without a matched payment"),
         gettext_noop("A separate list of their own tasks for every employee")
       ],
-      visual: :inbox
+      visual: :inbox,
+      page: nil
     }
   ]
 
@@ -234,7 +242,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
   @spec capabilities_section(map()) :: Rendered.t()
   def capabilities_section(assigns) do
-    assigns = assign(assigns, :features, localize_features(@features))
+    assigns =
+      assign(assigns,
+        features: localize_features(@features),
+        link_label: Guides.feature_link_label()
+      )
 
     ~H"""
     <section id="funkcje" class="py-18 lg:py-26">
@@ -256,7 +268,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <article
           :for={feature <- @features}
-          class="mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-16 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 lg:[&+article]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+article]:bg-size-[100%_--spacing(0.5)] lg:[&+article]:bg-top lg:[&+article]:bg-no-repeat lg:[&+article]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+          class="group relative mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-16 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 lg:[&+article]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+article]:bg-size-[100%_--spacing(0.5)] lg:[&+article]:bg-top lg:[&+article]:bg-no-repeat lg:[&+article]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
         >
           <div class="font-normal">
             <p class="flex flex-wrap gap-2 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-sm [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase max-lg:[&_span]:text-xs lg:[&_span]:rounded-full lg:[&_span]:bg-[#f2dfd4] lg:[&_span]:px-4 lg:[&_span]:py-1 lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:border-0 [&_span+span::before]:mr-2.5 [&_span+span::before]:content-['·'] lg:[&_span+span::before]:content-none">
@@ -267,7 +279,19 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               feature.visual == :banking && "lg:max-w-115",
               feature.visual == :team && "lg:max-w-100"
             ]}>
-              <span class={[feature.visual == :team && "whitespace-pre-line"]}>{feature.title}</span>
+              <a
+                :if={feature.page}
+                href={~p"/funkcje/#{feature.page}"}
+                class={[
+                  "after:absolute after:inset-0 after:rounded-2xl after:content-['']",
+                  feature.visual == :team && "whitespace-pre-line"
+                ]}
+              >
+                {feature.title}
+              </a>
+              <span :if={!feature.page} class={[feature.visual == :team && "whitespace-pre-line"]}>
+                {feature.title}
+              </span>
             </h3>
             <p class="text-base/6.75 text-grey-700 lg:text-h5">
               {feature.description}
@@ -283,6 +307,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 />{bullet}
               </li>
             </ul>
+            <p
+              :if={feature.page}
+              aria-hidden="true"
+              class="mt-6 text-sm font-semibold text-(--landing-accent) transition-opacity lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+            >
+              {@link_label} →
+            </p>
           </div>
           <.product_preview visual={feature.visual} />
         </article>
@@ -943,6 +974,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ></span>{gettext("Reading sales and cost invoices")}
             </li>
           </ul>
+          <a
+            href={~p"/funkcje/claude-chatgpt-mcp"}
+            class="mt-6 inline-block text-sm font-semibold text-teal-700 underline underline-offset-4"
+          >
+            {Guides.feature_link_label()} →
+          </a>
 
           <div class="mt-10 flex items-center gap-2 max-lg:mt-16 max-lg:justify-center lg:mt-14 lg:pl-4 max-lg:[&>div]:hidden [&>img]:h-12.5 [&>img]:w-8.5 [&>img]:shrink-0 [&>img]:object-contain max-lg:[&>img]:hidden">
             <img
