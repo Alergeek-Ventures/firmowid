@@ -1,0 +1,7 @@
+# Advisories in the asset build tooling that have no patched release. Nothing here
+# ships to the browser. Recheck with every dependency update; audit-ci.jsonc keeps
+# the matching npm audit allowlist.
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+reason = "No picomatch release fixes it (4.0.7 is the latest, checked 2026-11-18). It only comes from @tailwindcss/cli's @parcel/watcher, which matches Tailwind's own ignore globs at build time, never user input."
