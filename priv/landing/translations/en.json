@@ -141,7 +141,7 @@
     ["<h3>Zespół</h3><p>Urlopy, delegacje, umowy.</p>", "<h3>Team</h3><p>Leave, business trips, contracts.</p>"],
     ["<h3>Paczka dla Twojego biura księgowego</h3><p>ZIP z&nbsp;fakturami za miesiąc.</p>", "<h3>A package for your accounting office</h3><p>A ZIP with the month’s invoices.</p>"],
     ["<p class=\"kicker\">Jak to działa u&nbsp;innych</p>", "<p class=\"kicker\">How it works for others</p>"],
-    ["Jak pomogliśmy innym.", "How we helped others."],
+    ["Jak korzystają z&nbsp;Firmowida.", "How companies use Firmowid."],
     ["<span class=\"case__tag\">Księgarnia i&nbsp;kawiarnia · Kraków</span>", "<span class=\"case__tag\">Bookshop and café · Kraków</span>"],
     ["<h3>Bonobo: z&nbsp;10 godzin papierów tygodniowo do jednej</h3>", "<h3>Bonobo: from 10 hours of paperwork a week to one</h3>"],
     ["<span class=\"case__go\">Sprawdź <i>", "<span class=\"case__go\">Read <i>"],
