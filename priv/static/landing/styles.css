@@ -157,12 +157,16 @@ section{position:relative}
   .stage__result{margin-top:40px}
   .stage__result::before{content:"";position:absolute;left:50%;top:-34px;height:28px;border-left:2px dotted var(--r400)}
 }
-.learn{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:clamp(36px,5vw,64px)}
+.learn{display:grid;grid-template-columns:repeat(3,1fr);gap:42px;margin-top:clamp(36px,5vw,64px)}
 .learn article{padding:18px 20px 22px;background:#fff;border:1px solid var(--g200);border-radius:4px}
 .learn__pic{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;min-height:136px;margin-bottom:16px;padding:14px;background:var(--g50);border-radius:3px;font-family:var(--app);font-size:12.5px}
 .learn__pic--stack{flex-direction:column;align-items:stretch;gap:6px}
 .learn__pic i{font-style:normal;color:var(--r600)}
-.learn h3{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.learn h3{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.learn__n{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--r500);color:var(--ink);font-size:14px;font-weight:700;letter-spacing:0}
+/* small hand-drawn arrows lead from one step to the next */
+.learn article{position:relative;display:grid;grid-template-rows:subgrid;grid-row:span 3;gap:0}
+.learn article:not(:last-child)::after{content:"";position:absolute;z-index:1;top:72px;right:-38px;width:34px;height:22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 22' fill='none' stroke='%239C5D39' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 13 C 9 8, 18 16, 30 10'/%3E%3Cpath d='M23 5 L31 10 L24 16'/%3E%3C/svg%3E") center/contain no-repeat}
 .learn p{margin-top:6px;font-size:14.5px;line-height:1.45;color:var(--g700)}
 .seal{padding:7px 12px;border:2px solid var(--r600);color:var(--r700);border-radius:4px;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;transform:rotate(-4deg)}
 .seal--teal{border-color:var(--t700);color:var(--t700);transform:rotate(3deg)}
@@ -553,6 +557,7 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
   .calc__out{position:static}
   .oss__top,.oss__facts{grid-template-columns:1fr}.oss__facts{gap:22px}
   .learn{grid-template-columns:1fr}
+  .learn article:not(:last-child)::after{top:auto;right:auto;bottom:-32px;left:50%;translate:-50% 0;rotate:90deg}
   .plans{grid-template-columns:1fr;max-width:460px;margin-inline:auto;gap:24px}
   .proof__nums{padding-left:24px}
   .end__fig{position:static;display:block;height:260px;margin:40px auto -40px}
@@ -598,7 +603,7 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
 .signup,.hero__cta{margin-top:clamp(26px,2.6vw,36px)}
 .hero__ticks{margin-top:20px}
 .hero .tabs{margin-top:clamp(56px,7vw,96px)}
-.bento__grid,.learn,.cases__grid,.plans{gap:16px}
+.bento__grid,.cases__grid,.plans{gap:16px}
 
 /* case cards in one column: picture beside the text */
 .case__pic--photo img{object-position:center 60%}
