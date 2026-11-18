@@ -10,7 +10,16 @@ defmodule Firmowid.Delegations.Delegation.List do
 
       argument :statuses, {:array, :atom},
         constraints: [
-          items: [one_of: [:pending, :in_progress, :awaiting_signature, :submitted, :complete]]
+          items: [
+            one_of: [
+              :pending,
+              :in_progress,
+              :awaiting_signature,
+              :submitted,
+              :complete,
+              :cancelled
+            ]
+          ]
         ]
 
       argument :ended_before, :date

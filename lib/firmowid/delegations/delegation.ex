@@ -13,6 +13,7 @@ defmodule Firmowid.Delegations.Delegation do
     fragments: [
       Firmowid.Delegations.Delegation.List,
       Firmowid.Delegations.Delegation.PendingOrderActions,
+      Firmowid.Delegations.Delegation.Cancellation,
       Firmowid.Delegations.Delegation.Policies,
       Firmowid.Delegations.Delegation.PerDiemAttributes
     ]
@@ -72,6 +73,7 @@ defmodule Firmowid.Delegations.Delegation do
       transition :submit_for_review, from: :awaiting_signature, to: :submitted
       transition :accept_settlement, from: :submitted, to: :complete
       transition :return_settlement, from: :submitted, to: :in_progress
+      transition :cancel, from: [:pending, :in_progress], to: :cancelled
     end
   end
 
@@ -319,7 +321,15 @@ defmodule Firmowid.Delegations.Delegation do
       allow_nil? false
       default :pending
       public? true
-      constraints one_of: [:pending, :in_progress, :awaiting_signature, :submitted, :complete]
+
+      constraints one_of: [
+                    :pending,
+                    :in_progress,
+                    :awaiting_signature,
+                    :submitted,
+                    :complete,
+                    :cancelled
+                  ]
     end
 
     attribute :settlement_sequence, :integer, public?: true, constraints: [min: 1]
@@ -361,6 +371,9 @@ defmodule Firmowid.Delegations.Delegation do
       on :delegation_submitted, :notify_admins, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
 
       on :delegation_approved, :notify_employee, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
+
+      on :delegation_cancelled, :notify_employee_about_cancellation,
+        delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
 
       on :settlement_submitted, :notify_admins_about_settlement,
         delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}

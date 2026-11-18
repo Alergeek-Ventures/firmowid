@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   def status_label(:submitted), do: pgettext("business trip status", "under review")
   def status_label(:complete), do: pgettext("business trip status", "approved")
+  def status_label(:cancelled), do: pgettext("business trip status", "cancelled")
 
   @spec status_badge_styles(atom()) :: list(String.t())
   def status_badge_styles(:pending), do: ["bg-teal-100 text-teal-700"]
@@ -21,6 +22,7 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   def status_badge_styles(:awaiting_signature), do: ["bg-rust-100 text-rust-700"]
   def status_badge_styles(:submitted), do: ["bg-teal-100 text-teal-700"]
   def status_badge_styles(:complete), do: ["bg-grey-100 text-grey-700"]
+  def status_badge_styles(:cancelled), do: ["bg-grey-100 text-grey-500"]
 
   @spec format_range(Date.t(), Date.t()) :: String.t()
   def format_range(start_date, end_date), do: TimeFormatter.format_date_range(start_date, end_date)

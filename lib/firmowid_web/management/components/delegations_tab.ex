@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Link
-  import FirmowidWeb.Delegations.Components.Delegation, only: [date_range: 1]
+  import FirmowidWeb.Delegations.Components.Delegation, only: [actions_menu: 1, date_range: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
       )
       |> assign(
         :previous_delegations,
-        Enum.filter(assigns.delegations, &(&1.status == :complete))
+        Enum.filter(assigns.delegations, &(&1.status in [:complete, :cancelled]))
       )
 
     ~H"""
@@ -65,6 +65,7 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
             <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />
           </p>
           <.delegation_status delegation={delegation} employee_id={@employee_id} />
+          <.delegation_menu delegation={delegation} />
         </li>
       </ul>
     </section>
@@ -105,6 +106,37 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
       status={@delegation.status}
       label={DelegationPresentation.status_label(@delegation.status)}
     />
+    """
+  end
+
+  attr :delegation, :map, required: true
+
+  # Every row keeps the menu's width, so the statuses line up.
+  defp delegation_menu(%{delegation: %{cancellable?: true}} = assigns) do
+    ~H"""
+    <.actions_menu
+      delegation={@delegation}
+      action={:cancel}
+      confirm={gettext("Cancel this business trip? The employee will see it as cancelled.")}
+      class="size-8 shrink-0"
+    />
+    """
+  end
+
+  defp delegation_menu(%{delegation: %{status: :cancelled}} = assigns) do
+    ~H"""
+    <.actions_menu
+      delegation={@delegation}
+      action={:delete}
+      confirm={gettext("Delete this business trip for good?")}
+      class="size-8 shrink-0"
+    />
+    """
+  end
+
+  defp delegation_menu(assigns) do
+    ~H"""
+    <span class="size-8 shrink-0" aria-hidden="true"></span>
     """
   end
 
