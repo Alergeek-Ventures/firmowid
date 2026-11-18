@@ -75,15 +75,20 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
     counterparties =
       Invoicing.list_counterparties!(%{status: :all}, load: [:display_label], scope: scope)
 
+    scope
+    |> unlinked_invoices()
+    |> Enum.group_by(&group_key/1)
+    |> Enum.map(fn {key, invoices} -> build_group(key, invoices, counterparties) end)
+    |> Enum.sort_by(&{-length(&1.invoice_ids), &1.buyer.label})
+  end
+
+  defp unlinked_invoices(scope) do
     %{submission: :confirmed}
     |> SalesInvoice.query_to_list(scope: scope)
     |> Ash.Query.filter(is_nil(counterparty_id))
     |> Ash.Query.sort(issue_date: :desc)
     |> Ash.Query.load(:amount)
     |> then(&SalesInvoice.list!(query: &1, scope: scope))
-    |> Enum.group_by(&group_key/1)
-    |> Enum.map(fn {key, invoices} -> build_group(key, invoices, counterparties) end)
-    |> Enum.sort_by(&{-length(&1.invoice_ids), &1.buyer.label})
   end
 
   @doc "The buyer groups skipped on the list, by group key."
@@ -102,10 +107,15 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
   def waiting_count(%Scope{} = scope) do
     skipped = skipped(scope)
 
-    {waiting, skipped_groups} =
-      scope |> list() |> Enum.split_with(&(not Map.has_key?(skipped, &1.key)))
+    # Only the group keys matter here, so the groups are not matched to counterparties.
+    {waiting, skipped_keys} =
+      scope
+      |> unlinked_invoices()
+      |> Enum.map(&group_key/1)
+      |> Enum.uniq()
+      |> Enum.split_with(&(not Map.has_key?(skipped, &1)))
 
-    %{waiting: length(waiting), skipped: length(skipped_groups)}
+    %{waiting: length(waiting), skipped: length(skipped_keys)}
   end
 
   @doc """

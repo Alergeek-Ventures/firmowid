@@ -23,8 +23,8 @@
   </header>
 
   <%!-- 24px around the toolbar, as between the title, the toolbar and the table. --%>
-  <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-grey-100 py-6 max-md:static max-md:z-auto max-md:flex-col max-md:items-stretch">
-    <form class="flex items-center gap-4 max-md:flex-wrap max-md:gap-3" phx-submit="search">
+  <div class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4 bg-grey-100 py-6 max-md:static max-md:z-auto max-md:flex-col max-md:items-stretch">
+    <form class="flex flex-wrap items-center gap-4 max-md:gap-3" phx-submit="search">
       <.scope_switch label={gettext("Counterparty scope")}>
         <:option
           patch={Navigation.counterparties_path(:index, @params)}
