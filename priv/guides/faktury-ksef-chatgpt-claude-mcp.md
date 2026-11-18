@@ -2,7 +2,7 @@
 title: "KSeF, bank, czas projektów i ChatGPT w jednym programie"
 description: "Firmowid łączy faktury KSeF, parowanie przelewów, czas projektów oraz ChatGPT i Claude przez MCP. Sprawdź, jak działa ten obieg i jakie ma ograniczenia."
 published: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-18
 category: ai-api-i-open-source
 ---
 
@@ -22,7 +22,7 @@ Firmowid przechowuje czas przy projekcie, obsługuje faktury sprzedażowe i kosz
 
 MCP, czyli Model Context Protocol, pozwala asystentowi korzystać z funkcji udostępnionych przez program. W przypadku Firmowida chodzi przede wszystkim o faktury, ale też o czas pracy, projekty i przypisywanie kosztów do projektów.
 
-We wczesnym dostępie można:
+Przez MCP można:
 
 - przygotować fakturę i zobaczyć jej podgląd przed wysłaniem do KSeF,
 - wystawić korektę,
@@ -64,7 +64,7 @@ Firmowid nie prowadzi KPiR, ryczałtu, ZUS ani deklaracji podatkowych. Nie ma te
 
 Plan Darmowy kosztuje 0 zł. Nie ma limitu faktur sprzedażowych ani wysyłki i odbioru dokumentów z KSeF. Obejmuje 2 użytkowników, 1 konto bankowe z parowaniem przelewów oraz ewidencję czasu dla 3 projektów.
 
-MCP dla ChatGPT, Claude, Cursora i innych zgodnych klientów jest we wczesnym dostępie w płatnych planach, od planu Przedsiębiorca. Plan Darmowy go nie obejmuje.
+MCP dla ChatGPT, Claude, Cursora i innych zgodnych klientów jest dostępny w płatnych planach, od planu Przedsiębiorca. Plan Darmowy go nie obejmuje.
 
 Kod Firmowida jest dostępny na licencji AGPL-3.0. Możesz uruchomić go na własnym serwerze bez opłaty licencyjnej. Trzeba wtedy samodzielnie skonfigurować i utrzymywać aplikację. Część funkcji dostępnych w wersji hostowanej nie trafiła jeszcze do publicznego repozytorium.
 
@@ -92,11 +92,11 @@ Może przygotować fakturę przez połączony program, jeśli jego serwer MCP ud
 
 ### Czy Claude łączy się z Firmowidem?
 
-Tak, przez MCP. Funkcja jest we wczesnym dostępie w płatnych planach, od planu Przedsiębiorca.
+Tak, przez MCP. Funkcja jest dostępna w płatnych planach, od planu Przedsiębiorca.
 
 ### Czy MCP jest dostępny w planie Darmowym?
 
-Nie. Plan Darmowy obejmuje KSeF bez limitu, jedno konto bankowe z parowaniem przelewów i ewidencję czasu dla 3 projektów. MCP jest we wczesnym dostępie w płatnych planach, od planu Przedsiębiorca.
+Nie. Plan Darmowy obejmuje KSeF bez limitu, jedno konto bankowe z parowaniem przelewów i ewidencję czasu dla 3 projektów. MCP jest dostępny w płatnych planach, od planu Przedsiębiorca.
 
 ### Czy Firmowid prowadzi księgowość?
 
