@@ -19,5 +19,9 @@
       });
     }, { rootMargin: '0px 0px -30% 0px' }).observe(bridge);
   }
+  // language menu: close on a click outside
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details.lang[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
+  });
   if (reduce) document.querySelectorAll('.reveal, .hours').forEach(function (el) { el.classList.add('in'); });
 })();
