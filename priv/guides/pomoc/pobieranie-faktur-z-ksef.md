@@ -56,7 +56,7 @@ Przy sprzedaży program zapisuje tylko zwykłe faktury VAT i korekty, które pot
 - korekty, które podają same różnice,
 - dokumenty z numerem, który w Firmowidzie nosi już inna faktura.
 
-Pominięta faktura pozostaje w KSeF bez zmian. Firmowid zapamiętuje jej numer i przy kolejnym pobieraniu próbuje ponownie.
+Pominięta faktura pozostaje w KSeF bez zmian. Firmowid zapisuje ją jako brakującą i zgłasza błąd zespołowi Firmowida, ale kolejne pobieranie jej nie ponawia: zaczyna od faktur zapisanych w KSeF później. Pojawi się w programie dopiero wtedy, gdy zespół usunie przyczynę i pobierze ją jeszcze raz.
 
 Faktur kosztowych to ograniczenie nie dotyczy. Na listę trafiają wszystkie.
 

@@ -28,7 +28,7 @@ Adres zwrotny klienta musi być w HTTPS. Wyjątkiem jest adres lokalny (`localho
 ## Jak czytać tabele
 
 - **Odczyt** niczego nie zmienia w firmie.
-- **Zapis** wykonuje się od razu po wywołaniu. Serwer nie pokazuje przy nim własnego okna potwierdzenia, więc o zgodę pyta Twój klient (Claude, ChatGPT, Cursor).
+- **Zapis** wykonuje się od razu po wywołaniu. Serwer nie pokazuje przy nim własnego okna potwierdzenia. Czy przed wywołaniem zobaczysz pytanie o zgodę, zależy od Twojego klienta (Claude, ChatGPT, Cursor) i jego ustawień, więc zapis może się wykonać bez dodatkowego potwierdzenia.
 - **Odczyt + widżet** otwiera podgląd dokumentu. Fakturę albo korektę wystawia dopiero kliknięcie w tym podglądzie.
 - **Rola** to najniższa rola w Firmowidzie, która może użyć narzędzia. Kolejność ról: pracownik, fakturowanie, księgowość, admin.
 

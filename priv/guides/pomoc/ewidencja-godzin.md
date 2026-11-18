@@ -30,7 +30,7 @@ Dokument nie zastępuje ewidencji czasu pracy prowadzonej dla pracowników na um
 
 ![Ewidencja godzin za zakończony miesiąc ze znaczkiem „BRAK”](/images/guides/pomoc/ewidencja-pazdziernik.webp)
 
-3. Kliknij „Pobierz”. Zapisze się plik PDF z nazwą zaczynającą się od „Ewidencja”.
+3. Jeśli w tym miesiącu trwa jeszcze sesja, najpierw ją zatrzymaj. Trwająca sesja dolicza czas do sumy, więc godziny w pobranym pliku przestałyby się zgadzać. Potem kliknij „Pobierz”. Zapisze się plik PDF z nazwą zaczynającą się od „Ewidencja”.
 4. Kliknij „Podpisz ewidencję”. Pojawi się okno „Sprawdź ewidencję przed podpisaniem”. Otwórz pobrany plik i porównaj miesiąc, godziny i swoje dane.
 5. Kliknij „Przejdź do podpisania”. W nowej karcie otworzy się podpis.gov.pl. Podpisz tam pobrany plik i zapisz go na dysku.
 6. Wróć do Firmowida i kliknij „Podpisane!”.
