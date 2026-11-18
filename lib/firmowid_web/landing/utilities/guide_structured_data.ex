@@ -4,8 +4,6 @@ defmodule FirmowidWeb.Landing.Utilities.GuideStructuredData do
   FAQPage and the index's ItemList. The root layout adds them to the site graph.
   """
 
-  use Gettext, backend: Firmowid.Gettext
-
   @type context :: %{
           url: String.t(),
           base_url: String.t(),
@@ -46,7 +44,7 @@ defmodule FirmowidWeb.Landing.Utilities.GuideStructuredData do
               "@type" => "ListItem",
               "position" => position,
               "name" => guide.title,
-              "url" => base_url <> "/poradnik/" <> guide.slug
+              "url" => base_url <> guide.path
             }
           end)
       }
@@ -70,30 +68,28 @@ defmodule FirmowidWeb.Landing.Utilities.GuideStructuredData do
   end
 
   defp breadcrumbs(article, %{url: url, base_url: base_url}) do
+    crumbs =
+      [%{name: "Firmowid", path: "/"}] ++
+        article.breadcrumbs ++ [%{name: article.title, path: nil}]
+
     %{
       "@type" => "BreadcrumbList",
       "@id" => url <> "#breadcrumb",
-      "itemListElement" => [
-        %{
-          "@type" => "ListItem",
-          "position" => 1,
-          "name" => "Firmowid",
-          "item" => base_url <> "/"
-        },
-        %{
-          "@type" => "ListItem",
-          "position" => 2,
-          "name" => gettext("Guides"),
-          "item" => base_url <> "/poradnik"
-        },
-        %{
-          "@type" => "ListItem",
-          "position" => 3,
-          "name" => article.category.name,
-          "item" => base_url <> "/poradnik#" <> article.category.slug
-        },
-        %{"@type" => "ListItem", "position" => 4, "name" => article.title}
-      ]
+      "itemListElement" =>
+        crumbs
+        |> Enum.with_index(1)
+        |> Enum.map(fn
+          {%{name: name, path: nil}, position} ->
+            %{"@type" => "ListItem", "position" => position, "name" => name}
+
+          {%{name: name, path: path}, position} ->
+            %{
+              "@type" => "ListItem",
+              "position" => position,
+              "name" => name,
+              "item" => base_url <> path
+            }
+        end)
     }
   end
 

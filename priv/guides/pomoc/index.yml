@@ -1,0 +1,19 @@
+# Heading, introduction and categories of /pomoc. Help articles are Polish only, so this text is not translated.
+heading: Pomoc
+intro: Instrukcje krok po kroku do Firmowida, ze zrzutami ekranu. Jak połączyć KSeF i bank, jak działa dopasowanie przelewów, jak mierzyć czas pracy i jak podłączyć Claude albo ChatGPT.
+categories:
+  - slug: faktury-i-ksef
+    name: Faktury i KSeF
+    description: Połączenie z KSeF i pobieranie faktur.
+  - slug: bank-i-platnosci
+    name: Bank i płatności
+    description: Konto bankowe, dopasowanie przelewów i paczka dla biura księgowego.
+  - slug: czas-pracy
+    name: Czas pracy
+    description: Licznik, wpisy ręczne i miesięczna ewidencja godzin.
+  - slug: analiza
+    name: Analiza
+    description: Jak czytać Podsumowanie i Trendy.
+  - slug: claude-i-chatgpt
+    name: Claude i ChatGPT
+    description: Narzędzia MCP Firmowida.

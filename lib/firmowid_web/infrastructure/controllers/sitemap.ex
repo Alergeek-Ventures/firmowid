@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
     "/faq",
     "/open-source",
     "/poradnik",
+    "/pomoc",
     "/polityka-prywatnosci",
     "/regulamin"
   ]
@@ -22,12 +23,15 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
   Returns sitemap.xml containing canonical public URLs.
   """
   # sobelow_skip ["XSS.SendResp"]
-  # This XML contains only fixed public paths, compiled guide slugs and dates, and
+  # This XML contains only fixed public paths, compiled guide, feature and help paths and dates, and
   # the configured endpoint URL, never request input; it is served as application/xml.
   def index(conn, _params) do
     entries =
       Enum.map(@public_paths, &{&1, nil}) ++
-        Enum.map(Guides.all(), &{"/poradnik/#{&1.slug}", &1.updated})
+        Enum.map(
+          Guides.all() ++ Guides.in_section(:feature) ++ Guides.in_section(:help),
+          &{&1.path, &1.updated}
+        )
 
     urls =
       Enum.map_join(entries, "\n", fn {path, lastmod} ->
