@@ -104,7 +104,7 @@ defmodule Firmowid.Timetracker.LeaveRequestEmails do
   defp category_label(_), do: "—"
 
   defp reason_label(:vacation), do: "Urlop wypoczynkowy"
-  defp reason_label(:sick), do: "Urlop zdrowotny"
+  defp reason_label(:sick), do: "Zwolnienie lekarskie"
   defp reason_label(:unpaid), do: "Urlop bezpłatny"
   defp reason_label(:indisposition), do: "Niedyspozycja"
   defp reason_label(:rest), do: "Wypoczynek"
