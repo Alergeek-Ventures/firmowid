@@ -635,11 +635,6 @@ msgstr ""
 msgid "). The Service Provider makes efforts to ensure the continuity and proper operation of the Service, but does not guarantee uninterrupted availability or the absence of errors."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
-msgstr ""
-
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgid "+ Add another"
@@ -2872,11 +2867,6 @@ msgstr ""
 msgid "Comes back on %{date}"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "Coming soon: financial analysis - invoices and real bank transactions in one place"
-msgstr ""
-
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
@@ -4665,11 +4655,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "EU VAT check"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "Early access"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegations_list.ex

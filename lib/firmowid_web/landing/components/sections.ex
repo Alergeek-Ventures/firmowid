@@ -732,7 +732,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   end
 
   @doc """
-  Renders the assistant early-access offer with an illustrative conversation.
+  Renders the assistant offer with an illustrative conversation.
   """
   @spec assistants_section(map()) :: Rendered.t()
   def assistants_section(assigns) do
@@ -742,9 +742,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="max-w-180 lg:max-w-284.75">
           <p class="mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-teal-700 uppercase">
             {gettext("Firmowid in ChatGPT and Claude")}
-            <span class="inline-flex items-center rounded-full bg-teal-700 px-2.25 py-0.75 text-caps-sm font-bold tracking-normal text-white uppercase">{gettext(
-              "Early access"
-            )}</span>
           </p>
           <h2 class="max-w-125 text-[30px] leading-[1.15] font-bold tracking-normal text-grey-900 lg:text-[48px] lg:leading-[1.15]">
             {gettext("An assistant to help you with your business")}
@@ -775,17 +772,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ></span>{gettext("Reading sales and cost invoices")}
             </li>
           </ul>
-          <p class="mt-3.5 flex items-start gap-2.5 text-base/6 text-grey-700">
-            <img
-              src={~p"/images/landing/icons/clock.svg"}
-              alt=""
-              width="14"
-              height="21"
-              class="shrink-0"
-            />{gettext(
-              "Coming soon: financial analysis - invoices and real bank transactions in one place"
-            )}
-          </p>
 
           <div class="mt-10 flex items-center gap-2 max-lg:mt-16 max-lg:justify-center lg:mt-14 lg:pl-4 max-lg:[&>div]:hidden [&>img]:h-12.5 [&>img]:w-8.5 [&>img]:shrink-0 [&>img]:object-contain max-lg:[&>img]:hidden">
             <img
@@ -837,12 +823,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               </li>
             </ul>
           </div>
-
-          <p class="mt-14 hidden text-sm/5 text-grey-500 lg:mt-34 lg:block">
-            {gettext(
-              "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
-            )}
-          </p>
         </div>
 
         <div
@@ -968,11 +948,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </p>
           </div>
         </div>
-        <p class="px-5 text-sm/5 text-grey-500 lg:hidden">
-          {gettext(
-            "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
-          )}
-        </p>
       </div>
     </section>
     """
