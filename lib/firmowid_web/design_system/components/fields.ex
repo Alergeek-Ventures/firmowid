@@ -30,22 +30,23 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   end
 
   @doc """
-  Renders a search input with a leading magnifier icon in the small (32px) or big (40px) size.
+  Renders a search input with a leading magnifier icon in the small (32px), medium (36px, beside
+  big buttons) or big (40px) size.
   The placeholder doubles as the accessible name.
   """
   @spec search_field(map()) :: Rendered.t()
   attr :name, :string, required: true
   attr :value, :string, default: ""
   attr :placeholder, :string, required: true
-  attr :size, :string, values: ~w(small big), default: "big"
+  attr :size, :string, values: ~w(small medium big), default: "big"
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(form autofocus autocomplete maxlength)
 
   def search_field(assigns) do
     ~H"""
     <div class={["relative", @class]}>
-      <Lucideicons.search class={[
-        "pointer-events-none absolute top-1/2 -translate-y-1/2 text-grey-500",
+      <.search_icon class={[
+        "pointer-events-none absolute top-1/2 -translate-y-1/2 text-grey-500 transition-colors",
         search_field_icon_styles(@size)
       ]} />
       <input
@@ -64,6 +65,35 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
     """
   end
 
+  @doc """
+  Renders the magnifier of the Figma "Search bar" and of the search buttons, a smaller lens
+  than Lucide's `search`. At 20px its stroke is Figma's 1.67px; a button thickens it to 2px
+  with `[stroke-width:2.4]`.
+  """
+  @spec search_icon(map()) :: Rendered.t()
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  def search_icon(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      class={@class}
+      {@rest}
+    >
+      <circle cx="10" cy="10" r="7" />
+      <path d="m21 21-6-6" />
+    </svg>
+    """
+  end
+
   defp field_row_layout_styles("stacked"), do: "flex flex-col gap-1"
   defp field_row_layout_styles("inline"), do: "grid grid-cols-2 items-baseline gap-x-5"
 
@@ -72,8 +102,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
 
   # Figma "Search bar": the magnifier sits 6px (8px big) from the edge, 8px before the text.
   defp search_field_size_styles("small"), do: "h-8 pr-1 pl-8.5"
+  defp search_field_size_styles("medium"), do: "h-9 pr-2 pl-9"
   defp search_field_size_styles("big"), do: "h-10 pr-2 pl-10"
 
   defp search_field_icon_styles("small"), do: "left-1.5 size-5"
+  defp search_field_icon_styles("medium"), do: "left-2 size-5"
   defp search_field_icon_styles("big"), do: "left-2 size-6"
 end

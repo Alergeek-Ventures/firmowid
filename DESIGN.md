@@ -446,7 +446,7 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 | Sibling views of a page | `tabs` | Underline links; the selected view lives in the URL. |
 | Scope of a list | `segmented_control` | Pills, one active (for example active and archived). |
 | Label with value or control | `field_row` | `stacked` for forms, `inline` for detail and settings panels. |
-| Search | `search_field` | Grey field with a leading magnifier; small 32px (20px icon) or big 40px (24px icon); a 2px teal-300 border while focused. |
+| Search | `search_field` | Grey field with a leading magnifier (`search_icon`, the Figma lens, not Lucide's `search`); small 32px (20px icon), medium 36px (20px icon, beside big buttons) or big 40px (24px icon); a 2px teal-300 border while focused. A short list may hide it behind a square tertiary button that widens (300ms) into a 240px medium field with focus, and narrows back when left empty. |
 | Supplementary hint | `tooltip` | Tippy with one delay; never the only place for essential information. |
 | One self-contained record | `card` + `card_header` | The flat-by-default exception; never nested. |
 

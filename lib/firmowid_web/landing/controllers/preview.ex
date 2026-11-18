@@ -46,8 +46,13 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
           end)
 
   # The CDN keeps static files for hours, so the pages link to digested copies
-  # of their stylesheets and script. Each deploy then changes their URLs.
-  @assets ["/landing/styles.css", "/landing/case-study.css", "/landing/app.js"]
+  # of their stylesheets and scripts. Each deploy then changes their URLs.
+  @assets [
+    "/landing/styles.css",
+    "/landing/case-study.css",
+    "/landing/app.js",
+    "/landing/case-study.js"
+  ]
 
   @doc "Returns the preview of the new home page."
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()

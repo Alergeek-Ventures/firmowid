@@ -122,7 +122,6 @@
 
 .cs .end{margin-top:var(--sec)}
 .cs .end__sub a{color:var(--cream);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--r500)}
-.cs .end__foot small{max-width:60ch}
 
 @media (max-width:900px){
   .cs-hero__grid,.cs-story__grid,.acct{grid-template-columns:1fr}
@@ -165,7 +164,6 @@
 .cs-aha{padding:var(--sec) 0 0!important;text-align:center}
 .cs-aha .hand{font-size:clamp(26px,3vw,36px);color:var(--r600);rotate:-2deg}
 .cs-aha__text{margin:18px auto 0;max-width:22ch;font-size:clamp(30px,4.2vw,56px);line-height:1.1;font-weight:700;letter-spacing:-.03em;text-wrap:balance}
-.cs-aha__sub{margin:18px auto 0;max-width:46ch;font-size:16px;color:var(--g700)}
 
 /* result as paper sheets */
 .cs-result h2{margin-bottom:var(--head)}

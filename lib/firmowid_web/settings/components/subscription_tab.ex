@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           </div>
 
           <div class="space-y-3 rounded-lg bg-grey-50 p-4">
-            <h3 class="text-sm leading-none font-medium text-grey-900">
+            <h3 class="text-sm/none font-medium text-grey-900">
               {gettext("Included in the plan")}
             </h3>
 
@@ -76,7 +76,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div
             :if={!@worksheet.over_limit?}
-            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
+            class="rounded-lg bg-grey-50 p-4 text-sm/[1.35] text-grey-700"
           >
             {gettext("Your current usage is within the plan limits.")}
           </div>
@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
         </section>
       </div>
     <% else %>
-      <div class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700">
+      <div class="rounded-lg bg-grey-50 p-4 text-sm/[1.35] text-grey-700">
         {gettext("This preview is available only to the organization owner.")}
       </div>
     <% end %>

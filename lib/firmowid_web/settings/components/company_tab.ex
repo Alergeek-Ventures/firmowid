@@ -285,7 +285,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
 
-      <div :if={Enum.empty?(@bank_accounts)} class="text-sm leading-[1.35] text-grey-700">
+      <div :if={Enum.empty?(@bank_accounts)} class="text-sm/[1.35] text-grey-700">
         {gettext("No bank accounts have been added yet.")}
       </div>
 
@@ -314,7 +314,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <.icon name="hero-arrow-path" class="size-5 animate-spin" />
         </span>
 
-        <div class="space-y-1 text-sm leading-[1.35] text-grey-900">
+        <div class="space-y-1 text-sm/[1.35] text-grey-900">
           <p class="font-medium">{gettext("The bank connection is being set up.")}</p>
           <p>
             {gettext(

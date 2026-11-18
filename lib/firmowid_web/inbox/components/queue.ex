@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
           <span class="whitespace-nowrap">{@item.date_range}</span></span>
         </h3>
-        <p class="flex min-w-0 flex-wrap gap-x-1.5 text-sm leading-[1.35] text-grey-600">
+        <p class="flex min-w-0 flex-wrap gap-x-1.5 text-sm/[1.35] text-grey-600">
           <span
             :if={@item.person}
             class="min-w-0 truncate text-black"
@@ -174,7 +174,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         </span>
         <Lucideicons.chevron_up :if={@expanded} class="size-4" aria-hidden="true" />
         <Lucideicons.chevron_down :if={!@expanded} class="size-4" aria-hidden="true" />
-        <span class="truncate text-sm leading-[1.35] text-grey-600 max-md:hidden">
+        <span class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
           {gettext("Hidden for everyone in the company.")}
         </span>
       </.button>
@@ -242,7 +242,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       ]}>
         {@count}
       </span>
-      <p class="truncate text-sm leading-[1.35] text-grey-600 max-md:hidden">
+      <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
         {Queue.tier_hint(@tier)}
       </p>
     </div>
@@ -281,7 +281,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     <section id="inbox-shortcuts" class="flex flex-col gap-3">
       <div class="flex items-center gap-2">
         <h2 class="text-caps-sm font-medium text-grey-900 uppercase">{gettext("Shortcuts")}</h2>
-        <p class="truncate text-sm leading-[1.35] text-grey-600 max-md:hidden">
+        <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
           {gettext("What your company does most often.")}
         </p>
       </div>
@@ -344,7 +344,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     />
     <span class="flex min-w-0 flex-col gap-0.5">
       <span class="text-base leading-[normal] font-medium text-black">{@shortcut.label}</span>
-      <span class="text-sm leading-[1.35] text-grey-600">{@shortcut.hint}</span>
+      <span class="text-sm/[1.35] text-grey-600">{@shortcut.hint}</span>
     </span>
     """
   end
@@ -403,7 +403,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         <.workplace_switch :if={@compact && @session} id={@id} remote={@session.is_remote} />
         <span
           :if={!@compact && @session}
-          class="inline-flex items-center gap-1.5 rounded-sm bg-moss-100 px-2 py-0.75 text-sm leading-[1.35] text-moss-800"
+          class="inline-flex items-center gap-1.5 rounded-sm bg-moss-100 px-2 py-0.75 text-sm/[1.35] text-moss-800"
         >
           <span class="size-2 rounded-full bg-moss-700" aria-hidden="true"></span>
           {pgettext("session state", "Running")}
@@ -422,7 +422,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         >
           <span data-timer-main>00:00</span><span data-timer-seconds class="text-grey-200">:00</span>
         </span>
-        <p class="truncate text-sm leading-[1.35] text-grey-600">
+        <p class="truncate text-sm/[1.35] text-grey-600">
           <%= cond do %>
             <% @session -> %>
               {session_summary(@session)}
@@ -728,7 +728,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         <h2 class="text-caps-sm font-medium text-grey-600 uppercase">
           {gettext("Today at the company")}
         </h2>
-        <span class="text-sm leading-[1.35] text-grey-700 tabular-nums">
+        <span class="text-sm/[1.35] text-grey-700 tabular-nums">
           {gettext("%{working} of %{count} working",
             working: length(@working),
             count: length(@presence)
@@ -765,7 +765,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           JS.toggle_attribute({"hidden", ""}, to: "#inbox-team-working [data-more]")
           |> JS.toggle_attribute({"aria-expanded", "true", "false"})
         }
-        class="group flex w-full cursor-pointer items-center justify-between gap-2.5 text-left text-sm leading-[1.35] text-grey-700 hover:text-grey-900"
+        class="group flex w-full cursor-pointer items-center justify-between gap-2.5 text-left text-sm/[1.35] text-grey-700 hover:text-grey-900"
       >
         <span class="group-aria-expanded:hidden">
           {ngettext(
@@ -792,7 +792,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             JS.toggle_attribute({"hidden", ""}, to: "#inbox-team-absent")
             |> JS.toggle_attribute({"aria-expanded", "true", "false"})
           }
-          class="group flex w-full cursor-pointer items-center gap-2.5 text-left text-sm leading-[1.35] text-grey-700 hover:text-grey-900"
+          class="group flex w-full cursor-pointer items-center gap-2.5 text-left text-sm/[1.35] text-grey-700 hover:text-grey-900"
         >
           <span class="isolate flex shrink-0 items-center" aria-hidden="true">
             <.initials

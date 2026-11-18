@@ -203,7 +203,6 @@
   <div class="wrap reveal">
     <p class="hand">pierwsze „to działa!”</p>
     <p class="cs-aha__text">Przelew do dostawcy sam przypiął się do właściwej faktury.</p>
-    <p class="cs-aha__sub">Tak Weronika zapamiętała moment, w&nbsp;którym uznała, że Firmowid działa.</p>
   </div>
 </section>
 
@@ -239,45 +238,32 @@
     <p class="hand">TWÓJ RUCH!</p>
     <h2>Też dostajesz dziesiątki faktur kosztowych?</h2>
     <p class="end__sub">Zacznij od połączenia konta bankowego. <a href="/poradnik/dopasowanie-przelewow-do-faktur">Jak działa dopasowanie przelewów do faktur</a></p>
-    <a class="btn btn--rust btn--big" href="/zarejestruj">Zacznij za darmo</a>
+    <div class="end__btns"><a class="btn btn--rust btn--big" href="/zarejestruj">Zacznij za darmo</a><a class="btn btn--light btn--big" href="https://cal.com/franek-madej/firmowid" target="_blank" rel="noopener noreferrer">Umów 15 min rozmowę</a></div>
     <p class="end__note">Konto w 2 minuty. Bez karty. Plan darmowy na zawsze.</p>
     <img class="end__fig" src="/images/landing/figurine.webp" width="566" height="800" alt="" loading="lazy">
   </div>
   <div class="wrap end__foot">
-    <span class="logo logo--light">Firmowid</span>
-    <nav><a href="/cennik">Cennik</a><a href="/funkcje">Funkcje</a><a href="/faq">FAQ</a><a href="/poradnik">Poradnik</a><a href="/polityka-prywatnosci">Polityka prywatności</a><a href="/regulamin">Regulamin</a></nav>
-    <small>Alergeek Ventures sp. z o.o. · Kraków</small>
+    <div class="end__brand">
+      <span class="logo logo--light">Firmowid</span>
+      <p>Fakturowanie, bank i godziny pracy.<br>Opracowane przez przedsiębiorców dla przedsiębiorców.</p>
+    </div>
+    <div class="end__cols">
+      <div>
+        <p>Produkt</p>
+        <a href="/funkcje">Funkcje</a><a href="/cennik">Cennik</a><a href="/faq">Pytania i odpowiedzi</a><a href="/poradnik">Poradnik</a><a href="/open-source">Kod źródłowy</a>
+      </div>
+      <div>
+        <p>Firma</p>
+        <a href="https://alergeek.ventures/contact-details" target="_blank" rel="noopener noreferrer">Kontakt</a><a href="/regulamin#top">Regulamin</a><a href="/polityka-prywatnosci#top">Polityka prywatności</a>
+      </div>
+    </div>
+    <div class="end__legal">
+      <p>© 2026 Firmowid · Alergeek Ventures sp. z o.o., ul. Władysława Syrokomli 24/10, 30-102 Kraków · NIP 6793209719 · KRS 0000874932 · REGON 387738728</p>
+      <div><a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener noreferrer">GitHub</a><a href="https://pl.linkedin.com/showcase/firmowid/" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="https://x.com/firmowid" target="_blank" rel="noopener noreferrer">Twitter</a></div>
+    </div>
   </div>
 </footer>
 
-<script>
-  // reveal on scroll, counters, and the hours bars
-  (function () {
-    var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      });
-    }, { threshold: 0.18 });
-    document.querySelectorAll('.reveal, .hours').forEach(function (el) { io.observe(el); });
-
-    // once the reader passes the problems, stamp each one as solved
-    var probs = document.querySelector('.probs'), bridge = document.getElementById('bridge');
-    if (probs && bridge) {
-      new IntersectionObserver(function (es) {
-        es.forEach(function (e) {
-          if (e.isIntersecting) { probs.classList.add('solved'); bridge.classList.add('in'); }
-        });
-      }, { rootMargin: '0px 0px -30% 0px' }).observe(bridge);
-    }
-    // language menu: close on a click outside
-    document.addEventListener('click', function (e) {
-      document.querySelectorAll('details.lang[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
-    });
-    if (reduce) document.querySelectorAll('.reveal, .hours').forEach(function (el) { el.classList.add('in'); });
-  })();
-</script>
+<script src="/landing/case-study.js"></script>
 </body>
 </html>

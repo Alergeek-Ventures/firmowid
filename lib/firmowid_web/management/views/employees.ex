@@ -5,8 +5,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.EmptyState
+  import FirmowidWeb.DesignSystem.Components.Fields, only: [search_field: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.DesignSystem.Components.Tooltip
   import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
+  import FirmowidWeb.Inbox.Components.Queue, only: [office_panel: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Management.Components.Roles
   import Phoenix.Component, except: [link: 1]
@@ -19,6 +23,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Session
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
@@ -45,6 +50,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
     socket =
       socket
       |> assign(:page_title, gettext("Employee management"))
+      # The page spaces itself, as in the design (see `employees.html.heex`).
+      |> assign(:no_padding, true)
       |> assign(:view, :standard)
       |> assign(:active_months, active_months)
       |> assign(
@@ -52,6 +59,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
         [Date.beginning_of_month(Date.utc_today())]
       )
       |> assign(:selected_user, nil)
+      # Who works today, beside the table on wide screens.
+      |> assign(:presence, Session.team_presence!(Date.utc_today(), scope: scope))
       |> assign_invites()
       |> assign_form()
 
@@ -94,11 +103,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> assign_employees()
       |> assign(
         :view,
-        if(disable_editing,
-          do: :wages,
-          else: socket.assigns.view
-        )
+        cond do
+          # The archive shows no payroll, so its switch is off and disabled.
+          socket.assigns.live_action == :archive -> :standard
+          disable_editing -> :wages
+          true -> socket.assigns.view
+        end
       )
+      |> assign_form()
 
     {:noreply, socket}
   end
@@ -174,7 +186,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   defp assign_form(socket) do
-    assign(socket, :form, to_form(%{"wages_view" => socket.assigns.view != :standard}))
+    assign(socket, :form, to_form(%{"viewing_wages" => socket.assigns.view != :standard}))
   end
 
   @impl true
@@ -357,6 +369,196 @@ defmodule FirmowidWeb.Management.Views.Employees do
      |> push_event("copy-to-clipboard", %{text: number})
      |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
   end
+
+  attr :selected_date, Date, required: true
+  attr :active_months, :list, required: true
+  attr :search, :string, required: true
+  slot :inner_block, doc: "Controls between the month and the search, such as the list scope."
+
+  defp month_and_search(assigns) do
+    ~H"""
+    <form class="flex items-center gap-4 max-md:flex-wrap max-md:gap-3" phx-submit="search">
+      <.month_picker
+        id="month"
+        show_on_mobile
+        selected_date={@selected_date}
+        active_months={@active_months}
+        class="max-md:flex-1"
+      />
+
+      {render_slot(@inner_block)}
+
+      <%!-- Figma "Wyszukiwarka rozwijana": a square tertiary button that widens into the search
+           field with focus, and narrows back when the field is left empty. The field itself is
+           the button: collapsed, it takes the button's fill and its thicker magnifier, and a
+           transparent button over it catches the click. The hook keeps the state, so the
+           server's answers to typing do not collapse the field. --%>
+      <div
+        id="search-container"
+        phx-hook=".ExpandingSearch"
+        phx-update="ignore"
+        data-expanded={to_string(@search != "")}
+        class="group relative w-9 overflow-hidden rounded-sm transition-[width] duration-300 ease-out data-[expanded=true]:w-60 max-md:data-[expanded=true]:w-full data-[expanded=false]:[&_input]:border-transparent data-[expanded=false]:[&_input]:bg-grey-200 data-[expanded=false]:[&_input]:placeholder:text-transparent data-[expanded=false]:hover:[&_input]:bg-grey-300 data-[expanded=false]:[&_svg]:stroke-[2.4] data-[expanded=false]:[&_svg]:text-grey-900"
+      >
+        <.search_field
+          name="szukaj"
+          value={@search}
+          placeholder={gettext("Search employees")}
+          size="medium"
+          autocomplete="off"
+          tabindex={if(@search == "", do: "-1")}
+          phx-change="search"
+          phx-debounce="300"
+          class="w-60 max-md:w-full"
+        />
+        <.button
+          type="button"
+          variant="unstyled"
+          data-expand
+          class="absolute inset-0 cursor-pointer rounded-sm group-data-[expanded=true]:hidden"
+        >
+          <span class="sr-only">{gettext("Search employees")}</span>
+        </.button>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ExpandingSearch">
+          export default {
+            mounted() {
+              const input = this.el.querySelector("input");
+              this.el.querySelector("[data-expand]").addEventListener("click", () => {
+                this.el.dataset.expanded = "true";
+                input.tabIndex = 0;
+                input.focus();
+              });
+              input.addEventListener("blur", () => {
+                if (input.value !== "") return;
+                this.el.dataset.expanded = "false";
+                input.tabIndex = -1;
+              });
+            }
+          }
+        </script>
+      </div>
+    </form>
+    """
+  end
+
+  attr :selected_date, Date, required: true
+
+  defp header_actions(assigns) do
+    ~H"""
+    <div class="flex gap-3 max-md:contents">
+      <.link
+        kind="button"
+        variant="tertiary"
+        size="big"
+        download
+        redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
+        class="max-md:hidden"
+      >
+        <Lucideicons.file_text /> {gettext("Payroll report")}
+      </.link>
+      <.page_actions>
+        <:action>
+          <.button
+            type="button"
+            variant="special"
+            phx-click={show_modal("organization_invite_modal")}
+            data-fab
+          >
+            <.icon name="hero-plus-mini" class="size-6" />
+            <span class="max-md:sr-only">{gettext("Add employee")}</span>
+          </.button>
+        </:action>
+      </.page_actions>
+    </div>
+    """
+  end
+
+  attr :selected_date, Date, required: true
+  attr :employees, :list, required: true
+  attr :wages?, :boolean, required: true
+  attr :accurate?, :boolean, required: true
+
+  # Figma "Ten miesiąc": the listed month in numbers, beside the table on wide screens. The payroll
+  # view swaps the average and the timesheets for the money.
+  defp month_summary(assigns) do
+    hours = assigns.employees |> Enum.map(& &1.time_worked) |> Enum.sum() |> div(3600)
+    count = length(assigns.employees)
+
+    rows =
+      if assigns.wages? do
+        [
+          {gettext("Hours worked"), hours_label(hours)},
+          {pgettext("team month", "Gross total"), total_gross(assigns.employees, assigns.accurate?)},
+          {pgettext("team month", "To pay in total"), if(assigns.accurate?, do: total_payout(assigns.employees)) || "—"}
+        ]
+      else
+        [
+          {gettext("Hours worked"), hours_label(hours)},
+          {pgettext("team month", "Average per person"), hours_label(if(count > 0, do: round(hours / count), else: 0))},
+          {pgettext("team month", "Timesheets submitted"),
+           pgettext("team month", "%{count} of %{total}",
+             count: Enum.count(assigns.employees, & &1.hours_record),
+             total: count
+           )}
+        ]
+      end
+
+    assigns = assign(assigns, rows: rows)
+
+    ~H"""
+    <section class="flex flex-col gap-4 rounded-sm bg-white p-5">
+      <h2 class="text-caps-sm font-medium text-grey-600 uppercase">
+        {Firmowid.Cldr.Date.to_string!(@selected_date, format: "LLLL y")}
+      </h2>
+      <dl class="flex flex-col gap-2">
+        <div :for={{label, value} <- @rows} class="flex items-baseline justify-between gap-3 text-sm">
+          <dt class="truncate leading-[1.35] text-grey-700">{label}</dt>
+          <dd class="shrink-0 font-medium text-grey-900 tabular-nums">{value}</dd>
+        </div>
+      </dl>
+    </section>
+    """
+  end
+
+  defp hours_label(hours), do: "#{hours} #{hours_unit()}"
+
+  # Hours read "godz.", as in the design; the shorter units keep the formatter's labels.
+  defp hours_unit, do: pgettext("hours worked unit", "hrs")
+
+  defp total_gross(employees, true) do
+    employees
+    |> Enum.map(&(&1.monthly_payout && &1.monthly_payout.gross))
+    |> sum_money()
+  end
+
+  defp total_gross(employees, false), do: employees |> Enum.map(& &1.monthly_gross) |> sum_money()
+
+  # Only the calculated payouts add up; with none calculated there is no total.
+  defp total_payout(employees) do
+    case employees
+         |> Enum.map(&MonthlyPayout.amount(&1.monthly_payout))
+         |> Enum.reject(&is_nil/1) do
+      [] -> nil
+      amounts -> sum_money(amounts)
+    end
+  end
+
+  defp sum_money(amounts) do
+    amounts |> Enum.reject(&is_nil/1) |> Enum.reduce(Money.new!(:PLN, 0), &Money.add!/2)
+  end
+
+  # The parts of a duration, such as `[["61", "h"], ["30", "min"]]`, so the units can be set apart.
+  defp duration_parts(seconds) do
+    ~r/(\d+)\s(\S+)/u
+    |> Regex.scan(TimeFormatter.format_duration(seconds), capture: :all_but_first)
+    |> Enum.map(fn
+      [value, "h"] -> [value, hours_unit()]
+      part -> part
+    end)
+  end
+
+  # The shown rate field is as wide as its digits (tabular, one `ch` each).
+  defp rate_width(rate), do: (rate || 0) |> Decimal.round() |> Decimal.to_string() |> String.length()
 
   defp same_rate?(nil, _typed), do: false
 

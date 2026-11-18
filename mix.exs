@@ -77,7 +77,7 @@ defmodule Firmowid.MixProject do
   defp deps do
     [
       {:ash_authentication_oauth2_server, "~> 0.4.0"},
-      {:ash_ai, "~> 1.5.1"},
+      {:ash_ai, "~> 1.5.4"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.36"},
       {:ash_json_api, "~> 1.7"},
