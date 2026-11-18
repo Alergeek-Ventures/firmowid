@@ -6,12 +6,11 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.EmptyState
-  import FirmowidWeb.DesignSystem.Components.Fields, only: [search_field: 1]
-  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.DesignSystem.Components.Tooltip
   import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
   import FirmowidWeb.Inbox.Components.Queue, only: [office_panel: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Management.Components.ListToolbar
   import FirmowidWeb.Management.Components.Roles
   import Phoenix.Component, except: [link: 1]
 
@@ -367,77 +366,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
      socket
      |> push_event("copy-to-clipboard", %{text: number})
      |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
-  end
-
-  attr :selected_date, Date, required: true
-  attr :active_months, :list, required: true
-  attr :search, :string, required: true
-  slot :inner_block, doc: "Controls between the month and the search, such as the list scope."
-
-  defp month_and_search(assigns) do
-    ~H"""
-    <form class="flex items-center gap-4 max-md:flex-wrap max-md:gap-3" phx-submit="search">
-      <.month_picker
-        id="month"
-        show_on_mobile
-        selected_date={@selected_date}
-        active_months={@active_months}
-        class="max-md:flex-1"
-      />
-
-      {render_slot(@inner_block)}
-
-      <%!-- Figma "Wyszukiwarka rozwijana": a square tertiary button that widens into the search
-           field with focus, and narrows back when the field is left empty. The field itself is
-           the button: collapsed, it takes the button's fill and its thicker magnifier, and a
-           transparent button over it catches the click. The hook keeps the state, so the
-           server's answers to typing do not collapse the field. --%>
-      <div
-        id="search-container"
-        phx-hook=".ExpandingSearch"
-        phx-update="ignore"
-        data-expanded={to_string(@search != "")}
-        class="group relative w-9 overflow-hidden rounded-sm transition-[width] duration-300 ease-out data-[expanded=true]:w-60 max-md:data-[expanded=true]:w-full data-[expanded=false]:[&_input]:border-transparent data-[expanded=false]:[&_input]:bg-grey-200 data-[expanded=false]:[&_input]:placeholder:text-transparent data-[expanded=false]:hover:[&_input]:bg-grey-300 data-[expanded=false]:[&_svg]:stroke-[2.4] data-[expanded=false]:[&_svg]:text-grey-900"
-      >
-        <.search_field
-          name="szukaj"
-          value={@search}
-          placeholder={gettext("Search employees")}
-          size="medium"
-          autocomplete="off"
-          tabindex={if(@search == "", do: "-1")}
-          phx-change="search"
-          phx-debounce="300"
-          class="w-60 max-md:w-full"
-        />
-        <.button
-          type="button"
-          variant="unstyled"
-          data-expand
-          class="absolute inset-0 cursor-pointer rounded-sm group-data-[expanded=true]:hidden"
-        >
-          <span class="sr-only">{gettext("Search employees")}</span>
-        </.button>
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".ExpandingSearch">
-          export default {
-            mounted() {
-              const input = this.el.querySelector("input");
-              this.el.querySelector("[data-expand]").addEventListener("click", () => {
-                this.el.dataset.expanded = "true";
-                input.tabIndex = 0;
-                input.focus();
-              });
-              input.addEventListener("blur", () => {
-                if (input.value !== "") return;
-                this.el.dataset.expanded = "false";
-                input.tabIndex = -1;
-              });
-            }
-          }
-        </script>
-      </div>
-    </form>
-    """
   end
 
   attr :selected_date, Date, required: true

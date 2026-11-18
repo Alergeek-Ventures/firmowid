@@ -266,6 +266,12 @@ msgctxt "team month"
 msgid "%{count} of %{total}"
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "%{count} of %{total}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} page"
@@ -388,6 +394,7 @@ msgstr ""
 
 #: lib/firmowid/time_formatter.ex
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/management/views/projects.ex
 #, elixir-autogen, elixir-format
 msgctxt "duration"
 msgid "%{hours} h"
@@ -772,6 +779,11 @@ msgstr ""
 msgid "A project with recorded time cannot be deleted."
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgid "A restored project returns to the active list with its whole history of hours, and the team can assign time to it again."
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/shortcuts.ex
 #, elixir-autogen, elixir-format
 msgid "A sales invoice for KSeF"
@@ -987,6 +999,12 @@ msgstr ""
 msgid "Active people in the organization, including the owner."
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "Active projects"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Add a bank account manually"
@@ -995,6 +1013,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Add a counterparty"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.html.heex
+#, elixir-autogen, elixir-format
+msgid "Add a project so your team can assign hours to it."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
@@ -1583,6 +1606,12 @@ msgctxt "archive action"
 msgid "Archive"
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects archive"
+msgid "Archive"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #: lib/firmowid_web/management/views/employees.html.heex
@@ -1602,6 +1631,12 @@ msgstr ""
 #: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "Archived on"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects archive"
+msgid "Archived projects"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
@@ -3984,6 +4019,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
+#: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "Counterparty"
 msgstr ""
@@ -6095,6 +6131,12 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "Hours in projects"
+msgstr ""
+
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #, elixir-autogen, elixir-format
 msgid "Hours record change request"
@@ -6274,6 +6316,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Identifier copied"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgid "If a project has ended, you can archive it."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
@@ -7147,6 +7194,12 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Last 3 mo."
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects archive"
+msgid "Last archived"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -8029,6 +8082,78 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "No history for this document."
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in April"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in August"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in December"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in February"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in January"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in July"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in June"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in March"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in May"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in November"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in October"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "No hours in September"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/monthly_results.ex
@@ -9442,6 +9567,7 @@ msgstr ""
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/management/components/projects_tab.ex
 #: lib/firmowid_web/management/views/employee.html.heex
+#: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "Projects"
 msgstr ""
@@ -9911,6 +10037,12 @@ msgstr ""
 msgid "Restore project"
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects archive"
+msgid "Restoring"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -10327,7 +10459,7 @@ msgstr ""
 msgid "Search document"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.ex
+#: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
 msgid "Search employees"
 msgstr ""
@@ -12865,6 +12997,12 @@ msgstr ""
 msgid "Total hours"
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects archive"
+msgid "Total hours"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
@@ -13917,6 +14055,12 @@ msgstr ""
 msgid "With cash accounting, VAT is due when the buyer pays the invoice, not when it is issued."
 msgstr ""
 
+#: lib/firmowid_web/management/views/projects.ex
+#, elixir-autogen, elixir-format
+msgctxt "projects month"
+msgid "With hours this month"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "With this rate the buyer accounts for VAT, which assumes a VAT-registered business. VIES does not confirm that. Keep other proof or reconsider the rate."
@@ -14232,11 +14376,6 @@ msgstr ""
 msgid "You have no active projects to show."
 msgstr ""
 
-#: lib/firmowid_web/management/views/projects.html.heex
-#, elixir-autogen, elixir-format
-msgid "You have no active projects to show. Add a new one by clicking below."
-msgstr ""
-
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #, elixir-autogen, elixir-format
 msgid "You have no archived counterparties to show."
@@ -14255,6 +14394,11 @@ msgstr ""
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "You have no assigned projects"
+msgstr ""
+
+#: lib/firmowid_web/management/views/projects.html.heex
+#, elixir-autogen, elixir-format
+msgid "You have no projects yet"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
