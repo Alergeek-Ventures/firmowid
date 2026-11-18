@@ -2,7 +2,100 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const fmt = n => Math.round(n).toLocaleString('pl-PL', { useGrouping: 'always' }).replace(/ | /g, ' ');
+
+  /* ---------- texts in the page language (<html lang>) ---------- */
+  const slavic = (one, few, many) => n => {
+    const d = n % 10, t = n % 100;
+    return n + ' ' + (n === 1 ? one : d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : many);
+  };
+  const TEXTS = {
+    pl: {
+      num: 'pl-PL', cur: 'zł', dec: ',', h: 'h',
+      months: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'],
+      tip: '<b>Lipiec 2026</b><span>Wynik <i>−4 210 zł</i></span><span>Przychody <i>52 300 zł</i></span><span>Wydatki <i>56 510 zł</i></span>',
+      whole: 'Cała firma', show: 'Pokaż: ', left: n => `zostało ${n} zł`,
+      caps: [
+        'Liczą się tylko opłacone faktury. Nieopłacone widzisz osobno, poza sumą.',
+        'Miesiąc pojawia się na wykresie, gdy się skończy i najwyżej dwie jego faktury czekają na zapłatę.',
+        'Koszt projektu to godziny zespołu razy stawka plus jego udział w kosztach firmy.',
+        'Przelew z banku sam przypina się do faktury. Niepewne dopasowania zatwierdzasz jednym kliknięciem.',
+      ],
+      qa: [
+        ['Który miesiąc był najsłabszy i dlaczego?', '<b>Lipiec: strata 4 210 zł.</b> Przychody spadły o 31%, a koszt podwykonawców został bez zmian.'],
+        ['Na co idzie najwięcej moich pieniędzy?', '<b>Wynagrodzenia i ZUS: 41 zł</b> z każdych 100 zł przychodu. Dalej podwykonawcy, 18 zł.'],
+        ['Które koszty odbiegają od zwykłych?', '<b>Oprogramowanie i IT: 7 200 zł</b>, zwykle 5 100 zł (+41%). Doszły licencje dla dwóch osób.'],
+      ],
+      cmp: ['Październik · 7 200 zł', 'Zwykle · 5 100 zł'],
+      people: slavic('osoba', 'osoby', 'osób'), things: slavic('rzecz', 'rzeczy', 'rzeczy'),
+      swap: [
+        ['Program do faktur', 'Faktury i KSeF bez limitu'],
+        ['Program do czasu pracy', 'Czasośledź'],
+        ['Wpłaty sprawdzane ręcznie', 'Przelew sam przypina się do faktury'],
+        ['Wynik w Excelu', 'Analiza: ile zostaje ze 100 zł'],
+        ['Urlopy w mailach', 'Wnioski z akceptacją'],
+      ],
+      plans: ['Darmowy', 'Przedsiębiorca', 'Firma'],
+      perYear: ' / rok', weekly: ' tygodniowo', say: 'Z Firmowidem oszczędzasz rocznie ',
+    },
+    en: {
+      num: 'en-US', cur: 'PLN', dec: '.', h: 'h',
+      months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      tip: '<b>July 2026</b><span>Result <i>−4,210 PLN</i></span><span>Revenue <i>52,300 PLN</i></span><span>Expenses <i>56,510 PLN</i></span>',
+      whole: 'Whole company', show: 'Show: ', left: n => `${n} PLN left`,
+      caps: [
+        'Only paid invoices count. Unpaid ones are shown separately, outside the total.',
+        'A month appears on the chart once it ends and no more than two of its invoices are still waiting for payment.',
+        'A project’s cost is the team’s hours times the rate, plus its share of company costs.',
+        'A transfer from the bank attaches itself to the invoice. You approve uncertain matches with one click.',
+      ],
+      qa: [
+        ['Which month was the weakest and why?', '<b>July: a loss of 4,210 PLN.</b> Revenue fell by 31%, while subcontractor costs stayed the same.'],
+        ['Where does most of my money go?', '<b>Salaries and ZUS: 41 PLN</b> of every 100 PLN of revenue. Next come subcontractors, 18 PLN.'],
+        ['Which costs are out of the ordinary?', '<b>Software and IT: 7,200 PLN</b>, usually 5,100 PLN (+41%). Licences for two more people were added.'],
+      ],
+      cmp: ['October · 7,200 PLN', 'Usually · 5,100 PLN'],
+      people: n => n === 1 ? '1 person' : n + ' people', things: n => n === 1 ? '1 thing' : n + ' things',
+      swap: [
+        ['Invoicing software', 'Unlimited invoices and KSeF'],
+        ['Time tracking software', 'Time tracker'],
+        ['Payments checked by hand', 'The transfer attaches itself to the invoice'],
+        ['Result in Excel', 'Analysis: what’s left of every 100 PLN'],
+        ['Leave by email', 'Requests with approval'],
+      ],
+      plans: ['Free', 'Entrepreneur', 'Company'],
+      perYear: ' / year', weekly: ' a week', say: 'With Firmowid you save per year ',
+    },
+    uk: {
+      num: 'uk-UA', cur: 'зл', dec: ',', h: 'год',
+      months: ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру'],
+      tip: '<b>Липень 2026</b><span>Результат <i>−4 210 зл</i></span><span>Доходи <i>52 300 зл</i></span><span>Витрати <i>56 510 зл</i></span>',
+      whole: 'Уся фірма', show: 'Показати: ', left: n => `залишилося ${n} зл`,
+      caps: [
+        'Враховуються лише оплачені рахунки. Неоплачені видно окремо, поза сумою.',
+        'Місяць зʼявляється на графіку, коли він закінчився і щонайбільше два його рахунки чекають на оплату.',
+        'Вартість проєкту складається з годин команди, помножених на ставку, і його частки у витратах фірми.',
+        'Переказ із банку сам привʼязується до рахунку. Непевні зіставлення ви затверджуєте одним кліком.',
+      ],
+      qa: [
+        ['Який місяць був найслабшим і чому?', '<b>Липень: збиток 4 210 зл.</b> Доходи впали на 31%, а витрати на субпідрядників не змінилися.'],
+        ['На що йде найбільше моїх грошей?', '<b>Зарплати і ZUS: 41 зл</b> з кожних 100 зл доходу. Далі субпідрядники, 18 зл.'],
+        ['Які витрати відрізняються від звичайних?', '<b>Софт і IT: 7 200 зл</b>, зазвичай 5 100 зл (+41%). Додалися ліцензії для двох осіб.'],
+      ],
+      cmp: ['Жовтень · 7 200 зл', 'Зазвичай · 5 100 зл'],
+      people: slavic('особа', 'особи', 'осіб'), things: slavic('річ', 'речі', 'речей'),
+      swap: [
+        ['Програма для рахунків', 'Рахунки й KSeF без ліміту'],
+        ['Програма для обліку часу', 'Облік часу'],
+        ['Надходження перевіряються вручну', 'Переказ сам привʼязується до рахунку'],
+        ['Результат в Excel', 'Аналіз: скільки залишається зі 100 зл'],
+        ['Відпустки в листах', 'Заявки з погодженням'],
+      ],
+      plans: ['Безкоштовний', 'Підприємець', 'Компанія'],
+      perYear: ' / рік', weekly: ' на тиждень', say: 'З Firmowid ви заощаджуєте за рік ',
+    },
+  };
+  const T = TEXTS[document.documentElement.lang] || TEXTS.pl;
+  const fmt = n => Math.round(n).toLocaleString(T.num, { useGrouping: 'always' }).replace(/ | /g, ' ');
 
   function tween(el, from, to, ms = 900, format = fmt) {
     if (reduce || document.hidden) { el.textContent = format(to); return; }
@@ -15,13 +108,16 @@
     requestAnimationFrame(step);
   }
 
+  /* ---------- language menu: close on a click outside ---------- */
+  document.addEventListener('click', e => $$('details.lang[open]').forEach(d => { if (!d.contains(e.target)) d.open = false; }));
+
   /* ---------- reveal + counters + bars ---------- */
   const io = new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return;
     const el = e.target;
     el.classList.add('in');
     $$('.bar100', el).forEach(b => b.classList.add('go'));
-    $$('[data-count]', el).forEach(c => tween(c, 0, +c.dataset.count, 1200, c.dataset.dec ? n => n.toFixed(1).replace('.', ',') : fmt));
+    $$('[data-count]', el).forEach(c => tween(c, 0, +c.dataset.count, 1200, c.dataset.dec ? n => n.toFixed(1).replace('.', T.dec) : fmt));
     if (el.id === 'chat') startChat();
     if (el.id === 'tabs') startTabs();
     io.unobserve(el);
@@ -40,7 +136,7 @@
   tick($('#timer2'), 51 * 60 + 12);
 
   /* ---------- charts ---------- */
-  const LABS = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
+  const LABS = T.months;
   function buildChart(root) {
     root.innerHTML = LABS.map(l => `<div class="col"><div class="col__area"><span class="col__val"></span><span class="col__bar"></span></div><div class="col__lab">${l}</div></div>`).join('');
     return $$('.col', root);
@@ -58,7 +154,7 @@
       const h = Math.abs(v) / unit;
       if (v < 0) bar.classList.add('neg');
       bar.style.height = h + '%';
-      val.textContent = (v > 0 ? '' : '−') + String(Math.abs(v)).replace('.', ',');
+      val.textContent = (v > 0 ? '' : '−') + String(Math.abs(v)).replace('.', T.dec);
       val.style.top = val.style.bottom = '';
       if (v < 0) val.style.top = `calc(${70 + h}% + 4px)`; else val.style.bottom = `calc(${30 + h}% + 4px)`;
       val.style.opacity = 1;
@@ -70,25 +166,25 @@
   const c1 = buildChart($('#chart1'));
   const tip = document.createElement('div');
   tip.className = 'tip';
-  tip.innerHTML = '<b>Lipiec 2026</b><span>Wynik <i>−4 210 zł</i></span><span>Przychody <i>52 300 zł</i></span><span>Wydatki <i>56 510 zł</i></span>';
+  tip.innerHTML = T.tip;
   $('#chart1').append(tip);
 
   const projects = [
     { name: 'CODEXA', v: [7.1, 6.4, 8.8, 5.2, 7.9, 9.6, 2.1, 6.8, 11.2, 9.8, null, null], rev: 214000, cost: 139100, keep: 35 },
     { name: 'QUBIQ', v: [3.9, 2.2, 4.8, -1.4, 2.6, 3.1, -5.2, 1.9, 6.3, 4.4, null, null], rev: 151000, cost: 128400, keep: 15 },
-    { name: 'Cała firma', v: firm, rev: 742000, cost: 625900, keep: 16 },
+    { name: T.whole, v: firm, rev: 742000, cost: 625900, keep: 16 },
   ];
   const c2 = buildChart($('#chart2'));
   let pj = 0, pjTimer, pjPrev = { rev: 0, cost: 0 };
   function showProject(i, first) {
     const p = projects[i];
-    $('#projchip').textContent = 'Pokaż: ' + p.name;
+    $('#projchip').textContent = T.show + p.name;
     drawChart(c2, p.v, first ? 60 : 0);
-    const z = n => fmt(n) + ' zł';
+    const z = n => fmt(n) + ' ' + T.cur;
     tween($('#pj-rev'), pjPrev.rev, p.rev, 700, z);
     tween($('#pj-cost'), pjPrev.cost, p.cost, 700, z);
     tween($('#pj-res'), pjPrev.rev - pjPrev.cost, p.rev - p.cost, 700, z);
-    $('#pj-keep').textContent = `zostało ${p.keep} zł`;
+    $('#pj-keep').textContent = T.left(p.keep);
     pjPrev = p;
   }
 
@@ -107,12 +203,7 @@
   /* ---------- auto tabs ---------- */
   const tabs = $$('.tab'), panels = $$('.panel'), side = $$('.app__side li');
   let cur = -1, tabsOn = false, advanceTimer;
-  const CAPS = [
-    'Liczą się tylko opłacone faktury. Nieopłacone widzisz osobno, poza sumą.',
-    'Miesiąc pojawia się na wykresie, gdy się skończy i najwyżej dwie jego faktury czekają na zapłatę.',
-    'Koszt projektu to godziny zespołu razy stawka plus jego udział w kosztach firmy.',
-    'Przelew z banku sam przypina się do faktury. Niepewne dopasowania zatwierdzasz jednym kliknięciem.',
-  ];
+  const CAPS = T.caps;
   $('#tabcap').textContent = CAPS[0];
   function go(i) {
     clearTimeout(advanceTimer);
@@ -165,12 +256,12 @@
 
   /* ---------- assistant chat ---------- */
   const QA = [
-    { q: 'Który miesiąc był najsłabszy i dlaczego?', a: '<b>Lipiec: strata 4 210 zł.</b> Przychody spadły o 31%, a koszt podwykonawców został bez zmian.',
+    { q: T.qa[0][0], a: T.qa[0][1],
       mini: el => { el.className = 'mini'; el.innerHTML = firm.slice(0, 10).map(v => `<span class="${v < 0 ? 'neg' : ''}" data-h="${Math.abs(v) / 21.6 * 100}"></span>`).join(''); setTimeout(() => $$('span', el).forEach((s, i) => { s.style.transitionDelay = i * 40 + 'ms'; s.style.height = s.dataset.h + '%'; }), 60); } },
-    { q: 'Na co idzie najwięcej moich pieniędzy?', a: '<b>Wynagrodzenia i ZUS: 41 zł</b> z każdych 100 zł przychodu. Dalej podwykonawcy, 18 zł.',
+    { q: T.qa[1][0], a: T.qa[1][1],
       mini: el => { el.className = 'mini bar'; const c = ['#9C5D39', '#DEA785', '#E9C3AC', '#666', '#5f8f4f'], w = [41, 18, 9, 9, 23]; el.innerHTML = w.map((_, i) => `<span style="background:${c[i]}"></span>`).join(''); setTimeout(() => $$('span', el).forEach((s, i) => { s.style.transitionDelay = i * 90 + 'ms'; s.style.width = `calc(${w[i]}% - 2px)`; }), 60); } },
-    { q: 'Które koszty odbiegają od zwykłych?', a: '<b>Oprogramowanie i IT: 7 200 zł</b>, zwykle 5 100 zł (+41%). Doszły licencje dla dwóch osób.',
-      mini: el => { el.className = 'mini cmp2'; el.innerHTML = '<span style="background:#D28F67;color:#000">Październik · 7 200 zł</span><span style="background:#555">Zwykle · 5 100 zł</span>'; setTimeout(() => { const s = $$('span', el); s[0].style.width = '92%'; s[1].style.width = '65%'; }, 60); } },
+    { q: T.qa[2][0], a: T.qa[2][1],
+      mini: el => { el.className = 'mini cmp2'; el.innerHTML = `<span style="background:#D28F67;color:#000">${T.cmp[0]}</span><span style="background:#555">${T.cmp[1]}</span>`; setTimeout(() => { const s = $$('span', el); s[0].style.width = '92%'; s[1].style.width = '65%'; }, 60); } },
   ];
   const cq = $('#chat-q'), ca = $('#chat-a'), ct = $('#chat-text'), cm = $('#chat-mini'), chips = $$('#chat-chips button');
   let chatT = [], chatI = 0, chatStarted = false;
@@ -201,36 +292,30 @@
   const cmpf = $('#cmpf');
   if (cmpf) {
     const v = id => +$('#' + id).value || 0, on = id => $('#' + id).checked;
-    const people = n => n === 1 ? '1 osoba' : (n % 10 >= 2 && n % 10 <= 4 && (n < 12 || n > 14)) ? n + ' osoby' : n + ' osób';
-    const zl = n => (n < 0 ? '−' : '') + fmt(Math.abs(n)) + ' zł';
+    const people = T.people;
+    const zl = n => (n < 0 ? '−' : '') + fmt(Math.abs(n)) + ' ' + T.cur;
     // what each ticked habit turns into in Firmowid
-    const SWAP = [
-      ['q-inv', 'Program do faktur', 'Faktury i KSeF bez limitu'],
-      ['q-time', 'Program do czasu pracy', 'Czasośledź'],
-      ['q-bank', 'Wpłaty sprawdzane ręcznie', 'Przelew sam przypina się do faktury'],
-      ['q-sheet', 'Wynik w Excelu', 'Analiza: ile zostaje ze 100 zł'],
-      ['q-leave', 'Urlopy w mailach', 'Wnioski z akceptacją'],
-    ];
+    const SWAP = ['q-inv', 'q-time', 'q-bank', 'q-sheet', 'q-leave'].map((id, i) => [id, ...T.swap[i]]);
     let shown = 0, sayTimer;
     const calc = () => {
       const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = 0.5; // half of the time comes back; Bonobo got back 9 of 10 hours
       // plan from the public price list, yearly billing
-      const plan = team <= 2 && !on('q-leave') ? ['Darmowy', 0] : team <= 5 ? ['Przedsiębiorca', 276] : ['Firma', 1428];
+      const plan = team <= 2 && !on('q-leave') ? [T.plans[0], 0] : team <= 5 ? [T.plans[1], 276] : [T.plans[2], 1428];
       const now = ((on('q-inv') ? v('q-inv-p') : 0) + (on('q-time') ? v('q-time-p') : 0)) * 12;
       const hours = h * 52 * share, time = hours * r, total = now - plan[1] + time;
       $('#q-team-out').textContent = people(team);
-      $('#q-h-out').textContent = String(h).replace('.', ',') + ' h';
-      $('#q-r-out').textContent = r + ' zł';
-      $('#r-now').textContent = zl(now) + ' / rok';
+      $('#q-h-out').textContent = String(h).replace('.', T.dec) + ' ' + T.h;
+      $('#q-r-out').textContent = r + ' ' + T.cur;
+      $('#r-now').textContent = zl(now) + T.perYear;
       $('#r-plan').textContent = plan[0];
-      $('#r-fw').textContent = zl(plan[1]) + ' / rok';
+      $('#r-fw').textContent = zl(plan[1]) + T.perYear;
       $('#r-hours').textContent = fmt(hours);
       $('#r-time').textContent = zl(time);
       $('#r-swap').innerHTML = SWAP.filter(s => on(s[0])).map(s => `<li><s>${s[1]}</s><i>→</i><b>${s[2]}</b></li>`).join('');
       tween($('#r-total'), shown, total, 350, n => (n < 0 ? '−' : '') + fmt(Math.abs(n)));
       shown = total;
       clearTimeout(sayTimer);
-      sayTimer = setTimeout(() => { $('#r-say').textContent = 'Z Firmowidem oszczędzasz rocznie ' + zl(total); }, 600);
+      sayTimer = setTimeout(() => { $('#r-say').textContent = T.say + zl(total); }, 600);
     };
     cmpf.addEventListener('input', calc);
     cmpf.addEventListener('submit', e => e.preventDefault());
@@ -238,11 +323,11 @@
 
     // one question at a time: later steps stay blurred until the earlier one is answered
     const steps = $$('.step', cmpf);
-    const things = n => n === 1 ? '1 rzecz' : n >= 2 && n <= 4 ? n + ' rzeczy' : n + ' rzeczy';
+    const things = T.things;
     const summary = [
       () => $('#q-team-out').textContent,
       () => things($$('.opt > input:checked', cmpf).length),
-      () => $('#q-h-out').textContent + ' tygodniowo',
+      () => $('#q-h-out').textContent + T.weekly,
     ];
     let reached = 0;
     const openStep = n => {
