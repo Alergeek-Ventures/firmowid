@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   alias FirmowidWeb.Assistant.Components.History
   alias FirmowidWeb.Assistant.Components.Invoice
   alias FirmowidWeb.Assistant.Components.Records
+  alias FirmowidWeb.Assistant.Components.Start
   alias FirmowidWeb.Assistant.Components.Transcript
   alias FirmowidWeb.Assistant.Utilities.PageContext
   alias FirmowidWeb.Assistant.Utilities.Presentation
@@ -76,7 +77,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     <section
       id="firmowid-assistant"
       class={[
-        "relative grid size-full grid-cols-1 grid-rows-[minmax(0,1fr)] bg-white text-sm/normal text-grey-900 block-[calc(100dvh-var(--navbar-height))]",
+        "relative grid size-full grid-cols-1 grid-rows-[minmax(0,1fr)] bg-grey-100 text-sm/normal text-grey-900 block-[calc(100dvh-var(--navbar-height))]",
         @open_invoice && "md:grid-cols-[minmax(0,1fr)_min(41.25rem,58%)]"
       ]}
       phx-hook="AssistantChat"
@@ -87,16 +88,24 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       data-history-open={to_string(@history_open?)}
       aria-label={gettext("Firmowid assistant")}
     >
+      <%!-- The start screen scrolls as a whole; a conversation scrolls its transcript. --%>
       <section
         id="assistant-panel"
-        class="@container/assistant flex flex-col min-block-0 min-inline-0"
+        class={[
+          "@container/assistant flex flex-col min-block-0 min-inline-0",
+          !@conversation && "overflow-y-auto"
+        ]}
         aria-label={gettext("Conversation")}
       >
         <Controls.page_header
           history_open?={@history_open?}
+          conversation?={@conversation != nil}
           title={@conversation && @conversation.title}
         />
         <.conversation
+          start?={!@conversation}
+          name={@current_user.member.name}
+          history={@history}
           subject={@subject}
           history_open?={false}
           turns={@turns}
@@ -113,13 +122,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       </section>
       <div
         :if={@history_open?}
-        class="motion-safe:animate-in motion-safe:fade-in absolute inset-0 z-20 bg-black/20"
+        class="absolute inset-0 z-20 bg-black/20 motion-safe:animate-fade-in"
         phx-click="history"
         aria-hidden="true"
       >
       </div>
       <div
-        class="absolute inset-y-0 inset-s-0 z-21 flex flex-col bg-white shadow-lg inline-80 max-inline-[86vw]"
+        class="absolute inset-y-0 inset-s-0 z-21 flex flex-col bg-white shadow-lg inline-80 max-inline-[86vw] motion-safe:animate-drawer-in"
         hidden={!@history_open?}
       >
         <Controls.page_history_header />
@@ -156,7 +165,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
         id="assistant-panel"
         class={
           [
-            "@container/assistant relative flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg inline-md max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] motion-safe:transition-[block-size] motion-safe:duration-300 motion-safe:ease-out max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none",
+            "@container/assistant relative flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg inline-md max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] motion-safe:animate-step-in motion-safe:transition-[block-size] motion-safe:duration-300 motion-safe:ease-out max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none",
             # The panel grows taller once the conversation has messages to read.
             if(@turns == [], do: "block-160", else: "block-224")
           ]
@@ -205,9 +214,27 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     """
   end
 
-  # The subject, transcript and composer, identical in the panel and on the page.
+  attr :start?, :boolean, default: false, doc: "The page's start screen, before a conversation."
+  attr :name, :string, default: nil
+  attr :history, :list, default: []
+  attr :subject, :map, required: true
+  attr :history_open?, :boolean, required: true
+  attr :turns, :list, required: true
+  attr :conversation_id, :string, required: true
+  attr :conversation_status, :atom, required: true
+  attr :conversation_error, :string, default: nil
+  attr :plan, :map, required: true
+  attr :conversation, :map, default: nil
+  attr :form_error, :string, default: nil
+  attr :invoices, :map, required: true
+  attr :open_invoice, :string, default: nil
+  attr :dismissed_invoices, :any, required: true
+
+  # The subject, transcript and composer, identical in the panel and on the page. The page's
+  # start screen puts its greeting above the composer and its suggestions below it.
   defp conversation(assigns) do
     ~H"""
+    <Start.intro :if={@start? and !@history_open?} name={@name} />
     <section
       :if={@subject && !@history_open?}
       class="flex-none border-be border-grey-200 bg-grey-100 px-4"
@@ -225,6 +252,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       />
     </section>
     <Transcript.transcript
+      start?={@start?}
       turns={@turns}
       subject={@subject}
       conversation_id={@conversation_id}
@@ -243,10 +271,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       />
     </Transcript.transcript>
     <Controls.composer
+      start?={@start?}
       conversation_id={@conversation_id}
       status={@conversation_status}
       form_error={@form_error}
       history_open?={@history_open?}
+    />
+    <Start.suggestions
+      :if={@start? and !@history_open?}
+      conversation_id={@conversation_id}
+      history={@history}
     />
     """
   end

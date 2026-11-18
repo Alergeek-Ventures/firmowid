@@ -9,9 +9,14 @@ export const AssistantChat = {
     this.messageList = this.el.querySelector("#assistant-messages");
     this.input = this.el.querySelector("#assistant-input");
     this.newMessages = this.el.querySelector("#assistant-new-messages");
+    this.send = this.el.querySelector("#assistant-send");
     this.input.value = sessionStorage.getItem(this.draftKey(this.conversationId)) || "";
+    this.syncSend();
 
-    this.storeDraft = () => sessionStorage.setItem(this.draftKey(this.conversationId), this.input.value);
+    this.storeDraft = () => {
+      sessionStorage.setItem(this.draftKey(this.conversationId), this.input.value);
+      this.syncSend();
+    };
     this.onRestart = () => this.pushEvent("new_conversation", { path: window.location.pathname });
     this.onScroll = () => {
       const distanceFromBottom = this.messageList.scrollHeight - this.messageList.scrollTop - this.messageList.clientHeight;
@@ -37,7 +42,7 @@ export const AssistantChat = {
         matchMedia("(pointer: fine)").matches
       ) {
         event.preventDefault();
-        if (!this.input.form.querySelector('[type="submit"]').disabled) this.input.form.requestSubmit();
+        if (!this.send.disabled) this.input.form.requestSubmit();
       }
     };
     this.updateViewportInset = () => {
@@ -56,6 +61,9 @@ export const AssistantChat = {
     this.contentObserver = new ResizeObserver(() => this.followLatest());
     this.contentObserver.observe(this.el.querySelector("#assistant-content"));
     this.consentObserver = new ResizeObserver(this.updateViewportInset);
+    // The input ignores server updates, so its placeholder follows the form's data attributes.
+    this.panelObserver = new ResizeObserver(() => this.syncPlaceholder());
+    this.panelObserver.observe(this.el.querySelector("#assistant-panel"));
     const consent = document.getElementById("cookie-consent-banner");
     if (consent) this.consentObserver.observe(consent);
 
@@ -73,12 +81,14 @@ export const AssistantChat = {
       this.syncConversation();
       this.input.value = "";
       sessionStorage.removeItem(this.draftKey(this.conversationId));
+      this.syncSend();
     });
     this.handleEvent("assistant-sent", ({ conversation_id, source_id }) => {
       this.syncConversation();
       sessionStorage.removeItem(this.draftKey(source_id));
       sessionStorage.removeItem(this.draftKey(conversation_id));
       this.input.value = "";
+      this.syncSend();
       this.scrollToLatest();
       this.input.focus({ preventScroll: true });
     });
@@ -98,6 +108,8 @@ export const AssistantChat = {
   },
   updated() {
     this.syncConversation();
+    this.syncPlaceholder();
+    this.syncSend();
     if (!this.page) sessionStorage.setItem(`${this.storageKey}:open`, this.el.dataset.open);
     sessionStorage.setItem(`${this.storageKey}:conversation`, this.conversationId);
     this.followLatest();
@@ -111,10 +123,21 @@ export const AssistantChat = {
     this.storeDraft();
     this.conversationId = nextId;
     this.input.value = sessionStorage.getItem(this.draftKey(nextId)) || "";
+    this.syncSend();
     this.followingLatest = true;
     this.newMessages.hidden = true;
     const liveText = this.el.querySelector("#assistant-live-text");
     if (liveText) liveText.textContent = "";
+  },
+  // Sending needs text, and an idle assistant (`data-busy` comes from the server).
+  syncSend() {
+    this.send.disabled = this.send.dataset.busy === "true" || this.input.value.trim() === "";
+  },
+  syncPlaceholder() {
+    const { placeholder, placeholderCompact } = this.input.form.dataset;
+    // Narrower than the panel's 40rem container breakpoint.
+    const compact = this.el.querySelector("#assistant-panel").offsetWidth < 640;
+    this.input.placeholder = compact ? placeholderCompact : placeholder;
   },
   followLatest() {
     if (this.el.dataset.historyOpen === "true") {
@@ -133,5 +156,6 @@ export const AssistantChat = {
     window.visualViewport?.removeEventListener("resize", this.updateViewportInset);
     this.contentObserver.disconnect();
     this.consentObserver.disconnect();
+    this.panelObserver.disconnect();
   },
 };

@@ -84,6 +84,16 @@
     }
   }
 
+  /* A drawer sliding in from the start edge, like the assistant's history. */
+  @keyframes drawer-in {
+    0% {
+      translate: -100% 0;
+    }
+    100% {
+      translate: 0 0;
+    }
+  }
+
   /* Onboarding: the next step's panel settling into place. */
   @keyframes step-in {
     0% {
@@ -131,6 +141,7 @@
   --animate-stamp-press: stamp-press 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-marker: marker 650ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-step-in: step-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-drawer-in: drawer-in 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-swap-in: swap-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 }
