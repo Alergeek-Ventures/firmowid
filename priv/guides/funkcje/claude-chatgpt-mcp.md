@@ -13,7 +13,7 @@ Przez konektor, bardzo proste. Pomaga, gdy podłączy to cała organizacja, bo w
 
 ## ChatGPT z aplikacją Firmowida
 
-Teraz częściej używamy ChatGPT, bo przez Firmowida można w nim wystawić fakturę. ChatGPT odpala całą aplikację wewnątrz czatu. To nowość na polskim rynku.
+Teraz częściej używamy ChatGPT, bo przez Firmowida można w nim wystawić fakturę. ChatGPT odpala całą aplikację wewnątrz czatu. Według naszego rozeznania z listopada 2026 to nowość na polskim rynku.
 
 ## Faktury przez AI
 
