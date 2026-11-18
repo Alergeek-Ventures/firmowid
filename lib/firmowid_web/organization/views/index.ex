@@ -532,7 +532,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
       type="submit"
       variant="unstyled"
       disabled={@disabled}
-      phx-disable-with
       class={[
         "mt-6 flex w-full items-center gap-4 rounded-xl bg-black px-5.5 py-4 text-left text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,.6)] transition-colors hover:bg-grey-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:cursor-not-allowed disabled:opacity-60 phx-submit-loading:opacity-75",
         @class
@@ -861,7 +860,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   defp update_manual_details(socket, _params), do: socket
 
-  defp company_errors(%{company: company, owner_name: owner_name, nip: nip}) do
+  defp company_errors(%{company: company, owner_name: owner_name, nip: nip, organization: organization}) do
     []
     |> add_error(
       :nip,
@@ -878,7 +877,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
       is_nil(company) or blank?(company.address),
       gettext("Enter the business address.")
     )
-    |> add_error(:owner_name, blank?(owner_name), gettext("Enter your full name."))
+    # Only a new company asks for the owner's name; editing one does not show the field.
+    |> add_error(
+      :owner_name,
+      is_nil(organization) and blank?(owner_name),
+      gettext("Enter your full name.")
+    )
     |> Map.new()
   end
 
