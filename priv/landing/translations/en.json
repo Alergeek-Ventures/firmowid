@@ -177,7 +177,7 @@
     ["aria-label=\"Okres rozliczeniowy\"", "aria-label=\"Billing period\""],
     [">Miesięcznie</button>", ">Monthly</button>"],
     [">Rocznie <em>", ">Yearly <em>"],
-    ["Płatne funkcje są bezpłatne do końca przyszłego miesiąca.", "Paid features are free until the end of next month."],
+    ["Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca.", "After you sign up, paid features are free until the end of the following month."],
     ["<h3>Darmowy</h3>", "<h3>Free</h3>"],
     ["<b>0</b> zł <span>na zawsze</span>", "<b>0</b> PLN <span>forever</span>"],
     ["<ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li></ul>", "<ul><li>Unlimited invoices and KSeF</li><li>1 bank with transfer matching</li><li>Time tracking for up to 3 projects</li><li>2 users</li></ul>"],
