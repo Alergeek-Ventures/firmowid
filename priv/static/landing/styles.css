@@ -69,6 +69,7 @@ h2{font-size:clamp(30px,4.2vw,52px);line-height:1.08;font-weight:700;letter-spac
 .lang{position:relative}
 .lang summary{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:4px;font-weight:500;font-size:15px;list-style:none;cursor:pointer}
 .lang summary::-webkit-details-marker{display:none}
+.lang summary::after{content:none}
 .lang summary:hover,.lang[open] summary{background:rgba(0,0,0,.06)}
 .lang summary img{width:18px;height:18px}
 .lang summary img:last-child{width:14px;height:14px;transition:rotate .2s}
