@@ -22,8 +22,9 @@ defmodule Firmowid.Core.Services.VatApiClient do
 
   @doc """
   Returns the VAT status code of one NIP from the WL2 status API: `"C"` active,
-  `"Z"` exempt, `"N"` not registered, `"B"` not in the VAT register at all, `"X"`
-  service inactive. WL2 allows 50 000 requests a day, `search` only 100.
+  `"Z"` exempt, `"N"` not registered, `"B"` not in the VAT register at all, `"I"`
+  invalid NIP, `"X"` service inactive. WL2 allows 50 000 requests a day,
+  `search` only 100.
   """
   @spec fetch_status(String.t()) :: {:ok, String.t()} | {:error, term()}
   def fetch_status(nip) do

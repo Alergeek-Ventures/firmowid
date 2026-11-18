@@ -29,6 +29,8 @@ defmodule Firmowid.Invoicing.NipRegistration do
       {:ok, "C"} -> :active
       {:ok, "Z"} -> :exempt
       {:ok, code} when code in ["N", "B"] -> ceidg_status(nip, code)
+      # A NIP with a wrong check digit, which no register can know.
+      {:ok, "I"} -> :unknown
       {:ok, "X"} -> :unavailable
       {:error, _reason} -> :unavailable
     end
