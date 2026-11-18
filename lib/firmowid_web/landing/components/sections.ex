@@ -1061,7 +1061,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
           <p class="mt-[2cqw] text-[3.1cqw]">
             {gettext(
-              "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm - only then does it reach KSeF."
+              "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm. Only then does it reach KSeF."
             )}
           </p>
 

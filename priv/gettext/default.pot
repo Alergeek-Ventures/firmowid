@@ -6244,7 +6244,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
-msgid "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm - only then does it reach KSeF."
+msgid "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm. Only then does it reach KSeF."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
