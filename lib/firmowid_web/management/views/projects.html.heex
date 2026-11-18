@@ -1,231 +1,195 @@
-<div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="sticky top-0 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
-    <div class="flex flex-row justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
-      <form class="flex gap-4 max-md:gap-3">
-        <.month_picker
-          id="project_date_picker"
-          show_on_mobile
-          selected_date={@selected_date}
-          active_months={@active_months}
-          class="max-md:flex-1"
-        />
+<div class="flex w-full flex-col px-4 py-6 md:px-10 md:pt-8 md:pb-12">
+  <header class="flex items-end justify-between gap-4">
+    <h1 class="text-3xl/[1.3] font-bold text-grey-900">{gettext("Projects")}</h1>
+    <.page_actions>
+      <:action>
+        <.link navigate={~p"/zarzadzanie/projekty/dodaj"} kind="button" variant="special" data-fab>
+          <.icon name="hero-plus-mini" class="size-6" />
+          <span class="max-md:sr-only">{gettext("Add project")}</span>
+        </.link>
+      </:action>
+    </.page_actions>
+  </header>
 
-        <div
-          id="search-container"
-          data-expanded={to_string(@params["szukaj"] != nil and @params["szukaj"] != "")}
-          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
+  <%!-- 24px around the toolbar, as between the title, the toolbar and the table. --%>
+  <div class="sticky top-0 z-10 bg-grey-100 py-6 max-md:static max-md:z-auto">
+    <.month_and_search
+      selected_date={@selected_date}
+      active_months={@active_months}
+      search={@search}
+      search_label={gettext("Search projects")}
+    >
+      <.scope_switch label={gettext("Project scope")}>
+        <:option
+          patch={Navigation.projects_path(:index, @params)}
+          active={@live_action == :index}
         >
-          <.input
-            name="szukaj"
-            value={@params["szukaj"] || ""}
-            placeholder={gettext("Search projects")}
-            phx-change={JS.push("search", loading: "#projects-list")}
-            phx-debounce="300"
-            input_class="py-0 px-1 bg-transparent! border-none"
-            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden max-md:group-data-[expanded=true]:w-36"
-          />
-          <.button
-            type="button"
-            phx-click={
-              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
-              |> JS.focus(to: "#search-container input")
-            }
-            variant="tertiary"
-          >
-            <Lucideicons.search />
-          </.button>
-        </div>
-      </form>
-
-      <.page_actions>
-        <:action>
-          <.link
-            navigate={~p"/zarzadzanie/projekty/dodaj"}
-            kind="button"
-            variant="special"
-            data-fab
-          >
-            <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add project")}</span>
-          </.link>
-        </:action>
-      </.page_actions>
-    </div>
-
-    <.filter_tabs label={gettext("Project scope")}>
-      <:tab patch={Navigation.projects_path(:index, @params)} active={@live_action == :index}>
-        {pgettext("projects list tab", "Active")}
-      </:tab>
-      <:tab patch={Navigation.projects_path(:archive, @params)} active={@live_action == :archive}>
-        {pgettext("projects list tab", "Archived")}
-      </:tab>
-    </.filter_tabs>
+          {pgettext("projects list tab", "Active")}
+        </:option>
+        <:option
+          patch={Navigation.projects_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          {pgettext("projects list tab", "Archived")}
+        </:option>
+      </.scope_switch>
+    </.month_and_search>
   </div>
 
-  <%= cond do %>
-    <% Enum.empty?(@projects) -> %>
-      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
-        <%= if @params["szukaj"] do %>
-          <Lucideicons.file_x class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">
-            {gettext("We could not find the project you are looking for.")}
-          </p>
-        <% else %>
-          <Lucideicons.presentation class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">
-            {case @live_action do
-              :index -> gettext("You have no active projects to show.")
-              :archive -> gettext("You have no archived projects to show.")
-            end}
-          </p>
-        <% end %>
-      </div>
-    <% @live_action == :index -> %>
+  <%!-- Figma "Wiersz projektu": the project fills the row, the client takes 240px, the hours
+       and the archive date 120px each, 24px apart. On phones the client goes under the name. --%>
+  <%!-- Figma "duży ekran (1920)": from 1800px the month in numbers and the projects without
+       hours stand beside the table, 48px apart, level with the first row. --%>
+  <div class="flex min-[1800px]:gap-12">
+    <div
+      id="projects-list"
+      class={[
+        "grid min-w-0 flex-1 content-start gap-x-6 gap-y-2 phx-change-loading:opacity-50",
+        if(@live_action == :archive,
+          do:
+            "grid-cols-[minmax(0,1fr)_15rem_7.5rem_7.5rem_max-content_min-content] max-md:grid-cols-[minmax(0,1fr)_max-content_min-content]",
+          else:
+            "grid-cols-[minmax(0,1fr)_15rem_7.5rem_min-content] max-md:grid-cols-[minmax(0,1fr)_max-content_min-content]"
+        )
+      ]}
+    >
       <div
-        id="projects-list"
-        class="grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_max-content_min-content] max-md:gap-x-4 phx-change-loading:opacity-50"
+        id="projects-list-header"
+        class={
+          [
+            "sticky top-21 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 py-1 text-sm/[1.35] text-grey-500 transition-all duration-75 max-md:static",
+            # An empty list keeps the heading's room, so the empty state stays in place.
+            @projects == [] && "invisible"
+          ]
+        }
+        phx-hook="ScrollStyle"
+        data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
+        data-scroll-offset="90"
       >
-        <div
-          id="projects-list-header-active"
-          class="sticky top-(--page-header-with-tabs-height) z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
-          phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
-          data-scroll-offset="90"
-        >
-          <p>{gettext("Project")}</p>
-          <p class="text-right max-md:hidden">
-            <!--Rentowność-->
-          </p>
+        <p>{gettext("Project")}</p>
+        <p class="max-md:hidden">{gettext("Counterparty")}</p>
+        <%= if @live_action == :archive do %>
+          <p class="text-right text-nowrap">{gettext("Total hours")}</p>
+          <p class="text-right text-nowrap max-md:hidden">{gettext("Archived on")}</p>
+          <span class="max-md:hidden" />
+        <% else %>
           <p class="text-right">{gettext("Hours")}</p>
-        </div>
+        <% end %>
+        <span />
+      </div>
 
-        <div class="col-span-full grid grid-cols-subgrid gap-y-2">
-          <div
-            :for={project <- @projects}
-            :key={project.id}
-            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
-          >
-            <div class="min-w-0 space-y-1 wrap-break-word">
-              <.link
-                kind="unstyled"
-                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-                class="hover:underline"
-              >
-                <p class="text-base/snug">{project.name}</p>
-              </.link>
-              <p class="text-sm/snug text-grey-500">
-                {CounterpartyHelpers.party_label(project.counterparty, @current_org)}
-              </p>
-            </div>
-            <p class="text-right max-md:hidden">
-              <!--Rentowność-->
-            </p>
-            <p class="text-right text-nowrap">
-              {TimeFormatter.format_duration(project.duration)}
-            </p>
+      <%= if @projects == [] do %>
+        <.empty_state
+          size="small"
+          title={
+            cond do
+              @search != "" -> gettext("We could not find the project you are looking for.")
+              @zero_state? -> gettext("You have no projects yet")
+              @live_action == :archive -> gettext("You have no archived projects to show.")
+              true -> gettext("You have no active projects to show.")
+            end
+          }
+          class="col-span-full gap-4! py-16! [&>div>p]:leading-[normal]"
+        >
+          <:icon><Lucideicons.folder_kanban class="text-grey-400" /></:icon>
+          <%!-- Figma "Pusty stan / Projekty": with no project at all, what a project is for. --%>
+          <p :if={@zero_state? and @search == ""} class="text-sm/[1.35] text-grey-600">
+            {gettext("Add a project so your team can assign hours to it.")}
+          </p>
+        </.empty_state>
+      <% else %>
+        <%!-- An archived project is greyed out, all but its archive date. --%>
+        <div
+          :for={project <- @projects}
+          :key={project.id}
+          class={[
+            "col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 max-md:py-3 md:h-[57px]",
+            if(@live_action == :archive, do: "text-grey-500", else: "text-grey-900")
+          ]}
+        >
+          <div class="min-w-0">
             <.link
               kind="unstyled"
               navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-              class="text-grey-500 hover:text-grey-700"
-              aria-label={gettext("Open project %{name}", name: project.name)}
+              class="block truncate text-base/[1.35] hover:underline"
+              title={project.name}
             >
-              <Lucideicons.chevron_right class="size-4" />
+              {project.name}
             </.link>
+            <p class={[
+              "truncate text-sm/[1.35] md:hidden",
+              if(@live_action == :archive, do: "text-grey-500", else: "text-grey-700")
+            ]}>
+              {CounterpartyHelpers.party_label(project.counterparty, @current_org)}
+            </p>
           </div>
-        </div>
-      </div>
-    <% @live_action == :archive -> %>
-      <div
-        id="projects-list"
-        class="grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_max-content_min-content] max-md:gap-x-4 phx-change-loading:opacity-50"
-      >
-        <div
-          id="projects-list-header-archive"
-          class="sticky top-(--page-header-with-tabs-height) z-1 -order-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug transition-all duration-75 max-md:static"
-          phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
-          data-scroll-offset="90"
-        >
-          <p>{gettext("Project")}</p>
-          <p class="text-right max-md:hidden">
-            <!--Rentowność-->
-          </p>
-          <p class="text-right">{gettext("Total hours")}</p>
-          <p class="text-right text-nowrap max-md:hidden">{gettext("Archived on")}</p>
-        </div>
 
-        <div class="col-span-full grid grid-cols-subgrid gap-y-2">
-          <div
-            :for={project <- @projects}
-            :key={project.id}
-            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
-          >
-            <div class="min-w-0 space-y-1 wrap-break-word">
-              <.link
-                kind="unstyled"
-                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-                class="hover:underline"
-              >
-                <p class="text-base/snug">{project.name}</p>
-              </.link>
-              <p class="text-sm/snug text-grey-500">
-                {case project.counterparty && project.counterparty.display_label do
-                  "" -> @current_org.display_name
-                  nil -> @current_org.display_name
-                  label -> label
-                end}
-              </p>
-            </div>
-            <p class="text-right max-md:hidden">
-              <!--Rentowność-->
-            </p>
-            <p class="text-right text-nowrap">
-              {TimeFormatter.format_duration(project.duration)}
-            </p>
-            <p class="text-right text-black max-md:hidden">
+          <p class={[
+            "truncate text-sm/[1.35] max-md:hidden",
+            if(@live_action == :archive, do: "text-grey-500", else: "text-grey-700")
+          ]}>
+            {CounterpartyHelpers.party_label(project.counterparty, @current_org)}
+          </p>
+
+          <%!-- The units in grey; no time at all is grey as a whole. --%>
+          <p class={[
+            "flex items-baseline justify-end gap-1.5 text-base/[1.35] text-nowrap",
+            project.duration < 60 && "text-grey-500"
+          ]}>
+            <span
+              :for={[value, unit] <- duration_parts(project.duration)}
+              class="flex items-baseline gap-0.5"
+            >
+              {value}<span class={[
+                "text-sm",
+                if(@live_action == :archive, do: "text-grey-400", else: "text-grey-500")
+              ]}>{unit}</span>
+            </span>
+          </p>
+
+          <%= if @live_action == :archive do %>
+            <p class="text-right text-base/[1.35] text-grey-900 max-md:hidden">
               {Calendar.strftime(project.archived_at, "%d.%m.%Y")}
             </p>
-            <div class="flex flex-row items-center gap-3">
-              <.button
-                type="button"
-                variant="tertiary"
-                size="small"
-                class="max-md:hidden"
-                phx-click="unarchive_project"
-                phx-value-id={project.id}
-              >
-                {gettext("Restore")}
-              </.button>
-              <.link
-                kind="unstyled"
-                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-                class="text-grey-500 hover:text-grey-700"
-                aria-label={gettext("Open project %{name}", name: project.name)}
-              >
-                <Lucideicons.chevron_right class="size-4" />
-              </.link>
-            </div>
-          </div>
+            <.button
+              type="button"
+              variant="tertiary"
+              size="small"
+              class="max-md:hidden"
+              phx-click="unarchive_project"
+              phx-value-id={project.id}
+            >
+              {gettext("Restore")}
+            </.button>
+          <% end %>
+
+          <.link
+            kind="unstyled"
+            navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
+            class="flex items-center"
+            aria-label={gettext("Open project %{name}", name: project.name)}
+          >
+            <Lucideicons.chevron_right class="size-4 shrink-0 text-black" />
+          </.link>
         </div>
-      </div>
-  <% end %>
-</div>
+      <% end %>
+    </div>
 
-<div
-  :if={@zero_state?}
-  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
->
-  <Lucideicons.presentation class="size-26 text-grey-300" size={48} />
-
-  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
-    {gettext("You have no active projects to show. Add a new one by clicking below.")}
-  </p>
-
-  <.link
-    navigate={~p"/zarzadzanie/projekty/dodaj"}
-    kind="button"
-    variant="tertiary"
-    class="mt-6"
-  >
-    <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add project")}</span>
-  </.link>
+    <aside
+      :if={@projects != []}
+      class="hidden w-80 shrink-0 flex-col gap-2.5 pt-8.75 min-[1800px]:flex"
+    >
+      <%= if @live_action == :archive do %>
+        <.archive_summary projects={@projects} />
+        <.restoring_hint />
+      <% else %>
+        <.month_summary selected_date={@selected_date} projects={@projects} />
+        <.projects_without_hours
+          projects={@projects}
+          month={@selected_date.month}
+          params={@params}
+        />
+      <% end %>
+    </aside>
+  </div>
 </div>

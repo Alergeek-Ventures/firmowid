@@ -10,32 +10,22 @@
       selected_date={@selected_date}
       active_months={@active_months}
       search={@search}
+      search_label={gettext("Search employees")}
     >
-      <nav
-        aria-label={gettext("Employee scope")}
-        class="flex h-9 items-center gap-0.5 overflow-hidden rounded-sm border border-grey-200 max-md:order-last max-md:w-full"
-      >
-        <.link
-          :for={
-            {action, label} <- [
-              index: pgettext("people list tab", "Active"),
-              archive: pgettext("people list tab", "Archived")
-            ]
-          }
-          kind="unstyled"
-          patch={Navigation.employees_path(action, @params)}
-          aria-current={@live_action == action && "page"}
-          class={[
-            "flex h-full items-center justify-center rounded-[2px] px-3 text-sm/none font-medium whitespace-nowrap transition-colors max-md:flex-1",
-            if(@live_action == action,
-              do: "bg-grey-200 text-grey-900",
-              else: "text-grey-700 hover:text-grey-900"
-            )
-          ]}
+      <.scope_switch label={gettext("Employee scope")}>
+        <:option
+          patch={Navigation.employees_path(:index, @params)}
+          active={@live_action == :index}
         >
-          {label}
-        </.link>
-      </nav>
+          {pgettext("people list tab", "Active")}
+        </:option>
+        <:option
+          patch={Navigation.employees_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          {pgettext("people list tab", "Archived")}
+        </:option>
+      </.scope_switch>
     </.month_and_search>
 
     <.switch
