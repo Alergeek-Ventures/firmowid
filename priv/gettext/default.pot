@@ -777,6 +777,11 @@ msgstr ""
 msgid "A sales invoice for KSeF"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "A separate list of their own tasks for every employee"
+msgstr ""
+
 #: lib/firmowid_web/infrastructure/components/error_html.ex
 #, elixir-autogen, elixir-format
 msgid "A server error occurred"
@@ -1530,6 +1535,7 @@ msgstr ""
 msgid "Apply when eligible"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/components/leaves_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Approve"
@@ -1719,6 +1725,11 @@ msgctxt "sidebar"
 msgid "Assistant"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Assistant in Firmowid, ChatGPT and Claude"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Assistant is ready."
@@ -1846,6 +1857,7 @@ msgid "Average per person"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "inbox tier"
 msgid "Awaiting approval"
@@ -2064,6 +2076,7 @@ msgid "Booked"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "inbox tier"
 msgid "Books"
@@ -3468,6 +3481,7 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/invoicing/cost_invoices/views/show.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoice"
 msgstr ""
@@ -3480,6 +3494,16 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoices from the last 30 days will arrive by themselves, and you will send sales invoices in one click."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Cost invoices imported from KSeF automatically"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Cost invoices in one place, without retyping"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/monthly_results.ex
@@ -4506,6 +4530,7 @@ msgid "Download documents"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/download_modal.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Download invoices"
 msgstr ""
@@ -5123,6 +5148,11 @@ msgstr ""
 msgid "Everything in one place: invoices, banking, working hours, leave, and business trips."
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Everything that needs your attention, on one list"
+msgstr ""
+
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "Everything works until %{date}; from that day a choice is needed."
@@ -5131,6 +5161,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Everything you set up is waiting there"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Everything your business needs."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5170,7 +5205,13 @@ msgstr ""
 msgid "Expected transaction — not included in the bank balance."
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Expense categories suggested from the counterparty's PKD code"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/financial_overview.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Expenses"
 msgstr ""
@@ -5444,11 +5485,6 @@ msgstr ""
 msgid "Firmowid in ChatGPT (panel beside the conversation)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "Firmowid in ChatGPT and Claude"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid is %{open_source}"
@@ -5654,11 +5690,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Found by NIP / VAT ID:"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "Four things your business needs."
 msgstr ""
 
 #: lib/firmowid_web/management/components/work_distribution.ex
@@ -6092,6 +6123,16 @@ msgstr ""
 msgid "How have fixed costs changed?"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "How much of every 100 PLN of income stayed"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "How much your company and each project really earn"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "I am joining a team"
@@ -6255,6 +6296,7 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
 #: lib/firmowid_web/inbox/views/index.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Inbox"
@@ -6291,6 +6333,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Income"
 msgstr ""
@@ -6303,6 +6346,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Income tax advance"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Income, expenses and net result month by month, also for each project. Firmowid counts only paid invoices, so the numbers match your bank account."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
@@ -6393,6 +6441,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Integration with major Polish banks"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Internal comment on every document"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -6510,7 +6563,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
-msgid "Invoice import and export (file, email, scan)"
+msgid "Invoice import and export (file, scan)"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
@@ -6632,6 +6685,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices appear in KSeF and you do not even know"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Invoices from KSeF arrive by themselves. You add paper ones with a photo and Firmowid reads the data. At the end of the month your accounting office gets one ZIP file."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/views/index.ex
@@ -6974,6 +7032,7 @@ msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF is not connected"
 msgstr ""
@@ -7096,6 +7155,7 @@ msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Leave request"
 msgstr ""
@@ -7114,6 +7174,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Leave requests with approval"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Leave requests, business trips and timesheet changes to approve"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -7512,6 +7577,11 @@ msgstr ""
 msgid "Monthly PIT-2 reduction"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Monthly ZIP package for your accounting office"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgctxt "CIT advances"
@@ -7658,8 +7728,14 @@ msgid "Net prices. Save 20% with annual billing."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Net result by month"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Net result by month and by project"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -8683,8 +8759,14 @@ msgstr ""
 msgid "Overdue invoices with no matched payment."
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Overdue invoices without a matched payment"
+msgstr ""
+
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Overdue sales invoice %{number}"
 msgstr ""
@@ -9057,6 +9139,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Phone number"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Photo, scan or PDF with the data read for you"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/download_modal.ex
@@ -9776,6 +9863,7 @@ msgid "Restore project"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/monthly_results.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Result"
 msgstr ""
@@ -11103,6 +11191,7 @@ msgid "Summary"
 msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Summary"
@@ -11760,6 +11849,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "The hourly rate changed during this month. Add a document confirming the gross pay."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "The inbox gathers what is waiting: KSeF or bank connection problems, team requests to approve and overdue invoices. Each employee sees only their own matters."
 msgstr ""
 
 #: lib/firmowid_web/management/views/employees.ex
@@ -12824,6 +12918,7 @@ msgid "Transport and fuel"
 msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Trends"
@@ -13016,6 +13111,11 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
+msgid "Unpaid invoices shown separately"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
 msgid "Unpaid leave"
 msgstr ""
 
@@ -13163,9 +13263,15 @@ msgid "Uploading..."
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
+#: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "inbox tier"
 msgid "Urgent"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Urgent matters first: KSeF, bank, company details"
 msgstr ""
 
 #: lib/firmowid_web/admin/views/organizations.ex
@@ -14271,6 +14377,11 @@ msgctxt "member role"
 msgid "accounting"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "accounting office"
+msgstr ""
+
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "actions performed through their account."
@@ -14290,6 +14401,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "administrator"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "analysis"
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/link_corrected_ksef_invoice.ex
@@ -14410,6 +14526,11 @@ msgctxt "document filter"
 msgid "contract"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "costs"
+msgstr ""
+
 #: lib/firmowid_web/documents/components/documents_section.ex
 #, elixir-autogen, elixir-format
 msgctxt "contract status"
@@ -14490,6 +14611,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "entered in the Register of Entrepreneurs maintained by the XI Commercial Division of the National Court Register of the District Court for Kraków-Śródmieście in Kraków under number"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "everyday work"
 msgstr ""
 
 #: lib/firmowid/invoicing/validations/validate_name_fields.ex
@@ -14583,6 +14709,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "in unpaid sales invoices"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "inbox"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -14914,6 +15045,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "salary period end"
 msgid "present"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "profitability"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
