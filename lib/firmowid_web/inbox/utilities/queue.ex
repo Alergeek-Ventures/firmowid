@@ -560,14 +560,21 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     do: gettext("Overdue cost invoice %{number}", number: invoice.invoice_identifier || invoice.id)
 
   @doc """
-  Income and costs from the start of `today`'s month for admins and
-  accountants, who see the company's finances; nothing for others.
+  Income and costs of `today`'s whole month, the same totals the analysis
+  shows for it, for admins and accountants, who see the company's finances;
+  nothing for others.
   """
   @spec month(Ash.Scope.t(), Date.t()) :: [
           %{label: String.t(), value: String.t(), side: :sales | :cost}
         ]
   def month(%{actor: %{member: %{role: role}}} = scope, today) when role in [:admin, :accountant] do
-    totals = Analysis.get_organization_totals(Date.beginning_of_month(today), today, [], scope)
+    totals =
+      Analysis.get_organization_totals(
+        Date.beginning_of_month(today),
+        Date.end_of_month(today),
+        [],
+        scope
+      )
 
     [
       %{label: gettext("Income"), value: pln(totals.total_income), side: :sales},
