@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         <Lucideicons.render! name={@item.icon} class="size-6" aria-hidden="true" />
       </span>
       <div class="flex min-w-0 flex-1 flex-col gap-1">
-        <h3 class="text-base leading-[normal] font-medium text-black">
+        <h3 class="text-base/[normal] font-medium text-black">
           {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
           <span class="whitespace-nowrap">{@item.date_range}</span></span>
         </h3>
@@ -279,7 +279,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     ~H"""
     <section id="inbox-shortcuts" class="flex flex-col gap-3 pt-4">
       <div class="flex items-baseline gap-3">
-        <h2 class="text-caps-sm leading-none font-medium text-grey-900 uppercase">
+        <h2 class="text-caps-sm/none font-medium text-grey-900 uppercase">
           {gettext("Shortcuts")}
         </h2>
         <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
@@ -866,7 +866,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       id="inbox-personal-month"
       class="relative flex flex-col gap-2 rounded-sm bg-white p-5 pr-18"
     >
-      <h2 class={["text-caps-sm leading-[normal] font-medium uppercase", @color]}>
+      <h2 class={["text-caps-sm/[normal] font-medium uppercase", @color]}>
         {Firmowid.Cldr.Date.to_string!(@today, format: "LLLL")} · {gettext("Hours worked")}
       </h2>
       <p class="text-lg leading-[normal] font-medium text-black tabular-nums">
