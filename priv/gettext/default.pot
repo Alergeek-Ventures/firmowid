@@ -694,11 +694,6 @@ msgstr ""
 msgid "9% – small taxpayer"
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/shortcuts.ex
-#, elixir-autogen, elixir-format
-msgid "A PDF or a photo"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "A budget that is outdated the day it is created"
@@ -717,11 +712,6 @@ msgstr ""
 #: lib/firmowid/taxes/tax_year/changes/fit_legal_form.ex
 #, elixir-autogen, elixir-format
 msgid "A civil partnership has at least two partners."
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/shortcuts.ex
-#, elixir-autogen, elixir-format
-msgid "A company or a person"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex
@@ -754,11 +744,6 @@ msgstr ""
 msgid "A new contract is waiting for you. Sign it with a Trusted Profile to finalize the formalities."
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/shortcuts.ex
-#, elixir-autogen, elixir-format
-msgid "A new person on the team"
-msgstr ""
-
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #, elixir-autogen, elixir-format
 msgid "A payment confirmation alone is not enough. If you attach a transfer or card payment confirmation, add a document showing what the payment was for, e.g. a booking."
@@ -782,11 +767,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/projects.ex
 #, elixir-autogen, elixir-format
 msgid "A restored project returns to the active list with its whole history of hours, and the team can assign time to it again."
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/shortcuts.ex
-#, elixir-autogen, elixir-format
-msgid "A sales invoice for KSeF"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5724,11 +5704,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "For the amount"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/shortcuts.ex
-#, elixir-autogen, elixir-format
-msgid "For time tracking"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

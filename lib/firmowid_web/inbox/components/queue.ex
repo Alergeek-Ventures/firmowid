@@ -262,10 +262,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   end
 
   @doc """
-  The actions the organization does most often, as tiles: the icon takes the
-  ledger side's colour, the label names the action and one line says what it
-  leads to. A tile opens its page; the upload tile opens the file picker and
-  sends the chosen files at once.
+  The actions the organization does most often, as small outlined buttons
+  with an icon and the action's name. A button opens its page; the upload
+  button opens the file picker and sends the chosen files at once.
   """
   attr :shortcuts, :list, required: true, doc: "from `FirmowidWeb.Inbox.Utilities.Shortcuts`"
 
@@ -278,80 +277,54 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def shortcuts(assigns) do
     ~H"""
-    <section id="inbox-shortcuts" class="flex flex-col gap-3">
-      <div class="flex items-center gap-2">
-        <h2 class="text-caps-sm font-medium text-grey-900 uppercase">{gettext("Shortcuts")}</h2>
+    <section id="inbox-shortcuts" class="flex flex-col gap-3 pt-4">
+      <div class="flex items-baseline gap-3">
+        <h2 class="text-caps-sm leading-none font-medium text-grey-900 uppercase">
+          {gettext("Shortcuts")}
+        </h2>
         <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
           {gettext("What your company does most often.")}
         </p>
       </div>
-      <%!-- Two tiles in a row on phones and for four tiles, three otherwise; a shorter last row fills the width. --%>
-      <ul class="flex flex-wrap gap-2.5">
-        <li
-          :for={shortcut <- @shortcuts}
-          class={["min-w-0 flex-1 basis-[40%]", length(@shortcuts) != 4 && "@2xl:basis-[30%]"]}
-        >
+      <ul class="flex flex-wrap gap-2">
+        <li :for={shortcut <- @shortcuts}>
           <form
             :if={shortcut.target == :upload}
             id="inbox-upload-form"
             phx-change="upload"
             phx-submit="upload"
-            class="h-full"
           >
-            <label
+            <.button
+              as="label"
               id={"inbox-shortcut-#{shortcut.id}"}
-              class={[
-                "has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus-ring)",
-                shortcut_styles()
-              ]}
+              size="small"
+              variant="outline"
+              class="relative has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus-ring)"
             >
               <.live_file_input upload={@upload} class="sr-only" />
-              <.shortcut_content shortcut={shortcut} />
+              <Lucideicons.render! name={shortcut.icon} aria-hidden="true" />{shortcut.label}
               <CostInvoiceUpload.processing_badge
                 id="inbox-upload-count-indicator"
                 uploading={@uploading}
                 processing={@processing}
               />
-            </label>
+            </.button>
           </form>
           <.link
             :if={shortcut.target != :upload}
-            kind="unstyled"
+            kind="button"
             id={"inbox-shortcut-#{shortcut.id}"}
             navigate={elem(shortcut.target, 1)}
-            class={shortcut_styles()}
+            size="small"
+            variant="outline"
           >
-            <.shortcut_content shortcut={shortcut} />
+            <Lucideicons.render! name={shortcut.icon} aria-hidden="true" />{shortcut.label}
           </.link>
         </li>
       </ul>
     </section>
     """
   end
-
-  defp shortcut_styles,
-    do:
-      "relative flex h-full cursor-pointer items-center gap-4 rounded-sm bg-white px-5 py-4 transition-colors hover:bg-grey-50 max-md:px-4"
-
-  attr :shortcut, :map, required: true
-
-  defp shortcut_content(assigns) do
-    ~H"""
-    <Lucideicons.render!
-      name={@shortcut.icon}
-      class={["size-6 shrink-0", shortcut_icon_styles(@shortcut.side)]}
-      aria-hidden="true"
-    />
-    <span class="flex min-w-0 flex-col gap-0.5">
-      <span class="text-base leading-[normal] font-medium text-black">{@shortcut.label}</span>
-      <span class="text-sm/[1.35] text-grey-600">{@shortcut.hint}</span>
-    </span>
-    """
-  end
-
-  defp shortcut_icon_styles(:sales), do: "text-teal-700"
-  defp shortcut_icon_styles(:cost), do: "text-rust-700"
-  defp shortcut_icon_styles(nil), do: "text-grey-900"
 
   @doc """
   The member's session: the running one with a stop button and where it is
