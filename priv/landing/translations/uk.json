@@ -178,7 +178,7 @@
     ["aria-label=\"Okres rozliczeniowy\"", "aria-label=\"Період оплати\""],
     [">Miesięcznie</button>", ">Щомісяця</button>"],
     [">Rocznie <em>", ">Щороку <em>"],
-    ["Płatne funkcje są bezpłatne do końca przyszłego miesiąca.", "Платні функції безкоштовні до кінця наступного місяця."],
+    ["Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca.", "Після реєстрації платні функції працюють безкоштовно до кінця наступного місяця."],
     ["<h3>Darmowy</h3>", "<h3>Безкоштовний</h3>"],
     ["<b>0</b> zł <span>na zawsze</span>", "<b>0</b> зл <span>назавжди</span>"],
     ["<ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li></ul>", "<ul><li>Рахунки й KSeF без ліміту</li><li>1 банк зі зіставленням переказів</li><li>Облік часу до 3 проєктів</li><li>2 користувачі</li></ul>"],
