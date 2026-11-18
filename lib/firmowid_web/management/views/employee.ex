@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
+  alias Firmowid.Delegations
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
@@ -27,7 +28,13 @@ defmodule FirmowidWeb.Management.Views.Employee do
   on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
 
   @employee_load [
-    member: [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]]
+    member: [
+      :display_name,
+      :projects,
+      :shared_birthday,
+      delegations: [:cancellable?],
+      avatar_blob: [:url]
+    ]
   ]
 
   @impl true
@@ -118,6 +125,43 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       {:error, error} ->
         {:noreply, put_flash(socket, :error, humanize_ash_error(error))}
+    end
+  end
+
+  def handle_event("cancel_delegation", %{"id" => id}, socket) do
+    case Delegations.cancel_delegation(id, scope: socket.assigns.ash_scope) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> assign_reloaded_employee()
+         |> LiveToast.put_toast(:info, gettext("The business trip has been cancelled."))}
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> assign_reloaded_employee()
+         |> LiveToast.put_toast(:error, gettext("Could not cancel the business trip."))}
+    end
+  end
+
+  def handle_event("delete_delegation", %{"id" => id}, socket) do
+    case Delegations.destroy_delegation(id, scope: socket.assigns.ash_scope) do
+      :ok ->
+        socket = assign_reloaded_employee(socket)
+
+        # The tab disappears with the employee's last trip, so show the profile instead.
+        socket =
+          if socket.assigns.employee.member.delegations == [],
+            do: push_patch(socket, to: Navigation.employee_path(socket.assigns.employee.id)),
+            else: socket
+
+        {:noreply, LiveToast.put_toast(socket, :info, gettext("The business trip has been deleted."))}
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> assign_reloaded_employee()
+         |> LiveToast.put_toast(:error, gettext("Could not delete the business trip."))}
     end
   end
 

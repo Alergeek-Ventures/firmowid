@@ -29,6 +29,10 @@ defmodule Firmowid.Delegations.Delegation.Policies do
       authorize_if signal_in(Signals, :delegation_approved)
     end
 
+    policy action(:notify_employee_about_cancellation) do
+      authorize_if signal_in(Signals, :delegation_cancelled)
+    end
+
     policy action(:notify_admins_about_settlement) do
       authorize_if signal_in(Signals, :settlement_submitted)
     end
@@ -43,6 +47,16 @@ defmodule Firmowid.Delegations.Delegation.Policies do
 
     policy action(:update_pending) do
       authorize_if expr(order_editable? and member_id == ^actor([:member, :id]))
+    end
+
+    # Only until the employer signs the order; afterwards an admin cancels it.
+    policy action(:cancel) do
+      authorize_if expr(order_editable? and member_id == ^actor([:member, :id]))
+    end
+
+    # The action itself deletes only cancelled trips.
+    policy action(:destroy) do
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action([:prepare_settlement, :save_draft, :detect_dates]) do

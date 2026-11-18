@@ -2128,6 +2128,11 @@ msgctxt "business trips table"
 msgid "Business trip"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Business trip actions: %{title}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Business trip date change"
@@ -2286,6 +2291,11 @@ msgctxt "invoice action"
 msgid "Cancel"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel business trip"
+msgstr ""
+
 #: lib/firmowid_web/management/components/card.ex
 #, elixir-autogen, elixir-format
 msgid "Cancel editing"
@@ -2299,6 +2309,16 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Cancel invoice"
+msgstr ""
+
+#: lib/firmowid_web/management/components/delegations_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel this business trip? The employee will see it as cancelled."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegations_list.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel this business trip? You can delete it afterwards."
 msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
@@ -3564,6 +3584,12 @@ msgstr ""
 msgid "Could not authenticate with KSeF. Check the certificate, key and password and try again."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employee.ex
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not cancel the business trip."
+msgstr ""
+
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Could not change the Google account."
@@ -3593,6 +3619,12 @@ msgstr ""
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
 msgid "Could not create the account. Check the form and try again."
+msgstr ""
+
+#: lib/firmowid_web/management/views/employee.ex
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not delete the business trip."
 msgstr ""
 
 #: lib/firmowid_web/delegations/views/delegation.ex
@@ -3739,6 +3771,11 @@ msgstr ""
 #: lib/firmowid/blobs/changes/process_document_blob.ex
 #, elixir-autogen, elixir-format
 msgid "Could not process the file."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Could not reject the business trip."
 msgstr ""
 
 #: lib/firmowid_web/management/components/leaves_tab.ex
@@ -4201,6 +4238,7 @@ msgstr ""
 msgid "Default for %{currency}"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -4237,6 +4275,12 @@ msgstr ""
 #: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgid "Delete session"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegations_list.ex
+#: lib/firmowid_web/management/components/delegations_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Delete this business trip for good?"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/components/overlap.ex
@@ -9666,6 +9710,11 @@ msgstr ""
 msgid "Reject request"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Reject this business trip? The employee will see it as cancelled."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "landing leave status"
@@ -11574,6 +11623,23 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "The business trip has been approved successfully!"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employee.ex
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "The business trip has been cancelled."
+msgstr ""
+
+#: lib/firmowid_web/management/views/employee.ex
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "The business trip has been deleted."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The business trip has been rejected."
 msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
@@ -14477,6 +14543,12 @@ msgstr ""
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "can't be blank"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trip status"
+msgid "cancelled"
 msgstr ""
 
 #: lib/firmowid/delegations/delegation.ex

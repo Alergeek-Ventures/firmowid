@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
       <col />
       <col class="w-36" />
       <col class="w-44" />
-      <col class="w-24" />
+      <col class="w-32" />
       <thead class="max-md:hidden">
         <tr class="border-be border-grey-100">
           <th scope="col" class={header_styles()}>
@@ -53,16 +53,21 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
           <td class="py-3 pe-4 max-md:p-0">
             <.status_badge status={delegation.status} />
           </td>
-          <td class="py-3 text-end max-md:ms-auto max-md:p-0">
-            <.link
-              :if={delegation.order_editable?}
-              kind="button"
-              variant="outline"
-              size="small"
-              navigate={FirmowidWeb.Delegations.Utilities.Navigation.edit_path(delegation.reference)}
-            >
-              {gettext("Edit")}
-            </.link>
+          <td class="py-3 max-md:ms-auto max-md:p-0">
+            <div class="flex items-center justify-end gap-1">
+              <.link
+                :if={delegation.order_editable?}
+                kind="button"
+                variant="outline"
+                size="small"
+                navigate={
+                  FirmowidWeb.Delegations.Utilities.Navigation.edit_path(delegation.reference)
+                }
+              >
+                {gettext("Edit")}
+              </.link>
+              <.delegation_menu delegation={delegation} />
+            </div>
           </td>
         </tr>
       </tbody>
@@ -70,6 +75,31 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
     <p :if={@delegations == []} class="text-sm text-grey-500">{gettext("No business trips.")}</p>
     """
   end
+
+  attr :delegation, :map, required: true
+
+  # The employee cancels a trip only until the employer signs its order, and then may delete it.
+  defp delegation_menu(%{delegation: %{order_editable?: true}} = assigns) do
+    ~H"""
+    <.actions_menu
+      delegation={@delegation}
+      action={:cancel}
+      confirm={gettext("Cancel this business trip? You can delete it afterwards.")}
+    />
+    """
+  end
+
+  defp delegation_menu(%{delegation: %{status: :cancelled}} = assigns) do
+    ~H"""
+    <.actions_menu
+      delegation={@delegation}
+      action={:delete}
+      confirm={gettext("Delete this business trip for good?")}
+    />
+    """
+  end
+
+  defp delegation_menu(assigns), do: ~H""
 
   # The same header style as the list of invoices.
   defp header_styles, do: "pbe-3 pe-4 text-start text-xs font-normal text-grey-700 uppercase"

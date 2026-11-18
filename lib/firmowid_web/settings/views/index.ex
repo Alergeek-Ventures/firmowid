@@ -202,6 +202,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> assign(:google_connected?, google_identities != [])
   end
 
+  defp assign_delegations(socket) do
+    %{current_user: current_user, ash_scope: scope} = socket.assigns
+
+    assign(
+      socket,
+      :delegations,
+      Delegations.list_delegations_for_member!(current_user.member.id,
+        scope: scope,
+        load: [:order_editable?]
+      )
+    )
+  end
+
   defp assign_profile(socket) do
     %{current_user: current_user, ash_scope: scope} = socket.assigns
     member_id = current_user.member.id
@@ -213,10 +226,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket
     |> assign(:leave_requests, list_leave_requests(member_id, scope))
-    |> assign(
-      :delegations,
-      Delegations.list_delegations_for_member!(member_id, scope: scope, load: [:order_editable?])
-    )
+    |> assign_delegations()
     |> assign(:leave_days, leave_days || 0)
     |> assign(:leave_search, "")
     |> assign(:leave_request_form, leave_request_form(current_user, scope))
@@ -366,6 +376,30 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("upload", _, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("cancel_delegation", %{"id" => id}, socket) do
+    case Delegations.cancel_delegation(id, scope: socket.assigns.ash_scope) do
+      {:ok, _delegation} ->
+        LiveToast.send_toast(:info, gettext("The business trip has been cancelled."))
+        {:noreply, assign_delegations(socket)}
+
+      {:error, _error} ->
+        LiveToast.send_toast(:error, gettext("Could not cancel the business trip."))
+        {:noreply, assign_delegations(socket)}
+    end
+  end
+
+  def handle_event("delete_delegation", %{"id" => id}, socket) do
+    case Delegations.destroy_delegation(id, scope: socket.assigns.ash_scope) do
+      :ok ->
+        LiveToast.send_toast(:info, gettext("The business trip has been deleted."))
+        {:noreply, assign_delegations(socket)}
+
+      {:error, _error} ->
+        LiveToast.send_toast(:error, gettext("Could not delete the business trip."))
+        {:noreply, assign_delegations(socket)}
+    end
   end
 
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do

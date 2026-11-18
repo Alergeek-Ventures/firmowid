@@ -24,6 +24,13 @@ defmodule Firmowid.Delegations.Signals do
       argument :organization_id, :uuid, allow_nil?: false
     end
 
+    signal :delegation_cancelled do
+      description "An employee or an admin cancelled a business trip delegation."
+      argument :delegation_id, :uuid, allow_nil?: false
+      argument :organization_id, :uuid, allow_nil?: false
+      argument :cancelled_by_member_id, :uuid, allow_nil?: false
+    end
+
     signal :settlement_reviewed do
       description "An admin accepted a delegation settlement or returned it for corrections."
       argument :delegation_id, :uuid, allow_nil?: false

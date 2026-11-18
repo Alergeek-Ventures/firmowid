@@ -7,6 +7,7 @@ defmodule Firmowid.Delegations.DelegationTest do
 
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
+  alias Ash.Error.Query.NotFound
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
@@ -349,6 +350,51 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert approved_delegation.signed_command_blob_id
   end
 
+  test "the owner cancels and deletes an unsigned order, while only an admin cancels a signed one",
+       %{
+         employee_scope: employee_scope,
+         admin_scope: admin_scope
+       } do
+    unsigned = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    other_scope = %Scope{
+      actor: user_in_org_fixture(employee_scope.tenant),
+      tenant: employee_scope.tenant
+    }
+
+    assert {:error, %Forbidden{}} = Delegations.cancel_delegation(unsigned.id, scope: other_scope)
+
+    # Only a cancelled trip can be deleted.
+    assert {:error, %Invalid{errors: [%NotFound{}]}} =
+             Delegations.destroy_delegation(unsigned.id, scope: employee_scope)
+
+    assert {:ok, %{status: :cancelled}} =
+             Delegations.cancel_delegation(unsigned.id, scope: employee_scope)
+
+    assert {:error, %Invalid{errors: [%NotFound{}]}} =
+             Delegations.cancel_delegation(unsigned.id, scope: employee_scope)
+
+    assert :ok = Delegations.destroy_delegation(unsigned.id, scope: employee_scope)
+
+    signed = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    signed =
+      Delegations.approve_delegation!(signed.id, approval_attrs(signed), scope: admin_scope)
+
+    expense = seed_expense(signed, employee_scope.actor, %{})
+
+    assert {:error, %Forbidden{}} =
+             Delegations.cancel_delegation(signed.id, scope: employee_scope)
+
+    assert {:ok, %{status: :cancelled}} =
+             Delegations.cancel_delegation(signed.id, scope: admin_scope)
+
+    assert :ok = Delegations.destroy_delegation(signed.id, scope: admin_scope)
+
+    assert {:ok, nil} =
+             Delegations.get_expense(expense.id, scope: admin_scope, not_found_error?: false)
+  end
+
   test "an order corrected after it was generated cannot be approved with the outdated signature",
        %{
          employee_scope: employee_scope,
@@ -362,7 +408,7 @@ defmodule Firmowid.Delegations.DelegationTest do
       updated_at: DateTime.shift(generated.updated_at, minute: 1)
     })
 
-    assert {:error, %Invalid{errors: [%Ash.Error.Query.NotFound{}]}} =
+    assert {:error, %Invalid{errors: [%NotFound{}]}} =
              Delegations.approve_delegation(generated.id, approval_attrs(generated), scope: admin_scope)
 
     stored = Delegations.get_delegation!(generated.id, scope: admin_scope)

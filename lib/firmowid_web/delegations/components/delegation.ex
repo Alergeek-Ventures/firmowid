@@ -3,6 +3,8 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Menu
+
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias Phoenix.LiveView.Rendered
 
@@ -64,6 +66,44 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
     <time datetime={"#{Date.to_iso8601(@start_date)}/#{Date.to_iso8601(@end_date)}"}>
       {DelegationPresentation.format_range(@start_date, @end_date)}
     </time>
+    """
+  end
+
+  @doc """
+  Renders a trip's row menu with its one destructive action: cancelling it or,
+  once cancelled, deleting it. The page handles `cancel_delegation` and
+  `delete_delegation` with the trip's `id`.
+  """
+  @spec actions_menu(map()) :: Rendered.t()
+  attr :delegation, :map, required: true
+  attr :action, :atom, values: [:cancel, :delete], required: true
+  attr :confirm, :string, required: true, doc: "The question the browser asks before the action."
+  attr :class, :any, default: nil
+
+  def actions_menu(assigns) do
+    assigns = assign(assigns, :menu_id, "delegation-#{assigns.delegation.id}-actions")
+
+    ~H"""
+    <.menu
+      id={@menu_id}
+      label={gettext("Business trip actions: %{title}", title: @delegation.title)}
+      class={@class}
+    >
+      <.menu_item
+        tone="danger"
+        phx-click={
+          JS.push("#{@action}_delegation", value: %{id: @delegation.id})
+          |> hide_popover("#{@menu_id}-menu")
+        }
+        data-confirm={@confirm}
+      >
+        <%= if @action == :cancel do %>
+          <Lucideicons.circle_x />{gettext("Cancel business trip")}
+        <% else %>
+          <Lucideicons.trash_2 />{gettext("Delete")}
+        <% end %>
+      </.menu_item>
+    </.menu>
     """
   end
 

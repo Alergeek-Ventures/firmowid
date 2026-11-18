@@ -113,6 +113,23 @@ defmodule Firmowid.Delegations.DelegationEmails do
     with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
   end
 
+  @doc "Tells the employee that an admin cancelled their delegation."
+  @spec deliver_cancelled_delegation(Delegation.t(), Member.t() | map()) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_cancelled_delegation(delegation, employee) do
+    assigns = %{name: employee_name(employee), delegation: delegation}
+
+    email =
+      new()
+      |> to(to_string(employee.user.email))
+      |> from({"Firmowid", "piotr@firmowid.pl"})
+      |> subject("Delegacja została anulowana")
+      |> html_body(to_html(cancellation_html(assigns)))
+      |> text_body(cancellation_text(assigns))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
   defp html(assigns) do
     ~H"""
     <.email preheader={"#{@name}, #{date_range(@delegation)}"} figure={:suitcase}>
@@ -168,6 +185,26 @@ defmodule Firmowid.Delegations.DelegationEmails do
     Data wyjazdu: #{date_range(assigns.delegation)}
     Cel wyjazdu: #{assigns.delegation.purpose}
     Przewidywana kwota: #{Money.to_string!(assigns.delegation.expected_cost)}
+    """
+  end
+
+  defp cancellation_html(assigns) do
+    ~H"""
+    <.email preheader={date_range(@delegation)} figure={:suitcase}>
+      <:headline>Delegacja została anulowana</:headline>
+      <:lead>{@name}, pracodawca anulował Twoją delegację.</:lead>
+      <.detail_row label="Data wyjazdu" value={date_range(@delegation)} />
+      <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
+    </.email>
+    """
+  end
+
+  defp cancellation_text(assigns) do
+    """
+    Delegacja została anulowana
+    #{assigns.name}, pracodawca anulował Twoją delegację.
+    Data wyjazdu: #{date_range(assigns.delegation)}
+    Cel wyjazdu: #{assigns.delegation.purpose}
     """
   end
 

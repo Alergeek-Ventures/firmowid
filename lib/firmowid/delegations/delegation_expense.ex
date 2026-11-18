@@ -24,6 +24,10 @@ defmodule Firmowid.Delegations.DelegationExpense do
   postgres do
     table "delegation_expenses"
     repo Firmowid.Repo
+
+    references do
+      reference :delegation, on_delete: :delete
+    end
   end
 
   actions do

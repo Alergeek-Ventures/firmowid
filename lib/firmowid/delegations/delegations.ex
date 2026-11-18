@@ -34,9 +34,15 @@ defmodule Firmowid.Delegations do
       define :submit_for_review, action: :submit_for_review, get_by: [:id]
       define :accept_settlement, action: :accept_settlement, get_by: [:id]
       define :return_settlement, action: :return_settlement, get_by: [:id]
+      define :cancel_delegation, action: :cancel, get_by: [:id]
+      define :destroy_delegation, action: :destroy, get_by: [:id]
       define :detect_dates, action: :detect_dates
       define :notify_admins_about_delegation, action: :notify_admins, args: [:signal]
       define :notify_employee_about_delegation, action: :notify_employee, args: [:signal]
+
+      define :notify_employee_about_cancellation,
+        action: :notify_employee_about_cancellation,
+        args: [:signal]
 
       define :notify_admins_about_settlement,
         action: :notify_admins_about_settlement,

@@ -71,8 +71,12 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                  load: [:order_editable?],
                  not_found_error?: false
                ) do
-            {:ok, %{member_id: ^member_id} = delegation} -> delegation
-            _ -> nil
+            # A cancelled trip has no order left to sign.
+            {:ok, %{member_id: ^member_id, status: status} = delegation} when status != :cancelled ->
+              delegation
+
+            _ ->
+              nil
           end
 
         if delegation do
@@ -222,6 +226,21 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
       _ ->
         {:noreply, put_flash(socket, :error, gettext("Could not approve the business trip."))}
+    end
+  end
+
+  def handle_event("reject", _params, socket) do
+    case Delegations.cancel_delegation(socket.assigns.delegation.id,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("The business trip has been rejected."))
+         |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not reject the business trip."))}
     end
   end
 
@@ -614,7 +633,17 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   {@command_upload_error}
                 </.alert>
                 <div class="mt-5 flex gap-3">
-                  <.button type="button" variant="tertiary" class="w-[170px]">{gettext("Reject")}</.button>
+                  <.button
+                    type="button"
+                    variant="tertiary"
+                    phx-click="reject"
+                    data-confirm={
+                      gettext("Reject this business trip? The employee will see it as cancelled.")
+                    }
+                    class="w-[170px]"
+                  >
+                    {gettext("Reject")}
+                  </.button>
                   <.button
                     type="submit"
                     variant="primary"
