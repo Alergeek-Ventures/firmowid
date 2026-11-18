@@ -147,7 +147,7 @@
     ["<span class=\"case__go\">Sprawdź <i>", "<span class=\"case__go\">Читати <i>"],
     ["<span class=\"case__tag\">Consulting · Kraków</span>", "<span class=\"case__tag\">Консалтинг · Краків</span>"],
     ["<h3>Jak korzysta zespół Alergeek Ventures</h3>", "<h3>Як ним користується команда Alergeek Ventures</h3>"],
-    ["<span class=\"case__go case__go--soon\">Wkrótce</span>", "<span class=\"case__go case__go--soon\">Незабаром</span>"],
+    ["<span class=\"case__go\">Artykuł po angielsku <i>", "<span class=\"case__go\">Стаття англійською <i>"],
     ["<h3>Jak wdrażaliśmy Firmowida w&nbsp;dużej polskiej firmie</h3>", "<h3>Як ми впроваджували Firmowid у&nbsp;великій польській фірмі</h3>"],
     ["<p>Napisz do nas, a&nbsp;wyślemy Ci case study.</p>", "<p>Напишіть нам, і&nbsp;ми надішлемо вам кейс.</p>"],
     [">Wyślijcie mi case study</a>", ">Надішліть мені кейс</a>"],

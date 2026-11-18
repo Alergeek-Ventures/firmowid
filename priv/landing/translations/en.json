@@ -146,7 +146,7 @@
     ["<h3>Bonobo: z&nbsp;10 godzin papierów tygodniowo do jednej</h3>", "<h3>Bonobo: from 10 hours of paperwork a week to one</h3>"],
     ["<span class=\"case__go\">Sprawdź <i>", "<span class=\"case__go\">Read <i>"],
     ["<h3>Jak korzysta zespół Alergeek Ventures</h3>", "<h3>How the Alergeek Ventures team uses it</h3>"],
-    ["<span class=\"case__go case__go--soon\">Wkrótce</span>", "<span class=\"case__go case__go--soon\">Coming soon</span>"],
+    ["<span class=\"case__go\">Artykuł po angielsku <i>", "<span class=\"case__go\">Read the article <i>"],
     ["<h3>Jak wdrażaliśmy Firmowida w&nbsp;dużej polskiej firmie</h3>", "<h3>How we rolled out Firmowid at a large Polish company</h3>"],
     ["<p>Napisz do nas, a&nbsp;wyślemy Ci case study.</p>", "<p>Write to us and we’ll send you the case study.</p>"],
     [">Wyślijcie mi case study</a>", ">Send me the case study</a>"],
