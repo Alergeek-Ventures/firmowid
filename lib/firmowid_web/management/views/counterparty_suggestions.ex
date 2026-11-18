@@ -85,8 +85,13 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   end
 
   def handle_event("skip", %{"key" => key}, socket) do
-    case Invoicing.skip_counterparty_suggestion(key, scope: socket.assigns.ash_scope) do
-      {:ok, skipped} -> {:noreply, update(socket, :skipped, &Map.put(&1, key, skipped))}
+    # A stale click on a buyer already added or no longer listed does nothing.
+    with %{} <- find_group(socket, key),
+         {:ok, skipped} <-
+           Invoicing.skip_counterparty_suggestion(key, scope: socket.assigns.ash_scope) do
+      {:noreply, update(socket, :skipped, &Map.put(&1, key, skipped))}
+    else
+      nil -> {:noreply, socket}
       {:error, error} -> raise Ash.Error.to_error_class(error)
     end
   end
@@ -310,14 +315,22 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
           >
             <Lucideicons.circle_check_big class="size-6 text-moss-700" aria-hidden="true" />
             <div class="flex flex-col gap-0.5">
-              <%= if @search != "" do %>
-                <p class="leading-[normal] font-medium text-black">
-                  {gettext("We could not find the counterparty you are looking for.")}
-                </p>
-              <% else %>
-                <p class="leading-[normal] font-medium text-black">
-                  {gettext("Every company from your invoices is already in your counterparties")}
-                </p>
+              <%!-- With skipped buyers below, neither "all added" nor "not found" holds. --%>
+              <%= cond do %>
+                <% @skipped_groups != [] -> %>
+                  <p class="leading-[normal] font-medium text-black">
+                    {gettext("No new counterparty is waiting for a decision")}
+                  </p>
+                <% @search != "" -> %>
+                  <p class="leading-[normal] font-medium text-black">
+                    {gettext("We could not find the counterparty you are looking for.")}
+                  </p>
+                <% true -> %>
+                  <p class="leading-[normal] font-medium text-black">
+                    {gettext("Every company from your invoices is already in your counterparties")}
+                  </p>
+              <% end %>
+              <%= if @search == "" do %>
                 <p class="leading-[1.35] text-grey-600">
                   {gettext(
                     "When an invoice from a new company appears in KSeF, you will see it here."

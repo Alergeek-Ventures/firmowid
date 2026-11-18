@@ -8253,6 +8253,11 @@ msgstr ""
 msgid "No month of this period is closed yet."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "No new counterparty is waiting for a decision"
+msgstr ""
+
 #: lib/firmowid_web/admin/views/organizations.ex
 #, elixir-autogen, elixir-format
 msgid "No organizations found for the selected filters."
