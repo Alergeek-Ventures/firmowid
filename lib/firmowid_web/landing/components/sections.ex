@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   @features [
     %{
       tags: [gettext_noop("invoicing"), "KSeF"],
-      title: gettext_noop("Invoices that reach KSeF by themselves"),
+      title: gettext_noop("Invoices that reach KSeF automatically"),
       description:
         gettext_noop(
           "Create, send, receive. Firmowid connects to the National e-Invoice System and tracks every regulatory change for you."

@@ -6778,7 +6778,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
-msgid "Invoices that reach KSeF by themselves"
+msgid "Invoices that reach KSeF automatically"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
