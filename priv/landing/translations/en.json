@@ -109,7 +109,7 @@
     ["18 400</span>&nbsp;zł", "18,400</span>&nbsp;PLN"],
     ["Z każdych 100&nbsp;zł przychodu zostało <b>23&nbsp;zł</b>", "Of every 100&nbsp;PLN of revenue, <b>23&nbsp;PLN</b> was left"],
     ["<span class=\"seal\">KSeF · połączono</span><span class=\"seal seal--teal\">Bank · połączono</span>", "<span class=\"seal\">KSeF · connected</span><span class=\"seal seal--teal\">Bank · connected</span>"],
-    ["Podpinasz raz, w&nbsp;2&nbsp;minuty</h3>", "Connect once, in 2&nbsp;minutes</h3>"],
+    ["Podpinasz raz, w&nbsp;3&nbsp;minuty</h3>", "Connect once, in 3&nbsp;minutes</h3>"],
     ["<p>Potem faktury, przelewy i&nbsp;godziny łączą się same, bez Twojego udziału.</p>", "<p>From then on, invoices, transfers and hours come together on their own.</p>"],
     ["Sam proponuje kategorie</h3>", "Suggests categories on its own</h3>"],
     ["<p>Sprawdza PKD kontrahenta w&nbsp;KRS i&nbsp;CEIDG i&nbsp;podpowiada, na co poszły pieniądze.</p>", "<p>It looks up the contact’s activity code (PKD) in the KRS and CEIDG registers and suggests what the money went on.</p>"],
