@@ -39,6 +39,11 @@ msgctxt "landing card price"
 msgid "%{amount} PLN"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "%{amount} in total"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} of 100"
@@ -225,13 +230,6 @@ msgid_plural "%{count} days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} invoice"
-msgid_plural "%{count} invoices"
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} invoice so far, the number grows live"
@@ -314,6 +312,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} sales invoice"
 msgid_plural "%{count} sales invoices"
@@ -482,6 +481,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "%{month}, usually %{amount}"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "%{name} is already in your counterparties, without this identifier. Adding links the invoices to it; if it is another company, create a new one."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -764,6 +768,11 @@ msgstr ""
 msgid "A project with recorded time cannot be deleted."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.html.heex
+#, elixir-autogen, elixir-format
+msgid "A restored counterparty returns to the active list with its whole history of invoices and transactions."
+msgstr ""
+
 #: lib/firmowid_web/management/views/projects.ex
 #, elixir-autogen, elixir-format
 msgid "A restored project returns to the active list with its whole history of hours, and the team can assign time to it again."
@@ -839,11 +848,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "inbox decision"
 msgid "Accept"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Accept ready (%{count})"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/change_request.ex
@@ -945,6 +949,12 @@ msgctxt "projects list tab"
 msgid "Active"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties summary"
+msgid "Active"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
@@ -1038,6 +1048,7 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/shortcuts.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Add counterparty"
 msgstr ""
@@ -1136,6 +1147,11 @@ msgstr ""
 msgid "Add the signed timesheet"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Add to counterparties"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Add work sessions"
@@ -1224,6 +1240,16 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "tax"
 msgid "Advances"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "After adding, the counterparty goes to the active list with its invoices."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "After adding, the invoices are linked to %{name}."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
@@ -1592,6 +1618,12 @@ msgctxt "projects archive"
 msgid "Archive"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties archive"
+msgid "Archive"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #: lib/firmowid_web/management/views/employees.html.heex
@@ -1604,6 +1636,12 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "projects list tab"
 msgid "Archived"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties archive"
+msgid "Archived counterparties"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparties.html.heex
@@ -2527,6 +2565,7 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #: lib/firmowid_web/landing/components/sections.ex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Check"
 msgstr ""
@@ -2534,11 +2573,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Check correction details"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Check first"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -2886,6 +2920,7 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/inbox/views/index.ex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Collapse"
 msgstr ""
@@ -2920,6 +2955,23 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Comment"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties summary"
+msgid "Companies"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Companies from invoices that are not in your counterparties yet. Several invoices from one company make one row."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties summary"
+msgid "Companies without an identifier"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex
@@ -3980,6 +4032,9 @@ msgid "Could not upload the file."
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
+#: lib/firmowid_web/management/views/counterparties.ex
+#: lib/firmowid_web/management/views/counterparties.html.heex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Counterparties"
@@ -4013,6 +4068,12 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Counterparty %{name} created"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparty suggestions"
+msgid "Counterparty details"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparties.ex
@@ -4053,11 +4114,6 @@ msgstr ""
 #: lib/firmowid/invoicing/wizard_state.ex
 #, elixir-autogen, elixir-format
 msgid "Country is required"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Create"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -4147,6 +4203,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Data and security"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Data from the VAT white list"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -4862,9 +4923,13 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Email"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Email (optional)"
 msgstr ""
 
 #: lib/firmowid_web/management/components/profile_tab.ex
@@ -5195,7 +5260,7 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
-msgid "Every buyer of your issued invoices has a counterparty."
+msgid "Every company from your invoices is already in your counterparties"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5413,6 +5478,11 @@ msgstr ""
 #: lib/firmowid/delegations/validations/expense_details_complete.ex
 #, elixir-autogen, elixir-format
 msgid "Fill in the expense details."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgid "Fill in the identifier in the counterparty's profile."
 msgstr ""
 
 #: lib/firmowid_web/delegations/views/delegation_form.ex
@@ -6445,6 +6515,7 @@ msgstr ""
 msgid "Individual"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #, elixir-autogen, elixir-format
 msgid "Individuals"
@@ -6735,7 +6806,6 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
 #: lib/firmowid_web/management/views/counterparty.ex
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices"
 msgstr ""
@@ -7136,6 +7206,11 @@ msgstr ""
 msgid "KSeF validation error: %{details}"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "KSeF, %{date}"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF: %{count} invoice so far, fetching more"
@@ -7172,6 +7247,12 @@ msgstr ""
 #: lib/firmowid_web/management/views/projects.ex
 #, elixir-autogen, elixir-format
 msgctxt "projects archive"
+msgid "Last archived"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties archive"
 msgid "Last archived"
 msgstr ""
 
@@ -7300,11 +7381,6 @@ msgctxt "suggested invoice"
 msgid "Link"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Link"
-msgstr ""
-
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Link another"
@@ -7324,11 +7400,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Link the invoice to a counterparty"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Link with"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -7849,9 +7920,21 @@ msgstr ""
 msgid "New conversation"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.html.heex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgctxt "people list tab"
+msgid "New counterparties"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparty suggestions"
+msgid "New counterparties"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_form.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "New counterparty"
 msgstr ""
@@ -9700,16 +9783,6 @@ msgstr ""
 msgid "Reads the company's invoices, clients, transfers, salaries, working time and leave"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Ready"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Ready counterparties saved"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Real-time working hours monitoring"
@@ -10016,6 +10089,12 @@ msgctxt "projects archive"
 msgid "Restoring"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparties.html.heex
+#, elixir-autogen, elixir-format
+msgctxt "counterparties archive"
+msgid "Restoring"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/monthly_results.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -10250,6 +10329,11 @@ msgctxt "invoice download option"
 msgid "Sales invoices"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Sales invoices · %{count}"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Same correspondence address"
@@ -10258,11 +10342,6 @@ msgstr ""
 #: lib/firmowid_web/management/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Same month"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Same name as"
 msgstr ""
 
 #: lib/firmowid_web/bank_sync/views/create.ex
@@ -10423,6 +10502,7 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/management/views/counterparties.html.heex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Search counterparties"
 msgstr ""
@@ -11023,6 +11103,12 @@ msgstr ""
 msgid "Skip for now"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgctxt "counterparty suggestions"
+msgid "Skipped"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Slack"
@@ -11058,11 +11144,6 @@ msgstr ""
 msgid "Some changes may already have been saved. Ask me to check the current state before proposing a new plan."
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Some counterparties could not be saved. Review them below."
-msgstr ""
-
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Some records could not be read. Reject this plan and ask for a new one."
@@ -11071,11 +11152,6 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Someone on the team is waiting for your decision."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Something does not add up. Decide before saving."
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -11612,6 +11688,11 @@ msgstr ""
 msgid "The User undertakes to provide accurate information and keep login credentials confidential. The User is responsible for all"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "The VAT taxpayer register lists this NIP as %{name}. Check the data before you add the counterparty."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The VAT white list does not know this NIP. Enter the company details yourself."
@@ -11880,11 +11961,6 @@ msgstr ""
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "The data controller is"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "The data matches. Accept them one by one or all at once."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
@@ -12499,6 +12575,11 @@ msgstr ""
 msgid "These Terms of Service set out the rules for using the Firmowid online service (hereinafter: the “Service”), available at"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "They do not count as waiting. You can add them to your counterparties at any time."
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Things waiting for you."
@@ -12889,13 +12970,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "To protect your account, log in again before closing it. After logging in you will come back here."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparties.html.heex
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgctxt "people list tab"
-msgid "To review"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
@@ -13565,11 +13639,6 @@ msgstr ""
 msgid "VAT total"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "VAT white list"
-msgstr ""
-
 #: lib/firmowid_web/management/views/counterparty.ex
 #: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
@@ -13704,6 +13773,7 @@ msgid "We could not create the company."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparties.html.heex
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "We could not find the counterparty you are looking for."
 msgstr ""
@@ -13721,6 +13791,16 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "We could not save the company."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "We did not find this NIP in the VAT taxpayer register. Check the number before you add the counterparty."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "We filled in the name and address from the VAT taxpayer register. VAT status: %{status}."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -13898,6 +13978,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "What your organization uses right now."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "When an invoice from a new company appears in KSeF, you will see it here."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -14312,11 +14397,6 @@ msgstr ""
 #: lib/firmowid_web/hours_record/controllers/record.ex
 #, elixir-autogen, elixir-format
 msgid "You do not have access to this timesheet."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparties.html.heex
-#, elixir-autogen, elixir-format
-msgid "You do not have any counterparties yet. Add the first one by clicking below."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex
@@ -14994,6 +15074,11 @@ msgstr ""
 msgid "last name is required"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "last: KSeF, %{date}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "leave and business trips"
@@ -15139,6 +15224,11 @@ msgstr ""
 msgid "must match the pattern %{regex}"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "name@company.com"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "net %{net} · VAT %{vat}"
@@ -15277,7 +15367,7 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
-msgid "same identifier"
+msgid "sales invoice %{number}"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
@@ -15356,6 +15446,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "invoice payment status"
 msgid "skipped"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "skipped %{date}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

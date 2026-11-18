@@ -365,6 +365,12 @@ defmodule Firmowid.Invoicing do
       define :record_counterparty_proposal, action: :record
     end
 
+    resource Firmowid.Invoicing.SkippedCounterpartySuggestion do
+      define :list_skipped_counterparty_suggestions, action: :read
+      define :skip_counterparty_suggestion, action: :skip, args: [:group_key]
+      define :unskip_counterparty_suggestion, action: :unskip
+    end
+
     resource Counterparty do
       define :list_counterparties, action: :list
       define :get_counterparty, action: :by_id, args: [:id]

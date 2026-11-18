@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.EmptyState
   import FirmowidWeb.Management.Components.ListToolbar
+  import FirmowidWeb.Management.Components.SidePanel
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
@@ -172,36 +173,16 @@ defmodule FirmowidWeb.Management.Views.Projects do
     """
   end
 
-  attr :title, :string, required: true
-  attr :rows, :list, required: true, doc: "`{label, value}` pairs"
-
-  defp summary_card(assigns) do
-    ~H"""
-    <section class="flex flex-col gap-4 rounded-sm bg-white p-5">
-      <h2 class="text-caps-sm/[normal] font-medium text-grey-600 uppercase">{@title}</h2>
-      <dl class="flex flex-col gap-2">
-        <div :for={{label, value} <- @rows} class="flex items-baseline justify-between gap-3 text-sm">
-          <dt class="truncate leading-[1.35] text-grey-700">{label}</dt>
-          <dd class="shrink-0 leading-[normal] font-medium text-grey-900 tabular-nums">{value}</dd>
-        </div>
-      </dl>
-    </section>
-    """
-  end
-
   # Figma "Przywracanie": what restoring a project does.
   defp restoring_hint(assigns) do
     ~H"""
-    <section class="flex flex-col gap-4 rounded-sm bg-white p-5">
-      <h2 class="text-caps-sm/[normal] font-medium text-grey-600 uppercase">
-        {pgettext("projects archive", "Restoring")}
-      </h2>
+    <.panel_card title={pgettext("projects archive", "Restoring")}>
       <p class="text-sm/[1.35] text-grey-500">
         {gettext(
           "A restored project returns to the active list with its whole history of hours, and the team can assign time to it again."
         )}
       </p>
-    </section>
+    </.panel_card>
     """
   end
 
@@ -215,13 +196,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
     assigns = assign(assigns, :idle, Enum.filter(assigns.projects, &(&1.duration < 60)))
 
     ~H"""
-    <section :if={@idle != []} class="flex flex-col gap-4 rounded-sm bg-white p-5">
-      <header class="flex items-center justify-between gap-3 text-grey-600">
-        <h2 class="text-caps-sm/[normal] font-medium uppercase">
-          {no_hours_title(@month)}
-        </h2>
-        <span class="text-sm/[1.35] tabular-nums">{length(@idle)}</span>
-      </header>
+    <.panel_card :if={@idle != []} title={no_hours_title(@month)} count={length(@idle)}>
       <ul class="flex flex-col gap-2">
         <li :for={project <- @idle} class="min-w-0">
           <.link
@@ -236,7 +211,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
       <p class="text-sm/[1.35] text-grey-500">
         {gettext("If a project has ended, you can archive it.")}
       </p>
-    </section>
+    </.panel_card>
     """
   end
 

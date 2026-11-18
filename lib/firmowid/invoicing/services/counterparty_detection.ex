@@ -86,6 +86,28 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
     |> Enum.sort_by(&{-length(&1.invoice_ids), &1.buyer.label})
   end
 
+  @doc "The buyer groups skipped on the list, by group key."
+  @spec skipped(Scope.t()) :: %{String.t() => Invoicing.SkippedCounterpartySuggestion.t()}
+  def skipped(%Scope{} = scope) do
+    [scope: scope]
+    |> Invoicing.list_skipped_counterparty_suggestions!()
+    |> Map.new(&{&1.group_key, &1})
+  end
+
+  @doc """
+  The buyer groups waiting for a decision: all of them but the skipped ones. The list of
+  counterparties counts them beside "New counterparties".
+  """
+  @spec waiting_count(Scope.t()) :: %{waiting: non_neg_integer(), skipped: non_neg_integer()}
+  def waiting_count(%Scope{} = scope) do
+    skipped = skipped(scope)
+
+    {waiting, skipped_groups} =
+      scope |> list() |> Enum.split_with(&(not Map.has_key?(skipped, &1.key)))
+
+    %{waiting: length(waiting), skipped: length(skipped_groups)}
+  end
+
   @doc """
   Looks up the Polish NIPs of the groups in the VAT
   white list, 30 per request. Returns the registry data by group key.
