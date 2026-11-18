@@ -6012,8 +6012,6 @@ msgid "Gross value"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/primitives.ex
-#: lib/firmowid_web/landing/utilities/guide_structured_data.ex
-#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Guides"
 msgstr ""
