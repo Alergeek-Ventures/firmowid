@@ -395,6 +395,10 @@ section{position:relative}
 .step__next{align-self:flex-end;min-height:44px;padding:0 26px;margin-top:14px;font-size:15px}
 .step .slider{margin-bottom:18px}.step .slider:last-of-type{margin-bottom:6px}
 .calc__out{position:sticky;top:104px}
+.calc__wait{display:none}
+.calc__out.is-waiting .calc__wait{display:block;margin-bottom:14px;font-size:15px;color:var(--cream)}
+.calc__out.is-waiting .calc__reveal{filter:blur(9px);opacity:.4;user-select:none;transition:filter .4s,opacity .4s}
+.calc__reveal{transition:filter .4s,opacity .4s}
 .calc__reveal>p:first-child{font-size:14px;color:rgba(245,241,234,.7)}
 .opts{display:grid;border-top:1px solid var(--g200)}
 .opt{display:flex;align-items:center;gap:12px;min-height:48px;padding:10px 2px;border-bottom:1px solid var(--g200);font-size:16px;color:var(--g700);cursor:pointer;transition:color .2s}

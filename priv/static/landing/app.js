@@ -42,7 +42,7 @@
         ['Urlopy w mailach', 'Wnioski z akceptacją'],
       ],
       plans: ['Darmowy', 'Przedsiębiorca', 'Firma'],
-      perYear: ' / rok', weekly: ' tygodniowo', say: 'Z Firmowidem oszczędzasz rocznie ',
+      perYear: ' / rok', perHour: ' za godzinę', weekly: ' tygodniowo', say: 'Z Firmowidem oszczędzasz rocznie ',
     },
     en: {
       num: 'en-US', cur: 'PLN', dec: '.', h: 'h',
@@ -70,7 +70,7 @@
         ['Leave by email', 'Requests with approval'],
       ],
       plans: ['Free', 'Entrepreneur', 'Company'],
-      perYear: ' / year', weekly: ' a week', say: 'With Firmowid you save per year ',
+      perYear: ' / year', perHour: ' an hour', weekly: ' a week', say: 'With Firmowid you save per year ',
     },
     uk: {
       num: 'uk-UA', cur: 'зл', dec: ',', h: 'год',
@@ -98,7 +98,7 @@
         ['Відпустки в листах', 'Заявки з погодженням'],
       ],
       plans: ['Безкоштовний', 'Підприємець', 'Компанія'],
-      perYear: ' / рік', weekly: ' на тиждень', say: 'З Firmowid ви заощаджуєте за рік ',
+      perYear: ' / рік', perHour: ' за годину', weekly: ' на тиждень', say: 'З Firmowid ви заощаджуєте за рік ',
     },
   };
   const T = TEXTS[document.documentElement.lang] || TEXTS.pl;
@@ -296,7 +296,7 @@
   }));
 
   /* ---------- cost calculator ---------- */
-  const cmpf = $('#cmpf');
+  const cmpf = $('#cmpf'), cmpout = $('#cmpout');
   if (cmpf) {
     const v = id => +$('#' + id).value || 0, on = id => $('#' + id).checked;
     const people = T.people;
@@ -317,12 +317,13 @@
       $('#r-plan').textContent = plan[0];
       $('#r-fw').textContent = zl(plan[1]) + T.perYear;
       $('#r-hours').textContent = fmt(hours);
+      $('#r-rate').textContent = r + ' ' + T.cur;
       $('#r-time').textContent = zl(time);
       $('#r-swap').innerHTML = SWAP.filter(s => on(s[0])).map(s => `<li><s>${s[1]}</s><i>→</i><b>${s[2]}</b></li>`).join('');
       tween($('#r-total'), shown, total, 350, n => (n < 0 ? '−' : '') + fmt(Math.abs(n)));
       shown = total;
       clearTimeout(sayTimer);
-      sayTimer = setTimeout(() => { $('#r-say').textContent = T.say + zl(total); }, 600);
+      sayTimer = setTimeout(() => { if (!cmpout.classList.contains('is-waiting')) $('#r-say').textContent = T.say + zl(total); }, 600);
     };
     cmpf.addEventListener('input', calc);
     cmpf.addEventListener('submit', e => e.preventDefault());
@@ -334,11 +335,16 @@
     const summary = [
       () => $('#q-team-out').textContent,
       () => things($$('.opt > input:checked', cmpf).length),
-      () => $('#q-h-out').textContent + T.weekly,
+      () => $('#q-h-out').textContent + T.weekly + ' · ' + $('#q-r-out').textContent + T.perHour,
     ];
     let reached = 0;
+    // the result stays blurred until all three questions are on screen, so nobody reads a number built on defaults
     const openStep = n => {
       reached = Math.max(reached, n);
+      const waiting = reached < steps.length - 1;
+      cmpout.classList.toggle('is-waiting', waiting);
+      $('.calc__reveal', cmpout).inert = waiting;
+      if (!waiting) calc();
       steps.forEach((s, i) => {
         s.classList.toggle('is-open', i === n);
         s.classList.toggle('is-locked', i > reached);
