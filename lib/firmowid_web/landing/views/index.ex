@@ -63,7 +63,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
       <main>
         <h1
-          :if={@live_action in [:pricing, :features]}
+          :if={@live_action == :pricing}
           class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
         >
           {@page_title}
@@ -71,7 +71,10 @@ defmodule FirmowidWeb.Landing.Views.Index do
         <.hero_section :if={@live_action == :home} />
         <.top_metrics_section :if={@live_action == :home} />
         <.audience_section :if={@live_action == :home} />
-        <.capabilities_section :if={@live_action in [:home, :features]} />
+        <.capabilities_section
+          :if={@live_action in [:home, :features]}
+          heading_tag={if @live_action == :features, do: "h1", else: "h2"}
+        />
         <.assistants_section :if={@live_action in [:home, :features]} />
         <.proof_section :if={@live_action == :home} />
         <.how_it_works_section :if={@live_action == :home} />
@@ -106,7 +109,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
   defp metadata(:pricing) do
     [
-      page_title: gettext("Firmowid pricing — choose your plan"),
+      page_title: gettext("Firmowid pricing: choose your plan"),
       meta_description:
         gettext("Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges.")
     ]
@@ -114,14 +117,14 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
   defp metadata(:features) do
     [
-      page_title: gettext("Firmowid features — KSeF, banking and your team"),
+      page_title: gettext("Firmowid features: KSeF, banking and your team"),
       meta_description: gettext("Invoices, transaction matching, time tracking, leave and business trips in one place.")
     ]
   end
 
   defp metadata(:open_source) do
     [
-      page_title: gettext("Firmowid open source — self-hosted KSeF invoicing"),
+      page_title: gettext("Firmowid open source: self-hosted KSeF invoicing"),
       meta_description:
         gettext("Firmowid's source code is public under the AGPL-3.0 license. You can host it on your own server.")
     ]
@@ -129,7 +132,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
   defp metadata(:faq) do
     [
-      page_title: gettext("Firmowid — frequently asked questions"),
+      page_title: gettext("Firmowid: frequently asked questions"),
       meta_description: gettext("Answers about KSeF, bank integrations, data security, migration and Firmowid plans.")
     ]
   end

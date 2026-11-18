@@ -240,6 +240,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   @doc """
   Renders the product features with noninteractive previews.
   """
+  attr :heading_tag, :string,
+    default: "h2",
+    values: ["h1", "h2"],
+    doc: "the features page uses the section heading as its only page heading"
+
   @spec capabilities_section(map()) :: Rendered.t()
   def capabilities_section(assigns) do
     assigns =
@@ -255,10 +260,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("What Firmowid can do")}
           </p>
-          <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:max-w-279 lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
+          <.dynamic_tag
+            tag_name={@heading_tag}
+            class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:max-w-279 lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]"
+          >
             {gettext("Everything your business needs.")}<br class="hidden lg:block" />
             {gettext("In one place.")}
-          </h2>
+          </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-700 lg:hidden lg:max-w-115">
             {gettext(
               "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
