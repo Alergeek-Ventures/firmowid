@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         ),
       bullets: [
         gettext_noop("Automatic KSeF compliance validation"),
-        gettext_noop("Invoice import and export (file, email, scan)"),
+        gettext_noop("Invoice import and export (file, scan)"),
         gettext_noop("Integration with business accounts, including foreign accounts"),
         gettext_noop("Error notifications before documents reach the tax office")
       ],
@@ -65,6 +65,36 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Alerts for unpaid invoices")
       ],
       visual: :banking
+    },
+    %{
+      tags: [gettext_noop("costs"), gettext_noop("accounting office")],
+      title: gettext_noop("Cost invoices in one place, without retyping"),
+      description:
+        gettext_noop(
+          "Invoices from KSeF arrive by themselves. You add paper ones with a photo and Firmowid reads the data. At the end of the month your accounting office gets one ZIP file."
+        ),
+      bullets: [
+        gettext_noop("Cost invoices imported from KSeF automatically"),
+        gettext_noop("Photo, scan or PDF with the data read for you"),
+        gettext_noop("Internal comment on every document"),
+        gettext_noop("Monthly ZIP package for your accounting office")
+      ],
+      visual: :costs
+    },
+    %{
+      tags: [gettext_noop("analysis"), gettext_noop("profitability")],
+      title: gettext_noop("How much your company and each project really earn"),
+      description:
+        gettext_noop(
+          "Income, expenses and net result month by month, also for each project. Firmowid counts only paid invoices, so the numbers match your bank account."
+        ),
+      bullets: [
+        gettext_noop("Net result by month and by project"),
+        gettext_noop("Expense categories suggested from the counterparty's PKD code"),
+        gettext_noop("How much of every 100 PLN of income stayed"),
+        gettext_noop("Unpaid invoices shown separately")
+      ],
+      visual: :analysis
     },
     %{
       tags: [gettext_noop("record-keeping"), gettext_noop("working hours")],
@@ -95,6 +125,21 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Tracked hours ready for payroll")
       ],
       visual: :team
+    },
+    %{
+      tags: [gettext_noop("inbox"), gettext_noop("everyday work")],
+      title: gettext_noop("Everything that needs your attention, on one list"),
+      description:
+        gettext_noop(
+          "The inbox gathers what is waiting: KSeF or bank connection problems, team requests to approve and overdue invoices. Each employee sees only their own matters."
+        ),
+      bullets: [
+        gettext_noop("Urgent matters first: KSeF, bank, company details"),
+        gettext_noop("Leave requests, business trips and timesheet changes to approve"),
+        gettext_noop("Overdue invoices without a matched payment"),
+        gettext_noop("A separate list of their own tasks for every employee")
+      ],
+      visual: :inbox
     }
   ]
 
@@ -185,7 +230,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   end
 
   @doc """
-  Renders the four product features with noninteractive previews.
+  Renders the product features with noninteractive previews.
   """
   @spec capabilities_section(map()) :: Rendered.t()
   def capabilities_section(assigns) do
@@ -199,7 +244,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             {gettext("What Firmowid can do")}
           </p>
           <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:max-w-279 lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
-            {gettext("Four things your business needs.")}<br class="hidden lg:block" />
+            {gettext("Everything your business needs.")}<br class="hidden lg:block" />
             {gettext("In one place.")}
           </h2>
           <p class="mt-6 text-h5/6.75 text-grey-700 lg:hidden lg:max-w-115">
@@ -261,7 +306,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         @visual == :time &&
           "aspect-528/400 px-[4.5%] pt-[6.5%] text-grey-900",
         @visual == :team &&
-          "aspect-528/400 px-[3%] pt-[4.8%] text-grey-900"
+          "aspect-528/400 px-[3%] pt-[4.8%] text-grey-900",
+        @visual in [:costs, :analysis, :inbox] &&
+          "aspect-528/400 px-[3.5%] pt-[4.5%] text-grey-900"
       ]}
       role="img"
       aria-label={gettext("Illustrative product preview")}
@@ -578,9 +625,133 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </span>
             <span class="self-start text-[3cqw] text-grey-700" aria-hidden="true">⋮</span>
           </div>
+        <% :costs -> %>
+          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[2cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
+            <p class="mb-[2.4cqw] text-[2.4cqw] font-medium">{gettext("Cost invoice")}</p>
+            <div
+              :for={row <- cost_invoices()}
+              class="grid grid-cols-[minmax(0,1fr)_auto_24%] items-center gap-[2.4cqw] border-t border-grey-100 py-[1.8cqw]"
+            >
+              <span class="min-w-0 truncate">{row.name}</span>
+              <span class={[
+                "rounded-[0.4cqw] px-[1.2cqw] py-[0.4cqw] text-[1.6cqw] font-semibold",
+                row.source == "KSeF" && "bg-rust-200 text-(--landing-accent)",
+                row.source != "KSeF" && "bg-teal-100 text-teal-700"
+              ]}>{row.source}</span>
+              <strong class="text-right font-medium">{pgettext("landing bank amount", "%{amount} PLN",
+                amount: row.amount
+              )}</strong>
+            </div>
+          </div>
+          <div class="absolute right-[3.5%] bottom-[6%] flex w-[52%] items-center gap-[2cqw] rounded-xl border border-(--landing-line) bg-white p-[2.6cqw] shadow-[0_1.5rem_2rem_rgb(80_50_30/20%)] lg:right-[-4%] lg:bottom-[-7%]">
+            <span class="grid size-[8cqw] shrink-0 place-items-center rounded-[1cqw] bg-grey-900 text-[2.2cqw] font-bold text-white">ZIP</span>
+            <span class="min-w-0 flex-1">
+              <strong class="block text-[2.4cqw] font-medium">{gettext("Download invoices")}</strong>
+              <small class="text-[1.8cqw] text-grey-600">10.2026</small>
+            </span>
+          </div>
+        <% :analysis -> %>
+          <div class="rounded-[1cqw] bg-white p-[2.8cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
+            <div class="mb-[2.4cqw] flex items-center gap-[1.4cqw] text-[1.8cqw] font-semibold tracking-[0.02em]">
+              <span class="rounded-[0.4cqw] px-[1.4cqw] py-[0.6cqw] text-grey-700">{pgettext(
+                "analysis view",
+                "Summary"
+              )}</span>
+              <span class="rounded-[0.4cqw] bg-grey-700 px-[1.4cqw] py-[0.6cqw] text-white">{pgettext(
+                "analysis view",
+                "Trends"
+              )}</span>
+              <span class="ml-auto rounded-[0.4cqw] bg-grey-100 px-[1.4cqw] py-[0.6cqw] font-medium">CODEXA</span>
+            </div>
+            <p class="mb-[1.6cqw] text-[2cqw] font-semibold">{gettext("Net result by month")}</p>
+            <div class="flex h-[26cqw] items-end gap-[1.4cqw] border-b border-grey-200">
+              <span
+                :for={height <- [52, 46, 70, 28, 60, 74, 12, 56, 92, 80]}
+                class={[
+                  "flex-1 rounded-t-[0.4cqw]",
+                  height < 20 && "bg-rust-400",
+                  height >= 20 && "bg-moss-600"
+                ]}
+                style={"height: #{height}%"}
+              ></span>
+            </div>
+          </div>
+          <div class="mt-[2.4cqw] grid grid-cols-3 gap-[1.8cqw] text-[1.7cqw]">
+            <span :for={{label, amount} <- analysis_totals()} class="rounded-[1cqw] bg-white p-[2cqw]">
+              <small class="block text-grey-600">{label}</small>
+              <strong class="mt-[0.6cqw] block text-[2.4cqw] font-semibold">{pgettext(
+                "landing bank amount",
+                "%{amount} PLN",
+                amount: amount
+              )}</strong>
+            </span>
+          </div>
+        <% :inbox -> %>
+          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[2cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
+            <p class="mb-[1.8cqw] text-[2.6cqw] font-semibold">{pgettext("sidebar", "Inbox")}</p>
+            <div :for={row <- inbox_rows()} class="[&+div]:mt-[2.2cqw]">
+              <p class="mb-[1cqw] text-[1.6cqw] font-bold tracking-[0.06em] text-grey-600 uppercase">
+                {row.tier}
+              </p>
+              <div class="flex items-center justify-between gap-[2cqw] rounded-[0.8cqw] bg-grey-50 p-[1.8cqw]">
+                <span class="min-w-0">
+                  <strong class="block truncate font-medium">{row.title}</strong>
+                  <small :if={row.context} class="text-[1.7cqw] text-grey-600">{row.context}</small>
+                </span>
+                <span class={[
+                  "shrink-0 rounded-[0.5cqw] px-[1.6cqw] py-[0.8cqw] text-[1.7cqw] font-medium",
+                  row.primary && "bg-teal-700 text-white",
+                  !row.primary && "border border-grey-300"
+                ]}>{row.action}</span>
+              </div>
+            </div>
+          </div>
       <% end %>
     </div>
     """
+  end
+
+  defp cost_invoices do
+    [
+      %{name: "Palarnia Kawy Sowa", source: "KSeF", amount: "1 240,00"},
+      %{name: "OVH sp. z o.o.", source: "KSeF", amount: "486,00"},
+      %{name: "Hurtownia Herbat", source: "PDF", amount: "2 115,40"},
+      %{name: "Browar Lokalny", source: "KSeF", amount: "940,00"}
+    ]
+  end
+
+  defp analysis_totals do
+    [
+      {gettext("Income"), "214 000"},
+      {gettext("Expenses"), "139 100"},
+      {gettext("Result"), "74 900"}
+    ]
+  end
+
+  defp inbox_rows do
+    [
+      %{
+        tier: pgettext("inbox tier", "Urgent"),
+        title: gettext("KSeF is not connected"),
+        context: nil,
+        action: gettext("Check"),
+        primary: false
+      },
+      %{
+        tier: pgettext("inbox tier", "Awaiting approval"),
+        title: gettext("Leave request"),
+        context: "Katarzyna Kowalska · 02–06.11",
+        action: gettext("Approve"),
+        primary: true
+      },
+      %{
+        tier: pgettext("inbox tier", "Books"),
+        title: gettext("Overdue sales invoice %{number}", number: "BC/09/09/2026"),
+        context: "Północny Kod sp. z o.o.",
+        action: gettext("Check"),
+        primary: false
+      }
+    ]
   end
 
   defp contractor_invoices do
@@ -741,7 +912,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 grid-cols-1 gap-10 *:min-w-0 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(125)] lg:gap-20">
         <div class="max-w-180 lg:max-w-284.75">
           <p class="mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-teal-700 uppercase">
-            {gettext("Firmowid in ChatGPT and Claude")}
+            {gettext("Assistant in Firmowid, ChatGPT and Claude")}
           </p>
           <h2 class="max-w-125 text-[30px] leading-[1.15] font-bold tracking-normal text-grey-900 lg:text-[48px] lg:leading-[1.15]">
             {gettext("An assistant to help you with your business")}
