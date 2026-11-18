@@ -21,7 +21,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Core
   alias Firmowid.Core.UserRole
   alias Firmowid.Payroll
-  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias FirmowidUI.Components.Inputs
@@ -545,16 +544,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   defp sum_money(amounts) do
     amounts |> Enum.reject(&is_nil/1) |> Enum.reduce(Money.new!(:PLN, 0), &Money.add!/2)
-  end
-
-  # The parts of a duration, such as `[["61", "h"], ["30", "min"]]`, so the units can be set apart.
-  defp duration_parts(seconds) do
-    ~r/(\d+)\s(\S+)/u
-    |> Regex.scan(TimeFormatter.format_duration(seconds), capture: :all_but_first)
-    |> Enum.map(fn
-      [value, "h"] -> [value, hours_unit()]
-      part -> part
-    end)
   end
 
   # The shown rate field is as wide as its digits (tabular, one `ch` each).

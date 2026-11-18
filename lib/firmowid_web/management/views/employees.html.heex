@@ -289,22 +289,13 @@
                 @view == :standard && "md:min-w-30",
                 if(employee.time_worked == 0, do: "text-grey-500", else: "text-grey-900")
               ]}>
-                <%= if @view == :standard do %>
-                  <span
-                    :for={[value, unit] <- duration_parts(employee.time_worked)}
-                    class="flex items-baseline gap-0.5"
-                  >
-                    {value}<span class="text-sm text-grey-500">{unit}</span>
-                  </span>
-                <% else %>
-                  <%!-- Payroll counts whole hours, rounded up (Figma "Widok=Wypłaty"). --%>
-                  <span class="flex items-baseline gap-0.5">
-                    {ceil(employee.time_worked / 3600)}<span class="text-sm text-grey-500">{pgettext(
-                      "hours worked unit",
-                      "hrs"
-                    )}</span>
-                  </span>
-                <% end %>
+                <%!-- Whole hours, rounded up, in both views (Figma "Wiersz pracownika"). --%>
+                <span class="flex items-baseline gap-0.5">
+                  {ceil(employee.time_worked / 3600)}<span class="text-sm text-grey-500">{pgettext(
+                    "hours worked unit",
+                    "hrs"
+                  )}</span>
+                </span>
               </p>
 
               <%= if @live_action == :archive do %>
