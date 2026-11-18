@@ -469,7 +469,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         phx-click="set_workplace"
         phx-value-remote={to_string(remote)}
         class={[
-          "flex cursor-pointer items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm leading-[normal] font-medium transition-colors",
+          "flex cursor-pointer items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm/[normal] font-medium transition-colors",
           if(@remote == remote,
             do: "bg-white text-black shadow-[0_1px_2px_0_rgb(0_0_0/0.08)]",
             else: "text-grey-600 hover:text-grey-900"
@@ -721,7 +721,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               <.presence_dot status={person.status} />
             </span>
           </span>
-          <span class="min-w-0 flex-1 truncate text-sm leading-[normal] font-medium text-black">
+          <span class="min-w-0 flex-1 truncate text-sm/[normal] font-medium text-black">
             {person_name(person)}
           </span>
           <span class="sr-only">{status_label(person.status)}</span>
@@ -796,7 +796,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         <ul id="inbox-team-absent" hidden class="flex flex-col gap-3">
           <li :for={person <- @absent} class="flex items-center gap-2.5">
             <.initials person={person} class="size-7 bg-grey-200 text-grey-700" />
-            <span class="min-w-0 flex-1 truncate text-sm leading-[normal] text-grey-700">
+            <span class="min-w-0 flex-1 truncate text-sm/[normal] text-grey-700">
               {person_name(person)}
             </span>
             <span class="sr-only">{status_label(person.status)}</span>
