@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     [
       %{
         key: "overdue",
-        title: gettext("Which sales invoices are overdue?"),
+        title: gettext("Show overdue sales invoices."),
         context: gettext("Unpaid, oldest first"),
         question:
           gettext("Show unpaid sales invoices past their due date, oldest first, with how many days each is overdue.")

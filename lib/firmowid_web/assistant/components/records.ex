@@ -47,14 +47,17 @@ defmodule FirmowidWeb.Assistant.Components.Records do
     assigns = assign(assigns, visible: visible, rest: rest)
 
     ~H"""
-    <div id={@records.id} class="@container flex flex-col">
+    <div
+      id={@records.id}
+      class="@container flex flex-col overflow-clip rounded-sm border border-grey-200 bg-white"
+    >
       <div class="flex flex-col divide-y divide-grey-200">
         <.answer_row :for={row <- @visible} row={row} />
       </div>
       <div
         :if={@rest != []}
         id={"#{@records.id}-rest"}
-        class="flex flex-col divide-y divide-grey-200 border-bs border-grey-200"
+        class="flex flex-col divide-y divide-grey-200 border-bs border-grey-200 motion-safe:animate-step-in"
         hidden
       >
         <.answer_row :for={row <- @rest} row={row} />
@@ -64,7 +67,7 @@ defmodule FirmowidWeb.Assistant.Components.Records do
         :if={@rest != []}
         type="button"
         variant="unstyled"
-        class="group flex cursor-pointer items-center gap-1 border-bs border-grey-200 text-start text-sm font-medium text-grey-900 inline-full min-block-10 active:opacity-80"
+        class="group flex cursor-pointer items-center justify-center gap-1 border-bs border-grey-200 text-sm/[normal] font-medium text-grey-800 inline-full min-block-11 active:bg-grey-100 pointer-fine:hover:text-grey-900"
         aria-expanded="false"
         aria-controls={"#{@records.id}-rest"}
         phx-click={
@@ -136,20 +139,60 @@ defmodule FirmowidWeb.Assistant.Components.Records do
 
   attr :row, :map, required: true
 
+  # The first column with the first detail under it (a number, a date), the other details in a
+  # column of their own and the amount at the end. A narrow list puts the other details under
+  # the amount.
   defp answer_row(assigns) do
+    {first, details} = Enum.split(assigns.row.meta, 1)
+    assigns = assign(assigns, first: first, details: details)
+
     ~H"""
-    <.row amount={@row.amount} amount_tone={@row.amount_tone}>
-      <:title>
-        <span class="[&_a]:underline [&_a]:decoration-grey-300 [&_a]:underline-offset-[.2em]">{@row.title}</span>
-      </:title>
-      <:meta>
-        <%= for {cell, index} <- Enum.with_index(@row.meta) do %>
-          <span :if={index > 0} aria-hidden="true"> · </span>{cell}
-        <% end %>
-      </:meta>
-    </.row>
+    <div class="flex items-center gap-3 p-3 block-15 @min-[37.5rem]:gap-4 @min-[37.5rem]:px-4 @min-[37.5rem]:block-auto">
+      <p class="flex flex-1 flex-col min-inline-0">
+        <span class="truncate text-sm/[normal] font-medium text-grey-900 [&_a]:underline [&_a]:decoration-grey-300 [&_a]:underline-offset-[.2em]">
+          {@row.title}
+        </span>
+        <span :for={cell <- @first} class="truncate text-xs/[normal] text-grey-600">{cell}</span>
+      </p>
+      <p
+        :if={@details != []}
+        class="hidden flex-none truncate text-sm/[1.35] text-grey-600 inline-40 @min-[37.5rem]:block"
+      >
+        <.details cells={@details} />
+      </p>
+      <p class="flex flex-none flex-col items-end gap-1 text-end @min-[37.5rem]:inline-28">
+        <span
+          :if={@row.amount}
+          class={[
+            "text-sm/[normal] font-medium text-nowrap tabular-nums",
+            amount_text_styles(@row.amount_tone)
+          ]}
+          data-tone={@row.amount_tone}
+        >{@row.amount}</span>
+        <span
+          :if={@details != []}
+          class="text-xs/[normal] text-nowrap text-grey-600 @min-[37.5rem]:hidden"
+        >
+          <.details cells={@details} />
+        </span>
+      </p>
+    </div>
     """
   end
+
+  attr :cells, :list, required: true
+
+  defp details(assigns) do
+    ~H"""
+    <%= for {cell, index} <- Enum.with_index(@cells) do %>
+      <span :if={index > 0} aria-hidden="true"> · </span>{cell}
+    <% end %>
+    """
+  end
+
+  defp amount_text_styles(:income), do: "text-teal-700"
+  defp amount_text_styles(:expense), do: "text-rust-700"
+  defp amount_text_styles(_tone), do: "text-grey-900"
 
   attr :amount, :any, default: nil
   attr :amount_tone, :atom, default: nil

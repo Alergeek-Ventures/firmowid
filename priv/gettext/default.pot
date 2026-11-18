@@ -1744,7 +1744,17 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/components/controls.ex
 #, elixir-autogen, elixir-format
-msgid "Ask a question…"
+msgid "Ask a question"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "Ask about invoices, transfers, costs or projects"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "Ask about invoices, transfers, the team or projects. I answer from your company's data and show where I got it from."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex
@@ -1938,6 +1948,11 @@ msgstr ""
 #: lib/firmowid_web/organization/components/onboarding_header.ex
 #, elixir-autogen, elixir-format
 msgid "Back"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "Back to a conversation"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
@@ -5756,6 +5771,11 @@ msgstr ""
 msgid "For everyone who issues invoices in KSeF"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "For example: how much did we spend on subcontractors in October?"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "For flights, use take-off from Poland and landing back in Poland. Otherwise, use the border crossing times."
@@ -6014,6 +6034,16 @@ msgstr ""
 msgid "Go to the invoice"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "Good morning"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "Good morning, %{name}"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #, elixir-autogen, elixir-format
 msgid "Goods and services sold"
@@ -6155,6 +6185,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
 #, elixir-autogen, elixir-format
 msgid "Historical time in UTC. Check it against the ticket."
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "History"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -7916,6 +7951,7 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/components/controls.ex
 #: lib/firmowid_web/assistant/components/history.ex
+#: lib/firmowid_web/assistant/components/start.ex
 #, elixir-autogen, elixir-format
 msgid "New conversation"
 msgstr ""
@@ -10939,6 +10975,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/history.ex
 #, elixir-autogen, elixir-format
 msgid "Show older conversations"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Show overdue sales invoices."
 msgstr ""
 
 #: lib/firmowid_web/management/views/project.html.heex
@@ -14060,11 +14101,6 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
-msgid "Which sales invoices are overdue?"
-msgstr ""
-
-#: lib/firmowid_web/assistant/utilities/presentation.ex
-#, elixir-autogen, elixir-format
 msgid "Which transfers will the accountant ask about?"
 msgstr ""
 
@@ -15546,6 +15582,11 @@ msgstr ""
 msgid "today"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "today, %{time}"
+msgstr ""
+
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "together with the date of the latest update."
@@ -15655,6 +15696,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "working hours"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/start.ex
+#, elixir-autogen, elixir-format
+msgid "yesterday"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex

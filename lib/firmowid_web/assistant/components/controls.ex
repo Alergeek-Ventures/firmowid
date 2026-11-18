@@ -45,16 +45,68 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
   end
 
   attr :history_open?, :boolean, required: true
+
+  attr :conversation?, :boolean,
+    required: true,
+    doc: "Whether a conversation is open, not the start screen."
+
   attr :title, :string, default: nil
 
-  @doc "Renders the page's slim bar: the history drawer, the conversation subject and a new conversation."
+  @doc """
+  Renders the page's bar. The start screen has only the history; a conversation adds its subject
+  and a new conversation, labelled on a wide screen.
+  """
   @spec page_header(map()) :: Rendered.t()
   def page_header(assigns) do
     ~H"""
-    <header class="flex flex-none items-center gap-1 px-3 min-block-13 max-md:px-1.5">
-      <.history_toggle history_open?={@history_open?} />
-      <h2 class="flex-1 truncate px-1.5 font-medium text-grey-900">{@title}</h2>
-      <.new_conversation />
+    <header
+      :if={!@conversation?}
+      class="flex flex-none items-center px-2 block-16 motion-safe:animate-fade-in @min-[40rem]/assistant:px-6"
+    >
+      <Button.button
+        id="assistant-history-toggle"
+        type="button"
+        variant="ghost"
+        size="small"
+        class="pointer-coarse:min-block-11"
+        phx-click="history"
+        aria-expanded={to_string(@history_open?)}
+        aria-controls="assistant-history"
+      >
+        <Lucideicons.history aria-hidden="true" />{gettext("History")}
+      </Button.button>
+    </header>
+    <%!-- A phone gets 44 px targets with icons only; the title takes the rest of the row. --%>
+    <header
+      :if={@conversation?}
+      class="flex flex-none items-center gap-1 border-be border-grey-200 p-1 motion-safe:animate-fade-in @min-[40rem]/assistant:gap-2 @min-[40rem]/assistant:px-6 @min-[40rem]/assistant:py-0 @min-[40rem]/assistant:block-16"
+    >
+      <.icon_button
+        id="assistant-history-toggle"
+        label={gettext("Conversation history")}
+        size="big"
+        class="min-block-11 min-inline-11 @min-[40rem]/assistant:min-block-9 @min-[40rem]/assistant:min-inline-9 [&>svg]:size-5!"
+        phx-click="history"
+        aria-expanded={to_string(@history_open?)}
+        aria-controls="assistant-history"
+      ><Lucideicons.history aria-hidden="true" /></.icon_button>
+      <h2 class="flex-1 truncate text-sm/[normal] font-medium text-grey-900">{@title}</h2>
+      <Button.button
+        id="assistant-new-conversation"
+        type="button"
+        variant="ghost"
+        size="small"
+        class="@max-[40rem]/assistant:hidden"
+        phx-click={JS.dispatch("assistant-restart", to: "#firmowid-assistant")}
+      >
+        <Lucideicons.plus aria-hidden="true" />{gettext("New conversation")}
+      </Button.button>
+      <.icon_button
+        label={gettext("New conversation")}
+        size="big"
+        class="min-block-11 min-inline-11 @min-[40rem]/assistant:hidden [&>svg]:size-5!"
+        phx-click={JS.dispatch("assistant-restart", to: "#firmowid-assistant")}
+      ><Lucideicons.plus aria-hidden="true" /></.icon_button>
     </header>
     """
   end
@@ -105,6 +157,10 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
   attr :form_error, :string, default: nil
   attr :history_open?, :boolean, required: true
 
+  attr :start?, :boolean,
+    default: false,
+    doc: "Whether the field sits on the page's start screen."
+
   @doc "Keeps the hook-owned input mounted while switching conversations and history."
   @spec composer(map()) :: Rendered.t()
   def composer(assigns) do
@@ -119,10 +175,29 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
       <Lucideicons.arrow_down class="size-4" aria-hidden="true" />{gettext("New messages")}
     </Button.button>
 
+    <%!--
+      On the start screen the field sits under the greeting; in a conversation it stays at the
+      bottom, on a phone above a divider. The placeholder follows the hook (`data-placeholder*`):
+      the input ignores server updates.
+    --%>
     <form
       id="assistant-form"
       phx-submit="send"
-      class="mx-auto flex-none px-4 pbs-1 pbe-4 inline-full max-inline-182 max-md:pbe-[max(.75rem,env(safe-area-inset-bottom))] @min-[40rem]/assistant:px-6"
+      class={[
+        "mx-auto flex-none inline-full",
+        if(@start?,
+          do: "px-4 max-inline-3xl @min-[40rem]/assistant:px-6",
+          else:
+            "border-bs border-grey-200 px-3 pbs-2 pbe-[max(.75rem,env(safe-area-inset-bottom))] @min-[40rem]/assistant:border-0 @min-[40rem]/assistant:px-6 @min-[40rem]/assistant:pbs-0 @min-[40rem]/assistant:pbe-6 @min-[40rem]/assistant:max-inline-202"
+        )
+      ]}
+      data-placeholder={
+        if(@start?,
+          do: gettext("For example: how much did we spend on subcontractors in October?"),
+          else: gettext("Ask about invoices, transfers, costs or projects")
+        )
+      }
+      data-placeholder-compact={gettext("Ask a question")}
       hidden={@history_open?}
     >
       <input type="hidden" name="conversation_id" value={@conversation_id} />
@@ -132,7 +207,8 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
       <p :if={@status == :awaiting_approval} class="mbe-2 text-xs/5 text-grey-700">
         {gettext("Confirm or reject the plan before sending another message.")}
       </p>
-      <div class="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-lg border border-grey-200 bg-white py-1.5 ps-1 pe-1.5 focus-within:border-grey-700">
+      <div class="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-1 rounded-sm border border-grey-200 bg-white py-1 ps-4 pe-1 focus-within:border-grey-700 motion-safe:transition-colors motion-safe:duration-150 @min-[40rem]/assistant:gap-2 @min-[40rem]/assistant:py-[7px] @min-[40rem]/assistant:ps-[15px] @min-[40rem]/assistant:pe-[7px]">
+        <%!-- Six lines at most, then it scrolls inside. --%>
         <Inputs.input
           type="textarea"
           id="assistant-input"
@@ -141,19 +217,35 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
           rows="1"
           maxlength="20000"
           required
-          placeholder={gettext("Ask a question…")}
+          placeholder={gettext("Ask a question")}
           aria-label={gettext("Message to the assistant")}
           phx-update="ignore"
-          input_class="block field-sizing-content border-0! py-1.5! text-base shadow-none! max-block-40 focus:ring-0! md:text-sm"
+          input_class="block field-sizing-content min-h-0! rounded-none! border-0! px-0! py-2.75! text-base/[1.35]! shadow-none! placeholder:text-grey-500! max-block-[calc(6lh+1.375rem)] focus:ring-0! @min-[40rem]/assistant:py-1! @min-[40rem]/assistant:text-base/7! @min-[40rem]/assistant:max-block-[calc(6lh+.5rem)]"
         />
+        <%!--
+          Disabled while the field is empty or the assistant is busy. The hook owns `disabled`:
+          it follows the typed text, which the server does not see.
+        --%>
         <Button.button
+          id="assistant-send"
           type="submit"
-          variant="secondary"
-          class="size-8 justify-center p-0 min-block-8 min-inline-8 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
-          disabled={@status in [:running, :awaiting_approval]}
+          variant="unstyled"
+          class="group/send relative inline-flex size-11 cursor-pointer items-center justify-center rounded-sm bg-grey-800 p-0 enabled:hover:bg-grey-900 enabled:active:scale-95 enabled:active:bg-black disabled:cursor-default motion-safe:transition-[background-color,scale] motion-safe:duration-150 @min-[40rem]/assistant:size-9"
+          disabled
+          data-busy={to_string(@status in [:running, :awaiting_approval])}
+          phx-mounted={JS.ignore_attributes("disabled")}
           aria-label={gettext("Send message")}
         >
-          <Lucideicons.arrow_up class="size-4" aria-hidden="true" />
+          <img
+            src={~p"/images/assistant/send.svg"}
+            alt=""
+            class="absolute size-5 group-disabled/send:opacity-0 motion-safe:transition-opacity motion-safe:duration-200"
+          />
+          <img
+            src={~p"/images/assistant/send-disabled.svg"}
+            alt=""
+            class="absolute size-5 opacity-0 group-disabled/send:opacity-100 motion-safe:transition-opacity motion-safe:duration-200"
+          />
         </Button.button>
       </div>
     </form>
@@ -171,7 +263,7 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
       id="assistant-launcher"
       type="button"
       variant="special"
-      class="shadow-lg max-md:hidden [body:has([data-assistant-entry])_&]:hidden"
+      class="shadow-lg motion-safe:animate-fade-in max-md:hidden [body:has([data-assistant-entry])_&]:hidden"
       phx-click="open"
       hidden={@open}
       aria-expanded={to_string(@open)}
