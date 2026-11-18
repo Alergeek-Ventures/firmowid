@@ -75,7 +75,7 @@ W pierwszym przypadku wystarczy poczekać. W drugim kliknij „Poproś Firmowida
 
 ## Cofanie dopasowania
 
-Na stronie faktury ze stanem „Komplet” jest przycisk cofnięcia. Odłącza on wszystkie przelewy powiązane z fakturą. Cofnięcie na stronie przelewu odłącza go od wszystkich faktur. Po odłączeniu obie strony wracają na listy niedopasowanych i znów mogą dostać propozycje.
+Na stronie faktury ze stanem „Komplet” jest przycisk cofnięcia. Odłącza on wszystkie przelewy powiązane z fakturą. Cofnięcie na stronie przelewu odłącza go od wszystkich faktur. Po odłączeniu obie strony wracają na listy niedopasowanych i znów mogą dostać propozycje. Program nie pamięta odłączonej pary, więc jeśli była bardzo pewna, automat może ją połączyć ponownie przy następnym przeglądzie. Żeby temu zapobiec, od razu połącz fakturę z właściwym przelewem albo oznacz jedną ze stron przyciskiem „Pomiń”. Pominięta faktura albo przelew wypada wtedy ze wszystkich automatycznych dopasowań, nie tylko z tej pary.
 
 ## Czego Firmowid tu nie robi
 
