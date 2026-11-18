@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Assistant.Components.History do
         id={"assistant-history-#{conversation.id}"}
         type="button"
         variant="unstyled"
-        class="group flex flex-none cursor-pointer flex-col items-stretch justify-center gap-0.5 rounded-lg border border-transparent px-3 py-2.5 text-start text-sm leading-[1.35] font-normal whitespace-normal select-none inline-full min-block-11 hover:bg-grey-100 active:bg-grey-200 aria-current:bg-grey-100 phx-click-loading:opacity-75"
+        class="group flex flex-none cursor-pointer flex-col items-stretch justify-center gap-0.5 rounded-lg border border-transparent px-3 py-2.5 text-start text-sm/[1.35] font-normal whitespace-normal select-none inline-full min-block-11 hover:bg-grey-100 active:bg-grey-200 aria-current:bg-grey-100 phx-click-loading:opacity-75"
         phx-click="select_conversation"
         phx-value-id={conversation.id}
         aria-current={if(conversation.id == @conversation_id, do: "true")}

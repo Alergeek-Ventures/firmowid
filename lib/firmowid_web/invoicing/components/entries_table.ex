@@ -465,7 +465,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <th scope="colgroup" class="h-[30px] p-0 font-medium max-md:block">
         <div class="absolute inset-0 flex items-center gap-4 pt-3 pb-1">
           <span class="h-px min-w-px flex-1 bg-grey-200"></span>
-          <span class="text-caps-sm leading-[normal] whitespace-nowrap text-grey-500 uppercase">{@label}</span>
+          <span class="text-caps-sm/[normal] whitespace-nowrap text-grey-500 uppercase">{@label}</span>
           <span class="h-px min-w-px flex-1 bg-grey-200"></span>
         </div>
       </th>
