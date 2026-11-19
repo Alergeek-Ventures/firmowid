@@ -13,7 +13,9 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
   A visitor who has accepted analytics also gets the `landing_preview.js`
   telemetry script on the home page, with the settings the root layout gives
   the other pages. It reports clicks on the calls to action and the steps and
-  result of the cost calculator. Everyone else gets no telemetry script at all.
+  result of the cost calculator. A visitor who has not chosen yet sees the
+  cookie banner and gets the script inside an inert `<template>`, which the
+  page starts only after "accept". Whoever refused gets no telemetry script.
   """
   use FirmowidWeb, :controller
 
@@ -123,16 +125,20 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
   end
 
   # The script reads its settings from its own data attributes, as on every other page.
-  # The page has no cookie banner, so the choice made on another page decides.
+  # Without a choice it waits in a template, which the browser neither fetches nor runs.
   defp telemetry_script(conn) do
     user = conn.assigns[:current_user]
     settings = Application.get_env(:firmowid, :frontend_observability, [])
     conn = fetch_cookies(conn)
 
-    if Keyword.get(settings, :posthog_enabled, false) and
-         conn.cookies["cookie_consent"] == "accepted" and
-         not impersonating?(user) do
-      telemetry_script_tag(user, conn.assigns[:current_org], settings)
+    if Keyword.get(settings, :posthog_enabled, false) and not impersonating?(user) do
+      tag = telemetry_script_tag(user, conn.assigns[:current_org], settings)
+
+      case conn.cookies["cookie_consent"] do
+        "accepted" -> tag
+        nil -> ~s(<template id="telemetry-script">#{tag}</template>)
+        _refused -> ""
+      end
     else
       ""
     end

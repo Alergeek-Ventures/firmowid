@@ -223,7 +223,11 @@
     ["<h3>Bez opłaty licencyjnej</h3><p>Na własnym serwerze płacisz tylko za infrastrukturę. Faktury, banki i&nbsp;użytkownicy bez limitów planu.</p>", "<h3>No licence fee</h3><p>On your own server you only pay for the infrastructure. Invoices, banks and users with no plan limits.</p>"],
     ["<h3>Bez uwiązania</h3><p>Każdy może sprawdzić, jak liczymy wynik. Jeśli zmienisz zdanie, dane zostają u&nbsp;Ciebie.</p>", "<h3>No lock-in</h3><p>Anyone can check how we calculate the result. If you change your mind, your data stays with you.</p>"],
     ["<h2>Prowadź firmę z&nbsp;lżejszą głową.</h2>", "<h2>Run your company with a lighter head.</h2>"],
-    ["Sprawdź, ile zostaje w&nbsp;Twojej firmie.", "See how much stays in your company."]
+    ["Sprawdź, ile zostaje w&nbsp;Twojej firmie.", "See how much stays in your company."],
+    ["aria-label=\"Zgoda na cookies\"", "aria-label=\"Cookie consent\""],
+    ["Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność usługi. Po akceptacji możemy dodatkowo zapisywać cookies analityczne, uruchomić nagrywanie sesji diagnostycznych i powiązać dane z zalogowanym użytkownikiem. Szczegóły w naszej <a href=\"/polityka-prywatnosci\">Polityce Prywatności</a>.", "We always monitor application errors to keep the service reliable. After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user. Details are available in our <a href=\"/polityka-prywatnosci\">Privacy Policy</a>."],
+    ["data-consent=\"rejected\">Odrzuć</button>", "data-consent=\"rejected\">Reject</button>"],
+    ["data-consent=\"accepted\">Akceptuję</button>", "data-consent=\"accepted\">Accept</button>"]
   ],
   "bonobo.html": [
     ["<html lang=\"pl\">", "<html lang=\"en\">"],
