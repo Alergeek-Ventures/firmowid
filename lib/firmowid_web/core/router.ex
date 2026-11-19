@@ -392,7 +392,8 @@ defmodule FirmowidWeb.Core.Router do
     get "/index.html", LegacyIndex, :index
     get "/funkcje/faktury-ksef", LegacyIndex, :invoicing
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
-    get "/landing", Preview, :show
+    get "/", Preview, :home
+    get "/landing", Preview, :landing
     get "/landing/bonobo", Preview, :bonobo
     get "/ksef", Preview, :ksef
 
@@ -405,7 +406,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/abonament-wygasl", Auth.Views.ExpiredSubscription
       live "/konto-wylaczone", Auth.Views.DisabledAccount
       live "/potwierdz-email/:token", Auth.Views.ConfirmEmail, :edit
-      live "/", Landing.Views.Index, :home
       live "/cennik", Landing.Views.Index, :pricing
       live "/funkcje", Landing.Views.Index, :features
       live "/funkcje/:slug", Guides, :feature

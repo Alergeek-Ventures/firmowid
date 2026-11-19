@@ -1,18 +1,20 @@
 defmodule FirmowidWeb.Landing.Controllers.Preview do
   @moduledoc """
-  Serves the preview of the new home page at `/landing`, its case study pages,
-  such as `/landing/bonobo`, and the KSeF pricing page at `/ksef`.
+  Serves the home page at `/`, its case study pages, such as `/landing/bonobo`,
+  and the KSeF pricing page at `/ksef`. `/landing`, the address of the home page
+  while it was a preview, redirects to `/`.
 
   The pages are self-contained static documents kept in `priv/static/landing`,
   written in Polish. The English and Ukrainian versions are built from them at
   compile time with the replacement lists in `priv/landing/translations`, and the
-  page follows the language chosen in the session, as the current home page does.
-  The preview pages are excluded from search indexes until they replace the home
-  page. The KSeF page is public, indexed and Polish only.
+  page follows the language chosen in the session. The case study pages are
+  excluded from search indexes. The KSeF page is Polish only.
   """
   use FirmowidWeb, :controller
 
+  alias Firmowid.Core
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Infrastructure.UserAuth
 
   @dir Application.app_dir(:firmowid, "priv/static/landing")
   @translations_dir Application.app_dir(:firmowid, "priv/landing/translations")
@@ -64,23 +66,43 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
     "/landing/ksef.js"
   ]
 
-  @doc "Returns the preview of the new home page."
-  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, _params), do: render_page(conn, "index.html")
+  @doc "Returns the home page, or sends a signed-in member to the app."
+  @spec home(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def home(conn, _params) do
+    user = conn.assigns[:current_user]
 
-  @doc "Returns the Bonobo case study."
+    if user && Core.load_member(user).member do
+      redirect(conn, to: UserAuth.signed_in_path(conn))
+    else
+      render_page(conn, "index.html")
+    end
+  end
+
+  @doc "Permanently redirects the former preview address `/landing` to `/`."
+  @spec landing(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def landing(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/")
+  end
+
+  @doc "Returns the Bonobo case study, excluded from search indexes."
   @spec bonobo(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def bonobo(conn, _params), do: render_page(conn, "bonobo.html")
+  def bonobo(conn, _params) do
+    conn
+    |> put_resp_header("x-robots-tag", "noindex")
+    |> render_page("bonobo.html")
+  end
 
   @doc "Returns the KSeF pricing page."
   @spec ksef(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def ksef(conn, _params), do: render_page(conn, "ksef.html", index?: true)
+  def ksef(conn, _params), do: render_page(conn, "ksef.html")
 
   # sobelow_skip ["XSS.HTML"]
   # Each page is built at compile time from our own files. The substitutions are
   # static paths of our own assets and the CSRF token for the language menu;
   # nothing comes from the request.
-  defp render_page(conn, file, opts \\ []) do
+  defp render_page(conn, file) do
     versions = Map.fetch!(@pages, file)
     page = Map.get(versions, Gettext.get_locale(Firmowid.Gettext), versions["pl"])
 
@@ -90,8 +112,6 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
         String.replace(page, ~s("#{path}"), ~s("#{Endpoint.static_path(path)}"))
       end)
       |> String.replace("__CSRF_TOKEN__", get_csrf_token())
-
-    conn = if opts[:index?], do: conn, else: put_resp_header(conn, "x-robots-tag", "noindex")
 
     html(conn, page)
   end

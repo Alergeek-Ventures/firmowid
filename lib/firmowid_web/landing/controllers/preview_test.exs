@@ -3,11 +3,26 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
   alias FirmowidWeb.Core.Endpoint
 
-  test "serves the preview page and keeps it out of search indexes", %{conn: conn} do
-    conn = get(conn, ~p"/landing")
+  test "serves the home page at / and lets search engines index it", %{conn: conn} do
+    conn = get(conn, ~p"/")
+    html = html_response(conn, 200)
 
-    assert html_response(conn, 200) =~ "dopóki go nie"
-    assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+    assert html =~ "dopóki go nie"
+    assert html =~ ~s(<link rel="canonical" href="https://firmowid.pl/">)
+    refute html =~ "noindex"
+    assert get_resp_header(conn, "x-robots-tag") == []
+  end
+
+  test "sends a signed-in member from / to the app", %{conn: conn} do
+    %{conn: conn} = register_and_log_in_user(%{conn: conn})
+
+    assert conn |> get(~p"/") |> redirected_to() =~ ~r{^/[a-z]}
+  end
+
+  test "redirects the former preview address to the home page", %{conn: conn} do
+    conn = get(conn, "/landing")
+
+    assert redirected_to(conn, 301) == ~p"/"
   end
 
   test "serves the Bonobo case study and keeps it out of search indexes", %{conn: conn} do
@@ -46,7 +61,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
   end
 
   test "describes the company and the app in valid structured data", %{conn: conn} do
-    html = conn |> get(~p"/landing") |> html_response(200)
+    html = conn |> get(~p"/") |> html_response(200)
 
     types =
       ~r{<script type="application/ld\+json">(.*?)</script>}s
@@ -62,7 +77,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
   end
 
   test "links the stylesheet and script through the static path helper", %{conn: conn} do
-    html = conn |> get(~p"/landing") |> html_response(200)
+    html = conn |> get(~p"/") |> html_response(200)
 
     assert html =~ Endpoint.static_path("/landing/styles.css")
     assert html =~ Endpoint.static_path("/landing/app.js")
@@ -74,7 +89,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
     test "follows the language chosen in the session", %{conn: conn} do
       en =
-        conn |> init_test_session(%{"locale" => "en"}) |> get(~p"/landing") |> html_response(200)
+        conn |> init_test_session(%{"locale" => "en"}) |> get(~p"/") |> html_response(200)
 
       uk =
         conn
@@ -89,7 +104,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     end
 
     test "fills in the CSRF token of the language menu", %{conn: conn} do
-      html = conn |> get(~p"/landing") |> html_response(200)
+      html = conn |> get(~p"/") |> html_response(200)
 
       assert html =~ ~s(action="/jezyk")
       refute html =~ "__CSRF_TOKEN__"
@@ -100,7 +115,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
         html =
           conn
           |> init_test_session(%{"locale" => locale})
-          |> get(~p"/landing")
+          |> get(~p"/")
           |> html_response(200)
 
         [_, json] = Regex.run(~r{<script type="application/ld\+json">(.*?)</script>}s, html)
