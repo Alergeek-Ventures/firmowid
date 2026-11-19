@@ -473,7 +473,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     case results do
       :ok ->
-        {:noreply, assign_sessions(socket)}
+        :ok
 
       {:error, _session_id, %Unknown{} = error} ->
         if overlap_error?(error) do
@@ -481,8 +481,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         else
           LiveToast.send_toast(:error, gettext("An error occurred while updating the session."))
         end
-
-        {:noreply, socket}
 
       {:error, _session_id, %Invalid{errors: errors}} ->
         messages =
@@ -492,20 +490,18 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
         LiveToast.send_toast(:error, messages)
 
-        {:noreply, socket}
-
       {:error, _session_id, %Ash.Error.Forbidden{}} ->
         LiveToast.send_toast(
           :error,
           gettext("You do not have permission to edit this session (it may be locked).")
         )
 
-        {:noreply, socket}
-
       {:error, _session_id, _other} ->
         LiveToast.send_toast(:error, gettext("An error occurred while updating the session."))
-        {:noreply, socket}
     end
+
+    # Updates before a failure stay saved, so the list is reloaded either way.
+    {:noreply, assign_sessions(socket)}
   end
 
   def edit_session(params, %{assigns: %{current_session: nil}} = socket) do
