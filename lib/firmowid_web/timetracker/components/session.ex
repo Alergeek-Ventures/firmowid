@@ -131,7 +131,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           dropdown_styles()
         ]}
       >
-        <ul class="flex flex-col gap-1 overflow-auto p-1">
+        <ul
+          id={"session-project-options-#{parent_session.id}"}
+          phx-hook="ListboxKeys"
+          class="flex flex-col gap-1 overflow-auto p-1"
+        >
           <li :for={project <- @active_projects}>
             <.button
               type="button"
@@ -462,7 +466,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       placement="bottom-end"
       class={["w-40 origin-top-right rounded-lg border border-grey-200 bg-grey-50", dropdown_styles()]}
     >
-      <ul class="flex flex-col gap-1 p-1">
+      <ul
+        id={"session-work-mode-options-#{@id}"}
+        phx-hook="ListboxKeys"
+        class="flex flex-col gap-1 p-1"
+      >
         <li :for={{remote?, label} <- work_mode_options()}>
           <.button
             type="button"

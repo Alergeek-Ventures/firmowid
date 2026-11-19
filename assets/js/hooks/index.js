@@ -6,6 +6,7 @@ import { Tippy, TippyWhenTruncated } from "./tippy";
 import { AirDatepicker } from "./air_datepicker";
 import { Timer } from "./timer";
 import { FocusOnMount } from "./focus_on_mount";
+import { ListboxKeys } from "./listbox_keys";
 import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
 import { CopyToClipboard } from "./copy_to_clipboard";
@@ -32,6 +33,7 @@ export const Hooks = {
   AirDatepicker,
   Timer,
   FocusOnMount,
+  ListboxKeys,
   Popover,
   ConfirmLeave,
   CopyToClipboard,
