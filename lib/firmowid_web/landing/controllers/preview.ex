@@ -12,8 +12,8 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
 
   A visitor who has accepted analytics also gets the `landing_preview.js`
   telemetry script on the home page, with the settings the root layout gives
-  the other pages. It reports clicks on the calls to action. Everyone else
-  gets no telemetry script at all.
+  the other pages. It reports clicks on the calls to action and the steps and
+  result of the cost calculator. Everyone else gets no telemetry script at all.
   """
   use FirmowidWeb, :controller
 

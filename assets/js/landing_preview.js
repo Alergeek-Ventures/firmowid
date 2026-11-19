@@ -3,9 +3,14 @@
 // is loaded into PostHog or sent until the visitor has accepted analytics.
 
 import { consentAccepted } from "./telemetry/consent";
-import { bootPosthog, installLandingCtaTracking } from "./telemetry/posthog";
+import {
+  bootPosthog,
+  installLandingCalculatorTracking,
+  installLandingCtaTracking,
+} from "./telemetry/posthog";
 
 if (consentAccepted()) {
   bootPosthog();
   installLandingCtaTracking();
+  installLandingCalculatorTracking();
 }

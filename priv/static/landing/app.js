@@ -303,7 +303,7 @@
     const zl = n => (n < 0 ? '−' : '') + fmt(Math.abs(n)) + ' ' + T.cur;
     // what each ticked habit turns into in Firmowid
     const SWAP = ['q-inv', 'q-time', 'q-bank', 'q-sheet', 'q-leave'].map((id, i) => [id, ...T.swap[i]]);
-    let shown = 0, sayTimer;
+    let shown = 0, sayTimer, last = {};
     const calc = () => {
       const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = 0.5; // half of the time comes back; Bonobo got back 9 of 10 hours
       // plan from the public price list, yearly billing
@@ -322,10 +322,23 @@
       $('#r-swap').innerHTML = SWAP.filter(s => on(s[0])).map(s => `<li><s>${s[1]}</s><i>→</i><b>${s[2]}</b></li>`).join('');
       tween($('#r-total'), shown, total, 350, n => (n < 0 ? '−' : '') + fmt(Math.abs(n)));
       shown = total;
+      last = { team_size: team, tools_cost_per_year: now, hours_per_week: h, hourly_cost: r, savings_per_year: Math.round(total) };
       clearTimeout(sayTimer);
       sayTimer = setTimeout(() => { if (!cmpout.classList.contains('is-waiting')) $('#r-say').textContent = T.say + zl(total); }, 600);
     };
-    cmpf.addEventListener('input', calc);
+    // The page only announces what happened in the calculator. The telemetry script
+    // listens and sends it when the visitor has accepted analytics.
+    const announce = detail => document.dispatchEvent(new CustomEvent('firmowid:calculator', { detail }));
+    const seen = new Set();
+    const step = n => { if (!seen.has(n)) { seen.add(n); announce({ type: 'step', step: n }); } };
+    let reached = 0, doneTimer, completed = false;
+    // the result counts as read once the last question is open and the answers stay put for 3 s
+    const settle = () => {
+      if (completed || reached < 2) return;
+      clearTimeout(doneTimer);
+      doneTimer = setTimeout(() => { completed = true; announce({ type: 'completed', ...last }); }, 3000);
+    };
+    cmpf.addEventListener('input', () => { calc(); step(1); settle(); });
     cmpf.addEventListener('submit', e => e.preventDefault());
     calc();
 
@@ -337,7 +350,6 @@
       () => things($$('.opt > input:checked', cmpf).length),
       () => $('#q-h-out').textContent + T.weekly + ' · ' + $('#q-r-out').textContent + T.perHour,
     ];
-    let reached = 0;
     // the result stays blurred until all three questions are on screen, so nobody reads a number built on defaults
     const openStep = n => {
       reached = Math.max(reached, n);
@@ -354,7 +366,7 @@
     };
     steps.forEach((s, i) => {
       const next = $('.step__next', s);
-      if (next) next.addEventListener('click', () => openStep(i + 1));
+      if (next) next.addEventListener('click', () => { step(1); openStep(i + 1); step(i + 2); settle(); });
       $('legend', s).addEventListener('click', () => { if (i <= reached) openStep(i); });
     });
     openStep(0);
