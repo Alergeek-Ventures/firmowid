@@ -74,5 +74,5 @@ W Skrzynce pojawia się „synchronizacja wstrzymana” z przyciskiem „Odnów 
 ### Czy dopasowanie da się cofnąć?
 Tak, na stronie faktury albo przelewu.
 
-### Jedna wpłata za kilka faktur?
+### Co z jedną wpłatą za kilka faktur?
 Na stronie faktury łączysz jeden przelew. Wpłatę za kilka faktur albo raty rozpisuje asystent.

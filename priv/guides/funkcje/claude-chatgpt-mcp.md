@@ -15,13 +15,13 @@ landing:
       value: "jak Twoja rola w firmie"
 ---
 
-Claude podłączonego do Firmowida używamy głównie do analiz, bo dane są już opisane i zebrane z kilku źródeł. Robi też rzecz, której się nie spodziewaliśmy: opisuje faktury dla naszej księgowości. Dopisuje do faktury 2–3 zdania, które pomagają zrozumieć, co to za faktura. To bardzo wygodne, a jemu samemu też pomaga to potem w analizie.
+Claude podłączonego do Firmowida używamy głównie do analiz, bo dane są już opisane i zebrane z kilku źródeł. Robi też rzecz, której się nie spodziewaliśmy: opisuje faktury dla naszego biura księgowego. Dopisuje do faktury 2–3 zdania, które pomagają zrozumieć, co to za faktura. To bardzo wygodne, a jemu samemu też pomaga to potem w analizie.
 
 ![Okno „Potwierdź fakturę” w ChatGPT z podglądem faktury i przyciskiem „Potwierdź i wyślij do KSeF”](/images/guides/funkcje/mcp-potwierdz-fakture.webp)
 
 ## Podłączenie
 
-Przez konektor, bardzo proste. Pomaga, gdy podłączy to cała organizacja, bo wtedy pracownik ma od razu Firmowida w swoich konektorach.
+Podłączamy go przez konektor, to bardzo proste. Pomaga, gdy podłączy to cała organizacja, bo wtedy pracownik ma od razu Firmowida w swoich konektorach.
 
 ## ChatGPT z aplikacją Firmowida
 
@@ -33,7 +33,7 @@ AI pomaga przygotować fakturę, ale zatwierdzenie i wysłanie zawsze czeka na c
 
 ## Bezpieczeństwo
 
-Zaufałem, bo wiem, jak bezpiecznie zbudowany jest Firmowid, i znam koncepcję MCP. Inne popularne programy też ją uruchamiają: poczta, dokumenty, narzędzia do programowania i do projektowania. To już standard.
+Zaufałem, bo wiem, jak bezpiecznie zbudowany jest Firmowid, i znam koncepcję MCP. Korzystają z niej też inne popularne programy: poczta, dokumenty, narzędzia do programowania i do projektowania. To już standard.
 
 ## Najważniejsze dane
 
