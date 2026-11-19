@@ -552,7 +552,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :label, :string, default: nil
   attr :class, :any, default: nil
   attr :disabled, :boolean, default: false
-  attr :color, :string, values: ["rust", "teal"], default: "rust"
+  attr :color, :string, values: ["rust", "teal", "black"], default: "rust"
   attr :rest, :global
 
   slot :label_slot
@@ -582,7 +582,8 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <div class={[
         "relative h-[24px] w-[38px] shrink-0 rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px]",
         @color == "rust" && "peer-checked:bg-rust-700",
-        @color == "teal" && "peer-checked:bg-teal-700"
+        @color == "teal" && "peer-checked:bg-teal-700",
+        @color == "black" && "peer-checked:bg-black"
       ]}>
       </div>
       <span :if={@label} class="text-grey-900">{@label}</span>

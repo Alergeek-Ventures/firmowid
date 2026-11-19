@@ -53,11 +53,10 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         lv
         |> form("#session_form", %{
           session_form: %{
-            "project_id" => project.id,
             "title" => title
           }
         })
-        |> render_submit()
+        |> render_submit(%{session_form: %{"project_id" => project.id}})
 
       assert result =~ title
       current_session = Session.get_current!(scope: scope)
@@ -77,14 +76,13 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         lv
         |> form("#session_form", %{
           session_form: %{
-            "project_id" => project.id,
             "title" => title,
             "date" => "2021-01-01",
             "start_time" => "14:00",
             "end_time" => nil
           }
         })
-        |> render_submit()
+        |> render_submit(%{session_form: %{"project_id" => project.id}})
 
       assert result =~ title
       assert result =~ "14:00"
@@ -105,14 +103,13 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         lv
         |> form("#session_form", %{
           session_form: %{
-            "project_id" => project.id,
             "title" => title,
             "date" => "2021-01-01",
             "start_time" => "09:00",
             "end_time" => "17:00"
           }
         })
-        |> render_submit()
+        |> render_submit(%{session_form: %{"project_id" => project.id}})
 
       assert result =~ title
       assert result =~ "09:00"
@@ -283,11 +280,11 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
-      refute has_element?(lv, "#session-presence-#{session.id}")
+      assert has_element?(lv, "#session-work-mode-#{session.id}[aria-label*='W biurze']")
 
       lv
-      |> form("#edit-session-form-#{session.id}", %{sessions_form: %{"is_remote" => "true"}})
-      |> render_change()
+      |> element("#session-work-mode-list-#{session.id} button", "Zdalnie")
+      |> render_click()
 
       updated_session = Repo.get!(Session, session.id)
 
@@ -299,7 +296,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
-      assert has_element?(lv, "#session-presence-#{session.id}", "zdalnie")
+      assert has_element?(lv, "#session-work-mode-#{session.id}[aria-label*='Zdalnie']")
 
       assert has_element?(
                lv,
@@ -375,10 +372,12 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         organization_id: user.member.organization_id
       })
 
-      {:ok, _lv, html} = live(conn, ~p"/czasosledz")
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
-      assert html =~
-               "<option selected=\"\" value=\"#{project.id}\">"
+      assert has_element?(
+               lv,
+               "#session_form input[name='session_form[project_id]'][value='#{project.id}']"
+             )
     end
   end
 

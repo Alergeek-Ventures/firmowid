@@ -76,6 +76,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     {:ok,
      socket
+     |> assign(:main_class, "bg-white")
      |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
      |> assign(:active_projects, active_projects)
      |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
@@ -89,7 +90,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     {:noreply,
      socket
      |> assign(:filter, parse_filter(params, socket.assigns.ash_scope))
-     |> assign_filtered_tasks()}
+     |> assign_filtered_tasks()
+     |> assign_timesheet_month()}
   end
 
   # `?projekt=<id>&miesiac=2026-11-01` narrows the list to one project's month, the
@@ -159,8 +161,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   def month_after_in(%Date{month: month}), do: month_name_after_in(month)
 
   @doc """
-  Entrance of the session list when the filter opens or closes: it rises a few
-  pixels and fades in. Only the entrance, since the outgoing list would stay
+  Entrance of the session list when the filter opens or closes, and of the
+  manual time fields when they open: it rises a few pixels and fades in. Only the entrance, since the outgoing list would stay
   beside the new one while it faded out. It ends with no classes left, as a
   lingering translate would anchor the rows' sticky headers and popovers.
   """
@@ -263,7 +265,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       end
     end)
     |> assign_page_title()
-    |> assign_month_stats()
+    |> assign_hours_record_submitted()
+    |> assign_timesheet_month()
     |> assign_filtered_tasks()
   end
 
@@ -288,10 +291,18 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end)
   end
 
+  # Neighbouring sessions of one task share a row, even when only some were
+  # remote; the row then shows a lighter house.
   def group_nearby(sessions) do
     Enum.chunk_by(sessions, fn session ->
-      {session.title, session.project_id, session.is_remote}
+      {session.title, session.project_id}
     end)
+  end
+
+  @doc "Grey pill with the total time beside a session list's heading."
+  @spec total_pill_classes() :: String.t()
+  def total_pill_classes do
+    "rounded bg-grey-200 px-2.5 py-1 text-base/[1.25] font-semibold text-grey-900 tabular-nums"
   end
 
   def assign_page_title(socket) do
@@ -686,6 +697,14 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end
   end
 
+  # The small select in a row's work-mode slot switches all the row's sessions.
+  def handle_event("set_work_mode", %{"ids" => ids, "is_remote" => is_remote}, socket) do
+    ids
+    |> fetch_sessions_by_ids(socket)
+    |> Enum.map(&{&1, %{is_remote: is_remote}})
+    |> ash_update_sessions(socket)
+  end
+
   def handle_event("load_more", _, socket) do
     {:noreply,
      socket
@@ -753,31 +772,34 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end)
   end
 
-  def assign_month_stats(socket) do
-    scope = socket.assigns.ash_scope
-    now = DateTime.now!(socket.assigns.timezone)
-
-    total_seconds = Session.month_duration!(DateTime.to_date(now), scope: scope)
-
-    hours = div(total_seconds, 60 * 60)
-    minutes = rem(div(total_seconds, 60), 60)
-
-    current_month = month_name_after_in(now.month)
-
+  def assign_hours_record_submitted(socket) do
     today = Date.utc_today()
 
     {:ok, hours_record} =
       HoursRecord.by_month(socket.assigns.current_user.member.id, today.month, today.year,
-        scope: scope,
+        scope: socket.assigns.ash_scope,
         not_found_error?: false
       )
 
-    socket
-    |> assign(:month_stats, %{
-      hours: hours,
-      minutes: minutes,
-      month: current_month
-    })
-    |> assign(:is_hours_record_submitted, hours_record != nil)
+    assign(socket, :is_hours_record_submitted, hours_record != nil)
   end
+
+  # The timesheet link in the header sums up the month it opens: the filtered
+  # month, or the current one.
+  defp assign_timesheet_month(socket) do
+    date =
+      case socket.assigns.filter do
+        nil -> socket.assigns.timezone |> DateTime.now!() |> DateTime.to_date()
+        filter -> filter.month
+      end
+
+    seconds = Session.month_duration!(date, scope: socket.assigns.ash_scope)
+
+    assign(socket, :timesheet_month, %{date: date, duration: format_month_duration(seconds)})
+  end
+
+  # A month without a full minute reads "0 h", as the timesheet shows it.
+  defp format_month_duration(seconds) when seconds < 60, do: pgettext("duration", "%{hours} h", hours: 0)
+
+  defp format_month_duration(seconds), do: TimeFormatter.format_duration(seconds)
 end

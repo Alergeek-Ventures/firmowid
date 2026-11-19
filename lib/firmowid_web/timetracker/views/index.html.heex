@@ -1,33 +1,39 @@
-<div class="mx-auto w-full max-w-6xl">
-  <%!-- todo: css background image --%>
+<div class="mx-auto w-full max-w-6xl lg:px-4 lg:pt-2">
+  <%!-- The Firmowid figure at 5% as in Figma: 613 px wide, 155 px left of the content (under the sidebar) and 238 px from the top. --%>
   <img
-    src="/images/figurine_timeracker.png"
-    class="pointer-events-none fixed top-[20%] left-0 z-0 hidden h-[135vh] max-md:block max-md:h-auto max-md:w-full max-md:opacity-60 lg:block"
+    src={~p"/images/figurine.png"}
+    alt=""
+    class="pointer-events-none fixed top-[20%] left-0 z-0 hidden opacity-5 max-md:block max-md:w-full lg:top-[238px] lg:left-[calc(16rem-155px)] lg:block lg:w-[613px] lg:in-data-[sidebar=collapsed]:left-[calc(3.5rem-155px)]"
   />
 
-  <div class="sticky top-navbar z-40 flex items-center justify-between gap-4 bg-grey-100 py-4">
-    <div class="flex shrink-0 gap-2 max-md:min-w-0 max-md:shrink">
-      <Lucideicons.calendar_1 />
-      <p class="line-clamp-1 text-grey-900 max-md:line-clamp-2 max-md:leading-5">
+  <div class="sticky top-navbar z-40 flex items-center justify-between gap-4 bg-white py-4">
+    <div class="flex shrink-0 items-center gap-2 max-md:min-w-0 max-md:shrink">
+      <Lucideicons.calendar_1 class="size-5 shrink-0" aria-hidden="true" />
+      <p class="line-clamp-1 font-medium text-grey-900 max-md:line-clamp-2 max-md:leading-5">
         {format_current_day_header(Date.utc_today())}
       </p>
     </div>
 
+    <%!-- Says what the timesheet holds for the month it opens: the filtered month, or the current one. --%>
     <.link
-      navigate={
-        if @filter,
-          do: Navigation.hours_record_index_path(@filter.month),
-          else: ~p"/czasosledz/ewidencja"
-      }
+      id="timesheet-link"
+      navigate={Navigation.hours_record_index_path(@timesheet_month.date)}
       kind="button"
       variant="outline"
+      class="gap-2.5! rounded px-3! text-sm/[1.4]! font-normal!"
     >
-      <Lucideicons.clipboard_list /> {pgettext("time tracker link", "Timesheet")}
+      <span class="text-grey-500 max-sm:hidden">{String.capitalize(
+        month_name(@timesheet_month.date)
+      )}</span>
+      <span class="font-semibold text-grey-900 max-sm:hidden">{@timesheet_month.duration}</span>
+      <span class="h-4 w-px bg-grey-200 max-sm:hidden" aria-hidden="true" />
+      <span class="font-medium text-grey-900">{pgettext("hours record page", "Timesheet")}</span>
+      <Lucideicons.chevron_right class="size-4" aria-hidden="true" />
     </.link>
   </div>
 
-  <div class="relative z-30 mbs-4 flex w-full flex-col justify-between gap-10 md:flex-row lg:gap-20">
-    <div class="mx-auto w-full max-w-md md:mx-0">
+  <div class="relative z-30 mbs-4 flex w-full flex-col justify-between gap-10 md:flex-row lg:mbs-6 lg:gap-14">
+    <div class="mx-auto w-full max-w-md md:mx-0 md:max-w-100">
       <%= if Enum.empty?(@active_projects) do %>
         <div class="w-full py-8 text-center text-grey-700">
           <p class="text-lg font-semibold">{gettext("You have no assigned projects")}</p>
@@ -64,28 +70,79 @@
               required={true}
               placeholder={
                 if not is_hours_record_submitted,
-                  do: gettext("What are you working on today?"),
+                  do: gettext("What are you working on?"),
                   else: gettext("You cannot add a session after the timesheet has been submitted")
               }
-              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200! text-black"
+              input_class="rounded! text-base/[1.35]! text-black! focus:border-grey-500! focus-visible:outline-none"
               phx-hook="FocusOnMount"
               phx-debounce="300"
               autofocus
             />
 
-            <.input
-              type="select"
-              disabled={is_hours_record_submitted}
-              class="h-11 cursor-pointer appearance-none border-none bg-rust-200! px-4 py-2 text-rust-700 transition-colors hover:bg-[#f0e0d8] focus:ring-1 focus:ring-rust-700 focus:outline-hidden"
-              field={@form[:project_id]}
-              options={@active_projects |> Enum.map(&{&1.name, &1.id})}
-            />
+            <%!-- The same dropdown as in the session rows instead of a native select, which
+            opens over the chosen option; this list always opens below, as wide as the field. --%>
+            <% project_field = @form[:project_id] %>
+            <% project_list_id = "session-form-project-list" %>
+            <% chosen_project = Enum.find(@active_projects, &(&1.id == project_field.value)) %>
+            <div class="relative" phx-click-away={JS.hide(to: "##{project_list_id}")}>
+              <input
+                type="hidden"
+                id={project_field.id}
+                name={project_field.name}
+                value={project_field.value}
+              />
+              <.button
+                id="session-form-project"
+                type="button"
+                variant="unstyled"
+                disabled={is_hours_record_submitted}
+                aria-haspopup="listbox"
+                phx-click={JS.toggle(to: "##{project_list_id}", display: "flex")}
+                class={[
+                  "flex w-full cursor-pointer items-center gap-2.5 rounded border border-grey-200 bg-grey-50 px-3 py-1.5 text-left text-base/[1.35] focus:border-grey-700 focus:outline-hidden disabled:cursor-default disabled:text-grey-300",
+                  if(chosen_project, do: "text-black", else: "text-grey-500")
+                ]}
+              >
+                <span class="min-w-0 flex-1 truncate">
+                  {if chosen_project, do: chosen_project.name, else: gettext("Choose a project")}
+                </span>
+                <Lucideicons.chevron_down
+                  class="size-4 shrink-0 text-grey-700"
+                  aria-hidden="true"
+                />
+              </.button>
+              <ul
+                id={project_list_id}
+                role="listbox"
+                phx-window-keydown={JS.hide(to: "##{project_list_id}")}
+                phx-key="escape"
+                class={[
+                  "absolute inset-x-0 top-full z-50 mt-1 hidden max-h-80 origin-top flex-col gap-1 overflow-auto rounded-lg border border-grey-200 bg-grey-50 p-1",
+                  FirmowidWeb.Timetracker.Components.Session.dropdown_styles()
+                ]}
+              >
+                <li
+                  :for={project <- @active_projects}
+                  role="option"
+                  aria-selected={to_string(project.id == project_field.value)}
+                  class={FirmowidWeb.Timetracker.Components.Session.dropdown_item_styles()}
+                  phx-click={
+                    JS.set_attribute({"value", project.id}, to: "##{project_field.id}")
+                    |> JS.dispatch("input", to: "##{project_field.id}")
+                    |> JS.hide(to: "##{project_list_id}")
+                  }
+                >
+                  {project.name}
+                </li>
+              </ul>
+            </div>
 
-            <div class="mt-2 flex justify-between">
+            <div class="flex items-center justify-between">
               <.switch
                 field={@form[:is_remote]}
                 label={gettext("I work from home")}
-                class="gap-3! font-normal"
+                color="black"
+                class="gap-2.5! text-sm font-normal [&>span]:text-grey-700!"
                 disabled={is_hours_record_submitted}
               />
 
@@ -93,7 +150,8 @@
                 type="button"
                 id="toggle_extended_form"
                 variant="tertiary"
-                class="size-8! rounded-lg! p-0!"
+                size="small"
+                class="rounded! aria-pressed:bg-grey-400"
                 phx-click="toggle_extended_form"
                 data-active={@is_form_extended}
                 disabled={is_hours_record_submitted}
@@ -109,7 +167,11 @@
           <div class="flex flex-col items-center">
             <%= cond do %>
               <% @is_form_extended -> %>
-                <div class="flex w-full flex-col items-center justify-center gap-12 pt-8">
+                <div
+                  id="session-form-times"
+                  phx-mounted={list_enter()}
+                  class="flex w-full flex-col items-center justify-center gap-12 pt-8"
+                >
                   <div class="flex h-8 w-full gap-6">
                     <.input
                       type="date"
@@ -141,8 +203,8 @@
 
                   <.button
                     :if={!@current_session}
-                    variant="primary"
-                    class="w-31.5"
+                    variant="special"
+                    class="min-w-[67px] rounded!"
                     disabled={is_hours_record_submitted}
                   >
                     {gettext("Start")}
@@ -151,17 +213,17 @@
                     :if={@current_session}
                     phx-click="end_session"
                     type="button"
-                    variant="primary"
-                    class="w-31.5"
+                    variant="special"
+                    class="min-w-[67px] rounded!"
                     disabled={is_hours_record_submitted}
                   >
                     {gettext("Stop")}
                   </.button>
                 </div>
               <% @current_session -> %>
-                <div class="mt-14.5 flex w-full min-w-0 flex-col items-center gap-5">
+                <div class="flex w-full min-w-0 flex-col items-center gap-6 pt-12 pb-2">
                   <p
-                    class="text-center text-2xl/tight font-semibold tracking-normal text-rust-700"
+                    class="text-center text-3xl/tight font-bold text-grey-900 tabular-nums"
                     id="timetracker-timer"
                     data-start_time={@current_session.start_datetime}
                     phx-hook="Timer"
@@ -172,29 +234,26 @@
                   <.button
                     phx-click="end_session"
                     type="button"
-                    variant="primary"
-                    class="w-31.5"
+                    variant="special"
+                    class="min-w-[67px] rounded!"
                   >
                     {gettext("Stop")}
                   </.button>
                 </div>
               <% true -> %>
-                <div class="mt-8 flex w-full flex-col items-center gap-5">
-                  <div class="h-[60px]">
-                    <p class="text-center text-2xl/tight font-semibold text-rust-700">
-                      {gettext("%{hours} h %{minutes} min",
-                        hours: @month_stats.hours,
-                        minutes: @month_stats.minutes
-                      )}
-                    </p>
-                    <p class="text-center text-rust-700">
-                      {gettext("in %{month}", month: @month_stats.month)}
-                    </p>
-                  </div>
+                <div class="flex w-full flex-col items-center gap-6 pt-12 pb-2">
+                  <%!-- Lighter while the form is empty, darker once the session can start; it eases between the two. --%>
+                  <p class={[
+                    "text-center text-3xl/tight font-bold tabular-nums transition-colors duration-300 ease-out motion-reduce:transition-none",
+                    if(@form.source.valid?, do: "text-grey-500", else: "text-grey-300")
+                  ]}>
+                    {TimeFormatter.format_timer(0, :with_seconds)}
+                  </p>
+                  <%!-- Starts once the session has a title and a project. --%>
                   <.button
-                    variant="primary"
-                    class="w-31.5"
-                    disabled={is_hours_record_submitted}
+                    variant="special"
+                    class="min-w-[67px] rounded!"
+                    disabled={is_hours_record_submitted or not @form.source.valid?}
                   >
                     {gettext("Start")}
                   </.button>
@@ -208,22 +267,22 @@
       :if={@filter}
       id="filtered-sessions"
       phx-mounted={list_enter()}
-      class="mb-16 w-full min-w-0 md:pr-8"
+      class="mb-16 flex w-full min-w-0 flex-col gap-1 md:pr-8 lg:pr-0"
     >
       <% month_sessions = List.flatten(@filtered_tasks) %>
       <% total = calculate_total_duration(month_sessions) %>
-      <div class="flex items-center justify-between gap-4 pb-3">
-        <p class="min-w-0">
-          <span class="font-semibold text-rust-700">
+      <div class="flex items-center justify-between gap-4 pb-1 pl-2">
+        <p class="flex min-w-0 items-baseline gap-2 leading-[1.4]">
+          <span class="truncate text-lg font-medium text-grey-900">
             {@filter.project.name} · {month_name(@filter.month)}
           </span>
-          <span class="whitespace-nowrap text-grey-600">
+          <span class="text-sm whitespace-nowrap text-grey-500">
             | {ngettext("%{count} session", "%{count} sessions", length(month_sessions))}
           </span>
         </p>
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex shrink-0 items-center gap-3">
           <p
-            class="rounded-md bg-rust-200 px-2 py-1 text-xl/tight font-bold text-rust-700"
+            class={total_pill_classes()}
             id="filtered-timer"
             phx-hook="Timer"
             data-start_time={DateTime.utc_now() |> DateTime.add(-total, :second)}
@@ -232,17 +291,23 @@
           >
             {TimeFormatter.format_timer(total)}
           </p>
-          <.link patch={~p"/czasosledz"} kind="button" variant="outline">
+          <.link
+            patch={~p"/czasosledz"}
+            kind="button"
+            variant="outline"
+            size="small"
+            class="rounded!"
+          >
             <Lucideicons.x /> {gettext("All sessions")}
           </.link>
         </div>
       </div>
 
-      <p :if={month_sessions == []} class="py-8 text-center text-grey-700">
+      <p :if={month_sessions == []} class="py-8 text-center text-sm text-grey-600">
         {gettext("No sessions in this project this month")}
       </p>
 
-      <div class="divide-y divide-grey-200">
+      <div>
         <FirmowidWeb.Timetracker.Components.Session.render
           :for={sessions <- @filtered_tasks}
           :key={hd(sessions).id}
@@ -258,24 +323,44 @@
       :if={!@filter}
       id="all-sessions"
       phx-mounted={list_enter()}
-      class="mb-16 w-full min-w-0 space-y-16 md:pr-8"
+      class="mb-16 flex w-full min-w-0 flex-col gap-10 has-[#sessions-empty-state]:mb-0 md:pr-8 lg:pr-0"
     >
       <div
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
-        class="py-8 text-center text-grey-700"
+        id="sessions-empty-state"
+        class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-grey-300 px-8 py-12 text-center"
       >
-        <p class="text-lg font-semibold">{gettext("No sessions recorded")}</p>
-        <p class="mt-2 text-sm">
-          {gettext("Start your first session using the form on the left")}
+        <Lucideicons.clock class="mb-1 size-6 text-grey-900" aria-hidden="true" />
+        <p class="text-lg/[1.4] font-medium text-grey-900">
+          {gettext("Your sessions will appear here")}
+        </p>
+        <p class="max-w-90 text-sm/normal text-grey-600">
+          {gettext(
+            "Type what you are working on, choose a project and click Start. Sessions will line up here chronologically, and their totals will go to the timesheet."
+          )}
+        </p>
+        <p
+          :if={@active_projects != [] and not @is_hours_record_submitted}
+          class="mt-2 text-sm text-grey-600"
+        >
+          {gettext("Was the timer off?")}
+          <.button
+            type="button"
+            variant="unstyled"
+            phx-click="toggle_extended_form"
+            class="cursor-pointer font-medium text-grey-700 hover:text-grey-900 hover:underline"
+          >
+            {gettext("Add a session manually")}
+          </.button>
         </p>
       </div>
 
       <div :if={not Enum.empty?(@today_sessions)}>
-        <div class="flex items-center justify-between pb-3">
-          <p class="font-semibold text-rust-700">{gettext("Your sessions today")}</p>
+        <div class="flex items-center justify-between pb-2 pl-2">
+          <p class="text-lg/[1.4] font-medium text-grey-900">{gettext("Your sessions today")}</p>
           <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
           <p
-            class="rounded-md bg-rust-200 px-2 py-1 text-xl/tight font-bold text-rust-700"
+            class={total_pill_classes()}
             id="today-timer"
             phx-hook="Timer"
             data-start_time={DateTime.utc_now() |> DateTime.add(-today_time, :second)}
@@ -285,7 +370,7 @@
             {today_time |> TimeFormatter.format_timer()}
           </p>
         </div>
-        <div class="divide-y divide-grey-200">
+        <div>
           <FirmowidWeb.Timetracker.Components.Session.render
             :for={sessions <- @today_sessions}
             :key={hd(sessions).id}
@@ -296,23 +381,19 @@
         </div>
       </div>
 
-      <div class="flex flex-col space-y-14">
+      <div :if={@grouped_sessions != []} class="flex flex-col gap-10">
         <div
           :for={{week, days} <- @grouped_sessions}
           :key={week}
           class={if Enum.empty?(@today_sessions), do: "order-first", else: ""}
         >
           <div :if={Enum.empty?(@today_sessions)} />
-          <div class="space-y-8">
-            <div
-              :for={{day, session_group} <- days}
-              :key={day}
-              class="flex flex-col gap-2"
-            >
-              <p class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] flex bg-grey-100 text-sm font-semibold text-grey-700">
+          <div class="flex flex-col gap-10">
+            <div :for={{day, session_group} <- days} :key={day}>
+              <p class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-10 flex bg-white pb-2 pl-2 text-caps-sm/[1.6] font-medium text-grey-500 uppercase">
                 {format_day_header(day)}
               </p>
-              <div class="divide-y divide-grey-200">
+              <div>
                 <FirmowidWeb.Timetracker.Components.Session.render
                   :for={sessions <- session_group}
                   :key={hd(sessions).id}
