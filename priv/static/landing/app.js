@@ -371,4 +371,25 @@
     });
     openStep(0);
   }
+
+  /* ---------- cookie consent: the banner stays until the visitor chooses. The choice is the same
+     cookie the rest of the site reads. Telemetry waits in a <template> and loads only after "accept". ---------- */
+  const consent = $('#consent');
+  if (consent && !/(^| )cookie_consent=/.test(document.cookie)) {
+    consent.hidden = false;
+    consent.addEventListener('click', e => {
+      const choice = e.target.closest('[data-consent]')?.dataset.consent;
+      if (!choice) return;
+      const secure = location.protocol === 'https:' ? ';Secure' : '';
+      document.cookie = `cookie_consent=${choice};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax${secure}`;
+      consent.hidden = true;
+      const waiting = $('#telemetry-script')?.content.querySelector('script');
+      if (choice === 'accepted' && waiting) {
+        // a script cloned out of a template may not run, so it is built anew with the same attributes
+        const script = document.createElement('script');
+        [...waiting.attributes].forEach(a => script.setAttribute(a.name, a.value));
+        document.body.append(script);
+      }
+    });
+  }
 })();

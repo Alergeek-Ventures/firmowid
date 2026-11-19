@@ -156,8 +156,16 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
       html
       |> LazyHTML.from_document()
-      |> LazyHTML.query(~s(script[data-telemetry-config="true"]))
+      |> LazyHTML.query(~s(body > script[data-telemetry-config="true"]))
       |> Enum.to_list()
+    end
+
+    defp waiting_telemetry(conn) do
+      Regex.run(
+        ~r{<template id="telemetry-script">(<script[^>]*></script>)</template>},
+        conn |> get(~p"/") |> html_response(200),
+        capture: :all_but_first
+      )
     end
 
     test "loads the telemetry script only for a visitor who accepted analytics", %{conn: conn} do
@@ -181,6 +189,34 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
       put_posthog(false)
 
       assert [] == telemetry_scripts(put_req_cookie(conn, "cookie_consent", "accepted"))
+    end
+
+    test "keeps the script inert until a visitor without a choice accepts", %{conn: conn} do
+      put_posthog(true)
+
+      assert [script] = waiting_telemetry(conn)
+      assert script =~ Endpoint.static_path("/assets/landing_preview.js")
+      assert script =~ ~s(data-posthog-api-key="phc_example")
+
+      refute waiting_telemetry(put_req_cookie(conn, "cookie_consent", "accepted"))
+      refute waiting_telemetry(put_req_cookie(conn, "cookie_consent", "rejected"))
+
+      put_posthog(false)
+      refute waiting_telemetry(conn)
+    end
+
+    test "shows the cookie banner hidden until the script reveals it", %{conn: conn} do
+      page = conn |> get(~p"/") |> html_response(200) |> LazyHTML.from_document()
+
+      assert [_banner] = page |> LazyHTML.query("#consent[hidden]") |> Enum.to_list()
+
+      assert ["rejected", "accepted"] ==
+               page |> LazyHTML.query("#consent button") |> LazyHTML.attribute("data-consent")
+
+      assert [_link] =
+               page
+               |> LazyHTML.query(~s|#consent a[href="/polityka-prywatnosci"]|)
+               |> Enum.to_list()
     end
 
     test "the case study page has no placeholder either", %{conn: conn} do

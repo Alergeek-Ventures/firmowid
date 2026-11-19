@@ -224,7 +224,11 @@
     ["<h3>Bez opłaty licencyjnej</h3><p>Na własnym serwerze płacisz tylko za infrastrukturę. Faktury, banki i&nbsp;użytkownicy bez limitów planu.</p>", "<h3>Без ліцензійної плати</h3><p>На власному сервері ви платите лише за інфраструктуру. Рахунки, банки й&nbsp;користувачі без лімітів плану.</p>"],
     ["<h3>Bez uwiązania</h3><p>Każdy może sprawdzić, jak liczymy wynik. Jeśli zmienisz zdanie, dane zostają u&nbsp;Ciebie.</p>", "<h3>Без привʼязки</h3><p>Кожен може перевірити, як ми рахуємо результат. Якщо передумаєте, дані залишаться у&nbsp;вас.</p>"],
     ["<h2>Prowadź firmę z&nbsp;lżejszą głową.</h2>", "<h2>Керуйте фірмою з&nbsp;легшою головою.</h2>"],
-    ["Sprawdź, ile zostaje w&nbsp;Twojej firmie.", "Дізнайтеся, скільки залишається у&nbsp;вашій фірмі."]
+    ["Sprawdź, ile zostaje w&nbsp;Twojej firmie.", "Дізнайтеся, скільки залишається у&nbsp;вашій фірмі."],
+    ["aria-label=\"Zgoda na cookies\"", "aria-label=\"Згода на cookies\""],
+    ["Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność usługi. Po akceptacji możemy dodatkowo zapisywać cookies analityczne, uruchomić nagrywanie sesji diagnostycznych i powiązać dane z zalogowanym użytkownikiem. Szczegóły w naszej <a href=\"/polityka-prywatnosci\">Polityce Prywatności</a>.", "Ми завжди відстежуємо помилки застосунку, щоб сервіс працював надійно. Після згоди ми можемо додатково зберігати аналітичні cookies, вмикати діагностичний запис сесій і пов’язувати дані з користувачем, який увійшов. Подробиці в нашій <a href=\"/polityka-prywatnosci\">Політиці конфіденційності</a>."],
+    ["data-consent=\"rejected\">Odrzuć</button>", "data-consent=\"rejected\">Відхилити</button>"],
+    ["data-consent=\"accepted\">Akceptuję</button>", "data-consent=\"accepted\">Прийняти</button>"]
   ],
   "bonobo.html": [
     ["<html lang=\"pl\">", "<html lang=\"uk\">"],
