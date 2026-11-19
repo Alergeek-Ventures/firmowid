@@ -122,7 +122,7 @@
     ["<p class=\"kicker\">Asystent</p>", "<p class=\"kicker\">Assistant</p>"],
     ["Zapytaj o&nbsp;finanse firmy.", "Ask about your company’s finances."],
     ["Działa też w", "Also works in"],
-    ["<li>Czyta te same faktury, przelewy i godziny co Analiza.</li>", "<li>Reads the same invoices, transfers and hours as Analysis.</li>"],
+    ["<li>Czyta te same faktury, przelewy i godziny co <a href=\"/funkcje/analiza\">Analiza</a>.</li>", "<li>Reads the same invoices, transfers and hours as <a href=\"/funkcje/analiza\">Analysis</a>.</li>"],
     ["<li>Wystawi fakturę albo dopasuje przelew. Każdą zmianę zatwierdzasz sam.</li>", "<li>It can issue an invoice or match a transfer. You approve every change yourself.</li>"],
     ["aria-label=\"Przykładowa rozmowa z asystentem\"", "aria-label=\"Sample conversation with the assistant\""],
     [">Który miesiąc był najsłabszy i dlaczego?<", ">Which month was the weakest and why?<"],

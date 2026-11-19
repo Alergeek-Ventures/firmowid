@@ -122,7 +122,7 @@
     ["<p class=\"kicker\">Asystent</p>", "<p class=\"kicker\">Асистент</p>"],
     ["Zapytaj o&nbsp;finanse firmy.", "Запитайте про фінанси фірми."],
     ["Działa też w", "Працює також у"],
-    ["<li>Czyta te same faktury, przelewy i godziny co Analiza.</li>", "<li>Читає ті самі рахунки, перекази й години, що й Аналіз.</li>"],
+    ["<li>Czyta te same faktury, przelewy i godziny co <a href=\"/funkcje/analiza\">Analiza</a>.</li>", "<li>Читає ті самі рахунки, перекази й години, що й <a href=\"/funkcje/analiza\">Аналіз</a>.</li>"],
     ["<li>Wystawi fakturę albo dopasuje przelew. Każdą zmianę zatwierdzasz sam.</li>", "<li>Виставить рахунок або зіставить переказ. Кожну зміну ви затверджуєте самі.</li>"],
     ["aria-label=\"Przykładowa rozmowa z asystentem\"", "aria-label=\"Приклад розмови з асистентом\""],
     [">Który miesiąc był najsłabszy i dlaczego?<", ">Який місяць був найслабшим і чому?<"],

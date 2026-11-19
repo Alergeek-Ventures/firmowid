@@ -289,7 +289,7 @@ section{position:relative}
 .assist__grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:48px;align-items:center}
 .assist .kicker{color:var(--r500)}
 .assist__also{margin-top:34px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;font-size:15px;color:rgba(245,241,234,.7)}
-.assist__also span{display:inline-flex;align-items:center;gap:8px;color:var(--cream);font-weight:500}
+.assist__also span,.assist__also a{display:inline-flex;align-items:center;gap:8px;color:var(--cream);font-weight:500}
 .assist__also img{background:#fff;border-radius:6px;padding:3px}
 .chat{font-family:var(--app);background:#1a1a1a;border:1px solid #2c2c2c;border-radius:8px;padding:22px;min-height:380px;display:flex;flex-direction:column;gap:14px}
 .chat__q{align-self:flex-end;max-width:85%;min-height:42px;padding:11px 15px;background:var(--cream);color:var(--ink);border-radius:14px 14px 3px 14px;font-size:15px}
@@ -374,7 +374,7 @@ section{position:relative}
 
 
 .assist__facts{margin-top:28px;display:grid;gap:12px;max-width:40ch;font-size:16px;line-height:1.45;color:rgba(245,241,234,.8)}
-.assist__facts li{padding-left:22px;position:relative}.assist__facts li::before{content:"✓";position:absolute;left:0;color:var(--r500)}
+.assist__facts li{padding-left:22px;position:relative}.assist__facts a{text-decoration:underline;text-underline-offset:3px}.assist__facts li::before{content:"✓";position:absolute;left:0;color:var(--r500)}
 
 /* ---------- calculator ---------- */
 .calc{padding:clamp(72px,9vw,128px) 0 0}

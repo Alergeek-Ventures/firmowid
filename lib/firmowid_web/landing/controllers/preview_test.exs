@@ -76,6 +76,20 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert "WebApplication" in types
   end
 
+  test "links to the KSeF page and the feature pages", %{conn: conn} do
+    html = conn |> get(~p"/") |> html_response(200)
+
+    for path <- [
+          "/ksef",
+          "/funkcje/bank",
+          "/funkcje/czas-pracy",
+          "/funkcje/analiza",
+          "/funkcje/claude-chatgpt-mcp"
+        ] do
+      assert html =~ ~s(href="#{path}")
+    end
+  end
+
   test "links the stylesheet and script through the static path helper", %{conn: conn} do
     html = conn |> get(~p"/") |> html_response(200)
 
