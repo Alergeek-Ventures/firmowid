@@ -40,7 +40,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
       phx-auto-recover="ignore"
-      class="group/row relative flex w-full min-w-0 flex-row items-center py-1 pl-1 max-md:flex-wrap"
+      class={[
+        "group/row relative flex w-full min-w-0 flex-row items-center border-b px-2 max-md:flex-wrap",
+        if(@filter, do: "min-h-12 border-grey-200 py-2", else: "border-grey-100 py-3")
+      ]}
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
@@ -50,7 +53,8 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         value={sessions_form[:project_id].value}
       />
 
-      <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1 max-md:mr-0 max-md:basis-full">
+      <%!-- Pulled left so the title's hover background starts at the row's edge, as in Figma. --%>
+      <div class="group -ml-2 flex min-w-0 flex-1 flex-row items-center gap-[11px] max-md:basis-full">
         <.hidden_input>
           <:input>
             <%!-- In the filtered list a title stands for a whole task, so say that renaming moves all its sessions. --%>
@@ -75,7 +79,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           </:input>
         </.hidden_input>
 
-        <span :if={length(@sessions) > 1} class="line-clamp-1 shrink-0 text-grey-600">
+        <span
+          :if={length(@sessions) > 1}
+          class="shrink-0 text-sm/[1.4] whitespace-nowrap text-grey-500"
+        >
           | {ngettext("%{count} session", "%{count} sessions", length(@sessions))}
         </span>
 
@@ -89,44 +96,45 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </.button>
       </div>
 
-      <span class="ml-auto max-md:ml-0">
-        <span
-          :if={@same_presence? and parent_session.is_remote}
-          id={"session-presence-#{parent_session.id}"}
-          class="inline-flex shrink-0 items-center gap-1 rounded-full bg-grey-200 px-2 py-0.5 text-xs text-grey-700"
-        >
-          <Lucideicons.house class="size-3.5" aria-hidden="true" />
-          {pgettext("presence", "remotely")}
-        </span>
-      </span>
-
       <% select_id = "session-project-select-#{parent_session.id}" %>
-      <.button
+      <%!-- The row's items are spaced by margins, as the popovers' focus wraps would take a gap. --%>
+      <%!-- The column keeps Figma's width, the hover background only the name's. --%>
+      <span
         :if={!@filter}
-        id={"project-select-#{parent_session.id}"}
-        type="button"
-        phx-click={show_popover(select_id)}
-        disabled={parent_session.lockdown}
-        variant="unstyled"
-        class="ml-1 min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
+        class="-mr-2 ml-[3px] flex min-w-0 justify-end max-md:-ml-2 xl:w-39 xl:shrink-0"
       >
-        {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
-          nil -> gettext("Select")
-          project -> project.name
-        end}
-      </.button>
+        <.button
+          id={"project-select-#{parent_session.id}"}
+          type="button"
+          phx-click={show_popover(select_id)}
+          disabled={parent_session.lockdown}
+          variant="unstyled"
+          class={[
+            "block max-w-full min-w-0 cursor-pointer truncate border-none text-xs/7 font-medium text-grey-500 uppercase focus:ring-0 disabled:pointer-events-none",
+            row_control_styles()
+          ]}
+        >
+          {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
+            nil -> gettext("Select")
+            project -> project.name
+          end}
+        </.button>
+      </span>
 
       <.popover
         :if={!@filter}
         placement="bottom-end"
         id={select_id}
         reference_id={"project-select-#{parent_session.id}"}
-        class="w-[230px] rounded-lg border border-grey-200 bg-grey-50"
+        class={[
+          "w-[230px] origin-top-right rounded-lg border border-grey-200 bg-grey-50",
+          dropdown_styles()
+        ]}
       >
         <ul class="flex flex-col gap-1 overflow-auto p-1">
           <li
             :for={project <- @active_projects}
-            class="cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-rust-100 hover:text-rust-800"
+            class={dropdown_item_styles()}
             phx-click={
               JS.set_attribute(
                 {"value", project.id},
@@ -141,21 +149,28 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </ul>
       </.popover>
 
+      <.work_mode :if={!@filter} sessions={@sessions} />
+
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
-      <.button
-        class="ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition hover:bg-grey-200 max-md:ml-auto lg:ml-8"
-        id={"session-timer-#{parent_session.id}"}
-        type="button"
-        phx-click={show_popover(popover_id)}
-        phx-hook="Timer"
-        data-start_time={DateTime.shift(DateTime.utc_now(), second: -1 * total_duration)}
-        data-format="short"
-        data-disabled={parent_session.end_datetime != nil}
-        variant="unstyled"
-      >
-        {TimeFormatter.format_timer(total_duration)}
-      </.button>
+      <span class={[
+        "-mr-2 flex w-18 shrink-0 justify-end max-md:ml-auto",
+        if(@filter, do: "ml-1", else: "ml-[3px]")
+      ]}>
+        <.button
+          class={["block text-sm/7 font-semibold text-grey-900 tabular-nums", row_control_styles()]}
+          id={"session-timer-#{parent_session.id}"}
+          type="button"
+          phx-click={show_popover(popover_id)}
+          phx-hook="Timer"
+          data-start_time={DateTime.shift(DateTime.utc_now(), second: -1 * total_duration)}
+          data-format="short"
+          data-disabled={parent_session.end_datetime != nil}
+          variant="unstyled"
+        >
+          {TimeFormatter.format_timer(total_duration)}
+        </.button>
+      </span>
 
       <%!-- Sits in the list's right padding, so the row keeps its width. Desktop only. --%>
       <% session_month = Index.session_month(parent_session) %>
@@ -342,6 +357,176 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     """
   end
 
+  attr :sessions, :list, required: true
+
+  # Where the row's sessions were worked: a house when remote, a lighter house
+  # with a tooltip when only some were, nothing for the office. A click opens a
+  # list that switches all the row's sessions at once.
+  defp work_mode(assigns) do
+    parent_session = hd(assigns.sessions)
+    remote_count = Enum.count(assigns.sessions, & &1.is_remote)
+
+    mode =
+      cond do
+        remote_count == 0 -> :office
+        remote_count == length(assigns.sessions) -> :remote
+        true -> :mixed
+      end
+
+    assigns =
+      assign(assigns,
+        id: parent_session.id,
+        locked?: parent_session.lockdown,
+        mode: mode,
+        remote_count: remote_count
+      )
+
+    ~H"""
+    <div class="group/mode-slot ml-[11px] flex h-6 w-10 shrink-0 items-center">
+      <.tooltip
+        :if={@mode == :mixed}
+        id={"session-work-mode-hint-#{@id}"}
+        text={
+          gettext("%{remote} of %{count} sessions remotely",
+            remote: @remote_count,
+            count: length(@sessions)
+          )
+        }
+        variant="hint"
+        placement="top"
+      >
+        <.work_mode_control id={@id} mode={@mode} locked?={@locked?} sessions={@sessions} />
+      </.tooltip>
+      <.work_mode_control
+        :if={@mode != :mixed}
+        id={@id}
+        mode={@mode}
+        locked?={@locked?}
+        sessions={@sessions}
+      />
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :mode, :atom, required: true
+  attr :locked?, :boolean, required: true
+  attr :sessions, :list, required: true
+
+  defp work_mode_control(%{locked?: true} = assigns) do
+    ~H"""
+    <span class="flex h-6 items-center pl-1">
+      <.work_mode_icon mode={@mode} class={work_mode_icon_styles(@mode)} />
+    </span>
+    """
+  end
+
+  defp work_mode_control(assigns) do
+    ~H"""
+    <% list_id = "session-work-mode-list-#{@id}" %>
+    <.button
+      id={"session-work-mode-#{@id}"}
+      type="button"
+      variant="unstyled"
+      phx-click={show_popover(list_id)}
+      aria-label={
+        gettext("Work mode: %{mode}",
+          mode:
+            case @mode do
+              :office -> pgettext("workplace", "In the office")
+              :remote -> pgettext("workplace", "Remotely")
+              :mixed -> pgettext("workplace", "Partly remote")
+            end
+        )
+      }
+      class={[
+        "group/mode -ml-1 flex cursor-pointer items-center group-has-[[role=dialog][style*='display:_block']]/mode-slot:bg-grey-100",
+        row_control_styles()
+      ]}
+    >
+      <.work_mode_icon
+        mode={@mode}
+        class={[
+          "transition group-hover/mode:opacity-100 group-focus-visible/mode:opacity-100 group-has-[[role=dialog][style*='display:_block']]/mode-slot:opacity-100",
+          work_mode_icon_styles(@mode)
+        ]}
+      />
+    </.button>
+
+    <.popover
+      id={list_id}
+      reference_id={"session-work-mode-#{@id}"}
+      placement="bottom-end"
+      class={["w-40 origin-top-right rounded-lg border border-grey-200 bg-grey-50", dropdown_styles()]}
+    >
+      <ul class="flex flex-col gap-1 p-1">
+        <li :for={{remote?, label} <- work_mode_options()}>
+          <.button
+            type="button"
+            variant="unstyled"
+            phx-click={
+              JS.push("set_work_mode",
+                value: %{ids: Enum.map(@sessions, & &1.id), is_remote: remote?}
+              )
+              |> hide_popover(list_id)
+            }
+            class={["w-full text-left", dropdown_item_styles()]}
+          >
+            {label}
+          </.button>
+        </li>
+      </ul>
+    </.popover>
+    """
+  end
+
+  defp work_mode_options do
+    [{false, pgettext("workplace", "In the office")}, {true, pgettext("workplace", "Remotely")}]
+  end
+
+  attr :mode, :atom, required: true
+  attr :class, :any, default: nil
+
+  defp work_mode_icon(%{mode: :office} = assigns) do
+    ~H"""
+    <Lucideicons.building_2 class={["size-4 shrink-0", @class]} aria-hidden="true" />
+    """
+  end
+
+  defp work_mode_icon(assigns) do
+    ~H"""
+    <Lucideicons.house class={["size-4 shrink-0", @class]} aria-hidden="true" />
+    """
+  end
+
+  # At rest the office shows nothing, a remote row a grey house and a mixed one
+  # a lighter house. Hovering the control shows its icon on a grey background.
+  defp work_mode_icon_styles(:office), do: "text-grey-500 opacity-0"
+  defp work_mode_icon_styles(:remote), do: "text-grey-500"
+  defp work_mode_icon_styles(:mixed), do: "text-grey-300"
+
+  # The hover shared by the row's controls (title, project, work mode and
+  # time): a light grey background 28 px high with 8 px on the sides, as wide
+  # as the content. The negative margin keeps the row's height.
+  defp row_control_styles do
+    "-my-1 h-7 rounded px-2 transition-colors hover:bg-grey-100 focus-visible:bg-grey-100"
+  end
+
+  @doc """
+  Entrance of the time tracker's dropdowns (project, work mode): they grow and
+  fade in each time they open, whatever opens them. The caller sets the origin.
+  """
+  @spec dropdown_styles() :: String.t()
+  def dropdown_styles do
+    "transition-[opacity,scale] duration-150 ease-out starting:scale-95 starting:opacity-0 motion-reduce:transition-none"
+  end
+
+  @doc "An option in the time tracker's dropdowns (project, work mode)."
+  @spec dropdown_item_styles() :: String.t()
+  def dropdown_item_styles do
+    "cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-grey-200 hover:text-grey-800"
+  end
+
   attr :field, Phoenix.HTML.FormField, required: true
 
   defp title_input(assigns) do
@@ -350,7 +535,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       id={@field.id}
       name={@field.name}
       value={@field.value}
-      class={text_like_input_styles(["max-w-full", "truncate"])}
+      class={
+        text_like_input_styles([
+          "-my-1! ml-0! h-7 max-w-full truncate px-2! py-0! text-sm/7 text-grey-900 hover:bg-grey-100! focus:bg-grey-100! focus-visible:outline-none"
+        ])
+      }
       style="field-sizing: content;"
       phx-debounce="300"
     />

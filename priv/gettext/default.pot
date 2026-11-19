@@ -395,13 +395,13 @@ msgstr ""
 #: lib/firmowid/time_formatter.ex
 #: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/management/views/projects.ex
+#: lib/firmowid_web/timetracker/views/index.ex
 #, elixir-autogen, elixir-format
 msgctxt "duration"
 msgid "%{hours} h"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
-#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "%{hours} h %{minutes} min"
 msgstr ""
@@ -537,6 +537,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "%{rate}%"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgid "%{remote} of %{count} sessions remotely"
 msgstr ""
 
 #: lib/firmowid/time_formatter.ex
@@ -1014,6 +1019,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Add a related document"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Add a session manually"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/shortcuts.ex
@@ -2756,6 +2766,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/transcript.ex
 #, elixir-autogen, elixir-format
 msgid "Choose a matching scenario"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Choose a project"
 msgstr ""
 
 #: lib/firmowid_web/management/components/roles.ex
@@ -6453,6 +6468,7 @@ msgid "In one place."
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "workplace"
 msgid "In the office"
@@ -8388,11 +8404,6 @@ msgstr ""
 msgid "No sessions on this day."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "No sessions recorded"
-msgstr ""
-
 #: lib/firmowid_web/management/components/projects_tab.ex
 #, elixir-autogen, elixir-format
 msgid "No sessions this month"
@@ -9177,6 +9188,12 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Participating"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgctxt "workplace"
+msgid "Partly remote"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
@@ -9976,6 +9993,7 @@ msgid "Remote work"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "workplace"
 msgid "Remotely"
@@ -11330,11 +11348,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
 msgid "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "Start your first session using the form on the left"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -12939,14 +12952,9 @@ msgstr ""
 #: lib/firmowid_web/hours_record/views/index.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/inbox/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgctxt "hours record page"
-msgid "Timesheet"
-msgstr ""
-
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
-msgctxt "time tracker link"
+msgctxt "hours record page"
 msgid "Timesheet"
 msgstr ""
 
@@ -13317,6 +13325,11 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Type the exact organization name: %{name}"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Type what you are working on, choose a project and click Start. Sessions will line up here chronologically, and their totals will go to the timesheet."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/issuance.ex
@@ -13805,6 +13818,11 @@ msgstr ""
 msgid "Waiting for the bank's consent."
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Was the timer off?"
+msgstr ""
+
 #: lib/firmowid_web/management/components/work_distribution.ex
 #, elixir-autogen, elixir-format
 msgctxt "weekday abbreviation"
@@ -13983,7 +14001,7 @@ msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
-msgid "What are you working on today?"
+msgid "What are you working on?"
 msgstr ""
 
 #: lib/firmowid_web/feedback/components/form.ex
@@ -14221,6 +14239,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/projects_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Work distribution"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgid "Work mode: %{mode}"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -14672,6 +14695,11 @@ msgstr ""
 msgid "Your sessions today"
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Your sessions will appear here"
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
@@ -15019,11 +15047,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "hours worked unit"
 msgid "hrs"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "in %{month}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
