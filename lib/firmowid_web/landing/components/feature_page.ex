@@ -305,12 +305,12 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
   defp section_body_styles do
     [
       "min-w-0 text-[17px] leading-[1.65] text-grey-700",
-      "[&_p]:max-w-[62ch] [&_p+p]:mt-4 [&_p:has(+table)]:mb-4 [&_table+p]:mt-4 [&_table+p]:text-[13px] [&_table+p]:leading-normal [&_table+p]:text-grey-600",
+      "[&_p]:max-w-[62ch] [&_p+p]:mt-4 [&_p:has(+.table-scroll)]:mb-4 [&_.table-scroll+p]:mt-4 [&_.table-scroll+p]:text-[13px] [&_.table-scroll+p]:leading-normal [&_.table-scroll+p]:text-grey-600",
       "[&_a]:text-[#0f0f0f] [&_a]:underline [&_a]:decoration-rust-400 [&_a]:underline-offset-[3px] [&_a:hover]:text-rust-700",
       "[&_strong]:text-[#0f0f0f]",
       "[&_figcaption]:mt-3 [&_figcaption]:text-[13px] [&_figcaption]:text-grey-600 [&_figure]:my-8 [&_figure]:first:mt-0 [&_figure_img]:block [&_figure_img]:h-auto [&_figure_img]:w-full [&_figure_img]:rounded-[4px] [&_figure_img]:bg-white [&_figure_img]:p-2 [&_figure_img]:shadow-[0_1px_0_var(--color-grey-200),0_26px_50px_-30px_rgba(87,54,35,.45)]",
-      "[&_table]:mt-2 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:rounded-[4px] [&_table]:border [&_table]:border-grey-200 [&_table]:bg-white [&_table]:font-sans [&_table]:text-[14.5px] [&_table]:leading-snug lg:[&_table]:table",
-      "[&_table+table]:mt-6 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-grey-600 [&_th]:uppercase [&_thead]:bg-grey-50 [&_thead:not(:has(th:not(:empty)))]:hidden",
+      "[&_.table-scroll]:mt-2 [&_.table-scroll]:overflow-x-auto [&_.table-scroll]:rounded-[4px] [&_.table-scroll]:border [&_.table-scroll]:border-grey-200 [&_.table-scroll]:bg-white [&_table]:w-full [&_table]:font-sans [&_table]:text-[14.5px] [&_table]:leading-snug",
+      "[&_.table-scroll+.table-scroll]:mt-6 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-grey-600 [&_th]:uppercase [&_thead]:bg-grey-50 [&_thead:not(:has(th:not(:empty)))]:hidden",
       "[&_tbody_tr:first-child_td]:border-t-0 [&_td]:border-t [&_td]:border-grey-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_td:first-child]:font-medium [&_td:first-child]:text-[#0f0f0f] [&_thead+tbody_tr:first-child_td]:border-t",
       "[&_ol.steps]:grid [&_ol.steps]:gap-3 [&_ol.steps]:[counter-reset:step] sm:[&_ol.steps]:grid-cols-2 xl:[&_ol.steps]:grid-cols-3",
       "[&_.steps>li]:relative [&_.steps>li]:rounded-[4px] [&_.steps>li]:border [&_.steps>li]:border-grey-200 [&_.steps>li]:bg-white [&_.steps>li]:p-5 [&_.steps>li]:pt-14 [&_.steps>li]:font-sans [&_.steps>li]:text-[14.5px] [&_.steps>li]:leading-snug [&_.steps>li]:[counter-increment:step]",

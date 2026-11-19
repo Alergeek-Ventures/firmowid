@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdownTest do
       assert body =~ "<figcaption>Faktura kosztowa</figcaption>"
     end
 
-    test "turns step tables into cards, questions into collapsible entries and marks comparisons" do
+    test "turns step tables into cards, questions into collapsible entries and wraps comparisons" do
       html = """
       <p>Wstęp.</p>
       <h2>Jak to działa</h2>
@@ -130,6 +130,10 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdownTest do
                ~s(<ol class="steps"><li><b>Wniosek</b><span>pracownik</span></li></ol>)
 
       assert comparison.band?
+
+      assert comparison.html =~
+               ~s(<div class="table-scroll"><table><tbody><tr class="firmowid">)
+
       assert faq.faq?
       assert faq.html =~ "<details><summary>Czy można?</summary><div><p>Tak.</p></div></details>"
     end

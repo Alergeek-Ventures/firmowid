@@ -86,6 +86,7 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
           end)
           |> steps()
           |> cards()
+          |> String.replace(~r/<table>.*?<\/table>/s, ~s(<div class="table-scroll">\\0</div>))
           |> then(&if(faq?, do: faq_details(&1), else: &1))
 
         %{
