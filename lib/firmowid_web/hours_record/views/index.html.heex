@@ -40,6 +40,15 @@
                 {TimeFormatter.format_duration(session.duration)}
               </span>
             </div>
+            <.link
+              navigate={Navigation.project_sessions_path(project.id, @selected_date)}
+              kind="button"
+              variant="outline"
+              size="small"
+              class="self-end"
+            >
+              <Lucideicons.clock /> {gettext("Show sessions in the time tracker")}
+            </.link>
           </div>
         </div>
       <% end %>

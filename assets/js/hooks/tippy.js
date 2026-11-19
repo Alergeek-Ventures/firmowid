@@ -55,8 +55,14 @@ export const Tippy = {
     mountTippy(this.el);
   },
 
+  // Refreshing the content in place keeps an open tooltip open while LiveView
+  // patches its element, for example during a live-saved rename.
   updated() {
-    mountTippy(this.el);
+    if (this.el._tippy) {
+      this.el._tippy.setContent(this.el.dataset.tippyContent);
+    } else {
+      mountTippy(this.el);
+    }
   },
 
   destroyed() {

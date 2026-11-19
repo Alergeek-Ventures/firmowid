@@ -14,7 +14,11 @@
     </div>
 
     <.link
-      navigate={~p"/czasosledz/ewidencja"}
+      navigate={
+        if @filter,
+          do: Navigation.hours_record_index_path(@filter.month),
+          else: ~p"/czasosledz/ewidencja"
+      }
       kind="button"
       variant="outline"
     >
@@ -200,7 +204,62 @@
         </.form>
       <% end %>
     </div>
-    <div class="mb-16 w-full min-w-0 space-y-16">
+    <div
+      :if={@filter}
+      id="filtered-sessions"
+      phx-mounted={list_enter()}
+      class="mb-16 w-full min-w-0 md:pr-8"
+    >
+      <% month_sessions = List.flatten(@filtered_tasks) %>
+      <% total = calculate_total_duration(month_sessions) %>
+      <div class="flex items-center justify-between gap-4 pb-3">
+        <p class="min-w-0">
+          <span class="font-semibold text-rust-700">
+            {@filter.project.name} · {month_name(@filter.month)}
+          </span>
+          <span class="whitespace-nowrap text-grey-600">
+            | {ngettext("%{count} session", "%{count} sessions", length(month_sessions))}
+          </span>
+        </p>
+        <div class="flex shrink-0 items-center gap-2">
+          <p
+            class="rounded-md bg-rust-200 px-2 py-1 text-xl/tight font-bold text-rust-700"
+            id="filtered-timer"
+            phx-hook="Timer"
+            data-start_time={DateTime.utc_now() |> DateTime.add(-total, :second)}
+            data-format="short"
+            data-disabled={not Enum.any?(month_sessions, &is_nil(&1.end_datetime))}
+          >
+            {TimeFormatter.format_timer(total)}
+          </p>
+          <.link patch={~p"/czasosledz"} kind="button" variant="outline">
+            <Lucideicons.x /> {gettext("All sessions")}
+          </.link>
+        </div>
+      </div>
+
+      <p :if={month_sessions == []} class="py-8 text-center text-grey-700">
+        {gettext("No sessions in this project this month")}
+      </p>
+
+      <div class="divide-y divide-grey-200">
+        <FirmowidWeb.Timetracker.Components.Session.render
+          :for={sessions <- @filtered_tasks}
+          :key={hd(sessions).id}
+          sessions={sessions}
+          active_projects={@active_projects}
+          projects_by_id={@projects_by_id}
+          filter={@filter}
+        />
+      </div>
+    </div>
+
+    <div
+      :if={!@filter}
+      id="all-sessions"
+      phx-mounted={list_enter()}
+      class="mb-16 w-full min-w-0 space-y-16 md:pr-8"
+    >
       <div
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
         class="py-8 text-center text-grey-700"

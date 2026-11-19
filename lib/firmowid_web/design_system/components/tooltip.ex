@@ -12,9 +12,17 @@ defmodule FirmowidWeb.DesignSystem.Components.Tooltip do
   @spec tooltip(map()) :: Phoenix.LiveView.Rendered.t()
   attr :id, :string, required: true
   attr :text, :string, required: true
-  attr :placement, :string, values: ~w(top bottom left right), default: "top"
+
+  attr :placement, :string,
+    values: ~w(top top-start top-end bottom left right),
+    default: "top"
 
   attr :title, :string, default: nil, doc: "a bold first line above the text"
+
+  attr :variant, :string,
+    values: ~w(default hint),
+    default: "default",
+    doc: "`hint` is the light Figma \"Information tooltip\" with an arrow"
 
   attr :class, :any, default: nil
   slot :inner_block, required: true
@@ -30,6 +38,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Tooltip do
       data-tippy-allowHTML={@title && "true"}
       data-tippy-placement={@placement}
       data-tippy-delay="[300, 0]"
+      data-tippy-theme={@variant == "hint" && "hint"}
+      data-tippy-arrow={@variant == "hint" && "true"}
+      data-tippy-maxWidth={@variant == "hint" && "220"}
+      data-tippy-hideOnClick={@variant == "hint" && "false"}
       class={["inline-flex", @class]}
     >
       {render_slot(@inner_block)}

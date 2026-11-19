@@ -12,6 +12,25 @@
 @source "../../lib/firmowid_mcp";
 @source "../../deps/live_toast/lib";
 
+/* ── Tooltips (tooltip/1, variant "hint") ───────────────────────────── */
+/* Figma's "Information tooltip": light grey, Body/Small 1, with an arrow. */
+.tippy-box[data-theme~="hint"] {
+  background-color: var(--color-grey-200);
+  color: var(--color-grey-700);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+}
+
+.tippy-box[data-theme~="hint"] > .tippy-content {
+  padding: 10px 12px;
+}
+
+.tippy-box[data-theme~="hint"] > .tippy-arrow {
+  color: var(--color-grey-200);
+}
+
 /* ── Avatars (avatar_image/1) ───────────────────────────────────────── */
 /* The picture fades in over its blurred placeholder once loaded, then the
    placeholder goes, since it would show through a transparent logo. One

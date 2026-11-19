@@ -22,6 +22,14 @@ defmodule FirmowidWeb.Timetracker.Utilities.Navigation do
   end
 
   @doc """
+  Builds the time tracker path showing one project's sessions from one month.
+  """
+  @spec project_sessions_path(Ash.UUID.t() | String.t(), Date.t()) :: String.t()
+  def project_sessions_path(project_id, %Date{} = date) when is_binary(project_id) do
+    ~p"/czasosledz?#{[projekt: project_id, miesiac: Date.to_iso8601(Date.beginning_of_month(date))]}"
+  end
+
+  @doc """
   Builds the canonical hours-record index path.
   """
   @spec hours_record_index_path(Date.t()) :: String.t()
