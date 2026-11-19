@@ -13,6 +13,23 @@
 @source "../../lib/firmowid_ui";
 @source "../../deps/live_toast/lib";
 
+/* Feature pages: the timer drawn in the hero. Minutes and seconds are CSS counters
+   set from --timer-m and --timer-s, which tick where motion is allowed. */
+@property --timer-m { syntax: "<integer>"; inherits: false; initial-value: 0; }
+@property --timer-s { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.feature-timer__m { counter-reset: timer-m var(--timer-m); }
+.feature-timer__s { counter-reset: timer-s var(--timer-s); }
+.feature-timer__m::after { content: counter(timer-m, decimal-leading-zero); }
+.feature-timer__s::after { content: counter(timer-s, decimal-leading-zero); }
+@media (prefers-reduced-motion: no-preference) {
+  .feature-timer__m { animation: feature-timer-m 3600s steps(60) var(--timer-offset, 0s) infinite; }
+  .feature-timer__s { animation: feature-timer-s 60s steps(60) var(--timer-offset, 0s) infinite; }
+  .feature-timer__bar { animation: feature-timer-bar .9s cubic-bezier(.2, .7, .2, 1) both; transform-origin: left; }
+}
+@keyframes feature-timer-m { from { --timer-m: 0; } to { --timer-m: 60; } }
+@keyframes feature-timer-s { from { --timer-s: 0; } to { --timer-s: 60; } }
+@keyframes feature-timer-bar { from { transform: scaleX(0); } }
+
 /* Feature pages (/funkcje/<slug>): steps with screenshots. The highlighted step
    and its screen take turns, 3.5 s each; data-steps sets the cycle length. */
 .feature-flow { display: grid; gap: 24px; align-items: center; }

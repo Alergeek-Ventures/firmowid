@@ -9,5 +9,7 @@ page:
   cta_note: "Konto w 2 minuty. Bez karty."
   match_transfer: "Przelew z banku"
   match_invoice: "Faktura"
+  timer_running: "Licznik czasu pracy włączony"
+  timer_stop: "Stop"
   quote_name: "Stanisław Madej"
   quote_role: "COO, Alergeek Ventures. Firmowida używamy u siebie na co dzień."

@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Landing.Components.FeaturePage do
   @moduledoc """
   Landing layout of a feature page (`/funkcje/:slug`), in the style of the home
-  page and the case studies: a hero with the screenshot (or transfers paired with invoices) on a sheet of paper, the
+  page and the case studies: a hero with the screenshot (or transfers paired with invoices, or a running timer) on a sheet of paper, the
   facts strip, the introduction quoted in a dark block, sections with tables and
   captioned screenshots, logo rows, collapsible questions and the closing call to action.
 
@@ -75,7 +75,10 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
               <p class="mt-4 text-[13px] text-grey-600">{@texts.cta_note}</p>
             </div>
 
-            <figure :if={@layout.hero || @landing.match != []} class="relative m-0 mb-10 lg:mb-0">
+            <figure
+              :if={@layout.hero || @landing.match != [] || @landing.timer}
+              class="relative m-0 mb-10 lg:mb-0"
+            >
               <div
                 :if={@landing.match != []}
                 class="rotate-[1.2deg] rounded-[4px] bg-white p-4 font-sans shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-6"
@@ -130,7 +133,65 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                 </div>
               </div>
               <div
-                :if={@layout.hero && @landing.match == []}
+                :if={@landing.timer}
+                class="rotate-[1.2deg] rounded-[4px] bg-white p-5 font-sans shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-7"
+              >
+                <p class="truncate rounded-[4px] border border-grey-300 bg-grey-100 px-3.5 py-2.5 text-[15px] font-medium">
+                  {@landing.timer.title}
+                </p>
+                <p class="mt-2.5 flex items-center justify-between rounded-[4px] bg-rust-100 px-3.5 py-2.5 text-[15px] font-medium text-rust-800">
+                  {@landing.timer.project}
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    class="size-4 stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round]"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
+                </p>
+                <div class="mt-6 flex items-center justify-between gap-4">
+                  <p
+                    class="feature-timer text-[clamp(34px,4vw,44px)] leading-none font-bold tracking-[-0.02em] text-rust-700 tabular-nums"
+                    style={"--timer-m: #{@landing.timer.minutes}; --timer-s: #{@landing.timer.seconds}; --timer-offset: -#{@landing.timer.minutes * 60 + @landing.timer.seconds}s"}
+                    aria-label={@texts.timer_running}
+                  >
+                    <span aria-hidden="true">{pad(@landing.timer.hours)}:</span><span
+                      class="feature-timer__m"
+                      aria-hidden="true"
+                    ></span><span aria-hidden="true">:</span><span
+                      class="feature-timer__s"
+                      aria-hidden="true"
+                    ></span>
+                  </p>
+                  <span class="inline-flex min-h-11 items-center rounded-[4px] bg-rust-700 px-8 text-[15px] font-semibold text-white">
+                    {@texts.timer_stop}
+                  </span>
+                </div>
+                <div class="mt-7 flex items-baseline justify-between border-t border-grey-200 pt-5 text-caps-sm font-semibold tracking-[.08em] text-grey-600 uppercase">
+                  <span>{@landing.timer.month}</span>
+                  <span class="text-[13px] tracking-normal text-[#0f0f0f] normal-case">
+                    {@landing.timer.total}
+                  </span>
+                </div>
+                <div
+                  :for={project <- @landing.timer.projects}
+                  class="mt-3 grid grid-cols-[minmax(0,.9fr)_minmax(0,1.3fr)_auto] items-center gap-3 text-sm"
+                >
+                  <span class="truncate font-medium">{project.name}</span>
+                  <span class="h-2 overflow-hidden rounded-full bg-grey-100">
+                    <span
+                      class="feature-timer__bar block h-full rounded-full bg-rust-500"
+                      style={"width: #{project.share}%"}
+                    ></span>
+                  </span>
+                  <span class="w-[5.5em] text-right font-semibold tabular-nums">
+                    {project.hours}
+                  </span>
+                </div>
+              </div>
+              <div
+                :if={@layout.hero && @landing.match == [] && !@landing.timer}
                 class="rotate-[1.2deg] rounded-[4px] bg-white p-2.5 shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-3.5"
               >
                 <img
@@ -236,6 +297,8 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
     </div>
     """
   end
+
+  defp pad(number), do: number |> Integer.to_string() |> String.pad_leading(2, "0")
 
   # Prose inside a section: paragraphs, tables, screenshots, step cards and
   # collapsible questions, all styled from the rendered Markdown.
