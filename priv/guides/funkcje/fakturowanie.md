@@ -1,5 +1,5 @@
 ---
-title: "Program do faktur z wysyłką do KSeF"
+title: "Wystawianie faktur: VAT, korekty i faktury w walutach"
 description: "Faktury VAT, korekty i faktury dwujęzyczne w walutach, wysyłane do KSeF. Jak wystawiamy je w Firmowidzie, co program obsługuje i czego nie."
 published: 2026-11-18
 updated: 2026-11-18

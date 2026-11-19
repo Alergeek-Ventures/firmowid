@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Error notifications before documents reach the tax office")
       ],
       visual: :invoices,
-      page: "faktury-ksef"
+      page: "fakturowanie"
     },
     %{
       tags: [gettext_noop("invoicing"), gettext_noop("bank accounts")],
