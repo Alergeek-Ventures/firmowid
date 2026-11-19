@@ -126,7 +126,11 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       end)
       |> Enum.sort_by(&calculate_total_duration/1, :desc)
 
-    assign(socket, :filtered_tasks, tasks)
+    # An archived project from an older month is missing from the map, which
+    # holds active projects and those of the recently loaded weeks.
+    socket
+    |> assign(:filtered_tasks, tasks)
+    |> update(:projects_by_id, &Map.put(&1, filter.project.id, filter.project))
   end
 
   defp to_local_time(session, timezone) do
