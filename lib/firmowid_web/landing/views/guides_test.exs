@@ -33,6 +33,16 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert html =~ ~s(src="/images/landing/banks/pkobp.png")
   end
 
+  test "the time tracking feature page draws a running timer and compares prices", %{conn: conn} do
+    html = conn |> get(~p"/funkcje/czas-pracy") |> html_response(200)
+
+    assert html =~ Guides.feature_page().timer_stop
+    assert html =~ "--timer-m: 40; --timer-s: 6; --timer-offset: -2406s"
+    assert html =~ "TacoOverflow"
+    assert html =~ ~s(<tr class="firmowid">)
+    assert html =~ ~s(href="#ile-to-kosztuje")
+  end
+
   test "a long title drops the brand suffix and a short one keeps it", %{conn: conn} do
     long = conn |> get(~p"/poradnik/tryb-offline-ksef") |> html_response(200) |> title()
 
