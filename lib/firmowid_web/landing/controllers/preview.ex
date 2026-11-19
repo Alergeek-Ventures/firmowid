@@ -11,9 +11,9 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
   excluded from search indexes. The KSeF page is Polish only.
 
   A visitor who has accepted analytics also gets the `landing_preview.js`
-  telemetry script on the home page, with the settings the root layout gives
-  the other pages. It reports clicks on the calls to action and the steps and
-  result of the cost calculator. A visitor who has not chosen yet sees the
+  telemetry script on the home page and the KSeF page, with the settings the
+  root layout gives the other pages. It reports clicks on the calls to action
+  and, on the home page, the steps and result of the cost calculator. A visitor who has not chosen yet sees the
   cookie banner and gets the script inside an inert `<template>`, which the
   page starts only after "accept". Whoever refused gets no telemetry script.
   """

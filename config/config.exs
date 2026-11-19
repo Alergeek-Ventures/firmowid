@@ -71,7 +71,7 @@ config :esbuild,
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Mix.Project.build_path()}
   ],
-  # Telemetry for the static home page, which has no LiveView.
+  # Telemetry for the static home page and KSeF pricing page, which have no LiveView.
   landing_preview: [
     args: ~w(js/landing_preview.js --bundle --target=es2022 --outdir=../priv/static/assets --alias:@=.),
     cd: Path.expand("../assets", __DIR__),

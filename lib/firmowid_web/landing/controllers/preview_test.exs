@@ -219,6 +219,52 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
                |> Enum.to_list()
     end
 
+    test "names the calls to action of the KSeF page", %{conn: conn} do
+      page = conn |> get(~p"/ksef") |> html_response(200) |> LazyHTML.from_document()
+
+      expected = %{
+        "navbar_login" => 1,
+        "navbar_trial" => 1,
+        "hero_trial" => 1,
+        "pricing_free" => 1,
+        "pricing_przedsiebiorca" => 1,
+        "pricing_firma" => 1,
+        "final_trial" => 1,
+        "demo_booking" => 2,
+        "github" => 2
+      }
+
+      found =
+        page
+        |> LazyHTML.query(~s([data-landing-page="true"] a[data-landing-cta]))
+        |> LazyHTML.attribute("data-landing-cta")
+        |> Enum.frequencies()
+
+      assert found == expected
+      assert Enum.all?(Map.keys(expected), &(&1 in Map.keys(@ctas)))
+
+      for href <- ["/zarejestruj", "/zaloguj"] do
+        assert [] ==
+                 page
+                 |> LazyHTML.query(~s|a[href="#{href}"]:not([data-landing-cta])|)
+                 |> Enum.to_list()
+      end
+    end
+
+    test "loads the telemetry script on the KSeF page as on the home page", %{conn: conn} do
+      put_posthog(true)
+      page = fn conn -> conn |> get(~p"/ksef") |> html_response(200) end
+
+      assert page.(conn) =~ ~s(<template id="telemetry-script"><script)
+      refute page.(conn) =~ "__TELEMETRY_SCRIPT__"
+
+      accepted = page.(put_req_cookie(conn, "cookie_consent", "accepted"))
+      assert accepted =~ Endpoint.static_path("/assets/landing_preview.js")
+      refute accepted =~ "<template"
+
+      refute page.(put_req_cookie(conn, "cookie_consent", "rejected")) =~ "landing_preview"
+    end
+
     test "the case study page has no placeholder either", %{conn: conn} do
       refute conn |> get(~p"/landing/bonobo") |> html_response(200) =~ "__TELEMETRY_SCRIPT__"
     end
