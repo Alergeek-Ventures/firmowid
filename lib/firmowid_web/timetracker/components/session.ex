@@ -132,19 +132,22 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         ]}
       >
         <ul class="flex flex-col gap-1 overflow-auto p-1">
-          <li
-            :for={project <- @active_projects}
-            class={dropdown_item_styles()}
-            phx-click={
-              JS.set_attribute(
-                {"value", project.id},
-                to: "##{sessions_form[:project_id].id}"
-              )
-              |> JS.dispatch("submit", to: "##{form_id}")
-              |> hide_popover(select_id)
-            }
-          >
-            {project.name}
+          <li :for={project <- @active_projects}>
+            <.button
+              type="button"
+              variant="unstyled"
+              class={["w-full text-left", dropdown_item_styles()]}
+              phx-click={
+                JS.set_attribute(
+                  {"value", project.id},
+                  to: "##{sessions_form[:project_id].id}"
+                )
+                |> JS.dispatch("submit", to: "##{form_id}")
+                |> hide_popover(select_id)
+              }
+            >
+              {project.name}
+            </.button>
           </li>
         </ul>
       </.popover>
@@ -524,7 +527,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   @doc "An option in the time tracker's dropdowns (project, work mode)."
   @spec dropdown_item_styles() :: String.t()
   def dropdown_item_styles do
-    "cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-grey-200 hover:text-grey-800"
+    "cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-grey-200 hover:text-grey-800 focus-visible:bg-grey-200 focus-visible:text-grey-800 focus-visible:outline-none"
   end
 
   attr :field, Phoenix.HTML.FormField, required: true
