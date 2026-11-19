@@ -117,6 +117,7 @@
               <ul
                 id={project_list_id}
                 role="listbox"
+                phx-hook="ListboxKeys"
                 class={[
                   "absolute inset-x-0 top-full z-50 mt-1 hidden max-h-80 origin-top flex-col gap-1 overflow-auto rounded-lg border border-grey-200 bg-grey-50 p-1",
                   FirmowidWeb.Timetracker.Components.Session.dropdown_styles()
