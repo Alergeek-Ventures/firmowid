@@ -6,7 +6,11 @@ import {
   telemetryContextProperties,
   telemetryUserProperties,
 } from "./config";
-import { landingCtaProperties } from "./landing-events.js";
+import {
+  LANDING_CALCULATOR_EVENT,
+  landingCalculatorEvent,
+  landingCtaProperties,
+} from "./landing-events.js";
 import { sanitizePosthogEvent } from "./posthog-privacy.js";
 import { sanitizeTelemetryUrl } from "./privacy.js";
 
@@ -146,6 +150,26 @@ export function installLandingCtaTracking() {
         posthog.capture("landing_cta_clicked", properties);
       } catch (_error) {
         // Analytics must never interfere with the CTA's navigation.
+      }
+    }
+  });
+}
+
+let landingCalculatorTrackingInstalled = false;
+
+/** Report the cost calculator's steps and result, which the page announces as DOM events. */
+export function installLandingCalculatorTracking() {
+  if (landingCalculatorTrackingInstalled) return;
+  landingCalculatorTrackingInstalled = true;
+
+  document.addEventListener(LANDING_CALCULATOR_EVENT, (event) => {
+    if (!telemetryConfig.posthogEnabled || !telemetryConfig.posthogApiKey || !consentAccepted()) return;
+    const calculatorEvent = landingCalculatorEvent(event.detail);
+    if (calculatorEvent) {
+      try {
+        posthog.capture(calculatorEvent.name, calculatorEvent.properties);
+      } catch (_error) {
+        // Analytics must never interfere with the calculator.
       }
     }
   });

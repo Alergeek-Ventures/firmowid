@@ -1,5 +1,5 @@
-// What the public pages may report: a fixed list of names.
-// Anything outside this list is dropped before it reaches PostHog.
+// What the public pages may report: a fixed list of names and plain numbers.
+// Anything outside these lists is dropped before it reaches PostHog.
 
 const LANDING_CTAS = new Set([
   // Home page
@@ -38,4 +38,34 @@ export function landingCtaProperties(dataset) {
     properties.billing_period = dataset.landingBillingPeriod;
   }
   return properties;
+}
+
+export const LANDING_CALCULATOR_EVENT = "firmowid:calculator";
+
+const CALCULATOR_STEPS = new Set([1, 2, 3]);
+const CALCULATOR_NUMBERS = {
+  team_size: (value) => Number.isInteger(value) && value >= 1,
+  tools_cost_per_year: (value) => value >= 0,
+  hours_per_week: (value) => value > 0,
+  hourly_cost: (value) => value > 0,
+  savings_per_year: () => true,
+};
+
+/** Name and properties of the event for what the cost calculator announced, or null. */
+export function landingCalculatorEvent(detail) {
+  if (detail?.type === "step") {
+    return CALCULATOR_STEPS.has(detail.step)
+      ? { name: "landing_calculator_step", properties: { step: detail.step } }
+      : null;
+  }
+
+  if (detail?.type !== "completed") return null;
+
+  const properties = {};
+  for (const [key, valid] of Object.entries(CALCULATOR_NUMBERS)) {
+    const value = detail[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || !valid(value)) return null;
+    properties[key] = value;
+  }
+  return { name: "landing_calculator_completed", properties };
 }
