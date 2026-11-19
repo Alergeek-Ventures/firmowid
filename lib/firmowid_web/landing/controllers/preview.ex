@@ -9,6 +9,11 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
   compile time with the replacement lists in `priv/landing/translations`, and the
   page follows the language chosen in the session. The case study pages are
   excluded from search indexes. The KSeF page is Polish only.
+
+  A visitor who has accepted analytics also gets the `landing_preview.js`
+  telemetry script on the home page, with the settings the root layout gives
+  the other pages. It reports clicks on the calls to action. Everyone else
+  gets no telemetry script at all.
   """
   use FirmowidWeb, :controller
 
@@ -101,7 +106,7 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
   # sobelow_skip ["XSS.HTML"]
   # Each page is built at compile time from our own files. The substitutions are
   # static paths of our own assets and the CSRF token for the language menu;
-  # nothing comes from the request.
+  # nothing comes from the request. The telemetry script tag is escaped by Phoenix.HTML.
   defp render_page(conn, file) do
     versions = Map.fetch!(@pages, file)
     page = Map.get(versions, Gettext.get_locale(Firmowid.Gettext), versions["pl"])
@@ -112,7 +117,50 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
         String.replace(page, ~s("#{path}"), ~s("#{Endpoint.static_path(path)}"))
       end)
       |> String.replace("__CSRF_TOKEN__", get_csrf_token())
+      |> String.replace("__TELEMETRY_SCRIPT__", telemetry_script(conn))
 
     html(conn, page)
   end
+
+  # The script reads its settings from its own data attributes, as on every other page.
+  # The page has no cookie banner, so the choice made on another page decides.
+  defp telemetry_script(conn) do
+    user = conn.assigns[:current_user]
+    settings = Application.get_env(:firmowid, :frontend_observability, [])
+    conn = fetch_cookies(conn)
+
+    if Keyword.get(settings, :posthog_enabled, false) and
+         conn.cookies["cookie_consent"] == "accepted" and
+         not impersonating?(user) do
+      telemetry_script_tag(user, conn.assigns[:current_org], settings)
+    else
+      ""
+    end
+  end
+
+  defp telemetry_script_tag(user, organization, settings) do
+    attributes = [
+      defer: true,
+      src: Endpoint.static_path("/assets/landing_preview.js"),
+      "data-telemetry-config": "true",
+      "data-public-marketing": "true",
+      "data-posthog-enabled": "true",
+      "data-posthog-api-key": Keyword.get(settings, :posthog_api_key, ""),
+      "data-current-user-id": (user && user.id) || "",
+      "data-current-user-role": member_field(user, :role),
+      "data-current-organization-id": member_field(user, :organization_id),
+      "data-current-organization-plan": organization_plan(organization)
+    ]
+
+    "<script#{attributes |> Phoenix.HTML.attributes_escape() |> Phoenix.HTML.safe_to_string()}></script>"
+  end
+
+  defp impersonating?(%Core.User{} = user), do: not is_nil(Core.impersonator_id(user))
+  defp impersonating?(_user), do: false
+
+  defp member_field(%{member: %{} = member}, field), do: member |> Map.get(field) |> to_string()
+  defp member_field(_user, _field), do: ""
+
+  defp organization_plan(%{billing_plan: plan}) when not is_nil(plan), do: to_string(plan)
+  defp organization_plan(_organization), do: ""
 end
