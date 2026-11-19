@@ -321,6 +321,7 @@ msgstr[1] ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/timetracker/components/session.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "%{count} session"
 msgid_plural "%{count} sessions"
@@ -1305,6 +1306,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "All done"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "All sessions"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -8372,6 +8378,11 @@ msgstr ""
 msgid "No results. Try changing the search criteria."
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "No sessions in this project this month"
+msgstr ""
+
 #: lib/firmowid_web/management/components/work_distribution.ex
 #, elixir-autogen, elixir-format
 msgid "No sessions on this day."
@@ -10946,6 +10957,11 @@ msgid_plural "Show %{count} more rows"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgid "Show %{project} sessions in %{month}"
+msgstr ""
+
 #: lib/firmowid_web/management/components/work_distribution.ex
 #, elixir-autogen, elixir-format
 msgid "Show all months"
@@ -10985,6 +11001,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Show sessions"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Show sessions in the time tracker"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
@@ -11893,6 +11914,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty, cancel this invoice and issue a new one."
 msgstr ""
+
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgid "The change applies to the %{count} session of this task in %{month}"
+msgid_plural "The change applies to all %{count} sessions of this task in %{month}"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format

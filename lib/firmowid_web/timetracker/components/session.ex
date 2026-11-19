@@ -3,18 +3,32 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.Tooltip
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
+  alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Views.Index
 
   attr :sessions, :list, required: true
   attr :active_projects, :list, required: true
   attr :projects_by_id, :map, required: true
 
+  attr :filter, :map,
+    default: nil,
+    doc: "the project and month the list is narrowed to; its rows leave out the project"
+
   def render(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :same_presence?,
+        assigns.sessions |> Enum.uniq_by(& &1.is_remote) |> length() == 1
+      )
+
     ~H"""
     <% parent_session = hd(@sessions) %>
     <% form_id = "edit-session-form-#{parent_session.id}" %>
@@ -26,7 +40,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
       phx-auto-recover="ignore"
-      class="flex w-full min-w-0 flex-row items-center py-1 pl-1 max-md:flex-wrap"
+      class="group/row relative flex w-full min-w-0 flex-row items-center py-1 pl-1 max-md:flex-wrap"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
@@ -39,14 +53,25 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1 max-md:mr-0 max-md:basis-full">
         <.hidden_input>
           <:input>
-            <input
-              id={sessions_form[:title].id}
-              name={sessions_form[:title].name}
-              value={sessions_form[:title].value}
-              class={text_like_input_styles(["max-w-full", "truncate"])}
-              style="field-sizing: content;"
-              phx-debounce="300"
-            />
+            <%!-- In the filtered list a title stands for a whole task, so say that renaming moves all its sessions. --%>
+            <.tooltip
+              :if={@filter && length(@sessions) > 1}
+              id={"task-rename-#{parent_session.id}"}
+              text={
+                ngettext(
+                  "The change applies to the %{count} session of this task in %{month}",
+                  "The change applies to all %{count} sessions of this task in %{month}",
+                  length(@sessions),
+                  month: Index.month_after_in(@filter.month)
+                )
+              }
+              variant="hint"
+              placement="top-start"
+              class="max-w-full min-w-0"
+            >
+              <.title_input field={sessions_form[:title]} />
+            </.tooltip>
+            <.title_input :if={!(@filter && length(@sessions) > 1)} field={sessions_form[:title]} />
           </:input>
         </.hidden_input>
 
@@ -66,7 +91,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
       <span class="ml-auto max-md:ml-0">
         <span
-          :if={parent_session.is_remote}
+          :if={@same_presence? and parent_session.is_remote}
           id={"session-presence-#{parent_session.id}"}
           class="inline-flex shrink-0 items-center gap-1 rounded-full bg-grey-200 px-2 py-0.5 text-xs text-grey-700"
         >
@@ -77,6 +102,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
       <% select_id = "session-project-select-#{parent_session.id}" %>
       <.button
+        :if={!@filter}
         id={"project-select-#{parent_session.id}"}
         type="button"
         phx-click={show_popover(select_id)}
@@ -91,6 +117,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       </.button>
 
       <.popover
+        :if={!@filter}
         placement="bottom-end"
         id={select_id}
         reference_id={"project-select-#{parent_session.id}"}
@@ -129,6 +156,35 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       >
         {TimeFormatter.format_timer(total_duration)}
       </.button>
+
+      <%!-- Sits in the list's right padding, so the row keeps its width. Desktop only. --%>
+      <% session_month = Index.session_month(parent_session) %>
+      <% filter_label =
+        gettext("Show %{project} sessions in %{month}",
+          project: @projects_by_id[parent_session.project_id].name,
+          month: Index.month_after_in(session_month)
+        ) %>
+      <.tooltip
+        :if={!@filter}
+        id={"session-filter-#{parent_session.id}"}
+        text={filter_label}
+        variant="hint"
+        placement="top-end"
+        class="absolute top-1/2 -right-7 -translate-y-1/2 opacity-0 transition group-hover/row:opacity-100 focus-within:opacity-100 max-md:hidden"
+      >
+        <.link
+          patch={Navigation.project_sessions_path(parent_session.project_id, session_month)}
+          kind="unstyled"
+          class="group/filter rounded p-1 text-grey-600 transition-colors hover:text-grey-900 focus-visible:text-grey-900"
+          aria-label={filter_label}
+        >
+          <%!-- On hover the funnel darkens and fills in, with no background behind it. --%>
+          <Lucideicons.funnel
+            class="size-4 transition-colors group-hover/filter:fill-current group-focus-visible/filter:fill-current"
+            aria-hidden="true"
+          />
+        </.link>
+      </.tooltip>
 
       <.popover
         id={popover_id}
@@ -243,7 +299,8 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
         <div class="flex items-center justify-end gap-3">
           <%!-- On phones the popover overflows the left edge, so keep the choice beside the buttons. --%>
-          <div class="flex gap-1 md:mr-auto">
+          <%!-- A task mixing office and remote sessions keeps each session's own choice. --%>
+          <div :if={@same_presence?} class="flex gap-1 md:mr-auto">
             <label
               :for={
                 {value, label} <- [
@@ -282,6 +339,21 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </div>
       </.popover>
     </.form>
+    """
+  end
+
+  attr :field, Phoenix.HTML.FormField, required: true
+
+  defp title_input(assigns) do
+    ~H"""
+    <input
+      id={@field.id}
+      name={@field.name}
+      value={@field.value}
+      class={text_like_input_styles(["max-w-full", "truncate"])}
+      style="field-sizing: content;"
+      phx-debounce="300"
+    />
     """
   end
 

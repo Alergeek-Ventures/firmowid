@@ -19,7 +19,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Timetracker.TrimPlan
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
+  alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
+  alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
   defp day_name(1), do: pgettext("weekday name", "Monday")
@@ -77,10 +79,98 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
      |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
      |> assign(:active_projects, active_projects)
      |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
+     |> assign(:filter, nil)
      |> assign_sessions()
      |> assign(:is_form_extended, false)
      |> assign(:trim_plan, nil)}
   end
+
+  def handle_params(params, _url, socket) do
+    {:noreply,
+     socket
+     |> assign(:filter, parse_filter(params, socket.assigns.ash_scope))
+     |> assign_filtered_tasks()}
+  end
+
+  # `?projekt=<id>&miesiac=2026-11-01` narrows the list to one project's month, the
+  # same sessions the timesheet sums up. An unknown project shows the usual list.
+  defp parse_filter(params, scope) do
+    with {:ok, project_id} <- Ecto.UUID.cast(params["projekt"]),
+         %Date{} = month <- QueryParams.parse_date(params, "miesiac", nil),
+         [project] <- Timetracker.list_projects!(%{ids: [project_id]}, scope: scope) do
+      %{project: project, month: Date.beginning_of_month(month)}
+    else
+      _no_filter -> nil
+    end
+  end
+
+  # The filtered list shows the month's tasks, each task being all sessions with
+  # one title, newest first so the running session leads its group.
+  defp assign_filtered_tasks(%{assigns: %{filter: nil}} = socket), do: assign(socket, :filtered_tasks, [])
+
+  defp assign_filtered_tasks(%{assigns: %{filter: filter}} = socket) do
+    timezone = socket.assigns.timezone
+
+    tasks =
+      %{
+        member_id: socket.assigns.current_user.member.id,
+        project_id: filter.project.id,
+        month: filter.month.month,
+        year: filter.month.year
+      }
+      |> Timetracker.list_sessions!(scope: socket.assigns.ash_scope, query: [load: [:lockdown]])
+      |> Enum.map(&to_local_time(&1, timezone))
+      |> Enum.group_by(& &1.title)
+      |> Enum.map(fn {_title, sessions} ->
+        Enum.sort_by(sessions, & &1.start_datetime, {:desc, DateTime})
+      end)
+      |> Enum.sort_by(&calculate_total_duration/1, :desc)
+
+    assign(socket, :filtered_tasks, tasks)
+  end
+
+  defp to_local_time(session, timezone) do
+    session
+    |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
+    |> Map.update!(:end_datetime, fn
+      nil -> nil
+      end_datetime -> DateTime.shift_zone!(end_datetime, timezone)
+    end)
+  end
+
+  @doc """
+  Month a session counts towards, taken in UTC as the session list and the
+  timesheet count it.
+  """
+  @spec session_month(map()) :: Date.t()
+  def session_month(session) do
+    session.start_datetime
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> DateTime.to_date()
+    |> Date.beginning_of_month()
+  end
+
+  @doc ~s(Name of a month as it follows "in", for example "w listopadzie".)
+  @spec month_after_in(Date.t()) :: String.t()
+  def month_after_in(%Date{month: month}), do: month_name_after_in(month)
+
+  @doc """
+  Entrance of the session list when the filter opens or closes: it rises a few
+  pixels and fades in. Only the entrance, since the outgoing list would stay
+  beside the new one while it faded out. It ends with no classes left, as a
+  lingering translate would anchor the rows' sticky headers and popovers.
+  """
+  @spec list_enter() :: JS.t()
+  def list_enter do
+    JS.transition(
+      {"ease-out duration-200 motion-reduce:transition-none", "opacity-0 translate-y-2", ""},
+      time: 200
+    )
+  end
+
+  @doc "Name of a month as it stands alone, for example in \"Firmowid · listopad\"."
+  @spec month_name(Date.t()) :: String.t()
+  def month_name(%Date{} = date), do: TimeFormatter.format_date(date, "LLLL")
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
     member_id = socket.assigns.current_user.member.id
@@ -99,15 +189,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     {:ok, sessions} =
       Session.list_user_sessions(%{after_date: after_date}, scope: scope)
 
-    sessions =
-      Enum.map(sessions, fn session ->
-        session
-        |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
-        |> Map.update!(:end_datetime, fn
-          nil -> nil
-          end_datetime -> DateTime.shift_zone!(end_datetime, timezone)
-        end)
-      end)
+    sessions = Enum.map(sessions, &to_local_time(&1, timezone))
 
     before_dt = DateTime.new!(after_date, ~T[00:00:00])
 
@@ -178,6 +260,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end)
     |> assign_page_title()
     |> assign_month_stats()
+    |> assign_filtered_tasks()
   end
 
   # Mondays of the newest weeks with matching sessions, as dates in the user's timezone.
@@ -455,13 +538,16 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
         {start_datetime, end_datetime} = times
 
-        attrs = %{
-          title: form.title,
-          project_id: form.project_id,
-          is_remote: form.is_remote,
-          start_datetime: start_datetime,
-          end_datetime: end_datetime
-        }
+        attrs =
+          put_presence(
+            %{
+              title: form.title,
+              project_id: form.project_id,
+              start_datetime: start_datetime,
+              end_datetime: end_datetime
+            },
+            form.is_remote
+          )
 
         {session, attrs}
       end)
@@ -469,16 +555,17 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     ash_update_sessions(session_updates, socket)
   end
 
-  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id, "is_remote" => is_remote}, socket) do
+  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id} = form, socket) do
     sessions = fetch_sessions_by_ids(ids, socket)
+    attrs = put_presence(%{title: title, project_id: project_id}, form["is_remote"])
 
-    session_updates =
-      Enum.map(sessions, fn session ->
-        {session, %{title: title, project_id: project_id, is_remote: is_remote}}
-      end)
-
-    ash_update_sessions(session_updates, socket)
+    ash_update_sessions(Enum.map(sessions, &{&1, attrs}), socket)
   end
+
+  # A task in the filtered list can mix office and remote sessions; its form then
+  # has no presence choice and each session keeps its own.
+  defp put_presence(attrs, nil), do: attrs
+  defp put_presence(attrs, is_remote), do: Map.put(attrs, :is_remote, is_remote)
 
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
     now = DateTime.now!(socket.assigns.timezone)
