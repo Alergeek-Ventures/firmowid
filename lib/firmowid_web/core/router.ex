@@ -394,6 +394,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
     get "/landing", Preview, :show
     get "/landing/bonobo", Preview, :bonobo
+    get "/ksef", Preview, :ksef
 
     ash_authentication_live_session :public,
       on_mount: [

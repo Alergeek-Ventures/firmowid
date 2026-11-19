@@ -21,6 +21,30 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
   end
 
+  test "serves the KSeF pricing page to search engines, in Polish only", %{conn: conn} do
+    conn = get(conn, ~p"/ksef")
+    html = html_response(conn, 200)
+
+    assert html =~ "Faktury KSeF bez limitu."
+    assert html =~ ~s(<link rel="canonical" href="https://firmowid.pl/ksef">)
+    assert html =~ ~s(href="/funkcje/fakturowanie")
+    assert html =~ Endpoint.static_path("/landing/ksef.css")
+    assert html =~ Endpoint.static_path("/landing/ksef.js")
+    assert html =~ ~s("@type": "FAQPage")
+    assert get_resp_header(conn, "x-robots-tag") == []
+    refute html =~ "noindex"
+
+    english =
+      build_conn()
+      |> init_test_session(%{"locale" => "en"})
+      |> get(~p"/ksef")
+      |> html_response(200)
+
+    assert english =~ "Faktury KSeF bez limitu."
+
+    assert build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/ksef</loc>"
+  end
+
   test "describes the company and the app in valid structured data", %{conn: conn} do
     html = conn |> get(~p"/landing") |> html_response(200)
 
