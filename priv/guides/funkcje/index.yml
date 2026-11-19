@@ -1,2 +1,12 @@
 # Feature pages are Polish only, so the link label on the /funkcje tiles is not translated.
 link_label: Dowiedz się więcej
+
+# Fixed texts of the feature page layout (/funkcje/<slug>).
+page:
+  back_label: "← Wszystkie funkcje"
+  updated_label: "Aktualizacja:"
+  cta_primary: "Zacznij za darmo"
+  cta_secondary: "Umów 15 min rozmowę"
+  cta_note: "Konto w 2 minuty. Bez karty."
+  quote_name: "Stanisław Madej"
+  quote_role: "COO, Alergeek Ventures. Firmowida używamy u siebie na co dzień."

@@ -12,3 +12,39 @@
 @source "../../lib/firmowid_ui.ex";
 @source "../../lib/firmowid_ui";
 @source "../../deps/live_toast/lib";
+
+/* Feature pages (/funkcje/<slug>): steps with screenshots. The highlighted step
+   and its screen take turns, 3.5 s each; data-steps sets the cycle length. */
+.feature-flow { display: grid; gap: 24px; align-items: center; }
+@media (min-width: 1024px) { .feature-flow { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 48px; } }
+.feature-flow ol.steps { grid-template-columns: 1fr !important; gap: 8px; }
+.feature-flow .steps > li { padding: 14px 18px 14px 60px !important; transition: none; }
+.feature-flow .steps > li::before { top: 14px !important; left: 18px !important; }
+.feature-flow__screens { display: grid; }
+.feature-flow__screens figure { grid-area: 1 / 1; margin: 0 !important; opacity: 0; }
+.feature-flow__screens figure:first-child { opacity: 1; }
+.feature-flow__screens img { display: block; width: 100%; height: auto; border-radius: 4px; background: #fff; padding: 8px;
+  box-shadow: 0 1px 0 var(--color-grey-200), 0 26px 50px -30px rgba(87, 54, 35, .45); }
+@media (prefers-reduced-motion: no-preference) {
+  .feature-flow[data-steps] .feature-flow__screens figure,
+  .feature-flow[data-steps] .steps > li { animation: var(--flow-name) var(--flow-total) infinite both; }
+  .feature-flow[data-steps] .feature-flow__screens figure:first-child { opacity: 0; }
+  .feature-flow[data-steps] .steps > li { animation-name: var(--flow-step); animation-fill-mode: none; }
+  .feature-flow[data-steps="3"] { --flow-total: 10.5s; --flow-name: feature-screen-3; --flow-step: feature-step-3; }
+  .feature-flow[data-steps="4"] { --flow-total: 14s; --flow-name: feature-screen-4; --flow-step: feature-step-4; }
+  .feature-flow[data-steps="5"] { --flow-total: 17.5s; --flow-name: feature-screen-5; --flow-step: feature-step-5; }
+  .feature-flow[data-steps="6"] { --flow-total: 21s; --flow-name: feature-screen-6; --flow-step: feature-step-6; }
+  .feature-flow :is(figure, li):nth-child(2) { animation-delay: 3.5s !important; }
+  .feature-flow :is(figure, li):nth-child(3) { animation-delay: 7s !important; }
+  .feature-flow :is(figure, li):nth-child(4) { animation-delay: 10.5s !important; }
+  .feature-flow :is(figure, li):nth-child(5) { animation-delay: 14s !important; }
+  .feature-flow :is(figure, li):nth-child(6) { animation-delay: 17.5s !important; }
+}
+@keyframes feature-screen-3 { 0% { opacity: 0; transform: translateY(8px); } 4%, 30% { opacity: 1; transform: none; } 34%, 100% { opacity: 0; } }
+@keyframes feature-screen-4 { 0% { opacity: 0; transform: translateY(8px); } 3%, 22% { opacity: 1; transform: none; } 25%, 100% { opacity: 0; } }
+@keyframes feature-screen-5 { 0% { opacity: 0; transform: translateY(8px); } 2.5%, 18% { opacity: 1; transform: none; } 20%, 100% { opacity: 0; } }
+@keyframes feature-screen-6 { 0% { opacity: 0; transform: translateY(8px); } 2%, 15% { opacity: 1; transform: none; } 16.7%, 100% { opacity: 0; } }
+@keyframes feature-step-3 { 0%, 33.3% { border-color: var(--color-rust-500); background-color: var(--color-rust-50); box-shadow: 0 10px 24px -16px rgba(87, 54, 35, .5); } 33.4%, 100% { border-color: var(--color-grey-200); box-shadow: none; } }
+@keyframes feature-step-4 { 0%, 25% { border-color: var(--color-rust-500); background-color: var(--color-rust-50); box-shadow: 0 10px 24px -16px rgba(87, 54, 35, .5); } 25.1%, 100% { border-color: var(--color-grey-200); box-shadow: none; } }
+@keyframes feature-step-5 { 0%, 20% { border-color: var(--color-rust-500); background-color: var(--color-rust-50); box-shadow: 0 10px 24px -16px rgba(87, 54, 35, .5); } 20.1%, 100% { border-color: var(--color-grey-200); box-shadow: none; } }
+@keyframes feature-step-6 { 0%, 16.6% { border-color: var(--color-rust-500); background-color: var(--color-rust-50); box-shadow: 0 10px 24px -16px rgba(87, 54, 35, .5); } 16.7%, 100% { border-color: var(--color-grey-200); box-shadow: none; } }

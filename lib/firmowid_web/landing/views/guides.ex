@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
 
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Landing.Components.FeaturePage, only: [feature_page: 1]
   import FirmowidWeb.Landing.Components.LegalPage, only: [legal_page: 1]
 
   alias Firmowid.TimeFormatter
@@ -81,6 +82,12 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </article>
       </section>
     </.legal_page>
+    """
+  end
+
+  def render(%{live_action: :feature} = assigns) do
+    ~H"""
+    <.feature_page article={@article} />
     """
   end
 
