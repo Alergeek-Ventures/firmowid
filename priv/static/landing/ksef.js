@@ -34,4 +34,26 @@
       });
     });
   });
+
+  // cookie consent: the banner stays until the visitor chooses. The choice is the same cookie
+  // the rest of the site reads. Telemetry waits in a <template> and loads only after "accept".
+  var consent = document.getElementById('consent');
+  if (consent && !/(^| )cookie_consent=/.test(document.cookie)) {
+    consent.hidden = false;
+    consent.addEventListener('click', function (e) {
+      var button = e.target.closest('[data-consent]');
+      if (!button) return;
+      var secure = location.protocol === 'https:' ? ';Secure' : '';
+      document.cookie = 'cookie_consent=' + button.dataset.consent + ';path=/;max-age=' + 365 * 24 * 60 * 60 + ';SameSite=Lax' + secure;
+      consent.hidden = true;
+      var template = document.getElementById('telemetry-script');
+      var waiting = template && template.content.querySelector('script');
+      if (button.dataset.consent === 'accepted' && waiting) {
+        // a script cloned out of a template may not run, so it is built anew with the same attributes
+        var script = document.createElement('script');
+        Array.prototype.forEach.call(waiting.attributes, function (a) { script.setAttribute(a.name, a.value); });
+        document.body.appendChild(script);
+      }
+    });
+  }
 })();
