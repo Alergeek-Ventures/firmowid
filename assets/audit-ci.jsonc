@@ -4,11 +4,5 @@
   "low": true,
   "report-type": "summary",
   "show-found": false,
-  "allowlist": [
-    // picomatch ReDoS via repeated extglobs. No picomatch release fixes it yet
-    // (checked 2026-11-17; recheck with every dependency update), and
-    // @tailwindcss/cli 4.3.3 pulls an affected picomatch 2.x too. The watcher
-    // only matches Tailwind's own ignore globs at build time, never user input.
-    "GHSA-fc5q-39xc-vjpf|@tailwindcss/cli>@parcel/watcher>picomatch"
-  ]
+  "allowlist": []
 }
