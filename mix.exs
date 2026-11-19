@@ -228,6 +228,7 @@ defmodule Firmowid.MixProject do
         "tailwind landing",
         "esbuild firmowid",
         "esbuild landing",
+        "esbuild landing_preview",
         "esbuild pdfjs",
         "assets.mcp"
       ],
@@ -237,6 +238,7 @@ defmodule Firmowid.MixProject do
         "tailwind landing --minify",
         "esbuild firmowid --minify",
         "esbuild landing --minify",
+        "esbuild landing_preview --minify",
         "esbuild pdfjs",
         "assets.mcp",
         "phx.digest"
@@ -246,6 +248,7 @@ defmodule Firmowid.MixProject do
         "tailwind landing --minify",
         "esbuild firmowid --minify --sourcemap=external",
         "esbuild landing --minify --sourcemap=external",
+        "esbuild landing_preview --minify --sourcemap=external",
         "esbuild pdfjs",
         "assets.mcp",
         "phx.digest"

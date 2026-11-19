@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   alias FirmowidWeb.Core.Endpoint
 
@@ -95,6 +95,97 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
     assert html =~ Endpoint.static_path("/landing/styles.css")
     assert html =~ Endpoint.static_path("/landing/app.js")
+  end
+
+  describe "analytics" do
+    @ctas %{
+      "navbar_login" => ["Zaloguj się"],
+      "navbar_trial" => ["Wypróbuj"],
+      "hero_trial" => ["Policz 3 projekty za darmo"],
+      "pricing_free" => ["Załóż darmowe konto"],
+      "pricing_przedsiebiorca" => ["Wypróbuj za darmo"],
+      "pricing_firma" => ["Wypróbuj za darmo"],
+      "final_trial" => ["Zacznij za darmo", "Zacznij za darmo"],
+      "demo_booking" => ["Umów 15 min rozmowę"],
+      "case_study_request" => ["Wyślijcie mi case study"],
+      "github" => ["GitHub", "open source", "Zobacz na GitHubie"],
+      "open_source" => ["Więcej o open source"]
+    }
+
+    test "names every call to action for the click event", %{conn: conn} do
+      page = conn |> get(~p"/") |> html_response(200) |> LazyHTML.from_document()
+
+      for {cta, labels} <- @ctas do
+        found =
+          page
+          |> LazyHTML.query(~s([data-landing-page="true"] a[data-landing-cta="#{cta}"]))
+          |> Enum.map(&(&1 |> LazyHTML.text() |> String.trim()))
+
+        assert found == labels, "#{cta}: #{inspect(found)}"
+      end
+
+      assert [_card] =
+               page
+               |> LazyHTML.query(~s(a[data-landing-cta="case_bonobo"][href="/landing/bonobo"]))
+               |> Enum.to_list()
+
+      # Every link to the registration and sign-in pages is a named call to action.
+      for href <- ["/zarejestruj", "/zaloguj"] do
+        assert [] ==
+                 page
+                 |> LazyHTML.query(~s|a[href="#{href}"]:not([data-landing-cta])|)
+                 |> Enum.to_list()
+      end
+    end
+
+    defp put_posthog(enabled?) do
+      settings = Application.get_env(:firmowid, :frontend_observability, [])
+
+      Application.put_env(
+        :firmowid,
+        :frontend_observability,
+        Keyword.merge(settings, posthog_enabled: enabled?, posthog_api_key: "phc_example")
+      )
+
+      on_exit(fn -> Application.put_env(:firmowid, :frontend_observability, settings) end)
+    end
+
+    defp telemetry_scripts(conn) do
+      html = conn |> get(~p"/") |> html_response(200)
+      refute html =~ "__TELEMETRY_SCRIPT__"
+
+      html
+      |> LazyHTML.from_document()
+      |> LazyHTML.query(~s(script[data-telemetry-config="true"]))
+      |> Enum.to_list()
+    end
+
+    test "loads the telemetry script only for a visitor who accepted analytics", %{conn: conn} do
+      put_posthog(true)
+
+      assert [] == telemetry_scripts(conn)
+      assert [] == telemetry_scripts(put_req_cookie(conn, "cookie_consent", "rejected"))
+      assert [script] = telemetry_scripts(put_req_cookie(conn, "cookie_consent", "accepted"))
+
+      assert LazyHTML.attribute(script, "src") == [
+               Endpoint.static_path("/assets/landing_preview.js")
+             ]
+
+      assert LazyHTML.attribute(script, "data-public-marketing") == ["true"]
+      assert LazyHTML.attribute(script, "data-posthog-enabled") == ["true"]
+      assert LazyHTML.attribute(script, "data-posthog-api-key") == ["phc_example"]
+      assert LazyHTML.attribute(script, "data-current-user-id") == [""]
+    end
+
+    test "loads no telemetry script when analytics is switched off", %{conn: conn} do
+      put_posthog(false)
+
+      assert [] == telemetry_scripts(put_req_cookie(conn, "cookie_consent", "accepted"))
+    end
+
+    test "the case study page has no placeholder either", %{conn: conn} do
+      refute conn |> get(~p"/landing/bonobo") |> html_response(200) =~ "__TELEMETRY_SCRIPT__"
+    end
   end
 
   describe "languages" do

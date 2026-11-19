@@ -19,7 +19,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Czy Firmowid zastąpi księgowość?", "acceptedAnswer": {"@type": "Answer", "text": "Nie. To wynik zarządczy, nie podatkowy. Biuro księgowe dostaje od Ciebie paczkę faktur za miesiąc, a Ty wiesz, jak stoi firma, zanim przyjdzie rozliczenie."}}, {"@type": "Question", "name": "Czy zespół widzi finanse firmy?", "acceptedAnswer": {"@type": "Answer", "text": "Nie. Pracownik widzi swój czas, urlopy i dokumenty. Faktury, przelewy i analiza są dla ról z dostępem do finansów."}}, {"@type": "Question", "name": "Jak często odświeżają się dane?", "acceptedAnswer": {"@type": "Answer", "text": "Faktury z KSeF co 2 godziny, przelewy z banku co drugi dzień. Godziny zespołu widać od razu."}}, {"@type": "Question", "name": "Czy mogę przenieść dane z obecnego programu?", "acceptedAnswer": {"@type": "Answer", "text": "Osobnego importu z innych programów nie ma. Po połączeniu z KSeF Firmowid sam pobiera faktury z ostatnich 30 dni, a bank udostępnia do 90 dni historii przelewów. Starsze faktury kosztowe dodasz jako PDF albo zdjęcie."}}, {"@type": "Question", "name": "Czy obsługujecie mój bank?", "acceptedAnswer": {"@type": "Answer", "text": "Firmowid łączy się z 29 bankami i fintechami, między innymi PKO BP, Pekao, mBank, ING, Millennium, Alior, BNP Paribas, Revolut i Wise. Konto spoza listy dodasz ręcznie po numerze IBAN, bez synchronizacji."}}, {"@type": "Question", "name": "Gdzie są moje dane?", "acceptedAnswer": {"@type": "Answer", "text": "Na serwerach OVH w Unii Europejskiej. Bank podłączasz tylko do odczytu, Firmowid nie zleca przelewów."}}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@id": "https://firmowid.pl/#organization", "@type": "Organization", "name": "Alergeek Ventures sp. z o.o.", "legalName": "Alergeek Ventures spółka z ograniczoną odpowiedzialnością", "taxID": "6793209719", "address": "ul. Władysława Syrokomli 24/10, 30-102 Kraków", "url": "https://alergeek.ventures", "brand": {"@type": "Brand", "name": "Firmowid", "logo": "https://firmowid.pl/favicon.png"}}, {"@id": "https://firmowid.pl/#website", "@type": "WebSite", "name": "Firmowid", "url": "https://firmowid.pl/", "inLanguage": "pl-PL", "publisher": {"@id": "https://firmowid.pl/#organization"}}, {"@id": "https://firmowid.pl/landing#webpage", "@type": "WebPage", "name": "Firmowid: program do faktur KSeF i rentowność projektów", "description": "Faktury KSeF za 0 zł, przelewy z banku i godziny zespołu w jednym miejscu. Zobacz, ile z każdych 100 zł zostaje w firmie.", "url": "https://firmowid.pl/landing", "inLanguage": "pl-PL", "isPartOf": {"@id": "https://firmowid.pl/#website"}, "about": {"@id": "https://firmowid.pl/#application"}, "primaryImageOfPage": {"@type": "ImageObject", "url": "https://firmowid.pl/images/social-card.png", "width": 1200, "height": 630}}, {"@id": "https://firmowid.pl/#application", "@type": "WebApplication", "name": "Firmowid", "url": "https://firmowid.pl/", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "inLanguage": "pl-PL", "isAccessibleForFree": true, "license": "https://www.gnu.org/licenses/agpl-3.0.html", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "PLN", "url": "https://firmowid.pl/cennik"}, "publisher": {"@id": "https://firmowid.pl/#organization"}, "sameAs": ["https://github.com/Alergeek-Ventures/firmowid", "https://pl.linkedin.com/showcase/firmowid/", "https://x.com/firmowid"]}]}</script>
 </head>
-<body>
+<body data-landing-page="true">
 
 <header class="nav" id="nav">
   <nav class="nav__bar" aria-label="Nawigacja główna">
@@ -27,7 +27,7 @@
     <div class="nav__links">
       <a href="#jak">Jak to działa</a>
       <a href="#cennik">Cennik</a>
-      <a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener" data-landing-cta="github">GitHub</a>
       <details class="lang">
         <summary aria-label="Język"><img src="/images/landing/icons/globe.svg" width="18" height="18" alt="">PL<img src="/images/landing/icons/chevron-down.svg" width="14" height="14" alt=""></summary>
         <form class="lang__menu" method="post" action="/jezyk">
@@ -37,8 +37,8 @@
           <button name="jezyk" value="uk" lang="uk"><span><img src="/images/flags/ua.svg" width="20" height="14" alt="">Українська</span><small>UA</small></button>
         </form>
       </details>
-      <a class="btn btn--nav-ghost" href="/zaloguj">Zaloguj się</a>
-      <a class="btn btn--nav" href="/zarejestruj">Wypróbuj</a>
+      <a class="btn btn--nav-ghost" href="/zaloguj" data-landing-cta="navbar_login">Zaloguj się</a>
+      <a class="btn btn--nav" href="/zarejestruj" data-landing-cta="navbar_trial">Wypróbuj</a>
     </div>
   </nav>
 </header>
@@ -50,12 +50,12 @@
   <div class="wrap">
     <div class="hero__copy">
       <p class="hero__meta">
-        <a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener"><img src="/images/github-mark.svg" width="20" height="20" alt=""> open source</a>
+        <a href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener" data-landing-cta="github"><img src="/images/github-mark.svg" width="20" height="20" alt=""> open source</a>
         <span>korzystaj w <img src="/images/landing/claude.svg" width="20" height="20" alt=""><img src="/images/landing/chatgpt.svg" width="20" height="20" alt=""><span class="sr">Claude i ChatGPT</span></span>
       </p>
       <h1 id="headline">Projekt wygląda na zyskowny, dopóki go nie <span class="ul">policzysz.</span></h1>
       <p class="hero__sub">Firmowid łączy godziny zespołu z&nbsp;fakturami z&nbsp;KSeF i&nbsp;przelewami z&nbsp;banku. Po każdym miesiącu widzisz, ile projekt zarobił, a&nbsp;nie tylko ile na nim zafakturowałeś.</p>
-      <div class="hero__cta"><a class="btn btn--dark btn--big" href="/zarejestruj">Policz 3 projekty za darmo</a></div>
+      <div class="hero__cta"><a class="btn btn--dark btn--big" href="/zarejestruj" data-landing-cta="hero_trial">Policz 3 projekty za darmo</a></div>
       <ul class="hero__ticks">
         <li>Plan darmowy na zawsze</li><li>Bez karty</li><li>Faktury KSeF bez limitu</li>
       </ul>
@@ -317,7 +317,7 @@
     <p class="kicker">Jak to działa u&nbsp;innych</p>
     <h2 class="reveal">Jak korzystają z&nbsp;Firmowida.</h2>
     <div class="cases__grid reveal">
-      <a class="case" href="/landing/bonobo">
+      <a class="case" href="/landing/bonobo" data-landing-cta="case_bonobo">
         <div class="case__pic case__pic--photo"><img src="/images/landing/bonobo/wnetrze.webp" width="1400" height="934" alt="Wnętrze księgarni Bonobo w Krakowie" loading="lazy"></div>
         <span class="case__tag">Księgarnia i&nbsp;kawiarnia · Kraków</span>
         <h3>Bonobo: z&nbsp;10 godzin papierów tygodniowo do jednej</h3>
@@ -332,7 +332,7 @@
       <div class="case case--dark">
         <h3>Jak wdrażaliśmy Firmowida w&nbsp;dużej polskiej firmie</h3>
         <p>Napisz do nas, a&nbsp;wyślemy Ci case study.</p>
-        <a class="btn btn--rust case__btn" href="mailto:contact@alergeek.ventures?subject=Case%20study%20Firmowida%3A%20wdro%C5%BCenie%20w%20du%C5%BCej%20polskiej%20firmie&amp;body=Dzie%C5%84%20dobry%2C%0A%0Aprosz%C4%99%20o%20przes%C5%82anie%20case%20study%20o%20tym%2C%20jak%20Firmowid%20zosta%C5%82%20wdro%C5%BCony%20w%20du%C5%BCej%20polskiej%20firmie.%0A%0AMoja%20firma%3A%0ALiczba%20os%C3%B3b%20w%20zespole%3A%0A%0APozdrawiam">Wyślijcie mi case study</a>
+        <a class="btn btn--rust case__btn" data-landing-cta="case_study_request" href="mailto:contact@alergeek.ventures?subject=Case%20study%20Firmowida%3A%20wdro%C5%BCenie%20w%20du%C5%BCej%20polskiej%20firmie&amp;body=Dzie%C5%84%20dobry%2C%0A%0Aprosz%C4%99%20o%20przes%C5%82anie%20case%20study%20o%20tym%2C%20jak%20Firmowid%20zosta%C5%82%20wdro%C5%BCony%20w%20du%C5%BCej%20polskiej%20firmie.%0A%0AMoja%20firma%3A%0ALiczba%20os%C3%B3b%20w%20zespole%3A%0A%0APozdrawiam">Wyślijcie mi case study</a>
       </div>
     </div>
   </div>
@@ -391,7 +391,7 @@
             <div><dt>Odzyskany czas: <span id="r-hours">130</span> h × <span id="r-rate">150 zł</span></dt><dd id="r-time">19 500 zł</dd></div>
           </dl>
           <ul class="swap" id="r-swap"></ul>
-          <a class="btn btn--rust" href="/zarejestruj">Zacznij za darmo</a>
+          <a class="btn btn--rust" href="/zarejestruj" data-landing-cta="final_trial">Zacznij za darmo</a>
           <p class="calc__fine">Szacunek z&nbsp;Twoich danych, nie gwarancja. Zakładamy, że odzyskasz połowę tego czasu.</p>
         </div>
       </div>
@@ -412,20 +412,20 @@
         <h3>Darmowy</h3>
         <p class="plan__price"><b>0</b> zł <span>na zawsze</span></p>
         <ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li></ul>
-        <a class="btn btn--sketch" href="/zarejestruj">Załóż darmowe konto</a>
+        <a class="btn btn--sketch" href="/zarejestruj" data-landing-cta="pricing_free">Załóż darmowe konto</a>
       </article>
       <article class="plan plan--top reveal">
         <span class="plan__badge">Najczęściej wybierany</span>
         <h3>Przedsiębiorca</h3>
         <p class="plan__price"><b data-m="29" data-y="23">29</b> zł <span>/ mies. netto</span><em class="save">oszczędzasz 72 zł rocznie</em></p>
         <ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>
-        <a class="btn btn--rust" href="/zarejestruj">Wypróbuj za darmo</a>
+        <a class="btn btn--rust" href="/zarejestruj" data-landing-cta="pricing_przedsiebiorca">Wypróbuj za darmo</a>
       </article>
       <article class="plan reveal">
         <h3>Firma</h3>
         <p class="plan__price"><b data-m="149" data-y="119">149</b> zł <span>/ mies. netto</span><em class="save">oszczędzasz 360 zł rocznie</em></p>
         <ul><li>Wszystko bez limitu</li><li>Delegacje</li><li>Ewidencja czasu w PDF</li><li>Raport wypłat</li></ul>
-        <a class="btn btn--sketch" href="/zarejestruj">Wypróbuj za darmo</a>
+        <a class="btn btn--sketch" href="/zarejestruj" data-landing-cta="pricing_firma">Wypróbuj za darmo</a>
       </article>
     </div>
   </div>
@@ -477,8 +477,8 @@
         <h2>Twoje dane na&nbsp;Twoim serwerze.</h2>
         <p class="oss__lead">Cały Firmowid jest publiczny. Możesz czytać kod, postawić go u&nbsp;siebie albo korzystać z&nbsp;naszej wersji hostowanej w&nbsp;UE.</p>
         <div class="oss__cta">
-          <a class="btn btn--light" href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener">Zobacz na GitHubie <img src="/images/github-mark.svg" width="22" height="22" alt=""></a>
-          <a class="oss__more" href="/open-source">Więcej o open source</a>
+          <a class="btn btn--light" href="https://github.com/Alergeek-Ventures/firmowid" target="_blank" rel="noopener" data-landing-cta="github">Zobacz na GitHubie <img src="/images/github-mark.svg" width="22" height="22" alt=""></a>
+          <a class="oss__more" href="/open-source" data-landing-cta="open_source">Więcej o open source</a>
           <span>Licencja AGPL-3.0</span>
         </div>
       </div>
@@ -504,7 +504,7 @@
     <p class="hand">TWÓJ RUCH!</p>
     <h2>Prowadź firmę z&nbsp;lżejszą głową.</h2>
     <p class="end__sub">Sprawdź, ile zostaje w&nbsp;Twojej firmie.</p>
-    <div class="end__btns"><a class="btn btn--rust btn--big" href="/zarejestruj">Zacznij za darmo</a><a class="btn btn--light btn--big" href="https://cal.com/franek-madej/firmowid" target="_blank" rel="noopener noreferrer">Umów 15 min rozmowę</a></div>
+    <div class="end__btns"><a class="btn btn--rust btn--big" href="/zarejestruj" data-landing-cta="final_trial">Zacznij za darmo</a><a class="btn btn--light btn--big" href="https://cal.com/franek-madej/firmowid" target="_blank" rel="noopener noreferrer" data-landing-cta="demo_booking">Umów 15 min rozmowę</a></div>
     <p class="end__note">Konto w 2 minuty. Bez karty. Plan darmowy na zawsze.</p>
     <img class="end__fig" src="/images/landing/figurine.webp" alt="" loading="lazy">
   </div>
@@ -531,5 +531,6 @@
 </footer>
 
 <script src="/landing/app.js"></script>
+__TELEMETRY_SCRIPT__
 </body>
 </html>
