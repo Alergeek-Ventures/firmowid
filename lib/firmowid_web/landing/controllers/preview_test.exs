@@ -205,18 +205,22 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
       refute waiting_telemetry(conn)
     end
 
-    test "shows the cookie banner hidden until the script reveals it", %{conn: conn} do
-      page = conn |> get(~p"/") |> html_response(200) |> LazyHTML.from_document()
+    for {name, path} <- [{"home page", "/"}, {"KSeF page", "/ksef"}] do
+      test "shows the cookie banner on the #{name}, hidden until the script reveals it", %{
+        conn: conn
+      } do
+        page = conn |> get(unquote(path)) |> html_response(200) |> LazyHTML.from_document()
 
-      assert [_banner] = page |> LazyHTML.query("#consent[hidden]") |> Enum.to_list()
+        assert [_banner] = page |> LazyHTML.query("#consent[hidden]") |> Enum.to_list()
 
-      assert ["rejected", "accepted"] ==
-               page |> LazyHTML.query("#consent button") |> LazyHTML.attribute("data-consent")
+        assert ["rejected", "accepted"] ==
+                 page |> LazyHTML.query("#consent button") |> LazyHTML.attribute("data-consent")
 
-      assert [_link] =
-               page
-               |> LazyHTML.query(~s|#consent a[href="/polityka-prywatnosci"]|)
-               |> Enum.to_list()
+        assert [_link] =
+                 page
+                 |> LazyHTML.query(~s|#consent a[href="/polityka-prywatnosci"]|)
+                 |> Enum.to_list()
+      end
     end
 
     test "names the calls to action of the KSeF page", %{conn: conn} do
