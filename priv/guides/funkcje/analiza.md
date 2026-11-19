@@ -21,7 +21,7 @@ Analiza daje nam szybki przegląd sytuacji. Zerkamy i od razu wiemy, co mówią 
 
 ## Kiedy tu zaglądamy
 
-Najczęściej pod koniec miesiąca, kiedy patrzymy, jak to wygląda w porównaniu do poprzedniego. Często też wtedy, gdy klienci zapłacili za faktury.
+Najczęściej pod koniec miesiąca, kiedy patrzymy, jak to wygląda w porównaniu z poprzednim. Często też wtedy, gdy klienci zapłacili za faktury.
 
 ## Ile zostaje ze 100 zł
 
@@ -29,7 +29,7 @@ Ten ekran jest dosyć mocny. Faktycznie można zobaczyć na własne oczy, ile ko
 
 ## Kategorie kosztów
 
-Koszty dzielimy na kategorie, takie jak wynagrodzenia czy lokal, ale większość zaznacza nam już AI. Podpowiada kategorię po kodzie PKD kontrahenta, więc w Polsce działa to świetnie, bez ręcznego opisywania każdej transakcji. Do projektów można przypisać samemu, a w dużym stopniu robi to też AI. Z każdym miesiącem się uczy, więc po paru miesiącach trzeba naprawdę niewiele. Ma się wtedy w Firmowidzie prawie że dyrektora finansowego albo szefa analityki finansowej, bo od razu potrafi wyciągnąć bardzo dużo rzeczy i zrobić pytania i analizy indywidualnie pod firmę.
+Koszty dzielimy na kategorie, takie jak wynagrodzenia czy lokal, ale większość zaznacza nam już AI. Podpowiada kategorię po kodzie PKD kontrahenta, więc w Polsce działa to świetnie, bez ręcznego opisywania każdej transakcji. Do projektów można przypisywać koszty samemu, a w dużym stopniu robi to też AI. Z każdym miesiącem się uczy, więc po paru miesiącach trzeba naprawdę niewiele. Ma się wtedy w Firmowidzie prawie że dyrektora finansowego albo szefa analityki finansowej, bo od razu potrafi wyciągnąć bardzo dużo rzeczy i przygotować pytania oraz analizy indywidualnie pod firmę.
 
 ## Projekty i trendy
 
@@ -54,7 +54,7 @@ Jak podłączyć Claude: [Firmowid w Claude i ChatGPT](/funkcje/claude-chatgpt-m
 | Kwoty | brutto, w złotych po kursie z dnia |
 | Miesiące | tylko domknięte |
 | Przelewy między własnymi kontami | pomijane |
-| Kategorie | 12 kosztów, podpowiada AI, zatwierdzasz Ty |
+| Kategorie | 12 kategorii kosztów, podpowiada AI, zatwierdzasz Ty |
 | Widoki | Podsumowanie, Trendy, filtr projektu |
 | Eksport | nie |
 

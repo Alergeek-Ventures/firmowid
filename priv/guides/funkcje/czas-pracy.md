@@ -21,7 +21,7 @@ Korzystaliśmy z paru różnych programów do mierzenia czasu dostępnych na ryn
 
 ## Na co dzień
 
-Różnie, zazwyczaj włączamy licznik na starcie. Czasami człowiek zapomni i dodaje godziny później. Jako tytuł wpisujemy nazwy zadań, nad którymi siedzimy, na przykład z Lineara.
+Różnie, zazwyczaj włączamy licznik na starcie. Czasami człowiek zapomina i dodaje godziny później. Jako tytuł wpisujemy nazwy zadań, nad którymi siedzimy, na przykład z Lineara.
 
 Licznik zatrzymuje się sam po 12 godzinach, więc zapomniany stoper nie nabije doby. Wpis dodany ręcznie może mieć do 24 godzin, a przełącznik „pracuję z domu” oznacza pracę zdalną. Krok po kroku: [Mierzenie czasu pracy: licznik i wpisy ręczne](/pomoc/mierzenie-czasu-pracy).
 
@@ -31,9 +31,9 @@ Czasośledź mierzy u nas cały zespół. Jest bardzo prosty w obsłudze: pracow
 
 ## Klienci i projekty
 
-Na podstawie godzin wystawiamy faktury i liczymy rentowność. Jeśli klient chce, pokazujemy mu krótkie zestawienie, co ile zajęło czasu.
+Na podstawie godzin wystawiamy faktury i liczymy rentowność. Jeśli klient chce, pokazujemy mu krótkie zestawienie, ile czasu co zajęło.
 
-Dzięki podziałowi na projekty wiemy, ile czasu zajmują nasze własne projekty, a ile klienci. Możemy zwiększyć wydajność, zrozumieć, gdzie spędzamy za dużo czasu, i patrzeć na rentowność każdego projektu.
+Dzięki podziałowi na projekty wiemy, ile czasu zajmują nasze własne projekty, a ile projekty klientów. Możemy zwiększyć wydajność, zrozumieć, gdzie spędzamy za dużo czasu, i patrzeć na rentowność każdego projektu.
 
 ## Na telefonie
 
