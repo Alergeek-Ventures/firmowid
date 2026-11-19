@@ -3,9 +3,21 @@ title: "Program do faktur z serwerem MCP: Firmowid w Claude i ChatGPT"
 description: "Firmowid łączy się z Claude i ChatGPT przez MCP. W ChatGPT wystawisz fakturę w oknie aplikacji, a wysyłka do KSeF zawsze czeka na Twoje potwierdzenie."
 published: 2026-11-18
 updated: 2026-11-18
+landing:
+  kicker: "Funkcje · Claude i ChatGPT"
+  note: "KSeF czeka na Twoje potwierdzenie"
+  facts:
+    - label: "Adres serwera"
+      value: "firmowid.pl/mcp"
+    - label: "Narzędzia"
+      value: "42, od faktur po urlopy"
+    - label: "Uprawnienia"
+      value: "jak Twoja rola w firmie"
 ---
 
 Claude podłączonego do Firmowida używamy głównie do analiz, bo dane są już opisane i zebrane z kilku źródeł. Robi też rzecz, której się nie spodziewaliśmy: opisuje faktury dla naszej księgowości. Dopisuje do faktury 2–3 zdania, które pomagają zrozumieć, co to za faktura. To bardzo wygodne, a jemu samemu też pomaga to potem w analizie.
+
+![Okno „Potwierdź fakturę” w ChatGPT z podglądem faktury i przyciskiem „Potwierdź i wyślij do KSeF”](/images/guides/funkcje/mcp-potwierdz-fakture.webp)
 
 ## Podłączenie
 

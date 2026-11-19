@@ -3,6 +3,16 @@ title: "Program do faktur z wysyłką do KSeF"
 description: "Faktury VAT, korekty i faktury dwujęzyczne w walutach, wysyłane do KSeF. Jak wystawiamy je w Firmowidzie, co program obsługuje i czego nie."
 published: 2026-11-18
 updated: 2026-11-18
+landing:
+  kicker: "Funkcje · Faktury i KSeF"
+  note: "faktura prosto do KSeF"
+  facts:
+    - label: "Rodzaje faktur"
+      value: "VAT, bez VAT, zaliczkowa, korekta"
+    - label: "Waluty"
+      value: "złoty i 32 waluty z tabeli NBP"
+    - label: "Kontrahent"
+      value: "biała lista VAT i VIES"
 ---
 
 Wystawianie faktur jest u nas bardzo intuicyjne. Dużo korzystamy z szybkiego wystawiania: kopiujemy fakturę z poprzedniego miesiąca, datę sprzedaży ustawiamy przyciskiem na ostatni dzień ubiegłego miesiąca, a numer faktury pojawia się automatycznie. Teraz działa to naprawdę dobrze. Pomaga nam też asystent w aplikacji, bo można go poprosić, żeby przygotował szkic faktury.
