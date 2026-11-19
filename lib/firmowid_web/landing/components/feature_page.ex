@@ -1,9 +1,9 @@
 defmodule FirmowidWeb.Landing.Components.FeaturePage do
   @moduledoc """
   Landing layout of a feature page (`/funkcje/:slug`), in the style of the home
-  page and the case studies: a hero with the screenshot on a sheet of paper, the
+  page and the case studies: a hero with the screenshot (or transfers paired with invoices) on a sheet of paper, the
   facts strip, the introduction quoted in a dark block, sections with tables and
-  captioned screenshots, collapsible questions and the closing call to action.
+  captioned screenshots, logo rows, collapsible questions and the closing call to action.
 
   The page content comes from `FirmowidWeb.Landing.Utilities.Guides`; the fixed
   texts are in `priv/guides/funkcje/index.yml`, because feature pages are Polish only.
@@ -13,7 +13,6 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
 
   import FirmowidWeb.Landing.Components.Primitives, only: [cta_footer: 1, landing_navbar: 1]
 
-  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Landing.Utilities.Guides
 
   @doc "Renders a feature page."
@@ -73,16 +72,67 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                   {@texts.cta_secondary}
                 </a>
               </div>
-              <p class="mt-4 text-[13px] text-grey-600">
-                {@texts.cta_note} · {@texts.updated_label}
-                <time datetime={Date.to_iso8601(@article.updated)}>
-                  {TimeFormatter.format_date(@article.updated, :long)}
-                </time>
-              </p>
+              <p class="mt-4 text-[13px] text-grey-600">{@texts.cta_note}</p>
             </div>
 
-            <figure :if={@layout.hero} class="relative m-0 mb-10 lg:mb-0">
-              <div class="rotate-[1.2deg] rounded-[4px] bg-white p-2.5 shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-3.5">
+            <figure :if={@layout.hero || @landing.match != []} class="relative m-0 mb-10 lg:mb-0">
+              <div
+                :if={@landing.match != []}
+                class="rotate-[1.2deg] rounded-[4px] bg-white p-4 font-sans shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-6"
+              >
+                <div class="grid grid-cols-[minmax(0,1fr)_36px_minmax(0,1fr)] pb-1 text-caps-sm font-semibold tracking-[.08em] text-grey-600 uppercase sm:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
+                  <span>{@texts.match_transfer}</span>
+                  <span></span>
+                  <span>{@texts.match_invoice}</span>
+                </div>
+                <div
+                  :for={row <- @landing.match}
+                  class="mt-2.5 grid grid-cols-[minmax(0,1fr)_36px_minmax(0,1fr)] items-center sm:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]"
+                >
+                  <div class="rounded-[4px] border border-grey-200 bg-grey-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                    <p class="truncate text-sm font-semibold sm:text-[15px]">{row.payer}</p>
+                    <p class="mt-0.5 truncate text-[12.5px] text-grey-600">
+                      {row.date} · <span class="font-medium text-[#0f0f0f]">{row.amount}</span>
+                    </p>
+                  </div>
+                  <div class={[
+                    "relative h-0 border-t-2",
+                    if(row.suggested?,
+                      do: "border-dashed border-rust-400",
+                      else: "border-teal-700"
+                    )
+                  ]}>
+                    <span class={[
+                      "absolute top-1/2 left-1/2 grid size-5 -translate-1/2 place-items-center rounded-full text-caps-sm leading-none font-bold sm:size-6",
+                      if(row.suggested?,
+                        do: "bg-rust-200 text-rust-800",
+                        else: "bg-teal-700 text-white"
+                      )
+                    ]}>
+                      {if row.suggested?, do: "?", else: "✓"}
+                    </span>
+                  </div>
+                  <div class={[
+                    "rounded-[4px] border px-3 py-2.5 sm:px-4 sm:py-3",
+                    if(row.suggested?,
+                      do: "border-rust-200 bg-(--landing-beige)",
+                      else: "border-teal-200 bg-teal-100"
+                    )
+                  ]}>
+                    <p class="truncate text-sm font-semibold sm:text-[15px]">{row.invoice}</p>
+                    <p class={[
+                      "mt-0.5 truncate text-[12.5px] font-medium",
+                      if(row.suggested?, do: "text-rust-800", else: "text-teal-800")
+                    ]}>
+                      {row.status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div
+                :if={@layout.hero && @landing.match == []}
+                class="rotate-[1.2deg] rounded-[4px] bg-white p-2.5 shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-3.5"
+              >
                 <img
                   src={@layout.hero.src}
                   width={@layout.hero.width}
@@ -165,7 +215,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
           ]}
         >
           <div class={[
-            "mx-auto grid w-[min(1140px,calc(100%-32px))] gap-6 lg:gap-14",
+            "mx-auto grid w-[min(1140px,calc(100%-32px))] grid-cols-[minmax(0,1fr)] gap-6 lg:gap-14",
             if(section.wide?, do: "lg:gap-10", else: "lg:grid-cols-[minmax(0,.34fr)_minmax(0,.66fr)]")
           ]}>
             <h2 class={[
@@ -203,6 +253,8 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
       "[&_.steps>li]:relative [&_.steps>li]:rounded-[4px] [&_.steps>li]:border [&_.steps>li]:border-grey-200 [&_.steps>li]:bg-white [&_.steps>li]:p-5 [&_.steps>li]:pt-14 [&_.steps>li]:font-sans [&_.steps>li]:text-[14.5px] [&_.steps>li]:leading-snug [&_.steps>li]:[counter-increment:step]",
       "[&_.steps>li]:before:absolute [&_.steps>li]:before:top-4 [&_.steps>li]:before:left-5 [&_.steps>li]:before:grid [&_.steps>li]:before:size-7 [&_.steps>li]:before:place-items-center [&_.steps>li]:before:rounded-full [&_.steps>li]:before:bg-rust-500 [&_.steps>li]:before:text-[13px] [&_.steps>li]:before:font-bold [&_.steps>li]:before:text-[#0f0f0f] [&_.steps>li]:before:content-[counter(step)]",
       "[&_.steps_b]:block [&_.steps_b]:font-landing [&_.steps_b]:text-[17px] [&_.steps_b]:font-semibold [&_.steps_b]:text-[#0f0f0f] [&_.steps_span]:mt-1.5 [&_.steps_span]:block [&_.steps_span:first-of-type]:text-[11.5px] [&_.steps_span:first-of-type]:font-semibold [&_.steps_span:first-of-type]:tracking-[.06em] [&_.steps_span:first-of-type]:text-rust-700 [&_.steps_span:first-of-type]:uppercase",
+      "[&_p:has(>img+img)]:flex [&_p:has(>img+img)]:max-w-none [&_p:has(>img+img)]:flex-wrap [&_p:has(>img+img)]:gap-3 [&_p:has(>img+img)>img]:size-14 [&_p:has(>img+img)>img]:rounded-full [&_p:has(>img+img)>img]:bg-white [&_p:has(>img+img)>img]:object-contain [&_p:has(>img+img)>img]:p-2.5 [&_p:has(>img+img)>img]:shadow-[0_0_0_1px_var(--color-grey-200),0_8px_18px_-10px_rgba(87,54,35,.45)]",
+      "[&_p:has(>img+img)+ul]:mt-5 [&_p:has(>img+img)+ul]:flex [&_p:has(>img+img)+ul]:flex-wrap [&_p:has(>img+img)+ul]:gap-2 [&_p:has(>img+img)+ul>li]:rounded-full [&_p:has(>img+img)+ul>li]:border [&_p:has(>img+img)+ul>li]:border-grey-200 [&_p:has(>img+img)+ul>li]:bg-white [&_p:has(>img+img)+ul>li]:px-3.5 [&_p:has(>img+img)+ul>li]:py-1.5 [&_p:has(>img+img)+ul>li]:font-sans [&_p:has(>img+img)+ul>li]:text-[14px] [&_p:has(>img+img)+ul>li]:leading-snug [&_p:has(>img+img)+ul>li]:font-medium [&_p:has(>img+img)+ul>li]:text-[#0f0f0f] [&_ul+p]:mt-5",
       "[&_tr.firmowid]:bg-[#0f0f0f] [&_tr.firmowid_a]:text-white [&_tr.firmowid_td]:border-transparent [&_tr.firmowid_td]:text-white",
       "[&_details]:border-b [&_details]:border-rust-200 [&_details:first-of-type]:border-t [&_summary]:flex [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:items-center [&_summary]:justify-between [&_summary]:gap-6 [&_summary]:py-5 [&_summary]:text-h5 [&_summary]:font-semibold [&_summary]:text-[#0f0f0f] [&_summary::-webkit-details-marker]:hidden",
       "[&_details>div]:pb-6 [&_details>div]:text-base [&_details[open]_summary]:after:content-['−'] [&_summary]:after:shrink-0 [&_summary]:after:text-2xl [&_summary]:after:font-normal [&_summary]:after:text-rust-600 [&_summary]:after:content-['+']"

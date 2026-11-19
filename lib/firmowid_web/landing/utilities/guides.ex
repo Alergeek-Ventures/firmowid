@@ -6,7 +6,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated` and, for guides and help articles, `category`; feature pages may add
-  `landing` with `kicker`, `note` and `facts` for their landing layout); the file name is the
+  `landing` with `kicker`, `note`, `facts` and `match`, the transfers paired with
+  invoices drawn in the hero, for their landing layout); the file name is the
   URL slug. Guide categories, in display order, and the guide index heading and
   introduction are in `priv/guides/categories.yml` and `priv/guides/index.yml`;
   the help index heading, introduction and categories are in
@@ -47,7 +48,17 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @type landing :: %{
           kicker: String.t() | nil,
           note: String.t() | nil,
-          facts: [%{label: String.t(), value: String.t()}]
+          facts: [%{label: String.t(), value: String.t()}],
+          match: [
+            %{
+              payer: String.t(),
+              date: String.t(),
+              amount: String.t(),
+              invoice: String.t(),
+              status: String.t(),
+              suggested?: boolean()
+            }
+          ]
         }
 
   @guides_dir Application.app_dir(:firmowid, "priv/guides")
@@ -169,7 +180,20 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   &%{label: Map.fetch!(&1, "label"), value: Map.fetch!(&1, "value")}
                 )
 
-              %{kicker: landing["kicker"], note: landing["note"], facts: facts}
+              match =
+                Enum.map(
+                  landing["match"] || [],
+                  &%{
+                    payer: Map.fetch!(&1, "payer"),
+                    date: Map.fetch!(&1, "date"),
+                    amount: Map.fetch!(&1, "amount"),
+                    invoice: Map.fetch!(&1, "invoice"),
+                    status: Map.fetch!(&1, "status"),
+                    suggested?: &1["suggested"] == true
+                  }
+                )
+
+              %{kicker: landing["kicker"], note: landing["note"], facts: facts, match: match}
             end
 
             %{
