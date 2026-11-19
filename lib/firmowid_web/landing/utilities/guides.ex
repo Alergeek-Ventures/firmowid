@@ -6,8 +6,9 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated` and, for guides and help articles, `category`; feature pages may add
-  `landing` with `kicker`, `note`, `facts` and `match`, the transfers paired with
-  invoices drawn in the hero, for their landing layout); the file name is the
+  `landing` with `kicker`, `note`, `facts`, `match`, the transfers paired with
+  invoices drawn in the hero, and `timer`, the running timer with the month's
+  hours by project drawn there, for their landing layout); the file name is the
   URL slug. Guide categories, in display order, and the guide index heading and
   introduction are in `priv/guides/categories.yml` and `priv/guides/index.yml`;
   the help index heading, introduction and categories are in
@@ -58,7 +59,19 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               status: String.t(),
               suggested?: boolean()
             }
-          ]
+          ],
+          timer:
+            %{
+              title: String.t(),
+              project: String.t(),
+              hours: non_neg_integer(),
+              minutes: non_neg_integer(),
+              seconds: non_neg_integer(),
+              month: String.t(),
+              total: String.t(),
+              projects: [%{name: String.t(), hours: String.t(), share: pos_integer()}]
+            }
+            | nil
         }
 
   @guides_dir Application.app_dir(:firmowid, "priv/guides")
@@ -193,7 +206,35 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   }
                 )
 
-              %{kicker: landing["kicker"], note: landing["note"], facts: facts, match: match}
+              timer =
+                if timer = landing["timer"] do
+                  %{
+                    title: Map.fetch!(timer, "title"),
+                    project: Map.fetch!(timer, "project"),
+                    hours: Map.fetch!(timer, "hours"),
+                    minutes: Map.fetch!(timer, "minutes"),
+                    seconds: Map.fetch!(timer, "seconds"),
+                    month: Map.fetch!(timer, "month"),
+                    total: Map.fetch!(timer, "total"),
+                    projects:
+                      Enum.map(
+                        Map.fetch!(timer, "projects"),
+                        &%{
+                          name: Map.fetch!(&1, "name"),
+                          hours: Map.fetch!(&1, "hours"),
+                          share: Map.fetch!(&1, "share")
+                        }
+                      )
+                  }
+                end
+
+              %{
+                kicker: landing["kicker"],
+                note: landing["note"],
+                facts: facts,
+                match: match,
+                timer: timer
+              }
             end
 
             %{
