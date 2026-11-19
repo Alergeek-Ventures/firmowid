@@ -380,7 +380,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             </p>
           </div>
 
-          <div class="mt-2 flex flex-col-reverse gap-2 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:bg-[url('/images/landing/decorations/dark-separator.svg')] lg:bg-size-[100%_--spacing(0.5)] lg:bg-top lg:bg-no-repeat lg:pt-10 lg:text-xs">
+          <div class="mt-2 flex flex-col-reverse gap-2 text-caps-sm/[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:bg-[url('/images/landing/decorations/dark-separator.svg')] lg:bg-size-[100%_--spacing(0.5)] lg:bg-top lg:bg-no-repeat lg:pt-10 lg:text-xs">
             <p class="font-light">
               © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
             </p>
