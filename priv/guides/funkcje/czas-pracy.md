@@ -3,6 +3,16 @@ title: "Program do ewidencji czasu pracy w projektach"
 description: "Czasośledź mierzy czas pracy przy projektach, a godziny trafiają do ewidencji, wynagrodzeń i faktur. Jak używamy go w zespole i czego nie robi."
 published: 2026-11-18
 updated: 2026-11-18
+landing:
+  kicker: "Funkcje · Czas pracy"
+  note: "start, stop i gotowe"
+  facts:
+    - label: "Licznik"
+      value: "start i stop w projekcie"
+    - label: "Ewidencja"
+      value: "miesięczny PDF do umowy zlecenia"
+    - label: "Wynagrodzenie"
+      value: "godziny razy stawka"
 ---
 
 Korzystaliśmy z paru różnych programów do mierzenia czasu dostępnych na rynku, ale nic nie było tak proste i intuicyjne jak Czasośledź. Żaden nie dawał połączenia z kontrahentami ani analizy finansowej, a za każdy trzeba było płacić dodatkowo. Teraz licznik stoi pod projektem, a godziny same trafiają do miesięcznej ewidencji.

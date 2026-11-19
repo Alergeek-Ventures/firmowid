@@ -3,6 +3,16 @@ title: "Program do analizy przychodów i kosztów małej firmy"
 description: "Analiza w Firmowidzie pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na kategorie po PKD i łączy się z Claude. Jak z niej korzystamy."
 published: 2026-11-18
 updated: 2026-11-18
+landing:
+  kicker: "Funkcje · Analiza"
+  note: "ile zostaje ze 100 zł"
+  facts:
+    - label: "Kategorie kosztów"
+      value: "12, podpowiada AI"
+    - label: "Widoki"
+      value: "Podsumowanie, Trendy, projekty"
+    - label: "Kwoty"
+      value: "brutto, w złotych"
 ---
 
 Analiza daje nam szybki przegląd sytuacji. Zerkamy i od razu wiemy, co mówią ostatnie miesiące. Poza tym daje nam przede wszystkim możliwość korzystania z Claude i robienia analiz bardziej dostosowanych do bieżącego problemu. Firmowid opisuje dane i synchronizuje je z kilku źródeł, więc Claude ma wszystko jak na tacy i może przygotować taką analizę, jaką chcemy.
