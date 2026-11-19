@@ -79,10 +79,15 @@
 
 /* quote */
 .kquote{display:grid;grid-template-columns:auto 1fr;gap:clamp(24px,4vw,48px);align-items:center;padding:clamp(28px,4.4vw,56px);background:var(--ink);color:var(--cream);border-radius:4px}
-.kquote img{width:clamp(96px,14vw,168px);height:auto;aspect-ratio:1;object-fit:cover;object-position:50% 18%;border-radius:50%}
+.kquote__score{display:grid;gap:12px;width:clamp(150px,19vw,210px)}
+.kquote__score b{font-size:clamp(56px,7.4vw,92px);line-height:.9;font-weight:700;letter-spacing:-.04em;color:var(--r500);font-variant-numeric:tabular-nums}
+.kquote__score i{font-style:normal;font-size:.42em;letter-spacing:-.02em;color:rgba(245,241,234,.7)}
+.kquote__score span{font-size:14px;line-height:1.4;color:rgba(245,241,234,.7)}
 .kquote blockquote p{font-size:clamp(20px,2.2vw,27px);line-height:1.25;font-weight:500;letter-spacing:-.015em}
 .kquote footer{margin-top:20px;font-size:15px;color:rgba(245,241,234,.7)}
 .kquote footer b{color:var(--cream)}
+.kquote footer a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--r400)}
+.kquote footer a:hover{color:var(--cream)}
 
 .ks main .pricing{padding-top:var(--sec)}
 .ks main .faq{padding:var(--sec) 0}
@@ -102,6 +107,7 @@
   .kbar__track{grid-column:1/-1;grid-row:2;height:22px}
   .kbar--us{margin-inline:-10px;padding-inline:10px}
   .kquote{grid-template-columns:1fr}
+  .kquote__score{width:auto}
   .ks-hero__cta .btn{flex:1 1 100%}
 }
 @media (prefers-reduced-motion:reduce){
