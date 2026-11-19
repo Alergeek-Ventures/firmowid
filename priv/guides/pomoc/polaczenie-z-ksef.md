@@ -58,4 +58,4 @@ Status zmieni się na **Połączono z KSeF**, obok zobaczysz typ autoryzacji i d
 
 Firmowid wysyła faktury tylko przy działającym połączeniu; trybu offline nie obsługuje ([tryb offline w KSeF](/poradnik/tryb-offline-ksef)).
 
-Zobacz też: [Faktury z wysyłką do KSeF](/funkcje/faktury-ksef) · [Pierwsza faktura w KSeF krok po kroku](/poradnik/pierwsza-faktura-ksef)
+Zobacz też: [Faktury z wysyłką do KSeF](/ksef) · [Pierwsza faktura w KSeF krok po kroku](/poradnik/pierwsza-faktura-ksef)

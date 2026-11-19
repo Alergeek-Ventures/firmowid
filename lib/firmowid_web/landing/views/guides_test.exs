@@ -33,6 +33,27 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert short == "Korekta faktury w KSeF · Firmowid"
   end
 
+  test "the KSeF page is served at /ksef and its old address redirects there", %{conn: conn} do
+    html = conn |> get(~p"/ksef") |> html_response(200)
+
+    assert title(html) == "Program do faktur z wysyłką do KSeF · Firmowid"
+    assert html =~ ~s(<link rel="canonical" href="#{FirmowidWeb.Core.Endpoint.url()}/ksef")
+
+    conn = get(build_conn(), "/funkcje/faktury-ksef")
+
+    assert redirected_to(conn, 301) == ~p"/ksef"
+  end
+
+  test "the features page and the sitemap link to /ksef, not to the old address", %{conn: conn} do
+    features = conn |> get(~p"/funkcje") |> html_response(200)
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+
+    assert features =~ ~s(href="/ksef")
+    assert sitemap =~ "/ksef</loc>"
+    refute features =~ "/funkcje/faktury-ksef"
+    refute sitemap =~ "/funkcje/faktury-ksef"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end

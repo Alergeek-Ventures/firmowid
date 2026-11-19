@@ -6,7 +6,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated` and, for guides and help articles, `category`); the file name is the
-  URL slug. Guide categories, in display order, and the guide index heading and
+  URL slug. An optional `path` replaces the section address of a page, as for
+  `funkcje/faktury-ksef.md`, served at `/ksef`. Guide categories, in display order, and the guide index heading and
   introduction are in `priv/guides/categories.yml` and `priv/guides/index.yml`;
   the help index heading, introduction and categories are in
   `priv/guides/pomoc/index.yml`. Images in the body get their dimensions
@@ -152,7 +153,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
             %{
               slug: slug,
               section: section,
-              path: "#{root}/#{slug}",
+              path: Map.get(meta, "path", "#{root}/#{slug}"),
               breadcrumbs:
                 [%{name: root_name, path: root}] ++
                   if(category,

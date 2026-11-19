@@ -289,7 +289,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             ]}>
               <a
                 :if={feature.page}
-                href={~p"/funkcje/#{feature.page}"}
+                href={feature_page_path(feature.page)}
                 class={[
                   "after:absolute after:inset-0 after:rounded-2xl after:content-['']",
                   feature.visual == :team && "whitespace-pre-line"
@@ -1385,6 +1385,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     </section>
     """
   end
+
+  # The KSeF invoicing page is served at /ksef, the other feature pages under /funkcje.
+  defp feature_page_path("faktury-ksef"), do: ~p"/ksef"
+  defp feature_page_path(page), do: ~p"/funkcje/#{page}"
 
   defp localize(records, fields) do
     Enum.map(records, fn record ->

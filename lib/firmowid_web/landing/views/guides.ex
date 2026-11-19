@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.Landing.Views.Guides do
   @moduledoc """
   Public guide list (`/poradnik`) and guide articles (`/poradnik/:slug`), feature
-  pages (`/funkcje/:slug`), the help list (`/pomoc`) and help articles
-  (`/pomoc/:slug`).
+  pages (`/funkcje/:slug` and the KSeF invoicing page at `/ksef`), the help list
+  (`/pomoc`) and help articles (`/pomoc/:slug`).
   """
 
   use FirmowidWeb, :live_view
@@ -37,6 +37,8 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       meta_description: index_page.intro
     )
   end
+
+  defp assign_page(socket, :ksef, _params), do: assign_page(socket, :feature, %{"slug" => "faktury-ksef"})
 
   defp assign_page(socket, action, %{"slug" => slug}) do
     section = Map.fetch!(%{show: :guide, feature: :feature, help: :help}, action)

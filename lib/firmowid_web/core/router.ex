@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireUser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
   alias Infrastructure.Controllers.AgentDiscovery
+  alias Infrastructure.Controllers.LegacyIndex
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
@@ -388,7 +389,8 @@ defmodule FirmowidWeb.Core.Router do
   scope "/", FirmowidWeb do
     pipe_through [:markdown_home, :browser, :agent_discovery_links]
 
-    get "/index.html", Infrastructure.Controllers.LegacyIndex, :index
+    get "/index.html", LegacyIndex, :index
+    get "/funkcje/faktury-ksef", LegacyIndex, :ksef
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
     get "/landing", Preview, :show
     get "/landing/bonobo", Preview, :bonobo
@@ -406,6 +408,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/cennik", Landing.Views.Index, :pricing
       live "/funkcje", Landing.Views.Index, :features
       live "/funkcje/:slug", Guides, :feature
+      live "/ksef", Guides, :ksef
       live "/faq", Landing.Views.Index, :faq
       live "/open-source", Landing.Views.Index, :open_source
       live "/poradnik", Guides, :index

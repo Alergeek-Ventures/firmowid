@@ -76,5 +76,5 @@ Nie pobiera urzędowego poświadczenia odbioru (UPO) i nie eksportuje faktur do 
 
 ## Powiązane
 
-- [Faktury z wysyłką do KSeF](/funkcje/faktury-ksef)
+- [Faktury z wysyłką do KSeF](/ksef)
 - [Paczka dokumentów dla biura księgowego](/pomoc/paczka-dla-biura-ksiegowego)
