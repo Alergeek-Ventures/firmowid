@@ -2,14 +2,14 @@
 // Anything outside these lists is dropped before it reaches PostHog.
 
 const LANDING_CTAS = new Set([
-  // Home page
+  // Pages built from the landing components
   "hero_register",
   "hero_login",
   "navbar_trial",
   "pricing_register",
   "footer_register",
   "footer_demo_booking",
-  // Preview of the new home page
+  // Home page and the KSeF pricing page
   "navbar_login",
   "hero_trial",
   "pricing_free",

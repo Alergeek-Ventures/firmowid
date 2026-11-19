@@ -1,4 +1,4 @@
-// Telemetry for the static home page. The page has
+// Telemetry for the static home page and the KSeF pricing page. Each has
 // its own script and no LiveView, so this bundle carries PostHog alone. Nothing
 // is loaded into PostHog or sent until the visitor has accepted analytics.
 
