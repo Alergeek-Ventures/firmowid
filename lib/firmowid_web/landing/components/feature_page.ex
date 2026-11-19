@@ -175,23 +175,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
             ]}>
               {Phoenix.HTML.raw(section.title)}
             </h2>
-            <div class={[
-              "min-w-0 text-[17px] leading-[1.65] text-grey-700",
-              "[&_p]:max-w-[62ch] [&_p+p]:mt-4 [&_p:has(+table)]:mb-4 [&_table+p]:mt-4 [&_table+p]:text-[13px] [&_table+p]:leading-normal [&_table+p]:text-grey-600",
-              "[&_a]:text-[#0f0f0f] [&_a]:underline [&_a]:decoration-rust-400 [&_a]:underline-offset-[3px] [&_a:hover]:text-rust-700",
-              "[&_strong]:text-[#0f0f0f]",
-              "[&_figcaption]:mt-3 [&_figcaption]:text-[13px] [&_figcaption]:text-grey-600 [&_figure]:my-8 [&_figure]:first:mt-0 [&_figure_img]:block [&_figure_img]:h-auto [&_figure_img]:w-full [&_figure_img]:rounded-[4px] [&_figure_img]:bg-white [&_figure_img]:p-2 [&_figure_img]:shadow-[0_1px_0_var(--color-grey-200),0_26px_50px_-30px_rgba(87,54,35,.45)]",
-              "[&_table]:mt-2 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:rounded-[4px] [&_table]:border [&_table]:border-grey-200 [&_table]:bg-white [&_table]:font-sans [&_table]:text-[14.5px] [&_table]:leading-snug lg:[&_table]:table",
-              "[&_table+table]:mt-6 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-grey-600 [&_th]:uppercase [&_thead]:bg-grey-50 [&_thead:not(:has(th:not(:empty)))]:hidden",
-              "[&_tbody_tr:first-child_td]:border-t-0 [&_td]:border-t [&_td]:border-grey-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_td:first-child]:font-medium [&_td:first-child]:text-[#0f0f0f] [&_thead+tbody_tr:first-child_td]:border-t",
-              "[&_ol.steps]:grid [&_ol.steps]:gap-3 [&_ol.steps]:[counter-reset:step] sm:[&_ol.steps]:grid-cols-2 xl:[&_ol.steps]:grid-cols-3",
-              "[&_.steps>li]:relative [&_.steps>li]:rounded-[4px] [&_.steps>li]:border [&_.steps>li]:border-grey-200 [&_.steps>li]:bg-white [&_.steps>li]:p-5 [&_.steps>li]:pt-14 [&_.steps>li]:font-sans [&_.steps>li]:text-[14.5px] [&_.steps>li]:leading-snug [&_.steps>li]:[counter-increment:step]",
-              "[&_.steps>li]:before:absolute [&_.steps>li]:before:top-4 [&_.steps>li]:before:left-5 [&_.steps>li]:before:grid [&_.steps>li]:before:size-7 [&_.steps>li]:before:place-items-center [&_.steps>li]:before:rounded-full [&_.steps>li]:before:bg-rust-500 [&_.steps>li]:before:text-[13px] [&_.steps>li]:before:font-bold [&_.steps>li]:before:text-[#0f0f0f] [&_.steps>li]:before:content-[counter(step)]",
-              "[&_.steps_b]:block [&_.steps_b]:font-landing [&_.steps_b]:text-[17px] [&_.steps_b]:font-semibold [&_.steps_b]:text-[#0f0f0f] [&_.steps_span]:mt-1.5 [&_.steps_span]:block [&_.steps_span:first-of-type]:text-[11.5px] [&_.steps_span:first-of-type]:font-semibold [&_.steps_span:first-of-type]:tracking-[.06em] [&_.steps_span:first-of-type]:text-rust-700 [&_.steps_span:first-of-type]:uppercase",
-              "[&_tr.firmowid]:bg-[#0f0f0f] [&_tr.firmowid_a]:text-white [&_tr.firmowid_td]:border-transparent [&_tr.firmowid_td]:text-white",
-              "[&_details]:border-b [&_details]:border-rust-200 [&_details:first-of-type]:border-t [&_summary]:flex [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:items-center [&_summary]:justify-between [&_summary]:gap-6 [&_summary]:py-5 [&_summary]:text-h5 [&_summary]:font-semibold [&_summary]:text-[#0f0f0f] [&_summary::-webkit-details-marker]:hidden",
-              "[&_details>div]:pb-6 [&_details>div]:text-base [&_details[open]_summary]:after:content-['−'] [&_summary]:after:shrink-0 [&_summary]:after:text-2xl [&_summary]:after:font-normal [&_summary]:after:text-rust-600 [&_summary]:after:content-['+']"
-            ]}>
+            <div class={section_body_styles()}>
               {Phoenix.HTML.raw(section.html)}
             </div>
           </div>
@@ -201,5 +185,27 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
       <.cta_footer />
     </div>
     """
+  end
+
+  # Prose inside a section: paragraphs, tables, screenshots, step cards and
+  # collapsible questions, all styled from the rendered Markdown.
+  defp section_body_styles do
+    [
+      "min-w-0 text-[17px] leading-[1.65] text-grey-700",
+      "[&_p]:max-w-[62ch] [&_p+p]:mt-4 [&_p:has(+table)]:mb-4 [&_table+p]:mt-4 [&_table+p]:text-[13px] [&_table+p]:leading-normal [&_table+p]:text-grey-600",
+      "[&_a]:text-[#0f0f0f] [&_a]:underline [&_a]:decoration-rust-400 [&_a]:underline-offset-[3px] [&_a:hover]:text-rust-700",
+      "[&_strong]:text-[#0f0f0f]",
+      "[&_figcaption]:mt-3 [&_figcaption]:text-[13px] [&_figcaption]:text-grey-600 [&_figure]:my-8 [&_figure]:first:mt-0 [&_figure_img]:block [&_figure_img]:h-auto [&_figure_img]:w-full [&_figure_img]:rounded-[4px] [&_figure_img]:bg-white [&_figure_img]:p-2 [&_figure_img]:shadow-[0_1px_0_var(--color-grey-200),0_26px_50px_-30px_rgba(87,54,35,.45)]",
+      "[&_table]:mt-2 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:rounded-[4px] [&_table]:border [&_table]:border-grey-200 [&_table]:bg-white [&_table]:font-sans [&_table]:text-[14.5px] [&_table]:leading-snug lg:[&_table]:table",
+      "[&_table+table]:mt-6 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-grey-600 [&_th]:uppercase [&_thead]:bg-grey-50 [&_thead:not(:has(th:not(:empty)))]:hidden",
+      "[&_tbody_tr:first-child_td]:border-t-0 [&_td]:border-t [&_td]:border-grey-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_td:first-child]:font-medium [&_td:first-child]:text-[#0f0f0f] [&_thead+tbody_tr:first-child_td]:border-t",
+      "[&_ol.steps]:grid [&_ol.steps]:gap-3 [&_ol.steps]:[counter-reset:step] sm:[&_ol.steps]:grid-cols-2 xl:[&_ol.steps]:grid-cols-3",
+      "[&_.steps>li]:relative [&_.steps>li]:rounded-[4px] [&_.steps>li]:border [&_.steps>li]:border-grey-200 [&_.steps>li]:bg-white [&_.steps>li]:p-5 [&_.steps>li]:pt-14 [&_.steps>li]:font-sans [&_.steps>li]:text-[14.5px] [&_.steps>li]:leading-snug [&_.steps>li]:[counter-increment:step]",
+      "[&_.steps>li]:before:absolute [&_.steps>li]:before:top-4 [&_.steps>li]:before:left-5 [&_.steps>li]:before:grid [&_.steps>li]:before:size-7 [&_.steps>li]:before:place-items-center [&_.steps>li]:before:rounded-full [&_.steps>li]:before:bg-rust-500 [&_.steps>li]:before:text-[13px] [&_.steps>li]:before:font-bold [&_.steps>li]:before:text-[#0f0f0f] [&_.steps>li]:before:content-[counter(step)]",
+      "[&_.steps_b]:block [&_.steps_b]:font-landing [&_.steps_b]:text-[17px] [&_.steps_b]:font-semibold [&_.steps_b]:text-[#0f0f0f] [&_.steps_span]:mt-1.5 [&_.steps_span]:block [&_.steps_span:first-of-type]:text-[11.5px] [&_.steps_span:first-of-type]:font-semibold [&_.steps_span:first-of-type]:tracking-[.06em] [&_.steps_span:first-of-type]:text-rust-700 [&_.steps_span:first-of-type]:uppercase",
+      "[&_tr.firmowid]:bg-[#0f0f0f] [&_tr.firmowid_a]:text-white [&_tr.firmowid_td]:border-transparent [&_tr.firmowid_td]:text-white",
+      "[&_details]:border-b [&_details]:border-rust-200 [&_details:first-of-type]:border-t [&_summary]:flex [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:items-center [&_summary]:justify-between [&_summary]:gap-6 [&_summary]:py-5 [&_summary]:text-h5 [&_summary]:font-semibold [&_summary]:text-[#0f0f0f] [&_summary::-webkit-details-marker]:hidden",
+      "[&_details>div]:pb-6 [&_details>div]:text-base [&_details[open]_summary]:after:content-['−'] [&_summary]:after:shrink-0 [&_summary]:after:text-2xl [&_summary]:after:font-normal [&_summary]:after:text-rust-600 [&_summary]:after:content-['+']"
+    ]
   end
 end
