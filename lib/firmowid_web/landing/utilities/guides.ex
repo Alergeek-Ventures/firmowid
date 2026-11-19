@@ -5,7 +5,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   `priv/guides/pomoc` (`/pomoc`).
 
   Each file starts with YAML front matter (`title`, `description`, `published`,
-  `updated` and, for guides and help articles, `category`); the file name is the
+  `updated` and, for guides and help articles, `category`; feature pages may add
+  `landing` with `kicker`, `note` and `facts` for their landing layout); the file name is the
   URL slug. Guide categories, in display order, and the guide index heading and
   introduction are in `priv/guides/categories.yml` and `priv/guides/index.yml`;
   the help index heading, introduction and categories are in
@@ -38,7 +39,15 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
           category: category() | nil,
           html: String.t(),
           faq: [GuideMarkdown.faq_entry()],
-          image: image() | nil
+          image: image() | nil,
+          layout: GuideMarkdown.feature_layout() | nil,
+          landing: landing() | nil
+        }
+
+  @type landing :: %{
+          kicker: String.t() | nil,
+          note: String.t() | nil,
+          facts: [%{label: String.t(), value: String.t()}]
         }
 
   @guides_dir Application.app_dir(:firmowid, "priv/guides")
@@ -85,9 +94,13 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   @help_categories help_index |> Map.fetch!("categories") |> Enum.map(to_category)
 
-  @feature_link_label @features_index_path
-                      |> YamlElixir.read_from_file!()
-                      |> Map.fetch!("link_label")
+  features_index = YamlElixir.read_from_file!(@features_index_path)
+
+  @feature_link_label Map.fetch!(features_index, "link_label")
+
+  @feature_page features_index
+                |> Map.fetch!("page")
+                |> Map.new(fn {key, value} -> {String.to_atom(key), value} end)
 
   # Section, URL prefix, breadcrumb root and categories of each directory.
   @sections %{
@@ -149,6 +162,16 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
             title = Map.fetch!(meta, "title")
 
+            landing = fn landing ->
+              facts =
+                Enum.map(
+                  landing["facts"] || [],
+                  &%{label: Map.fetch!(&1, "label"), value: Map.fetch!(&1, "value")}
+                )
+
+              %{kicker: landing["kicker"], note: landing["note"], facts: facts}
+            end
+
             %{
               slug: slug,
               section: section,
@@ -167,6 +190,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               html: html,
               faq: GuideMarkdown.faq(body),
               image: image,
+              layout: if(section == :feature, do: GuideMarkdown.feature_layout(html)),
+              landing: if(section == :feature, do: landing.(Map.get(meta, "landing") || %{})),
               # Body images and the preview path (even when missing) recompile this module when they change.
               resources:
                 [Path.join(@static_dir, og_path)] ++
@@ -199,6 +224,10 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @doc "Returns the label of links from the /funkcje tiles to the feature pages."
   @spec feature_link_label() :: String.t()
   def feature_link_label, do: @feature_link_label
+
+  @doc "Returns the fixed texts of the feature page layout (links, buttons, quote author)."
+  @spec feature_page() :: %{atom() => String.t()}
+  def feature_page, do: @feature_page
 
   @doc "Returns the heading and introduction of the help index."
   @spec help_index_page() :: %{heading: String.t(), intro: String.t()}
