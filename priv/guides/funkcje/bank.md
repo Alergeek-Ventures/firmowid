@@ -3,6 +3,16 @@ title: "Program do faktur z integracją bankową i dopasowaniem przelewów"
 description: "Firmowid pobiera przelewy z banku przez GoCardless i sam przypina je do faktur. Jak to wygląda u nas na co dzień, co obsługuje i czego nie robi."
 published: 2026-11-18
 updated: 2026-11-18
+landing:
+  kicker: "Funkcje · Bank"
+  note: "przelewy same przypinają się do faktur"
+  facts:
+    - label: "Połączenie"
+      value: "przez GoCardless"
+    - label: "Nowe przelewy"
+      value: "co drugi dzień"
+    - label: "Zgoda w banku"
+      value: "90 dni, potem odnowienie"
 ---
 
 Wcześniej braliśmy wyciąg z banku i długopisem skreślaliśmy każdy przelew, mając fakturę w ręce albo na komputerze. Było to bardzo czasochłonne. Nie kontrolowaliśmy, czy kontrahent już przelał pieniądze i ile dni zostało mu do terminu. Teraz przelewy same przypinają się do faktur, a gdy Firmowid czegoś nie przypnie, proszę asystenta o pomoc.
