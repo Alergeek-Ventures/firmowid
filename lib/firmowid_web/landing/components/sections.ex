@@ -83,7 +83,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Monthly ZIP package for your accounting office")
       ],
       visual: :costs,
-      page: nil
+      page: "faktury-kosztowe"
     },
     %{
       tags: [gettext_noop("analysis"), gettext_noop("profitability")],
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Tracked hours ready for payroll")
       ],
       visual: :team,
-      page: nil
+      page: "zespol"
     },
     %{
       tags: [gettext_noop("inbox"), gettext_noop("everyday work")],
@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("A separate list of their own tasks for every employee")
       ],
       visual: :inbox,
-      page: nil
+      page: "skrzynka"
     }
   ]
 
