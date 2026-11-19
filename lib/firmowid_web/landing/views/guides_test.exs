@@ -23,6 +23,16 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert html =~ ~s("@type":"FAQPage")
   end
 
+  test "the bank feature page pairs transfers with invoices and compares prices", %{conn: conn} do
+    html = conn |> get(~p"/funkcje/bank") |> html_response(200)
+
+    assert html =~ Guides.feature_page().match_transfer
+    assert html =~ "Północny Kod"
+    assert html =~ ~s(<tr class="firmowid">)
+    assert html =~ ~s(href="#banki-i-waluty")
+    assert html =~ ~s(src="/images/landing/banks/pkobp.png")
+  end
+
   test "a long title drops the brand suffix and a short one keeps it", %{conn: conn} do
     long = conn |> get(~p"/poradnik/tryb-offline-ksef") |> html_response(200) |> title()
 
