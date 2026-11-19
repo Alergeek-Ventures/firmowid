@@ -62,4 +62,76 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdownTest do
       assert GuideMarkdown.faq("## Wstęp\n\nTekst.\n") == []
     end
   end
+
+  describe "feature_layout/1" do
+    test "takes the first image as the hero, the text before the first heading as the introduction" do
+      html = """
+      <p>Wcześniej robiliśmy to ręcznie.</p>
+      <p><img src="/images/guides/funkcje/a.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Lista faktur" /></p>
+      <h2>Na co dzień</h2>
+      <p>Tekst.</p>
+      <p><img src="/images/guides/funkcje/b.webp" width="800" height="600" loading="lazy" decoding="async" alt="Faktura kosztowa" /></p>
+      """
+
+      layout = GuideMarkdown.feature_layout(html)
+
+      assert layout.hero == %{
+               src: "/images/guides/funkcje/a.webp",
+               width: "1600",
+               height: "900",
+               alt: "Lista faktur"
+             }
+
+      assert layout.intro == "<p>Wcześniej robiliśmy to ręcznie.</p>"
+
+      assert [
+               %{
+                 id: "na-co-dzien",
+                 title: "Na co dzień",
+                 faq?: false,
+                 band?: false,
+                 wide?: false,
+                 html: body
+               }
+             ] =
+               layout.sections
+
+      assert body =~ "<figcaption>Faktura kosztowa</figcaption>"
+    end
+
+    test "turns step tables into cards, questions into collapsible entries and marks comparisons" do
+      html = """
+      <p>Wstęp.</p>
+      <h2>Jak to działa</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Krok</th>
+      <th>Kto</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Wniosek</td>
+      <td>pracownik</td>
+      </tr>
+      </tbody>
+      </table>
+      <h2>Porównanie</h2>
+      <table><tbody><tr class="firmowid"><td>Firmowid</td></tr></tbody></table>
+      <h2>Najczęstsze pytania</h2>
+      <h3>Czy można?</h3>
+      <p>Tak.</p>
+      """
+
+      [steps, comparison, faq] = GuideMarkdown.feature_layout(html).sections
+
+      assert steps.html =~
+               ~s(<ol class="steps"><li><b>Wniosek</b><span>pracownik</span></li></ol>)
+
+      assert comparison.band?
+      assert faq.faq?
+      assert faq.html =~ "<details><summary>Czy można?</summary><div><p>Tak.</p></div></details>"
+    end
+  end
 end
