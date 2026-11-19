@@ -56,7 +56,8 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
   @doc """
   Splits a feature page's HTML for its landing layout: the first image becomes
   the hero picture, the text before the first `<h2>` the quoted introduction,
-  and each `<h2>` a section. Images in sections get their alt text as a caption
+  and each `<h2>` a section. Images in sections get their alt text as a caption,
+  a table of steps becomes step cards, a table of reports a grid of cards
   and the questions under `#{@faq_heading}` become collapsible entries.
   """
   @spec feature_layout(String.t()) :: feature_layout()
@@ -84,6 +85,7 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
             ~s(<figure><img src="#{src}" width="#{width}" height="#{height}" loading="lazy" decoding="async" alt="#{alt}" /><figcaption>#{alt}</figcaption></figure>\n)
           end)
           |> steps()
+          |> cards()
           |> then(&if(faq?, do: faq_details(&1), else: &1))
 
         %{
@@ -128,6 +130,27 @@ defmodule FirmowidWeb.Landing.Utilities.GuideMarkdown do
             ~s(<div class="feature-flow" data-steps="#{length(images)}"><ol class="steps">#{items}</ol>) <>
               ~s(<div class="feature-flow__screens">#{screens}</div></div>)
         end
+      end
+    )
+  end
+
+  # A table whose first column is "Zestawienie" becomes a grid of cards: the
+  # name, a sample figure drawn large and one sentence (see `.feature-cards`
+  # in assets/css/landing.css).
+  defp cards(html) do
+    Regex.replace(
+      ~r/<table>\s*<thead>\s*<tr>\s*<th>Zestawienie<\/th>.*?<\/thead>\s*<tbody>(.*?)<\/tbody>\s*<\/table>/s,
+      html,
+      fn _, rows ->
+        items =
+          for [_, row] <- Regex.scan(~r/<tr>(.*?)<\/tr>/s, rows) do
+            [name, sample, text] =
+              for [_, cell] <- Regex.scan(~r/<td>(.*?)<\/td>/s, row), do: cell
+
+            ~s(<li><span>#{name}</span><b>#{sample}</b><p>#{text}</p></li>)
+          end
+
+        ~s(<ul class="feature-cards">#{items}</ul>)
       end
     )
   end

@@ -30,6 +30,15 @@
 @keyframes feature-timer-s { from { --timer-s: 0; } to { --timer-s: 60; } }
 @keyframes feature-timer-bar { from { transform: scaleX(0); } }
 
+/* Feature pages: reports as cards, each with a sample figure. */
+.feature-cards { display: grid; gap: 12px; margin-top: 24px; font-family: var(--font-sans); }
+@media (min-width: 640px) { .feature-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.feature-cards > li { border: 1px solid var(--color-grey-200); border-radius: 4px; background: #fff; padding: 20px; }
+.feature-cards > li > span { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-rust-700); }
+.feature-cards > li > b { display: block; margin-top: 10px; font-size: 26px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; color: #0f0f0f; font-variant-numeric: tabular-nums; }
+.feature-cards > li > b::before { content: "np. "; font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--color-grey-600); }
+.feature-cards > li > p { margin-top: 8px; font-size: 14.5px; line-height: 1.4; }
+
 /* Feature pages (/funkcje/<slug>): steps with screenshots. The highlighted step
    and its screen take turns, 3.5 s each; data-steps sets the cycle length. */
 .feature-flow { display: grid; gap: 24px; align-items: center; }
