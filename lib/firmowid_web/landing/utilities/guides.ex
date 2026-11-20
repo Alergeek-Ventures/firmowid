@@ -7,7 +7,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   Each file starts with YAML front matter (`title`, `description`, `published`,
   `updated` and, for guides and help articles, `category`; feature pages may add
   `landing` with `kicker`, `note`, `facts`, `match`, the transfers paired with
-  invoices drawn in the hero, and `timer`, the running timer with the month's
+  invoices drawn in the hero, `split`, the bar showing where each 100 zł of
+  revenue went, and `timer`, the running timer with the month's
   hours by project drawn there, for their landing layout); the file name is the
   URL slug. Guide categories, in display order, and the guide index heading and
   introduction are in `priv/guides/categories.yml` and `priv/guides/index.yml`;
@@ -71,6 +72,13 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               month: String.t(),
               total: String.t(),
               projects: [%{name: String.t(), hours: String.t(), share: pos_integer()}]
+            }
+            | nil,
+          split:
+            %{
+              period: String.t(),
+              left: pos_integer(),
+              costs: [%{name: String.t(), share: pos_integer()}]
             }
             | nil
         }
@@ -235,13 +243,27 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   }
                 end
 
+              split =
+                if split = landing["split"] do
+                  %{
+                    period: Map.fetch!(split, "period"),
+                    left: Map.fetch!(split, "left"),
+                    costs:
+                      Enum.map(
+                        Map.fetch!(split, "costs"),
+                        &%{name: Map.fetch!(&1, "name"), share: Map.fetch!(&1, "share")}
+                      )
+                  }
+                end
+
               %{
                 kicker: landing["kicker"],
                 note: landing["note"],
                 author: quote_author.(landing["author"]),
                 facts: facts,
                 match: match,
-                timer: timer
+                timer: timer,
+                split: split
               }
             end
 
