@@ -572,7 +572,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         ~H"""
         <.link
           kind="unstyled"
-          class="text-sm font-bold underline"
+          class="text-sm font-bold"
           navigate={@cost_invoice_path}
         >
           {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
@@ -601,7 +601,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         ~H"""
         <.link
           kind="unstyled"
-          class="text-sm font-bold underline"
+          class="text-sm font-bold"
           navigate={Navigation.invoices_list_path()}
         >
           {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />

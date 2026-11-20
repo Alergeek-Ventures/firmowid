@@ -540,9 +540,9 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       days_late: Date.diff(today, invoice.effective_due_date),
       icon: "file-chart-column",
       title: overdue_invoice_title(invoice, side),
-      amount: Money.to_string!(Money.abs(invoice.effective_amount)),
+      amount: Money.to_string!(Money.abs(invoice.effective_amount), minimum_grouping_digits: 1),
       context: gettext("due %{date}", date: Calendar.strftime(invoice.effective_due_date, "%d.%m.%Y")),
-      person: counterparty_name(invoice, side),
+      person: invoice |> counterparty_name(side) |> short_legal_forms(),
       action: gettext("Review"),
       href:
         if(side == :sales,
@@ -554,7 +554,30 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   defp counterparty_name(invoice, :sales), do: invoice.buyer_display_name_label
 
-  defp counterparty_name(invoice, :cost), do: invoice.effective_seller_display_name || invoice.effective_seller
+  # Spelled out in the registers, legal forms take most of a narrow line:
+  # "ACME SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ" reads "ACME sp. z o.o.",
+  # the name itself keeps its case. Longer forms come first, as they contain
+  # the shorter ones.
+  defp short_legal_forms(nil), do: nil
+
+  defp short_legal_forms(name) do
+    Enum.reduce(
+      [
+        {"prosta spółka akcyjna", "P.S.A."},
+        {"spółka z ograniczoną odpowiedzialnością", "sp. z o.o."},
+        {"spółka komandytowo-akcyjna", "S.K.A."},
+        {"spółka komandytowa", "sp.k."},
+        {"spółka jawna", "sp.j."},
+        {"spółka partnerska", "sp.p."},
+        {"spółka akcyjna", "S.A."},
+        {"spółka cywilna", "s.c."}
+      ],
+      name,
+      fn {form, short}, name ->
+        String.replace(name, Regex.compile!("(?<!\\p{L})#{form}(?!\\p{L})", "iu"), short)
+      end
+    )
+  end
 
   defp overdue_invoice_title(invoice, :sales),
     do: gettext("Overdue sales invoice %{number}", number: invoice.invoice_number)
@@ -615,5 +638,19 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   def month(_scope, _today), do: []
 
-  defp pln(amount), do: Money.to_string!(Money.new(:PLN, Decimal.abs(amount)), fractional_digits: 0)
+  # Grouped from four digits on, "7 011 zł", though Polish CLDR starts at five.
+  defp pln(amount),
+    do: Money.to_string!(Money.new(:PLN, Decimal.abs(amount)), fractional_digits: 0, minimum_grouping_digits: 1)
+
+  @doc """
+  A day as the inbox names it: "śr 18.11", with the year once it is another
+  one, "wt 9.02.2027". The abbreviated weekday loses its dot ("śr." in CLDR).
+  """
+  @spec short_date(Date.t(), Date.t()) :: String.t()
+  def short_date(date, today) do
+    format = if date.year == today.year, do: "d.MM", else: "d.MM.y"
+    weekday = date |> Firmowid.Cldr.Date.to_string!(format: "EEE") |> String.trim_trailing(".")
+
+    "#{weekday} #{Firmowid.Cldr.Date.to_string!(date, format: format)}"
+  end
 end
