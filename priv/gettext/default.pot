@@ -4256,6 +4256,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #: lib/firmowid_web/timetracker/controllers/csv.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
@@ -5887,6 +5888,7 @@ msgid "Friday"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/components/session.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgctxt "time range column"
 msgid "From"
@@ -9445,6 +9447,12 @@ msgstr ""
 msgid "Photos and scans of documents"
 msgstr ""
 
+#: lib/firmowid_web/timetracker/components/session.ex
+#, elixir-autogen, elixir-format
+msgctxt "session column"
+msgid "Place"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #: lib/firmowid_web/admin/views/organizations.ex
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -12982,6 +12990,7 @@ msgid "Title"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/components/session.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgctxt "time range column"
 msgid "To"
@@ -14283,6 +14292,7 @@ msgid "Working time session started"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgid "Workplace"
 msgstr ""
@@ -15005,12 +15015,6 @@ msgctxt "date range start"
 msgid "from"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgctxt "session time range"
-msgid "from"
-msgstr ""
-
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "has already been taken"
@@ -15061,7 +15065,6 @@ msgid "in progress"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
-#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "in the office"
@@ -15446,7 +15449,6 @@ msgid "rejected"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
-#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "remotely"
@@ -15614,12 +15616,6 @@ msgstr ""
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgctxt "date range end"
-msgid "to"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgctxt "session time range"
 msgid "to"
 msgstr ""
 

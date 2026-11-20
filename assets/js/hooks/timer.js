@@ -19,8 +19,10 @@ export const Timer = {
     }
   },
 
+  // A stopped timer shows the server's value; recomputing it here would add the
+  // time since the page rendered.
   beforeUpdate() {
-    this.updateElement();
+    if (!this.disabled) this.updateElement();
   },
 
   formatTime(elapsed) {

@@ -187,33 +187,39 @@
                   phx-mounted={list_enter()}
                   class="flex w-full flex-col items-center justify-center gap-12 pt-8"
                 >
-                  <div class="flex h-8 w-full gap-6">
-                    <.input
-                      type="date"
-                      class="min-w-0 flex-1"
-                      input_class="w-full h-8 border-none bg-grey-200!"
-                      field={@form[:date]}
-                    />
+                  <div class="flex w-full gap-2">
+                    <div class="flex w-40 shrink-0 flex-col gap-1">
+                      <label for={@form[:date].id} class="text-xs/[1.4] font-medium text-grey-500">
+                        {gettext("Date")}
+                      </label>
+                      <FirmowidWeb.Timetracker.Components.Session.date_field field={@form[:date]} />
+                    </div>
 
-                    <.input
-                      step="60"
-                      label={pgettext("session time range", "from")}
-                      type="time"
-                      class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
-                      input_class="w-full h-8 border-none bg-grey-200!"
-                      field={@form[:start_time]}
-                      value={format_time(@form[:start_time].value)}
-                    />
+                    <div class="flex min-w-0 flex-1 flex-col gap-1">
+                      <label
+                        for={@form[:start_time].id}
+                        class="text-xs/[1.4] font-medium text-grey-500"
+                      >
+                        {pgettext("time range column", "From")}
+                      </label>
+                      <FirmowidWeb.Timetracker.Components.Session.time_field
+                        field={@form[:start_time]}
+                        value={format_time(@form[:start_time].value)}
+                      />
+                    </div>
 
-                    <.input
-                      step="60"
-                      type="time"
-                      label={pgettext("session time range", "to")}
-                      class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
-                      input_class="w-full h-8 border-none bg-grey-200!"
-                      field={@form[:end_time]}
-                      value={format_time(@form[:end_time].value)}
-                    />
+                    <div class="flex min-w-0 flex-1 flex-col gap-1">
+                      <label
+                        for={@form[:end_time].id}
+                        class="text-xs/[1.4] font-medium text-grey-500"
+                      >
+                        {pgettext("time range column", "To")}
+                      </label>
+                      <FirmowidWeb.Timetracker.Components.Session.time_field
+                        field={@form[:end_time]}
+                        value={format_time(@form[:end_time].value)}
+                      />
+                    </div>
                   </div>
 
                   <.button
