@@ -304,6 +304,47 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
              )
     end
 
+    test "saves each grouped session's own workplace", %{conn: conn, user: user, project: project} do
+      yesterday = Date.add(Date.utc_today(), -1)
+
+      [morning, afternoon] =
+        for {from, to} <- [{~T[09:00:00], ~T[10:00:00]}, {~T[13:00:00], ~T[14:00:00]}] do
+          session_fixture(%{
+            user_id: user.id,
+            project_id: project.id,
+            title: "Code review",
+            start_datetime: DateTime.new!(yesterday, from, "Etc/UTC"),
+            end_datetime: DateTime.new!(yesterday, to, "Etc/UTC"),
+            organization_id: user.member.organization_id
+          })
+        end
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      form_id =
+        Enum.find_value([morning, afternoon], fn session ->
+          id = "edit-session-form-#{session.id}"
+
+          if has_element?(lv, "##{id} [name='sessions_form[start_end_times][1][is_remote]']"),
+            do: id
+        end)
+
+      # The workplace dropdown writes its choice into a hidden input.
+      lv
+      |> form("##{form_id}")
+      |> render_submit(%{
+        sessions_form: %{
+          "start_end_times" => %{
+            "0" => %{"is_remote" => "false"},
+            "1" => %{"is_remote" => "true"}
+          }
+        }
+      })
+
+      refute Repo.get!(Session, morning.id).is_remote
+      assert Repo.get!(Session, afternoon.id).is_remote
+    end
+
     test "edits an adjacent session through the minute-only form", %{
       conn: conn,
       user: user,
