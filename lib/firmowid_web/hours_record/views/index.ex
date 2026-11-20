@@ -7,8 +7,13 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
+
+  import FirmowidWeb.HoursRecord.Components.Document,
+    only: [in_progress: 1, sent: 1, pending_label: 1]
+
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.LocalDate
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
@@ -16,6 +21,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Timetracker.Utilities.Navigation
+  alias FirmowidWeb.Timetracker.Views.Index, as: TimetrackerIndex
 
   @impl true
   def mount(_params, _session, socket) do
@@ -40,6 +46,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> assign(:can_use_hours_records, can_use_hours_records)
       |> assign(settings_before: settings_before, settings_after: settings_after)
       |> assign(:page_title, pgettext("hours record page", "Timesheet"))
+      |> assign(:main_class, "bg-white")
 
     {:ok, socket}
   end
@@ -50,7 +57,11 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     {:noreply,
      socket
-     |> assign(selected_date: month, change_request_error: nil)
+     |> assign(selected_date: month, change_request_error: nil, just_sent?: false)
+     |> assign(
+       :month_label,
+       month |> Firmowid.Cldr.Date.to_string!(format: "LLLL y") |> String.capitalize()
+     )
      |> assign(:change_request_form, to_form(%{}, as: :change_request))
      |> refetch_data()}
   end
@@ -70,14 +81,8 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   end
 
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = Date.from_iso8601!(month)
-
-    socket =
-      socket
-      |> assign(:selected_date, month)
-      |> push_patch(to: Navigation.hours_record_index_path(month))
-
-    {:noreply, socket}
+    # handle_params assigns the month together with its data, so the page changes once.
+    {:noreply, push_patch(socket, to: Navigation.hours_record_index_path(Date.from_iso8601!(month)))}
   end
 
   def handle_event("request-change", %{"change_request" => params}, socket) do
@@ -111,9 +116,18 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     end
   end
 
+  def handle_event("withdraw-change-request", _params, socket) do
+    {:ok, _record} =
+      HoursRecord.withdraw_change_request(socket.assigns.current_hours_record,
+        scope: socket.assigns.ash_scope
+      )
+
+    {:noreply, refetch_data(socket)}
+  end
+
   @impl true
   def handle_info(:upload_complete, socket) do
-    {:noreply, refetch_data(socket)}
+    {:noreply, socket |> assign(:just_sent?, true) |> refetch_data()}
   end
 
   def refetch_data(socket) do
@@ -122,6 +136,11 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     member_id = socket.assigns.current_user.member.id
     month = selected_date.month
     year = selected_date.year
+
+    # A project open in one month stays open in the next, so switching months does
+    # not fold it away.
+    expanded_ids =
+      for %{expanded: true, id: id} <- socket.assigns[:projects] || [], into: MapSet.new(), do: id
 
     projects =
       member_id
@@ -133,11 +152,16 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
           |> Timetracker.list_sessions!(scope: scope)
           |> Enum.group_by(& &1.title)
           |> Enum.map(fn {title, ss} ->
-            %{title: title, duration: ss |> Enum.map(& &1.duration) |> Enum.sum()}
+            # The newest session names the task in the time tracker's filtered list.
+            newest = Enum.max_by(ss, & &1.start_datetime, DateTime)
+            %{id: newest.id, title: title, duration: ss |> Enum.map(& &1.duration) |> Enum.sum()}
           end)
           |> Enum.sort_by(& &1.duration, :desc)
 
-        Map.merge(project, %{expanded: false, sessions: grouped_sessions})
+        Map.merge(project, %{
+          expanded: MapSet.member?(expanded_ids, project.id),
+          sessions: grouped_sessions
+        })
       end)
 
     total_duration = Session.month_duration!(selected_date, scope: scope)
@@ -145,6 +169,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     {:ok, current_month_hours_record} =
       HoursRecord.by_month(member_id, month, year,
         scope: scope,
+        load: [:blob],
         not_found_error?: false
       )
 
@@ -154,11 +179,24 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
         scope: scope
       )
 
+    {:ok, running_session} = Session.get_current(scope: scope)
+
     socket
+    |> assign(:running_session, running_session)
+    # The record is signed once the month is over; until then it can only be previewed.
+    |> assign(
+      :month_in_progress?,
+      Date.compare(Date.end_of_month(selected_date), LocalDate.today()) != :lt
+    )
     |> assign(:current_hours_record, current_month_hours_record)
     |> assign(
       :change_requests,
-      Enum.filter(period_records, &(&1.change_requested_at && &1.submission_status == :submitted))
+      # A request still waiting for a decision is shown inside the document card.
+      Enum.filter(
+        period_records,
+        &(&1.change_requested_at && &1.change_request_decision &&
+            &1.submission_status == :submitted)
+      )
     )
     |> assign(
       :previous_hours_records,

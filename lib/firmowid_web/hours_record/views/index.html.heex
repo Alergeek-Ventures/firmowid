@@ -1,111 +1,262 @@
-<div class="container p-6">
-  <div class="flex justify-between">
-    <.back navigate={~p"/czasosledz/"} class="my-auto" icon_only />
-    <.month_picker
-      id="selected_date"
-      active_months={@active_months}
-      selected_date={@selected_date}
-      data-position="bottom right"
-      show_on_mobile
-    />
-  </div>
+<% {worked_projects, idle_projects} = Enum.split_with(@projects, &(&1.duration > 0)) %>
+<div class="flex w-full flex-col gap-8 md:px-4 md:pt-6 md:pb-12">
+  <header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+    <h1 class="text-2xl/tight font-semibold text-grey-900">
+      {pgettext("hours record page", "Timesheet")}
+    </h1>
+    <%!-- As wide as the side panel below on wide screens. A running session fills what
+    the month leaves; without one the month stretches beside "Start a session", and a
+    long month name may push the pair past the panel. --%>
+    <div class={[
+      "flex min-w-0 items-center justify-end gap-3 max-sm:w-full",
+      if(@running_session, do: "xl:w-[360px]", else: "xl:min-w-[360px]")
+    ]}>
+      <%!-- Sized to the month like Figma's standard button, not to the widest month;
+      stretched, its icon and month keep to the left. The label comes from the server,
+      so a month change does not show an empty button until the picker fills it in. --%>
+      <.month_picker
+        id="selected_date"
+        active_months={@active_months}
+        selected_date={@selected_date}
+        value={@month_label}
+        data-position="bottom right"
+        class={[
+          "min-w-0! pr-2.25!",
+          !@running_session && "flex-1"
+        ]}
+        show_on_mobile
+      />
+      <%!-- The running session leads back to the time tracker, where it can be stopped. --%>
+      <.link
+        :if={@running_session}
+        id="hours-record-running-session"
+        navigate={~p"/czasosledz"}
+        kind="unstyled"
+        class="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-sm border border-grey-200 bg-white px-3 text-sm/5 whitespace-nowrap transition-colors duration-100 ease-out hover:bg-grey-50 active:bg-grey-100"
+      >
+        <span class="sr-only">{gettext("Back to the time tracker")}</span>
+        <span class="size-3 shrink-0 rounded-full bg-moss-500" aria-hidden="true"></span>
+        <span
+          id="hours-record-running-timer"
+          class="shrink-0 text-base/[normal] font-medium text-grey-900 tabular-nums"
+          phx-hook="Timer"
+          data-start_time={@running_session.start_datetime}
+          aria-label={gettext("The session is running")}
+        >
+          {TimeFormatter.format_timer(
+            DateTime.diff(DateTime.utc_now(), @running_session.start_datetime),
+            :with_seconds
+          )}
+        </span>
+        <span class="min-w-0 flex-1 truncate text-grey-600">{@running_session.title}</span>
+        <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-900" aria-hidden="true" />
+      </.link>
+      <%!-- With no session running, the same spot leads to the time tracker to start one. --%>
+      <.link
+        :if={!@running_session}
+        id="hours-record-start-session"
+        navigate={~p"/czasosledz"}
+        kind="button"
+        variant="outline"
+      >
+        <Lucideicons.timer aria-hidden="true" /> {gettext("Start a session")}
+      </.link>
+    </div>
+  </header>
 
-  <div class="mt-6 flex flex-col justify-between gap-6 md:mt-8 md:flex-row md:gap-20">
-    <div class="col-span-4 w-full space-y-2">
-      <%= for project <- @projects do %>
-        <div class="flex flex-col divide-y divide-grey-200 rounded-md bg-grey-50 px-4">
-          <FirmowidUI.Components.Button.button
-            phx-click="toggle-project"
-            type="button"
-            phx-value-id={project.id}
-            disabled={project.duration == 0}
-            variant="unstyled"
-            class="flex w-full items-center gap-6 py-5 text-left disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <span class="me-auto wrap-anywhere">{project.name}</span>
-            <span class="shrink-0 whitespace-nowrap tabular-nums">
-              {TimeFormatter.format_duration(project.duration)}
-            </span>
-            <span class="inline-flex items-center justify-center">
-              <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-grey-700" />
-              <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-grey-700" />
-            </span>
-          </FirmowidUI.Components.Button.button>
+  <div class="flex flex-col justify-between gap-6 xl:flex-row xl:gap-8">
+    <div class="flex min-w-0 flex-1 flex-col overflow-clip rounded-sm bg-white">
+      <div
+        :for={project <- worked_projects}
+        id={"hours-record-project-#{project.id}"}
+        class={[
+          "flex flex-col border-b border-grey-100 transition-colors duration-250 ease-out-quint motion-reduce:transition-none",
+          project.expanded && "bg-grey-50"
+        ]}
+      >
+        <.button
+          phx-click="toggle-project"
+          type="button"
+          phx-value-id={project.id}
+          variant="unstyled"
+          aria-expanded={to_string(project.expanded)}
+          class={
+            [
+              "flex w-full cursor-pointer items-center gap-4 pr-4 pl-5 text-left text-sm font-medium text-grey-900",
+              # Figma: 52 px open, and 52 px closed including the 1 px line under the row.
+              if(project.expanded, do: "h-13", else: "h-[51px]")
+            ]
+          }
+        >
+          <span class="min-w-0 flex-1 truncate leading-[1.4]">{project.name}</span>
+          <span class="shrink-0 leading-[1.4] whitespace-nowrap tabular-nums">
+            {TimeFormatter.format_duration(project.duration)}
+          </span>
+          <Lucideicons.chevron_down
+            class={[
+              "size-5 shrink-0 transition-transform duration-250 ease-out-quint motion-reduce:transition-none",
+              project.expanded && "rotate-180"
+            ]}
+            aria-hidden="true"
+          />
+        </.button>
 
-          <%!-- A wrapped title keeps tight lines and the gap between sessions stays wider, so each session reads as one block. --%>
-          <div :if={project.expanded} class="flex flex-col gap-5 py-4 pe-11">
-            <div :for={session <- project.sessions} class="flex items-baseline gap-6 text-sm">
-              <span class="max-w-prose leading-snug text-pretty wrap-anywhere">{session.title}</span>
-              <span class="ms-auto shrink-0 whitespace-nowrap tabular-nums">
-                {TimeFormatter.format_duration(session.duration)}
-              </span>
+        <%!-- The sessions stay in the page, so opening and closing can slide: the grid
+        row grows from 0fr to 1fr while the content is clipped. --%>
+        <div
+          class={[
+            "grid transition-[grid-template-rows,opacity] duration-250 ease-out-quint motion-reduce:transition-none",
+            if(project.expanded,
+              do: "grid-rows-[1fr] opacity-100",
+              else: "grid-rows-[0fr] opacity-0"
+            )
+          ]}
+          inert={!project.expanded}
+        >
+          <div class="min-h-0 overflow-hidden">
+            <div class="flex flex-col items-end gap-3 pb-3">
+              <ul class="flex w-full flex-col">
+                <li :for={session <- project.sessions}>
+                  <%!-- Opens the same list as the button below, with this task highlighted. --%>
+                  <.link
+                    navigate={
+                      Navigation.project_sessions_path(project.id, @selected_date, session.id)
+                    }
+                    kind="unstyled"
+                    class="flex h-10 items-center gap-4 px-5 text-sm/[1.4] text-grey-700 transition-colors duration-100 ease-out hover:bg-grey-100"
+                  >
+                    <span class="min-w-0 flex-1 truncate">{session.title}</span>
+                    <span class="w-[120px] shrink-0 text-right font-medium whitespace-nowrap tabular-nums">
+                      {TimeFormatter.format_duration(session.duration)}
+                    </span>
+                    <Lucideicons.chevron_right
+                      class="size-4 shrink-0 text-grey-500"
+                      aria-hidden="true"
+                    />
+                  </.link>
+                </li>
+              </ul>
+              <.link
+                navigate={Navigation.project_sessions_path(project.id, @selected_date)}
+                kind="button"
+                variant="outline"
+                size="small"
+                class="me-5"
+              >
+                <Lucideicons.clock /> {gettext("Show sessions in the time tracker")}
+              </.link>
             </div>
-            <.link
-              navigate={Navigation.project_sessions_path(project.id, @selected_date)}
-              kind="button"
-              variant="outline"
-              size="small"
-              class="self-end"
-            >
-              <Lucideicons.clock /> {gettext("Show sessions in the time tracker")}
-            </.link>
           </div>
         </div>
-      <% end %>
+      </div>
+
+      <div :if={idle_projects != []} id="hours-record-idle-projects" class="group/idle">
+        <.button
+          type="button"
+          variant="unstyled"
+          aria-expanded="false"
+          aria-controls="hours-record-idle-projects-list"
+          phx-click={
+            JS.toggle_attribute({"data-open", ""}, to: "#hours-record-idle-projects")
+            |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+            |> JS.toggle_attribute({"inert", ""}, to: "#hours-record-idle-projects-list")
+          }
+          class="flex cursor-pointer items-center gap-1.5 px-5 py-[18px] text-left text-sm/[1.4] font-medium text-grey-500 transition-colors duration-100 ease-out hover:text-grey-700"
+        >
+          {gettext("Projects without hours in %{month} (%{count})",
+            month: TimetrackerIndex.month_after_in(@selected_date),
+            count: length(idle_projects)
+          )}
+          <Lucideicons.chevron_down
+            class="size-4 shrink-0 transition-transform duration-250 ease-out-quint group-data-open/idle:rotate-180 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+        </.button>
+        <div
+          id="hours-record-idle-projects-list"
+          inert
+          class="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-250 ease-out-quint group-data-open/idle:grid-rows-[1fr] group-data-open/idle:opacity-100 motion-reduce:transition-none"
+        >
+          <ul class="min-h-0 overflow-hidden">
+            <li
+              :for={project <- idle_projects}
+              class="flex h-10 items-center px-5 text-sm/[1.4] text-grey-500"
+            >
+              <span class="min-w-0 truncate">{project.name}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <%!-- On a phone the summary and the timesheet actions come before the project list, which can be long. --%>
-    <div class="flex w-full flex-col gap-4 max-md:order-first md:max-w-[360px] md:gap-6">
-      <%!-- On a phone each figure is one row: the label on the left, the value on the right. --%>
-      <div class="flex flex-col gap-2 rounded-sm bg-grey-50 p-4 md:gap-8">
-        <h3 class="font-bold max-md:sr-only">{gettext("Summary:")}</h3>
-        <div class="max-md:flex max-md:flex-wrap max-md:items-baseline max-md:justify-between max-md:gap-x-4">
-          <p class="max-md:text-sm max-md:text-grey-700 md:mb-3">{gettext("Hours worked:")}</p>
-          <p class="font-bold md:text-xl">{TimeFormatter.format_duration(@total_duration)}</p>
+    <div class="flex w-full flex-col gap-4 max-xl:order-first xl:max-w-[360px] xl:shrink-0">
+      <section
+        id="hours-record-summary"
+        class="flex flex-col gap-5 rounded-sm border border-grey-100 bg-white p-6"
+      >
+        <h2 class="text-lg/[1.4] font-semibold text-grey-900">{gettext("Summary")}</h2>
+        <div class="flex flex-col gap-[3px]">
+          <p class="text-sm/5 text-grey-500">{gettext("Hours worked")}</p>
+          <p class="text-2xl/[34px] font-bold text-grey-900">
+            {TimeFormatter.format_duration(@total_duration)}
+          </p>
         </div>
         <div
-          :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)}
-          class="max-md:flex max-md:flex-wrap max-md:items-baseline max-md:justify-between max-md:gap-x-4"
+          :if={most_demanding = Enum.max_by(worked_projects, & &1.duration, fn -> nil end)}
+          class="flex flex-col gap-1"
         >
-          <p class="max-md:text-sm max-md:text-grey-700 md:mb-3">
-            {gettext("Most demanding project:")}
+          <p class="text-sm/5 text-grey-500">{gettext("Most time")}</p>
+          <p class="text-base/5 font-medium text-grey-900">
+            {most_demanding.name} · {TimeFormatter.format_duration(most_demanding.duration)}
           </p>
-          <p class="font-bold md:text-xl">
-            {TimeFormatter.format_duration(most_demanding.duration)}
-          </p>
-          <p class="text-sm text-grey-700 max-md:basis-full">{most_demanding.name}</p>
         </div>
-      </div>
-      <div
-        :if={@current_hours_record || @total_duration > 3599}
-        id="hours-record-submission-card"
-        class="flex flex-col gap-6 rounded-md bg-grey-50 p-4"
-      >
-        <div class="flex items-center justify-between gap-2 bg-grey-50">
-          <span class="font-bold">{pgettext("hours record page", "Timesheet")}</span>
+      </section>
 
-          <%= if @current_hours_record do %>
-            <span class="flex items-center justify-center gap-1 rounded-md bg-moss-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-moss-700 uppercase">
-              {pgettext("hours record badge", "Sent")} <.icon name="hero-check-micro" />
-            </span>
-          <% else %>
-            <span class="flex items-center justify-center gap-1 rounded-md bg-grey-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-grey-700 uppercase">
-              {pgettext("hours record badge", "None")} <.icon name="hero-x-mark-micro" />
-            </span>
-          <% end %>
+      <% month_in_progress? = !@current_hours_record && @month_in_progress? %>
+      <section
+        :if={@current_hours_record || month_in_progress? || @total_duration > 3599}
+        id="hours-record-submission-card"
+        class="flex flex-col gap-5 rounded-sm border border-grey-100 bg-white p-6"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2 class="text-lg/[1.4] font-semibold text-grey-900">
+            {gettext("Timesheet document")}
+          </h2>
+          <% pending_change? =
+            @current_hours_record && @current_hours_record.change_requested_at &&
+              is_nil(@current_hours_record.change_request_decision) %>
+          <.badge :if={pending_change?}>
+            {pending_label(@current_hours_record.change_request_kind)}
+          </.badge>
+          <.badge :if={@current_hours_record && !pending_change?} tone="success">
+            {pgettext("hours record badge", "Sent")}
+          </.badge>
+          <.badge :if={month_in_progress?}>
+            {pgettext("hours record badge", "In progress")}
+          </.badge>
+          <.badge :if={!@current_hours_record && !month_in_progress?}>
+            {pgettext("hours record badge", "To sign")}
+          </.badge>
         </div>
-        <p :if={!@can_use_hours_records} class="mt-2 text-sm">
-          {@settings_before}
-          <.link
+        <.sent
+          :if={@current_hours_record}
+          record={@current_hours_record}
+          animate={@just_sent?}
+        />
+        <.in_progress :if={month_in_progress?} selected_date={@selected_date} />
+        <p
+          :if={!@current_hours_record && !month_in_progress? && !@can_use_hours_records}
+          class="text-sm/[1.4] text-grey-700"
+        >
+          {@settings_before}<.link
             kind="unstyled"
             navigate={~p"/ustawienia"}
-            class="text-rust-700 hover:underline"
-          >
-            {pgettext("hours record settings link", "Settings")}
-          </.link>{@settings_after}
+            class="font-medium text-grey-900 underline decoration-from-font"
+          >{pgettext("hours record settings link", "Settings")}</.link>{@settings_after}
         </p>
         <.live_component
-          :if={!@current_hours_record && @can_use_hours_records}
+          :if={!@current_hours_record && !month_in_progress? && @can_use_hours_records}
           module={FirmowidWeb.HoursRecord.Components.UploadForm}
           id={"upload_form-#{Date.to_iso8601(@selected_date)}"}
           selected_date={@selected_date}
@@ -113,32 +264,23 @@
           total_duration={@total_duration}
           ash_scope={@ash_scope}
         />
-      </div>
-      <div
-        :if={@current_hours_record && is_nil(@current_hours_record.change_requested_at)}
-        id="hours-record-change-card"
-        class="rounded-md bg-grey-50"
-      >
-        <.button
-          id="hours-record-request-change"
-          type="button"
-          variant="unstyled"
-          class="block w-full cursor-pointer rounded-md p-4 text-center focus-visible:outline-2 focus-visible:outline-rust-500 active:bg-grey-200"
-          phx-click={show_modal("hours-record-change-request")}
-        >
-          {gettext("Request correction or cancellation")}
-        </.button>
-      </div>
-      <div
+      </section>
+      <section
         :for={record <- @change_requests}
-        class="rounded-md border border-rust-700 bg-grey-50 p-4"
+        class="rounded-sm border border-grey-100 bg-white p-6"
       >
         <.change_request record={record} />
-      </div>
-      <div :if={@previous_hours_records != []} class="rounded-md bg-grey-50 p-4">
+      </section>
+      <section
+        :if={@previous_hours_records != []}
+        class="rounded-sm border border-grey-100 bg-white p-6"
+      >
         <.submission_history records={@previous_hours_records} user={@current_user} />
-      </div>
-      <p :if={!@current_hours_record && @total_duration <= 3599} class="mt-2 text-center text-sm">
+      </section>
+      <p
+        :if={!@current_hours_record && !@month_in_progress? && @total_duration <= 3599}
+        class="text-center text-sm/[1.4] text-grey-500"
+      >
         {gettext("To fill in the timesheet you must add at least one hour of work")}
       </p>
     </div>
