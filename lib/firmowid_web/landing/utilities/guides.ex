@@ -49,6 +49,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @type landing :: %{
           kicker: String.t() | nil,
           note: String.t() | nil,
+          author: :stanislaw | :franek,
           facts: [%{label: String.t(), value: String.t()}],
           match: [
             %{
@@ -186,6 +187,12 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
             title = Map.fetch!(meta, "title")
 
+            # Who signs the quote under the hero; pages without `author` are signed by Stanisław.
+            quote_author = fn
+              nil -> :stanislaw
+              "franek" -> :franek
+            end
+
             landing = fn landing ->
               facts =
                 Enum.map(
@@ -231,6 +238,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
               %{
                 kicker: landing["kicker"],
                 note: landing["note"],
+                author: quote_author.(landing["author"]),
                 facts: facts,
                 match: match,
                 timer: timer

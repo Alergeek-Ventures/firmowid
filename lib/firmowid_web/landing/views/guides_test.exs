@@ -33,6 +33,19 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert html =~ ~s(src="/images/landing/banks/pkobp.png")
   end
 
+  test "a feature page signs its quote with the author from the front matter", %{conn: conn} do
+    texts = Guides.feature_page()
+
+    bank = conn |> get(~p"/funkcje/bank") |> html_response(200)
+    assert bank =~ texts.quote_franek_name
+    assert bank =~ ~s(src="/images/team-franek-madej.webp")
+    refute bank =~ texts.quote_name
+
+    time = conn |> get(~p"/funkcje/czas-pracy") |> html_response(200)
+    assert time =~ texts.quote_name
+    refute time =~ texts.quote_franek_name
+  end
+
   test "the time tracking feature page draws a running timer and compares prices", %{conn: conn} do
     html = conn |> get(~p"/funkcje/czas-pracy") |> html_response(200)
 

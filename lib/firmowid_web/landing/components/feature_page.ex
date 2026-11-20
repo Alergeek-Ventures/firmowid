@@ -22,11 +22,31 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
   # sobelow_skip ["XSS.Raw"]
   # Feature page HTML is compiled from Markdown committed in priv/guides with raw HTML disabled.
   def feature_page(assigns) do
+    texts = Guides.feature_page()
+
+    author =
+      case assigns.article.landing.author do
+        :stanislaw ->
+          %{
+            name: texts.quote_name,
+            role: texts.quote_role,
+            image: "/images/team-stanislaw-madej.webp"
+          }
+
+        :franek ->
+          %{
+            name: texts.quote_franek_name,
+            role: texts.quote_franek_role,
+            image: "/images/team-franek-madej.webp"
+          }
+      end
+
     assigns =
       assign(assigns,
-        texts: Guides.feature_page(),
+        texts: texts,
         layout: assigns.article.layout,
-        landing: assigns.article.landing
+        landing: assigns.article.landing,
+        author: author
       )
 
     ~H"""
@@ -254,15 +274,14 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
             </blockquote>
             <figcaption class="mt-8 flex items-center gap-4 text-[15px] text-[#f5f1ea]/70">
               <img
-                src="/images/team-stanislaw-madej.webp"
+                src={@author.image}
                 width="832"
                 height="1248"
                 alt=""
                 loading="lazy"
                 class="size-12 shrink-0 rounded-full bg-[#f5f1ea] object-cover object-[50%_8%]"
               />
-              <span><b class="font-semibold text-[#f5f1ea]">{@texts.quote_name}</b>
-              · {@texts.quote_role}</span>
+              <span><b class="font-semibold text-[#f5f1ea]">{@author.name}</b> · {@author.role}</span>
             </figcaption>
           </figure>
         </section>

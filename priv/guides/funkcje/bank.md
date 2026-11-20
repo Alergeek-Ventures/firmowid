@@ -6,6 +6,7 @@ updated: 2026-11-19
 landing:
   kicker: "Funkcje · Bank"
   note: "przelew sam trafia do faktury"
+  author: franek
   facts:
     - label: "Cena"
       value: "0 zł z jednym bankiem"
