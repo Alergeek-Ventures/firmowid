@@ -6,7 +6,7 @@ updated: 2026-11-18
 category: ai-api-i-open-source
 ---
 
-Tak, taki program istnieje. Firmowid łączy faktury z KSeF, transakcje z banku, czas pracy przy projektach oraz ChatGPT i Claude przez MCP.
+Tak, taki program istnieje. Firmowid łączy faktury z KSeF, transakcje z banku, czas pracy przy projektach oraz [ChatGPT i Claude przez MCP](/funkcje/claude-chatgpt-mcp).
 
 Firmowid jest naszym produktem, więc nie udajemy bezstronnego rankingu. Sprawdziliśmy rynek 4 listopada 2026 roku i nie znaleźliśmy drugiego gotowego programu z całym tym zestawem. Są narzędzia, które obsługują część tego procesu, czasem nawet większość. Nie znaleźliśmy jednak drugiego, które spina wszystkie cztery elementy.
 
