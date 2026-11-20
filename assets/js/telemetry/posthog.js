@@ -28,7 +28,8 @@ function posthogOptions() {
         "/s/": "/_x/3d81/",
         "/flags/": "/_x/4c6e/",
         "/array/": "/_x/5ab2/",
-        "/static/": "/_x/6f93/"
+        "/static/": "/_x/6f93/",
+        "/api/conversations/v1/": "/_x/7c2e/"
       };
 
       const entry = Object.entries(paths).find(([original]) => url.pathname.startsWith(original));

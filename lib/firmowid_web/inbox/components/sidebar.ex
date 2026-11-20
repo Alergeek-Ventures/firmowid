@@ -162,19 +162,19 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       </nav>
       <div class="mt-auto flex flex-col gap-0.5 border-t border-grey-800 pt-11 motion-safe:transition-[padding] motion-safe:duration-250 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:pt-3">
         <.button
-          id="app-sidebar-feedback"
+          id="app-sidebar-support"
           variant="unstyled"
           type="button"
-          phx-click={show_modal("feedback-modal")}
+          phx-click={show_modal("support-modal")}
           class={link_styles(false)}
           phx-hook="TippyWhenTruncated"
-          data-tippy-content={gettext("Feedback")}
+          data-tippy-content={gettext("Support")}
           data-tippy-placement="right"
           data-tippy-delay="[300, 0]"
           data-tippy-truncate-selector="[data-label]"
         >
           <Lucideicons.message_square_text class="size-4.5 shrink-0" aria-hidden="true" />
-          <span data-label class={label_styles()}>{gettext("Feedback")}</span>
+          <span data-label class={label_styles()}>{gettext("Support")}</span>
         </.button>
         <.button
           variant="unstyled"

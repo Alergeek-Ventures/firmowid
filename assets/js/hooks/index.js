@@ -21,6 +21,7 @@ import { NumberPopIn } from "./number_pop_in";
 import { ScrollIntoView } from "./scroll_into_view";
 import { ImageLoadReveal } from "./image_load_reveal";
 import { AssistantChat } from "./assistant";
+import { SupportForm } from "./support-form";
 
 export const Hooks = {
   ...UIHooks,
@@ -46,5 +47,6 @@ export const Hooks = {
   LandingHero,
   LandingPricing,
   NumberPopIn,
-  ImageLoadReveal
+  ImageLoadReveal,
+  SupportForm
 };
