@@ -8,9 +8,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceUpload do
 
   use FirmowidWeb, :html
 
-  import FirmowidUI.Components.Link
-  import Phoenix.Component, except: [link: 1]
-
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
@@ -134,13 +131,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceUpload do
         assigns = assign(assigns, :cost_invoice_id, cost_invoice.id)
 
         ~H"""
-        <.link
-          kind="unstyled"
-          class="text-sm font-bold"
-          navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
-        >
-          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
-        </.link>
+        <FirmowidWeb.Core.Toast.view_action navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)} />
         """
       end
     )

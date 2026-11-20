@@ -570,13 +570,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         assigns = assign(assigns, :cost_invoice_path, cost_invoice_path)
 
         ~H"""
-        <.link
-          kind="unstyled"
-          class="text-sm font-bold"
-          navigate={@cost_invoice_path}
-        >
-          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
-        </.link>
+        <FirmowidWeb.Core.Toast.view_action navigate={@cost_invoice_path} />
         """
       end
     )
@@ -599,13 +593,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       title: gettext("Invoice matched with a transaction"),
       action: fn assigns ->
         ~H"""
-        <.link
-          kind="unstyled"
-          class="text-sm font-bold"
-          navigate={Navigation.invoices_list_path()}
-        >
-          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
-        </.link>
+        <FirmowidWeb.Core.Toast.view_action navigate={Navigation.invoices_list_path()} />
         """
       end
     )

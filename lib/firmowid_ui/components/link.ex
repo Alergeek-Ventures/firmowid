@@ -117,7 +117,8 @@ defmodule FirmowidUI.Components.Link do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
       text_size_classes(size),
-      "font-normal text-grey-700",
+      # Figma's "Link": Geist Medium, grey-700, darker on hover and rust while pressed.
+      "font-medium text-grey-700",
       "hover:text-grey-900 active:text-rust-700",
       "[&>svg]:size-4"
     ]
@@ -131,6 +132,6 @@ defmodule FirmowidUI.Components.Link do
     ]
   end
 
-  defp text_size_classes("big"), do: "text-base/tight"
-  defp text_size_classes("small"), do: "text-sm/tight"
+  defp text_size_classes("big"), do: "text-base/[21px]"
+  defp text_size_classes("small"), do: "text-sm/4.5"
 end

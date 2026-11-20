@@ -2892,6 +2892,7 @@ msgstr ""
 msgid "Click to confirm the connection"
 msgstr ""
 
+#: lib/firmowid_web/core/toast.ex
 #: lib/firmowid_web/feedback/components/form.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
@@ -13353,7 +13354,7 @@ msgstr ""
 msgid "Under the GDPR, you have the following rights:"
 msgstr ""
 
-#: lib/firmowid_web/inbox/views/index.ex
+#: lib/firmowid_web/core/toast.ex
 #, elixir-autogen, elixir-format
 msgid "Undo"
 msgstr ""
@@ -13724,9 +13725,7 @@ msgctxt "sales invoice items"
 msgid "Value"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex
-#: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
-#: lib/firmowid_web/invoicing/views/index.ex
+#: lib/firmowid_web/core/toast.ex
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr ""
