@@ -51,6 +51,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Error notifications before documents reach the tax office")
       ],
       visual: :invoices,
+      image: "/images/guides/funkcje/faktury-lista.webp",
       page: "fakturowanie"
     },
     %{
@@ -67,6 +68,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Alerts for unpaid invoices")
       ],
       visual: :banking,
+      image: "/images/guides/pomoc/transakcja-sugestie.webp",
       page: "bank"
     },
     %{
@@ -83,6 +85,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Monthly ZIP package for your accounting office")
       ],
       visual: :costs,
+      image: "/images/guides/funkcje/faktury-zakupowe.webp",
       page: "faktury-kosztowe"
     },
     %{
@@ -99,6 +102,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Unpaid invoices shown separately")
       ],
       visual: :analysis,
+      image: "/images/guides/funkcje/analiza-podsumowanie.webp",
       page: "analiza"
     },
     %{
@@ -115,6 +119,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("One-click time tracking export")
       ],
       visual: :time,
+      image: "/images/guides/funkcje/czas-formularz.webp",
       page: "czas-pracy"
     },
     %{
@@ -131,6 +136,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("Tracked hours ready for payroll")
       ],
       visual: :team,
+      image: "/images/guides/funkcje/zespol.webp",
       page: "zespol"
     },
     %{
@@ -147,6 +153,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         gettext_noop("A separate list of their own tasks for every employee")
       ],
       visual: :inbox,
+      image: "/images/guides/funkcje/skrzynka.webp",
       page: "skrzynka"
     }
   ]
@@ -238,7 +245,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   end
 
   @doc """
-  Renders the product features with noninteractive previews.
+  Renders the product features with screenshots from the app.
   """
   attr :heading_tag, :string,
     default: "h2",
@@ -323,622 +330,19 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               {@link_label} →
             </p>
           </div>
-          <.product_preview visual={feature.visual} />
+          <img
+            src={feature.image}
+            alt={feature.title}
+            width="1600"
+            height={if feature.visual == :inbox, do: "1000", else: "1217"}
+            loading="lazy"
+            decoding="async"
+            class="h-auto w-full min-w-0 rounded-2xl border border-(--landing-line) bg-grey-100 shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)]"
+          />
         </article>
       </div>
     </section>
     """
-  end
-
-  @doc false
-  @spec product_preview(map()) :: Rendered.t()
-  attr :visual, :atom, required: true
-
-  defp product_preview(assigns) do
-    ~H"""
-    <div
-      class={[
-        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-grey-100 font-sans text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
-        @visual == :invoices &&
-          "p-2.5 lg:px-4 lg:pt-5 lg:pb-4",
-        @visual == :banking && "p-2.5 lg:p-4",
-        @visual == :time &&
-          "aspect-528/400 px-[4.5%] pt-[6.5%] text-grey-900",
-        @visual == :team &&
-          "aspect-528/400 px-[3%] pt-[4.8%] text-grey-900",
-        @visual in [:costs, :analysis, :inbox] &&
-          "aspect-528/400 px-[3.5%] pt-[4.5%] text-grey-900"
-      ]}
-      role="img"
-      aria-label={gettext("Illustrative product preview")}
-    >
-      <%= case @visual do %>
-        <% :invoices -> %>
-          <div class="mb-[1.5cqw] grid grid-cols-[minmax(0,1fr)_20.5%_22.5%] items-center py-[1.1cqw] text-[1.8cqw] font-normal text-grey-700">
-            <span class="pl-[1cqw]">{gettext("Counterparty")}</span>
-            <span>{gettext("Status")}</span>
-          </div>
-          <div
-            :for={row <- contractor_invoices()}
-            class="grid min-h-[7.3cqw] grid-cols-[minmax(0,1fr)_20.5%_22.5%] items-center overflow-hidden rounded-[0.4cqw] bg-white text-[2cqw] leading-[1.4] [&+div]:mt-[1.5cqw]"
-          >
-            <span class="flex min-w-0 items-center gap-[1.8cqw] py-[1cqw] pr-[1cqw] pl-[1.8cqw] whitespace-nowrap">
-              <span class={[
-                "relative flex h-[5.2cqw] w-[4.6cqw] shrink-0 items-center justify-center overflow-hidden rounded-[0.4cqw] [clip-path:polygon(0_0,70%_0,100%_25%,100%_100%,0_100%)]",
-                row.tone == :warm && "border border-grey-200 bg-grey-100",
-                row.tone == :teal && "bg-[#969696] text-white"
-              ]}>
-                <span
-                  :if={row.tone == :warm}
-                  class="text-[1.25cqw] font-bold text-[#14386a]"
-                >KSe<span class="text-[#c94040]">F</span></span>
-                <svg
-                  :if={row.tone == :teal}
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1"
-                  class="size-[2.5cqw]"
-                  aria-hidden="true"
-                >
-                  <circle cx="8" cy="8" r="6" />
-                  <ellipse cx="8" cy="8" rx="2.5" ry="6" />
-                  <path d="M2 8h12M3 4.5h10M3 11.5h10" />
-                </svg>
-              </span>
-              <span class="flex min-w-0 items-baseline gap-[0.6cqw]">
-                <strong class="shrink-0 font-medium">{row.name}</strong>
-                <small class="truncate text-[2cqw] font-normal text-[#969696]">{row.note}</small>
-              </span>
-            </span>
-            <span class={[
-              "mr-[3cqw] rounded-[0.4cqw] py-[0.5cqw] text-center text-[1.4cqw] leading-[1.4] font-medium whitespace-nowrap uppercase",
-              row.paid && "bg-moss-100 text-moss-700",
-              !row.paid && row.tone == :warm && "bg-grey-100 text-grey-700",
-              row.status == gettext("Draft") && "border border-grey-200 text-grey-700",
-              row.status == gettext("Sending") && "after:content-['...']"
-            ]}>
-              {row.status}
-            </span>
-            <span class={[
-              "flex h-full items-center justify-end pr-[2.6cqw] font-medium whitespace-nowrap",
-              row.tone == :warm && "bg-rust-200 text-(--landing-accent)",
-              row.tone == :teal && "bg-teal-200 text-teal-700"
-            ]}>
-              {gettext("%{amount} PLN", amount: row.amount)}
-            </span>
-          </div>
-        <% :banking -> %>
-          <div class="grid grid-cols-2 gap-[3.6cqw] text-[2cqw] leading-[1.4] text-grey-900">
-            <div class="flex min-w-0 flex-col rounded-[1cqw] bg-[#f3f0ee] p-[1.8cqw]">
-              <div class="mb-[2.4cqw] flex items-center justify-between gap-[1cqw] rounded-[0.6cqw] bg-rust-200 p-[1.2cqw_1.8cqw] text-[2.4cqw] font-normal text-(--landing-accent)">
-                <span>{gettext("Transactions to match")}</span>
-                <span class="rounded-[0.4cqw] bg-white/70 px-[2.6cqw] py-[1.2cqw]">6</span>
-              </div>
-              <div
-                :for={row <- unmatched_transactions()}
-                class="rounded-[1cqw] bg-grey-50 p-[1.4cqw_1.8cqw] [&+div]:mt-[1.2cqw]"
-              >
-                <div class="flex items-baseline justify-between gap-[1cqw] whitespace-nowrap">
-                  <span class="min-w-0 truncate">{row.name}</span>
-                  <strong class={[
-                    "shrink-0 font-medium",
-                    String.starts_with?(row.amount, "+") && "text-moss-600",
-                    !String.starts_with?(row.amount, "+") && "text-[#e52b2b]"
-                  ]}>
-                    <span aria-hidden="true">{if String.starts_with?(row.amount, "+"),
-                      do: "↑",
-                      else: "↓"}</span>
-                    {pgettext("landing bank amount", "%{amount} PLN",
-                      amount:
-                        String.trim_leading(
-                          row.amount,
-                          if(String.starts_with?(row.amount, "+"), do: "+ ", else: "− ")
-                        )
-                    )}
-                  </strong>
-                </div>
-                <div class="mt-[1.2cqw] flex min-h-[1.8cqw] items-end justify-between">
-                  <small class="text-[1.6cqw] text-grey-500">{row.date}</small>
-                  <span
-                    :if={row.bank}
-                    class={[
-                      "flex h-[3.4cqw] w-[5.8cqw] items-center justify-between rounded-[0.3cqw] px-[0.6cqw]",
-                      row.bank == :credit_agricole && "bg-[#00848c]",
-                      row.bank == :santander && "bg-[#ec0000]"
-                    ]}
-                  >
-                    <img
-                      src={
-                        if row.bank == :credit_agricole,
-                          do: ~p"/images/invoicing_badges/frame4243.svg",
-                          else: ~p"/images/invoicing_badges/g11.svg"
-                      }
-                      alt=""
-                      class="size-[2.2cqw] object-contain"
-                    />
-                    <img
-                      src={~p"/images/invoicing_badges/vector.svg"}
-                      alt=""
-                      class="h-[1.2cqw] w-[2cqw]"
-                    />
-                  </span>
-                </div>
-              </div>
-              <p class="mt-auto pt-[4cqw] pb-[1.6cqw] text-center text-[2.4cqw] font-normal text-(--landing-accent)">
-                {gettext("See all")}
-              </p>
-            </div>
-            <div class="flex min-w-0 flex-col rounded-[1cqw] bg-teal-100 p-[1.8cqw]">
-              <div class="mb-[2.4cqw] flex items-center justify-between gap-[1cqw] rounded-[0.6cqw] bg-teal-200 p-[1.2cqw_1.8cqw] text-[2.4cqw] font-normal text-teal-700">
-                <span>{gettext("Matched")}</span>
-                <span class="rounded-[0.4cqw] bg-white/70 px-[2cqw] py-[1.2cqw]">36</span>
-              </div>
-              <div
-                :for={row <- matched_transactions()}
-                class="rounded-[1cqw] bg-grey-50 p-[1.4cqw_1.8cqw] [&+div]:mt-[1.2cqw]"
-              >
-                <div class="flex items-baseline justify-between gap-[1cqw] whitespace-nowrap">
-                  <span class="min-w-0 truncate">{row.name}</span>
-                  <strong class="shrink-0 font-medium">{pgettext(
-                    "landing bank amount",
-                    "%{amount} PLN",
-                    amount: row.amount
-                  )}</strong>
-                </div>
-                <small class="block text-[1.7cqw] text-grey-700">{row.reference}</small>
-                <span class={[
-                  "mt-[1.6cqw] flex items-center gap-[1.2cqw] rounded-[0.4cqw] p-[1.2cqw] text-[1.6cqw]",
-                  row.confidence == 100 && "bg-moss-100 text-moss-600",
-                  row.confidence < 100 && "bg-grey-100 text-grey-700"
-                ]}>
-                  <span class={[
-                    "flex h-[2.4cqw] w-[4.2cqw] items-center justify-between rounded-[0.2cqw] px-[0.4cqw]",
-                    row.bank == :santander && "bg-[#ec0000]",
-                    row.bank == :other && "bg-grey-700"
-                  ]}>
-                    <img
-                      src={
-                        if row.bank == :santander,
-                          do: ~p"/images/invoicing_badges/g11.svg",
-                          else: ~p"/images/invoicing_badges/frame.svg"
-                      }
-                      alt=""
-                      class="size-[1.6cqw] object-contain"
-                    />
-                    <img
-                      src={~p"/images/invoicing_badges/vector.svg"}
-                      alt=""
-                      class="h-[0.8cqw] w-[1.4cqw]"
-                    />
-                  </span>
-                  {gettext("%{confidence}% confidence", confidence: row.confidence)}
-                  <span :if={row.confidence < 100} class="ml-auto text-[2cqw] font-medium">{gettext(
-                    "Check"
-                  )}</span>
-                </span>
-              </div>
-              <p class="mt-auto pt-[4cqw] pb-[1.6cqw] text-center text-[2.4cqw] font-normal text-teal-700">
-                {gettext("See all")}
-              </p>
-            </div>
-          </div>
-        <% :time -> %>
-          <div class="mb-[2.6cqw] flex items-center justify-between text-[2.9cqw] font-normal text-(--landing-accent)">
-            <span>{gettext("Today's sessions")}</span>
-            <span class="rounded-[0.6cqw] bg-rust-200 px-[1.5cqw] py-[0.6cqw] text-[4.2cqw] font-semibold">00:51</span>
-          </div>
-          <div class="grid grid-cols-[minmax(0,1fr)_36%_15%] items-center px-[0.6cqw] py-[1.6cqw] text-[2.7cqw]">
-            <span>{gettext("Database maintenance")}</span>
-            <span class="text-[2.3cqw] text-grey-700">CODEXA</span>
-            <strong class="text-right">00:51</strong>
-          </div>
-          <p class="mt-[11cqw] mb-[1cqw] text-[2.5cqw] text-grey-600">
-            {gettext("Friday")} (09.10)
-          </p>
-          <div
-            :for={{row, index} <- Enum.with_index(sessions())}
-            class={[
-              "grid grid-cols-[minmax(0,1fr)_36%_15%] items-center px-[0.6cqw] py-[1.3cqw] text-[2.7cqw]",
-              index < 2 && "border-b border-grey-200/60"
-            ]}
-          >
-            <span class="whitespace-nowrap">{row.name}<small
-              :if={index < 2}
-              class="ml-[1.4cqw] border-l border-grey-400 pl-[1.4cqw] text-[2.5cqw] text-grey-600"
-            >{ngettext("%{count} session", "%{count} sessions", index + 2)}</small></span>
-            <span class="text-[2.3cqw] text-grey-700">{row.project}</span>
-            <strong class="text-right">{row.duration}</strong>
-          </div>
-          <p class="mt-[7cqw] text-[2.5cqw] text-grey-600">
-            {gettext("Wednesday")} (07.10)
-          </p>
-          <div class="absolute right-[2.5%] bottom-[3%] flex w-[53%] flex-col rounded-xl border border-(--landing-line) bg-grey-100 bg-[url('/images/figurine_timeracker.png')] bg-size-[100%_auto] bg-position-[left_8cqw] bg-no-repeat p-[4.4cqw] pb-[6.5cqw] text-[1.5cqw] shadow-[0_0.75rem_1.75rem_rgb(80_50_30/16%)] lg:right-[-4.5%] lg:bottom-[-7%]">
-            <span class="rounded-[0.3cqw] bg-grey-200 px-[1.6cqw] py-[1.2cqw]">{gettext(
-              "Equipment testing"
-            )}</span>
-            <span class="mt-[1.6cqw] flex justify-between rounded-[0.3cqw] bg-rust-200 px-[1.6cqw] py-[1.2cqw] text-(--landing-accent)">
-              Qubiq <span aria-hidden="true">⌄</span>
-            </span>
-            <span class="mt-[2.5cqw] flex items-center gap-[1.4cqw]">
-              <span class="h-[2.5cqw] w-[5cqw] rounded-full bg-grey-200 p-[0.3cqw]"><span class="block size-[1.9cqw] rounded-full bg-white"></span></span>
-              {gettext("Working from home")}
-              <span
-                class="ml-auto rounded-[0.5cqw] bg-grey-200 px-[0.6cqw] text-[2cqw]"
-                aria-hidden="true"
-              >✎</span>
-            </span>
-            <strong class="mt-[3.4cqw] text-center text-[2.9cqw] font-medium text-(--landing-accent)">{gettext(
-              "16 hours 23 min"
-            )}</strong>
-            <small class="mt-[0.3cqw] text-center text-[1.5cqw] text-(--landing-accent)">{gettext(
-              "in October"
-            )}</small>
-            <span class="mt-[2cqw] self-center rounded-[0.6cqw] bg-(--landing-accent) px-[4cqw] py-[1.2cqw] text-white">{gettext(
-              "Start"
-            )}</span>
-          </div>
-        <% :team -> %>
-          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[1.8cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
-            <p class="mb-[3.5cqw] font-medium">{gettext("Leave requests to approve")}</p>
-            <div class="grid grid-cols-[minmax(0,1fr)_auto_14%] items-center gap-[3cqw] pb-[1cqw]">
-              <span class="flex items-center gap-[1.5cqw] whitespace-nowrap"><span
-                class="bg-grey-100 px-[0.5cqw] text-[2.5cqw] text-grey-700"
-                aria-hidden="true"
-              >☼</span>{gettext("Annual leave")}<span class="ml-[-1cqw] size-[1.3cqw] self-start rounded-full bg-teal-500"></span></span>
-              <small class="text-[1.5cqw]">02–06.11.2026</small>
-              <span class="rounded-full bg-teal-100 py-[0.5cqw] text-center text-[1.5cqw] text-teal-700">{gettext(
-                "Pending"
-              )}</span>
-            </div>
-          </div>
-          <div class="mt-[2.8cqw] rounded-t-[1cqw] bg-white px-[2.8cqw] pt-[2.2cqw] pb-[1.6cqw] text-[1.8cqw]">
-            <div class="flex items-center justify-between">
-              <p class="font-medium">{gettext("Other requests")}</p>
-              <span class="flex items-center gap-[1.6cqw] text-[1.5cqw]">
-                <svg
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  class="size-[3.5cqw] rounded-[0.5cqw] border border-grey-200 p-[0.5cqw] text-grey-700"
-                  aria-hidden="true"
-                ><circle cx="6.5" cy="6.5" r="4" /><path d="m10 10 4 4" /></svg>
-                <span class="flex items-center gap-[1cqw] rounded-[0.5cqw] border border-grey-200 px-[1.2cqw] py-[0.6cqw]"><svg
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  class="size-[1.8cqw]"
-                  aria-hidden="true"
-                ><rect x="2" y="3" width="12" height="11" rx="1" /><path d="M2 7h12M5 1v4m6-4v4" /></svg>2026</span>
-              </span>
-            </div>
-            <div class="mt-[1cqw] mb-[2.8cqw] flex gap-[1.4cqw] text-[1.5cqw] text-grey-500">
-              <span class="bg-grey-50 px-[1.4cqw] py-[0.5cqw]">{gettext("Used this year:")}
-              <strong class="ml-[0.8cqw] font-normal text-grey-700">{ngettext(
-                "%{count} day",
-                "%{count} days",
-                11
-              )}</strong></span>
-              <span class="bg-grey-50 px-[1.4cqw] py-[0.5cqw]">{gettext("Available:")}
-              <strong class="ml-[0.8cqw] font-normal text-grey-700">{ngettext(
-                "%{count} day",
-                "%{count} days",
-                15
-              )}</strong></span>
-            </div>
-            <div
-              :for={row <- leave_requests()}
-              class="grid grid-cols-[minmax(0,1fr)_auto_14%] items-center gap-[3cqw] py-[1.2cqw]"
-            >
-              <span class="flex items-center gap-[1.5cqw]"><span
-                class="flex size-[3.2cqw] items-center justify-center bg-grey-100 text-[2.5cqw] text-grey-700"
-                aria-hidden="true"
-              >{row.icon}</span>{row.name}</span>
-              <span class="text-[1.5cqw]">{row.date}</span>
-              <span class={[
-                "rounded-full py-[0.5cqw] text-center text-[1.5cqw]",
-                row.approved && "bg-moss-100 text-moss-700",
-                !row.approved && "bg-grey-100 text-grey-700"
-              ]}>
-                {row.status}
-              </span>
-            </div>
-          </div>
-          <div class="absolute bottom-[3%] left-[2.5%] flex w-[53%] items-center gap-[1.8cqw] rounded-xl border border-(--landing-line) bg-white p-[2.5cqw] shadow-[0_1.5rem_2rem_rgb(80_50_30/20%)] lg:bottom-[-7%] lg:left-[-4%]">
-            <img
-              src={~p"/images/landing/example-employee.png"}
-              alt=""
-              width="62"
-              height="62"
-              class="size-[12cqw] shrink-0 rounded-full object-cover"
-            />
-            <span class="min-w-0 flex-1 self-start pt-[0.4cqw]">
-              <strong class="block text-[2.8cqw] font-medium whitespace-nowrap">Katarzyna Kowalska</strong>
-              <small class="mt-[0.5cqw] flex items-center gap-[1.2cqw] text-[2cqw] text-grey-700"><img
-                src={~p"/images/slack.png"}
-                width="16"
-                height="16"
-                alt="Slack"
-                class="size-[3.8cqw]"
-              />{gettext("Write on Slack")}</small>
-            </span>
-            <span class="self-start text-[3cqw] text-grey-700" aria-hidden="true">⋮</span>
-          </div>
-        <% :costs -> %>
-          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[2cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
-            <p class="mb-[2.4cqw] text-[2.4cqw] font-medium">{gettext("Cost invoice")}</p>
-            <div
-              :for={row <- cost_invoices()}
-              class="grid grid-cols-[minmax(0,1fr)_auto_24%] items-center gap-[2.4cqw] border-t border-grey-100 py-[1.8cqw]"
-            >
-              <span class="min-w-0 truncate">{row.name}</span>
-              <span class={[
-                "rounded-[0.4cqw] px-[1.2cqw] py-[0.4cqw] text-[1.6cqw] font-semibold",
-                row.source == "KSeF" && "bg-rust-200 text-(--landing-accent)",
-                row.source != "KSeF" && "bg-teal-100 text-teal-700"
-              ]}>{row.source}</span>
-              <strong class="text-right font-medium">{pgettext("landing bank amount", "%{amount} PLN",
-                amount: row.amount
-              )}</strong>
-            </div>
-          </div>
-          <div class="absolute right-[3.5%] bottom-[6%] flex w-[52%] items-center gap-[2cqw] rounded-xl border border-(--landing-line) bg-white p-[2.6cqw] shadow-[0_1.5rem_2rem_rgb(80_50_30/20%)] lg:right-[-4%] lg:bottom-[-7%]">
-            <span class="grid size-[8cqw] shrink-0 place-items-center rounded-[1cqw] bg-grey-900 text-[2.2cqw] font-bold text-white">ZIP</span>
-            <span class="min-w-0 flex-1">
-              <strong class="block text-[2.4cqw] font-medium">{gettext("Download invoices")}</strong>
-              <small class="text-[1.8cqw] text-grey-600">10.2026</small>
-            </span>
-          </div>
-        <% :analysis -> %>
-          <div class="rounded-[1cqw] bg-white p-[2.8cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
-            <div class="mb-[2.4cqw] flex items-center gap-[1.4cqw] text-[1.8cqw] font-semibold tracking-[0.02em]">
-              <span class="rounded-[0.4cqw] px-[1.4cqw] py-[0.6cqw] text-grey-700">{pgettext(
-                "analysis view",
-                "Summary"
-              )}</span>
-              <span class="rounded-[0.4cqw] bg-grey-700 px-[1.4cqw] py-[0.6cqw] text-white">{pgettext(
-                "analysis view",
-                "Trends"
-              )}</span>
-              <span class="ml-auto rounded-[0.4cqw] bg-grey-100 px-[1.4cqw] py-[0.6cqw] font-medium">CODEXA</span>
-            </div>
-            <p class="mb-[1.6cqw] text-[2cqw] font-semibold">{gettext("Net result by month")}</p>
-            <div class="flex h-[26cqw] items-end gap-[1.4cqw] border-b border-grey-200">
-              <span
-                :for={height <- [52, 46, 70, 28, 60, 74, 12, 56, 92, 80]}
-                class={[
-                  "flex-1 rounded-t-[0.4cqw]",
-                  height < 20 && "bg-rust-400",
-                  height >= 20 && "bg-moss-600"
-                ]}
-                style={"height: #{height}%"}
-              ></span>
-            </div>
-          </div>
-          <div class="mt-[2.4cqw] grid grid-cols-3 gap-[1.8cqw] text-[1.7cqw]">
-            <span :for={{label, amount} <- analysis_totals()} class="rounded-[1cqw] bg-white p-[2cqw]">
-              <small class="block text-grey-600">{label}</small>
-              <strong class="mt-[0.6cqw] block text-[2.4cqw] font-semibold">{pgettext(
-                "landing bank amount",
-                "%{amount} PLN",
-                amount: amount
-              )}</strong>
-            </span>
-          </div>
-        <% :inbox -> %>
-          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[2cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
-            <p class="mb-[1.8cqw] text-[2.6cqw] font-semibold">{pgettext("sidebar", "Inbox")}</p>
-            <div :for={row <- inbox_rows()} class="[&+div]:mt-[2.2cqw]">
-              <p class="mb-[1cqw] text-[1.6cqw] font-bold tracking-[0.06em] text-grey-600 uppercase">
-                {row.tier}
-              </p>
-              <div class="flex items-center justify-between gap-[2cqw] rounded-[0.8cqw] bg-grey-50 p-[1.8cqw]">
-                <span class="min-w-0">
-                  <strong class="block truncate font-medium">{row.title}</strong>
-                  <small :if={row.context} class="text-[1.7cqw] text-grey-600">{row.context}</small>
-                </span>
-                <span class={[
-                  "shrink-0 rounded-[0.5cqw] px-[1.6cqw] py-[0.8cqw] text-[1.7cqw] font-medium",
-                  row.primary && "bg-teal-700 text-white",
-                  !row.primary && "border border-grey-300"
-                ]}>{row.action}</span>
-              </div>
-            </div>
-          </div>
-      <% end %>
-    </div>
-    """
-  end
-
-  defp cost_invoices do
-    [
-      %{name: "Palarnia Kawy Sowa", source: "KSeF", amount: "1 240,00"},
-      %{name: "OVH sp. z o.o.", source: "KSeF", amount: "486,00"},
-      %{name: "Hurtownia Herbat", source: "PDF", amount: "2 115,40"},
-      %{name: "Browar Lokalny", source: "KSeF", amount: "940,00"}
-    ]
-  end
-
-  defp analysis_totals do
-    [
-      {gettext("Income"), "214 000"},
-      {gettext("Expenses"), "139 100"},
-      {gettext("Result"), "74 900"}
-    ]
-  end
-
-  defp inbox_rows do
-    [
-      %{
-        tier: pgettext("inbox tier", "Urgent"),
-        title: gettext("KSeF is not connected"),
-        context: nil,
-        action: gettext("Check"),
-        primary: false
-      },
-      %{
-        tier: pgettext("inbox tier", "Awaiting approval"),
-        title: gettext("Leave request"),
-        context: "Katarzyna Kowalska · 02–06.11",
-        action: gettext("Approve"),
-        primary: true
-      },
-      %{
-        tier: pgettext("inbox tier", "Books"),
-        title: gettext("Overdue sales invoice %{number}", number: "BC/09/09/2026"),
-        context: "Północny Kod sp. z o.o.",
-        action: gettext("Check"),
-        primary: false
-      }
-    ]
-  end
-
-  defp contractor_invoices do
-    [
-      %{
-        name: "SoftSystem sp. z o. o.",
-        note: gettext("programming services"),
-        status: gettext("Unmatched"),
-        amount: "−90 000",
-        tone: :warm,
-        paid: false
-      },
-      %{
-        name: "CyberSec Innovations sp. z o. o.",
-        note: gettext("security audit"),
-        status: gettext("Sending"),
-        amount: "12 000",
-        tone: :teal,
-        paid: false
-      },
-      %{
-        name: "WebCraft Masters sp. j.",
-        note: gettext("website project"),
-        status: gettext("Matched"),
-        amount: "−15 750",
-        tone: :warm,
-        paid: true
-      },
-      %{
-        name: "CodeWave Dynamics",
-        note: gettext("software license"),
-        status: gettext("Draft"),
-        amount: "300",
-        tone: :teal,
-        paid: false
-      },
-      %{
-        name: "CloudSync Systems",
-        note: gettext("hosting services"),
-        status: gettext("Unmatched"),
-        amount: "−15 750",
-        tone: :warm,
-        paid: false
-      },
-      %{
-        name: "DataShield Security",
-        note: gettext("data protection"),
-        status: gettext("Matched"),
-        amount: "+5 200",
-        tone: :warm,
-        paid: true
-      }
-    ]
-  end
-
-  defp unmatched_transactions do
-    [
-      %{
-        name: "Freshbus Sp. z o.o.",
-        date: "05.10.2026",
-        amount: "+ 2 304,50",
-        bank: :credit_agricole
-      },
-      %{name: "Tech Innovations Ltd.", date: "07.10.2026", amount: "− 1 500,00", bank: nil},
-      %{
-        name: "GreenTech Innovations",
-        date: "08.10.2026",
-        amount: "+ 5 500,00",
-        bank: :santander
-      },
-      %{name: "Freshbus Sp. z o.o.", date: "09.10.2026", amount: "− 2 304,50", bank: nil},
-      %{name: "Tech Innovations Ltd.", date: "09.10.2026", amount: "− 1 500,00", bank: nil},
-      %{name: "Green Solutions Inc.", date: "12.10.2026", amount: "− 3 875,00", bank: nil}
-    ]
-  end
-
-  defp matched_transactions do
-    [
-      %{
-        name: "Freshbus Sp. z o.o.",
-        reference: "FV/2026/10/43",
-        amount: "2 304,50",
-        confidence: 100,
-        bank: :other
-      },
-      %{
-        name: "TechCorp Ltd.",
-        reference: "INV/2026/10/56",
-        amount: "1 850,00",
-        confidence: 100,
-        bank: :other
-      },
-      %{
-        name: "Green Energy Co.",
-        reference: "BILL/2026/09/98",
-        amount: "3 500,00",
-        confidence: 80,
-        bank: :other
-      },
-      %{
-        name: "Innovate Solutions Inc.",
-        reference: "RCPT/2026/10/77",
-        amount: "1 200,75",
-        confidence: 100,
-        bank: :santander
-      }
-    ]
-  end
-
-  defp sessions do
-    [
-      %{name: gettext("Database maintenance"), project: "CODEXA", duration: "00:51"},
-      %{name: gettext("Equipment testing"), project: "QUBIQ", duration: "01:42"},
-      %{name: gettext("Database maintenance"), project: "CODEXA", duration: "00:51"}
-    ]
-  end
-
-  defp leave_requests do
-    [
-      %{
-        name: gettext("Annual leave"),
-        date: "15.07 - 24.07.2026",
-        status: pgettext("landing leave status", "Approved"),
-        approved: true,
-        icon: "☼"
-      },
-      %{
-        name: gettext("Unpaid leave"),
-        date: "10.04.2026",
-        status: pgettext("landing leave status", "Approved"),
-        approved: true,
-        icon: "╱"
-      },
-      %{
-        name: gettext("Sick leave"),
-        date: "16.02 - 19.02.2026",
-        status: pgettext("landing leave status", "Rejected"),
-        approved: false,
-        icon: "✚"
-      },
-      %{
-        name: gettext("Annual leave"),
-        date: "02.01.2026",
-        status: pgettext("landing leave status", "Approved"),
-        approved: true,
-        icon: "☼"
-      }
-    ]
   end
 
   @doc """
