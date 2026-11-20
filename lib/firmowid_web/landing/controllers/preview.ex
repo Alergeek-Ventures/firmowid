@@ -1,14 +1,14 @@
 defmodule FirmowidWeb.Landing.Controllers.Preview do
   @moduledoc """
-  Serves the home page at `/`, its case study pages, such as `/landing/bonobo`,
+  Serves the home page at `/`, its case study pages, such as `/historie/bonobo`,
   and the KSeF pricing page at `/ksef`. `/landing`, the address of the home page
-  while it was a preview, redirects to `/`.
+  while it was a preview, redirects to `/`, and `/landing/bonobo` to
+  `/historie/bonobo`.
 
   The pages are self-contained static documents kept in `priv/static/landing`,
   written in Polish. The English and Ukrainian versions are built from them at
   compile time with the replacement lists in `priv/landing/translations`, and the
-  page follows the language chosen in the session. The case study pages are
-  excluded from search indexes. The KSeF page is Polish only.
+  page follows the language chosen in the session. The KSeF page is Polish only.
 
   A visitor who has accepted analytics also gets the `landing_preview.js`
   telemetry script on the home page and the KSeF page, with the settings the
@@ -93,13 +93,17 @@ defmodule FirmowidWeb.Landing.Controllers.Preview do
     |> redirect(to: ~p"/")
   end
 
-  @doc "Returns the Bonobo case study, excluded from search indexes."
-  @spec bonobo(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def bonobo(conn, _params) do
+  @doc "Permanently redirects the former case study address `/landing/bonobo`."
+  @spec landing_bonobo(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def landing_bonobo(conn, _params) do
     conn
-    |> put_resp_header("x-robots-tag", "noindex")
-    |> render_page("bonobo.html")
+    |> put_status(301)
+    |> redirect(to: ~p"/historie/bonobo")
   end
+
+  @doc "Returns the Bonobo case study."
+  @spec bonobo(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def bonobo(conn, _params), do: render_page(conn, "bonobo.html")
 
   @doc "Returns the KSeF pricing page."
   @spec ksef(Plug.Conn.t(), map()) :: Plug.Conn.t()

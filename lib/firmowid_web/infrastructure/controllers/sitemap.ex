@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
   @public_paths [
     "/",
     "/ksef",
+    "/historie/bonobo",
     "/cennik",
     "/funkcje",
     "/faq",
