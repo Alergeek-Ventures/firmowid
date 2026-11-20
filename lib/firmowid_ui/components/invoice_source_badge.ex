@@ -68,7 +68,7 @@ defmodule FirmowidUI.Components.InvoiceSourceBadge do
         :if={@variant in ["cost_ksef", "sales_ksef"]}
         class={[
           @size == "small" && "text-[10px] leading-[1.55] font-semibold tracking-tight",
-          @size == "big" && "text-xs leading-[1.4] font-semibold tracking-tight",
+          @size == "big" && "text-xs/[1.4] font-semibold tracking-tight",
           @variant == "cost_ksef" && "text-[#013066]",
           @variant == "sales_ksef" && "text-black"
         ]}
