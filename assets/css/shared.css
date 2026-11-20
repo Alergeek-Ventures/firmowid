@@ -182,6 +182,19 @@ html {
   }
 }
 
+/* A row a link pointed at: framed for a moment, then the frame fades. A frame
+   rather than a fill, so the row's own hover backgrounds still read. */
+@keyframes t-row-highlight {
+  0%,
+  50% {
+    outline-color: var(--color-grey-700);
+  }
+
+  100% {
+    outline-color: transparent;
+  }
+}
+
 /* ── Air Datepicker ─────────────────────────────────────────────────── */
 .air-datepicker {
   --adp-background-color-selected-other-month-focused: #455e5e;

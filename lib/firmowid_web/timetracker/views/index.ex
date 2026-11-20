@@ -90,6 +90,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     {:noreply,
      socket
      |> assign(:filter, parse_filter(params, socket.assigns.ash_scope))
+     |> assign(:highlighted_task, parse_task(params))
      |> assign_filtered_tasks()
      |> assign_timesheet_month()}
   end
@@ -103,6 +104,15 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       %{project: project, month: Date.beginning_of_month(month)}
     else
       _no_filter -> nil
+    end
+  end
+
+  # `&zadanie=<id>`, the newest session of a task, lights that task up for a moment;
+  # the timesheet links to it.
+  defp parse_task(params) do
+    case Ecto.UUID.cast(params["zadanie"]) do
+      {:ok, id} -> id
+      :error -> nil
     end
   end
 

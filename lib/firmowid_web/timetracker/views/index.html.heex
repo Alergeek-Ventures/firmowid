@@ -20,15 +20,35 @@
       navigate={Navigation.hours_record_index_path(@timesheet_month.date)}
       kind="button"
       variant="outline"
-      class="gap-2.5! rounded px-3! text-sm/[1.4]! font-normal!"
+      class="gap-2! rounded bg-white px-2.5! leading-[normal]! hover:bg-grey-50! active:bg-grey-100!"
     >
-      <span class="text-grey-500 max-sm:hidden">{String.capitalize(
-        month_name(@timesheet_month.date)
-      )}</span>
-      <span class="font-semibold text-grey-900 max-sm:hidden">{@timesheet_month.duration}</span>
-      <span class="h-4 w-px bg-grey-200 max-sm:hidden" aria-hidden="true" />
-      <span class="font-medium text-grey-900">{pgettext("hours record page", "Timesheet")}</span>
-      <Lucideicons.chevron_right class="size-4" aria-hidden="true" />
+      <span class="flex items-center gap-1.5">
+        <%!-- Figma's clipboard, drawn at 20 px with a 2 px line; Lucide's is a shade
+        different and thinner. --%>
+        <svg
+          class="size-5 shrink-0 text-grey-900"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M7.8125 2.5H12.1875C12.5902 2.5 12.9167 2.77982 12.9167 3.125V4.375C12.9167 4.72018 12.5902 5 12.1875 5H7.8125C7.40979 5 7.08333 4.72018 7.08333 4.375V3.125C7.08333 2.77982 7.40979 2.5 7.8125 2.5Z" />
+          <path d="M12.9167 4.16667H14.375C14.7618 4.16667 15.1327 4.32275 15.4062 4.60058C15.6797 4.87841 15.8333 5.25523 15.8333 5.64815V16.0185C15.8333 16.4114 15.6797 16.7883 15.4062 17.0661C15.1327 17.3439 14.7618 17.5 14.375 17.5H5.625C5.23823 17.5 4.86729 17.3439 4.5938 17.0661C4.32031 16.7883 4.16667 16.4114 4.16667 16.0185V5.64815C4.16667 5.25523 4.32031 4.87841 4.5938 4.60058C4.86729 4.32275 5.23823 4.16667 5.625 4.16667H7.08333" />
+          <path d="M10.2777 9.375H13.3333" />
+          <path d="M10.2777 13.1942H13.3333" />
+          <path d="M7.22209 9.375H7.23042" />
+          <path d="M7.22209 13.1942H7.23042" />
+        </svg>
+        <span class="text-grey-600 max-sm:hidden">{String.capitalize(
+          month_name(@timesheet_month.date)
+        )}</span>
+        <span class="text-grey-900 max-sm:hidden">{@timesheet_month.duration}</span>
+      </span>
+      <span class="h-5 w-px bg-grey-200 max-sm:hidden" aria-hidden="true" />
+      <span class="text-grey-900">{pgettext("timesheet link", "Timesheet")}</span>
     </.link>
   </div>
 
@@ -330,6 +350,7 @@
           active_projects={@active_projects}
           projects_by_id={@projects_by_id}
           filter={@filter}
+          highlighted={hd(sessions).id == @highlighted_task}
         />
       </div>
     </div>

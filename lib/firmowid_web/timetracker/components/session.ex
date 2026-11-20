@@ -23,6 +23,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     default: nil,
     doc: "the project and month the list is narrowed to; its rows leave out the project"
 
+  attr :highlighted, :boolean,
+    default: false,
+    doc: "lights the row up for a moment and scrolls to it, for a task a link points at"
+
   def render(assigns) do
     ~H"""
     <% parent_session = hd(@sessions) %>
@@ -38,8 +42,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       phx-auto-recover="ignore"
       class={[
         "group/row relative flex w-full min-w-0 flex-row items-center border-b px-2 max-md:flex-wrap",
-        if(@filter, do: "min-h-12 border-grey-200 py-2", else: "border-grey-100 py-3")
+        if(@filter, do: "min-h-12 border-grey-200 py-2", else: "border-grey-100 py-3"),
+        @highlighted &&
+          "animate-[t-row-highlight_2.4s_ease-out] rounded-sm outline -outline-offset-1 outline-transparent motion-reduce:animate-none"
       ]}
+      phx-hook={@highlighted && "ScrollIntoView"}
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
