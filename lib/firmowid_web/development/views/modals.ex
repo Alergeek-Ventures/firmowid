@@ -278,7 +278,7 @@ defmodule FirmowidWeb.Development.Views.Modals do
       <.frame source="lib/firmowid_web/invoicing/components/bank_transfer_modal.ex">
         <.modal id="gallery-transfer" class="max-w-[1000px]">
           <:header>
-            <h3 class="text-center text-lg font-semibold">{gettext("Transfer details")}</h3>
+            <h3 class="text-lg font-semibold">{gettext("Transfer details")}</h3>
           </:header>
           <.body_placeholder text="Dane przelewu i kod QR" />
         </.modal>
