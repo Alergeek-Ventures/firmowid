@@ -17,7 +17,7 @@ O tym, gdzie znaleźć faktury kosztowe w KSeF, pisaliśmy już w poradniku o pi
 | opis zakupu i kwota | porównasz je z umową, zamówieniem i historią płatności |
 | dane firmy w CEIDG, KRS lub wykazie podatników VAT | sprawdzisz, czy wystawca działa i podaje zgodne dane |
 
-Do czasu wyjaśnienia nie płać takiej faktury i nie przekazuj jej biuru księgowemu do rozliczenia. Jeżeli faktury kosztowe odbiera za Ciebie program do faktur, na przykład nasz Firmowid, zatrzymaj w nim dokument przed dalszym rozliczeniem.
+Do czasu wyjaśnienia nie płać takiej faktury i nie przekazuj jej biuru księgowemu do rozliczenia. Jeżeli faktury kosztowe odbiera za Ciebie program do faktur, na przykład nasz [Firmowid](/funkcje/faktury-kosztowe), zatrzymaj w nim dokument przed dalszym rozliczeniem.
 
 ![Cztery rzeczy do sprawdzenia przy nieznanej fakturze w KSeF: NIP nabywcy, nazwa wystawcy, opis i kwota, dane w rejestrach.](/images/guides/obca-faktura-ksef-co-sprawdzic.webp)
 *Do czasu wyjaśnienia nie płać faktury i nie przekazuj jej biuru księgowemu.*
