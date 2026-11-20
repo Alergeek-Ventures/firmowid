@@ -39,6 +39,9 @@ defmodule FirmowidWeb.Inbox.Utilities.QueueTest do
     refute Decimal.equal?(analysis_month.total_income, 0)
 
     assert income ==
-             Money.to_string!(Money.new(:PLN, analysis_month.total_income), fractional_digits: 0)
+             Money.to_string!(Money.new(:PLN, analysis_month.total_income),
+               fractional_digits: 0,
+               minimum_grouping_digits: 1
+             )
   end
 end

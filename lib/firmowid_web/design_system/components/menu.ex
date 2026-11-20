@@ -6,6 +6,9 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
 
   Its dropdown variant lists the options of a select field: `dropdown_panel_styles/0`
   for the panel and `dropdown_option/1` for each option.
+
+  The trigger darkens while the nearest `group` around it is hovered, so a list
+  row marks itself `group` once to light up its menu.
   """
 
   use FirmowidUI, :html
@@ -24,10 +27,6 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
   attr :placement, :string, default: "bottom-end"
   attr :class, :any, default: nil
 
-  attr :trigger_class, :any,
-    default: nil,
-    doc: "Extra trigger classes, for example darkening it while its row is hovered."
-
   attr :panel_class, :any,
     default: nil,
     doc: "Extra classes of the menu panel, for example its width."
@@ -42,7 +41,6 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
         id={"#{@id}-trigger"}
         label={@label}
         variant="menu"
-        class={@trigger_class}
         aria-haspopup="menu"
         aria-expanded="false"
         phx-click={show_popover("#{@id}-menu")}

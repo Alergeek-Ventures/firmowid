@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     <article
       id={"item-#{@item.id}"}
       class={[
-        "group/row flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4",
+        "group flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4",
         @fresh && "motion-safe:animate-arrive"
       ]}
     >
@@ -49,17 +49,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
           <span class="whitespace-nowrap">{@item.date_range}</span></span>
         </h3>
-        <p class="flex min-w-0 flex-wrap gap-x-1.5 text-sm/[1.35] text-grey-600">
-          <span
-            :if={@item.person}
-            class="min-w-0 truncate text-black"
-            title={@item.person}
-          >
-            {@item.person}
-          </span>
-          <span :if={@item.person} aria-hidden="true">·</span>
-          <span>{@item.context}</span>
-        </p>
+        <.meta_line item={@item} />
       </div>
       <div
         :if={Map.has_key?(@item, :amount)}
@@ -113,8 +103,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           >
             {@item.action}
           </.link>
+          <%!-- Urgent items cannot be put aside. --%>
+          <.snooze_menu item={@item} today={@today} />
         <% end %>
-        <.snooze_menu item={@item} today={@today} />
       </div>
     </article>
     """
@@ -131,6 +122,32 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   end
 
   attr :item, :map, required: true
+
+  # One line under the title that never wraps: the person or counterparty, then
+  # the context. Next to an amount the name gives way and the due date stays;
+  # elsewhere the context is what ends with an ellipsis.
+  defp meta_line(assigns) do
+    ~H"""
+    <p class="flex min-w-0 gap-x-1.5 text-sm/[1.35] whitespace-nowrap text-grey-600">
+      <span
+        :if={@item.person}
+        class={[
+          "truncate font-medium text-black",
+          if(Map.has_key?(@item, :amount), do: "min-w-0", else: "max-w-2/3 shrink-0")
+        ]}
+        title={@item.person}
+      >
+        {@item.person}
+      </span>
+      <span :if={@item.person} class="shrink-0" aria-hidden="true">·</span>
+      <span class={[if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate")]}>
+        {@item.context}
+      </span>
+    </p>
+    """
+  end
+
+  attr :item, :map, required: true
   attr :today, Date, required: true
 
   # Puts the item aside for the whole company (`Firmowid.Core.InboxSnooze`);
@@ -139,11 +156,13 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     ~H"""
     <.menu
       id={"item-#{@item.id}-snooze"}
-      label={gettext("Put aside")}
-      trigger_class="group-hover/row:text-grey-900"
+      label={gettext("More options")}
       panel_class="w-70"
     >
-      <p class="px-3 py-2 text-caps-sm/none font-medium text-grey-600 uppercase" aria-hidden="true">
+      <p
+        class="px-3 pt-2 pb-1 text-caps-sm/[normal] font-medium text-grey-600 uppercase"
+        aria-hidden="true"
+      >
         {gettext("Put aside until")}
       </p>
       <.menu_item
@@ -151,16 +170,18 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         class="justify-between gap-4"
         phx-click={leave(@item.id, "snooze_item", %{days: to_string(days)})}
       >
-        <span class="font-medium text-black">{label}</span>
-        <span class="text-grey-600">{comes_back(Date.add(@today, days), @today)}</span>
+        <span class="text-black">{label}</span>
+        <span class="text-grey-600">{Queue.short_date(Date.add(@today, days), @today)}</span>
       </.menu_item>
-      <div class="my-1 h-px bg-grey-100" role="separator"></div>
+      <div class="pt-1 pb-0.75" role="separator">
+        <div class="h-px bg-grey-200"></div>
+      </div>
       <.menu_item
         tone="danger"
-        class="flex-col items-start gap-1 py-2"
+        class="flex-col items-start gap-y-1 py-2"
         phx-click={leave(@item.id, "snooze_item")}
       >
-        <span class="font-medium">{gettext("Hide this item")}</span>
+        <span>{gettext("Remove notification")}</span>
         <span class="text-sm/[1.35] whitespace-normal text-grey-600">{hide_for_good_note(@item)}</span>
       </.menu_item>
     </.menu>
@@ -169,92 +190,121 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   defp snooze_options, do: [{7, gettext("In a week")}, {30, gettext("In a month")}, {90, gettext("In 3 months")}]
 
-  # "śr 18.11", with the year once it is another one: "wt 9.02.2027". The
-  # abbreviated weekday loses its dot ("śr." in CLDR).
-  defp comes_back(date, today) do
-    format = if date.year == today.year, do: "d.MM", else: "d.MM.y"
-    weekday = date |> Firmowid.Cldr.Date.to_string!(format: "EEE") |> String.trim_trailing(".")
-
-    "#{weekday} #{Firmowid.Cldr.Date.to_string!(date, format: format)}"
-  end
-
   defp hide_for_good_note(%{days_late: _}),
     do: gettext("It will not come back to the inbox, even if the invoice is still overdue.")
 
-  defp hide_for_good_note(_item), do: gettext("It will not come back to the inbox until someone brings it back.")
+  defp hide_for_good_note(_item), do: gettext("It will not come back to the inbox.")
 
   @doc """
-  Items the company put aside, folded under the queue: each says when it comes
-  back and can be brought back right away.
+  Next to the page title: how many items the company put aside until a day,
+  opening the list of them (`put_aside_modal/1`).
   """
-  attr :entries, :list,
-    required: true,
-    doc: "`{item, snooze}` pairs from `Queue.split_put_aside/2`"
+  attr :count, :integer, required: true
 
-  attr :expanded, :boolean, required: true
-
-  def put_aside(assigns) do
+  def put_aside_link(assigns) do
     ~H"""
-    <section id="inbox-put-aside" class="flex flex-col gap-3">
-      <.button
-        type="button"
-        variant="unstyled"
-        id="inbox-put-aside-toggle"
-        aria-expanded={to_string(@expanded)}
-        aria-controls="inbox-put-aside-list"
-        phx-click="toggle_group"
-        phx-value-tier="put_aside"
-        class="flex cursor-pointer items-center gap-2 self-start text-grey-900 hover:text-black"
-      >
-        <h2 class="text-caps-sm font-medium uppercase">{pgettext("inbox section", "Put aside")}</h2>
-        <span class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 text-caps-sm font-semibold text-grey-700 tabular-nums">
-          {length(@entries)}
-        </span>
-        <Lucideicons.chevron_up :if={@expanded} class="size-4" aria-hidden="true" />
-        <Lucideicons.chevron_down :if={!@expanded} class="size-4" aria-hidden="true" />
-        <span class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
-          {gettext("Hidden for everyone in the company.")}
-        </span>
-      </.button>
-      <div :if={@expanded} id="inbox-put-aside-list" class="overflow-hidden rounded-sm bg-white">
-        <div
-          :for={{item, snooze} <- @entries}
-          id={"put-aside-#{item.id}"}
-          class="flex items-center gap-4 border-b border-grey-100 px-5 py-3 last:border-b-0 max-md:px-4"
-        >
-          <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-            <%!-- Like the queue row, the date range and the person tell apart items of one kind. --%>
-            <p class="truncate text-sm font-medium text-black">
-              {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
-            </p>
-            <p class="flex min-w-0 flex-wrap gap-x-1.5 text-sm text-grey-600">
-              <span :if={item.person} class="min-w-0 truncate text-black">{item.person}</span>
-              <span :if={item.person} aria-hidden="true">·</span>
-              <span>{put_aside_until(snooze)}</span>
-            </p>
-          </div>
-          <.button
-            type="button"
-            size="small"
-            variant="ghost"
-            phx-click="restore_item"
-            phx-value-id={item.id}
-          >
-            {gettext("Bring back")}
-          </.button>
-        </div>
-      </div>
-    </section>
+    <.link
+      id="inbox-put-aside-link"
+      kind="text"
+      size="big"
+      aria-label={ngettext("Show %{count} item put aside", "Show %{count} items put aside", @count)}
+      phx-click={JS.push_focus() |> show_modal("inbox-put-aside")}
+      class="max-md:w-full max-md:justify-start"
+    >
+      {ngettext("%{count} put aside", "%{count} put aside", @count)}<Lucideicons.history aria-hidden="true" />
+    </.link>
     """
   end
 
-  defp put_aside_until(%{until: nil}), do: gettext("Hidden for good")
+  @doc """
+  Items the company put aside until a day: each says when it comes back and
+  can be brought back right away or removed for good.
+  """
+  attr :entries, :list,
+    required: true,
+    doc: "`{item, snooze}` pairs from `Queue.split_put_aside/2` that come back on their own"
 
-  defp put_aside_until(%{until: until}),
-    do:
-      gettext("Comes back on %{date}",
-        date: until |> DateTime.shift_zone!("Europe/Warsaw") |> Calendar.strftime("%d.%m.%Y")
-      )
+  attr :today, Date, required: true
+  attr :timezone, :string, required: true
+
+  def put_aside_modal(assigns) do
+    ~H"""
+    <.modal id="inbox-put-aside">
+      <div class="flex flex-col gap-6">
+        <%!-- Room for the close button: 32px wide, 16px from the text. --%>
+        <div class="flex flex-col gap-1 pr-12">
+          <h2 id="inbox-put-aside-title" class="text-xl/6.5 font-medium text-black">
+            {gettext("Items put aside")}
+          </h2>
+          <p id="inbox-put-aside-description" class="text-sm/[1.35] text-grey-600">
+            {gettext("They will come back to the inbox on their own, on the chosen day.")}
+          </p>
+        </div>
+        <section class="flex flex-col gap-1">
+          <div class="flex items-baseline gap-2">
+            <h3 class="text-caps-sm/none font-medium text-grey-900 uppercase">
+              {gettext("Coming back on their own")}
+            </h3>
+            <span class="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 px-1.5 text-caps-sm font-semibold text-grey-700 tabular-nums">
+              {length(@entries)}
+            </span>
+          </div>
+          <ul>
+            <li
+              :for={{item, snooze} <- @entries}
+              id={"put-aside-#{item.id}"}
+              class="flex items-center gap-4 border-b border-grey-100 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3"
+            >
+              <span class={[
+                "flex size-10 shrink-0 items-center justify-center rounded-sm",
+                icon_styles(item)
+              ]}>
+                <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
+              </span>
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <p class="truncate text-base/[21px] font-medium text-black">
+                  {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
+                </p>
+                <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
+              </div>
+              <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
+                {gettext("comes back %{date}",
+                  date:
+                    snooze.until
+                    |> DateTime.shift_zone!(@timezone)
+                    |> DateTime.to_date()
+                    |> Queue.short_date(@today)
+                )}
+              </p>
+              <div class="flex shrink-0 items-center gap-3">
+                <.icon_button
+                  id={"put-aside-#{item.id}-remove"}
+                  label={gettext("Remove notification")}
+                  variant="destructive"
+                  class="w-8"
+                  phx-click="remove_item"
+                  phx-value-id={item.id}
+                >
+                  <Lucideicons.trash_2 aria-hidden="true" />
+                </.icon_button>
+                <.button
+                  id={"put-aside-#{item.id}-restore"}
+                  type="button"
+                  size="small"
+                  variant="tertiary"
+                  phx-click="restore_item"
+                  phx-value-id={item.id}
+                >
+                  {gettext("Bring back")}
+                </.button>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </.modal>
+    """
+  end
 
   defp icon_styles(%{tier: :urgent}), do: "bg-brick-200 text-brick-700"
   defp icon_styles(%{tier: :info}), do: "bg-teal-200 text-teal-700"
@@ -268,8 +318,8 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def tier_header(assigns) do
     ~H"""
-    <div class="flex items-center gap-2">
-      <h2 class={["text-caps-sm font-medium uppercase", header_styles(@tier)]}>
+    <div class="flex items-baseline gap-2">
+      <h2 class={["text-caps-sm/none font-medium uppercase", header_styles(@tier)]}>
         {Queue.tier_label(@tier)}
       </h2>
       <span class={[
@@ -322,7 +372,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def shortcuts(assigns) do
     ~H"""
-    <section id="inbox-shortcuts" class="flex flex-col gap-3 pt-4">
+    <section id="inbox-shortcuts" class="flex flex-col gap-3">
       <div class="flex items-baseline gap-3">
         <h2 class="text-caps-sm/none font-medium text-grey-900 uppercase">
           {gettext("Shortcuts")}
@@ -403,8 +453,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       class={[
         "relative flex-col overflow-hidden rounded-sm bg-white",
         if(@compact,
-          do: "hidden gap-8 p-5 group-data-compact-session:flex",
-          else: "flex min-h-65 justify-between gap-5 p-6 group-data-compact-session:hidden max-md:p-4"
+          do: "hidden gap-8 p-5 group-data-compact-session/columns:flex",
+          else:
+            "flex min-h-65 justify-between gap-5 p-6 group-data-compact-session/columns:hidden max-md:p-4"
         )
       ]}
     >

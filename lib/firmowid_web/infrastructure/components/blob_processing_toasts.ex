@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
             ~H"""
             <.link
               kind="unstyled"
-              class="text-sm font-bold underline"
+              class="text-sm font-bold"
               navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
             >
               {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
