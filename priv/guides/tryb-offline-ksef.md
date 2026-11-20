@@ -21,7 +21,7 @@ Inaczej jest wtedy, gdy nie działa sam KSeF, a Ministerstwo Finansów ogłosi n
 
 ## W programie do faktur
 
-W praktyce większość programów do faktur, w tym nasz Firmowid, pozwala ponowić wysyłkę faktury, której nie udało się przesłać, więc po powrocie internetu wystarczy to zrobić przed upływem terminu.
+W praktyce większość programów do faktur, w tym nasz [Firmowid](/ksef), pozwala ponowić wysyłkę faktury, której nie udało się przesłać, więc po powrocie internetu wystarczy to zrobić przed upływem terminu.
 
 ## Najczęstsze pytania
 
