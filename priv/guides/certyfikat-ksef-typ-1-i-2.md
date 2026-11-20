@@ -1,6 +1,6 @@
 ---
 title: "Certyfikat KSeF: typ 1, typ 2 i token"
-description: "Do czego służy certyfikat KSeF typu 1 i typu 2, czym różni się od tokenu, gdzie go wygenerować i dlaczego nie przekazuje się go księgowej."
+description: "Do czego służy certyfikat KSeF typu 1 i typu 2, czym różni się od tokenu, gdzie go wygenerować i dlaczego nie przekazuje się go biuru księgowemu."
 published: 2026-11-12
 updated: 2026-11-12
 category: ksef-w-praktyce
@@ -13,13 +13,13 @@ Certyfikaty KSeF są dwa. Typ 1 służy do logowania, typ 2 do drugiego kodu QR 
 | Do czego | logowanie do KSeF, także przez program | drugi kod QR na fakturze offline wręczanej przed wysłaniem do KSeF | logowanie programu do KSeF |
 | Gdzie powstaje | aplikacja MF (moduł certyfikatów) | aplikacja MF (moduł certyfikatów) | Aplikacja Podatnika KSeF |
 | Ważność | do daty wygaśnięcia | do daty wygaśnięcia | do unieważnienia, ale rozporządzenie pozwala logować się tokenem do 31.12.2026 r., a MF zapowiada przedłużenie |
-| Można przekazać księgowej | nie, księgowej nadaje się uprawnienia | nie | brak informacji w odpowiedziach MF |
+| Można przekazać biuru księgowemu | nie, biuru księgowemu nadaje się uprawnienia | nie | brak informacji w odpowiedziach MF |
 
 ## Na co uważać
 
 | Sytuacja | Co działa |
 |---|---|
-| Księgowa ma wystawiać faktury za firmę | uprawnienia nadane przez właściciela, nie jego certyfikat |
+| Biuro księgowe ma wystawiać faktury za firmę | uprawnienia nadane przez właściciela, nie jego certyfikat |
 | Token wygenerowany w KSeF 1.0 | nie działa w KSeF 2.0, trzeba wygenerować nowy |
 | Moduł KSeF w banku, np. Księgowość z Żubrem w Pekao | certyfikat pobrany z aplikacji MF i wgrany w banku |
 | Faktura offline wręczana klientowi przed wysłaniem | certyfikat typu 2 wygenerowany wcześniej |
@@ -28,11 +28,11 @@ Według MF certyfikat jest osobistym poświadczeniem tożsamości. Nie pożycza 
 
 [Firmowid](/cennik), nasz program, przyjmuje token albo certyfikat. Przy certyfikacie zapisuje datę wygaśnięcia.
 
-![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu; rozporządzenie pozwala logować się nim do 31 grudnia 2026 r. Certyfikatu nie przekazuje się księgowej, tylko nadaje jej uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
+![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu; rozporządzenie pozwala logować się nim do 31 grudnia 2026 r. Certyfikatu nie przekazuje się biuru księgowemu, tylko nadaje mu uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
 
 ## Źródła
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.
 - [PKO Bank Polski: Faktury elektroniczne KSeF](https://www.pkobp.pl/firmy/uslugi-dla-firm/e-ksiegowosc/faktury-elektroniczne), dostęp 10.11.2026 (moduł certyfikatów MF).
 - [Bank Pekao: KSeF](https://www.pekao.com.pl/przedsiebiorcy/uslugi-dodatkowe/ksef.html), dostęp 10.11.2026.
-- Uprawnienia dla księgowej i biura: [dostęp do KSeF w JDG](/poradnik/dostep-do-ksef-jdg-i-ksiegowa).
+- Uprawnienia dla biura księgowego: [dostęp do KSeF w JDG](/poradnik/dostep-do-ksef-jdg-i-ksiegowa).

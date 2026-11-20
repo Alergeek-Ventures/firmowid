@@ -40,7 +40,7 @@ W tym przykładzie wystawiasz fakturę korygującą do faktury zaliczkowej na 24
 | Zaliczka nie pokrywa całej ceny | Faktura końcowa pomniejszona o wcześniejsze zaliczki |
 | Zaliczka jest równa cenie | Co do zasady nie ma kwoty pozostałej do rozliczenia |
 | Zafakturowana zaliczka przewyższa cenę i zwracasz różnicę | Faktura korygująca do faktury zaliczkowej |
-| Nadwyżka ma zostać na poczet innej dostawy lub usługi | Najpierw uzgodnij rozliczenie z klientem i księgową; nie opisuj jej automatycznie jako zwrotu |
+| Nadwyżka ma zostać na poczet innej dostawy lub usługi | Najpierw uzgodnij rozliczenie z klientem i biurem księgowym; nie opisuj jej automatycznie jako zwrotu |
 
 ## Dalsze czytanie
 

@@ -46,7 +46,7 @@ Nazwy są zapisane małymi literami, bez polskich znaków, ze znakiem podkreśle
 
 ## Na co uważać przed wysłaniem
 
-**Komentarze wewnętrzne.** Jeśli przy fakturach zapisujesz uwagi tylko dla siebie, wyłącz przełącznik komentarzy. Przy włączonym trafią one na generowane PDF-y i zobaczy je każdy, kto otworzy paczkę. Z drugiej strony to wygodny sposób, żeby przekazać księgowej opis wydatku, na przykład „laptop dla nowej osoby”.
+**Komentarze wewnętrzne.** Jeśli przy fakturach zapisujesz uwagi tylko dla siebie, wyłącz przełącznik komentarzy. Przy włączonym trafią one na generowane PDF-y i zobaczy je każdy, kto otworzy paczkę. Z drugiej strony to wygodny sposób, żeby przekazać biuru księgowemu opis wydatku, na przykład „laptop dla nowej osoby”.
 
 **Faktury kosztowe z KSeF.** Ta opcja jest domyślnie odznaczona, bo biuro księgowe z uprawnieniami w KSeF pobiera je samo. Zaznacz ją, gdy biuro księgowe woli dostać komplet w jednym miejscu.
 

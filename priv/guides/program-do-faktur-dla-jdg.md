@@ -37,7 +37,7 @@ O tym, czy do KSeF trzeba kupować program, pisaliśmy już osobno, dlatego tuta
 - czy wysyłka i odbiór KSeF są dostępne w wybranym planie;
 - czy połączenie bankowe obsługuje Twój rachunek;
 - czy czas zapisuje się przy projekcie i osobie;
-- czy księgowa dostaje dokumenty w użytecznej formie;
+- czy biuro księgowe dostaje dokumenty w użytecznej formie;
 - czy bezpłatny plan jest stały, czy to tylko okres próbny.
 
 ## Dalsze czytanie

@@ -58,7 +58,7 @@ MCP w Firmowidzie obejmuje przygotowanie, korekty i odczyt faktur, a także przy
 
 Ten układ ma sens w firmie usługowej, która prowadzi równolegle kilka projektów B2B, zapisuje czas pracy i chce widzieć faktyczne wpłaty bez ciągłego zaglądania do banku. Przydaje się też wtedy, gdy część osób powinna rejestrować godziny, ale nie mieć dostępu do finansów firmy.
 
-Firmowid nie prowadzi KPiR, ryczałtu, ZUS ani deklaracji podatkowych. Nie ma też modułu magazynowego. Dokumenty można zebrać i przekazać księgowej, natomiast rozliczenie podatków pozostaje po stronie księgowości.
+Firmowid nie prowadzi KPiR, ryczałtu, ZUS ani deklaracji podatkowych. Nie ma też modułu magazynowego. Dokumenty można zebrać i przekazać biuru księgowemu, natomiast rozliczenie podatków pozostaje po stronie księgowości.
 
 ## Cena i wersja open source
 
