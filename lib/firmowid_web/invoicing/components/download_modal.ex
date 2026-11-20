@@ -52,10 +52,10 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         phx-click={show_modal("download-modal")}
         data-tippy-content={gettext("Download")}
         phx-hook="Tippy"
-        class="relative @max-[66.5rem]:px-2! [&>svg]:size-5!"
+        class="relative group-data-fold-download/toolbar:px-1.75! [&>svg]:size-5!"
       >
         <Lucideicons.cloud_download />
-        <span class="@max-[66.5rem]:sr-only">{gettext("Download")}</span>
+        <span class="group-data-fold-download/toolbar:sr-only">{gettext("Download")}</span>
       </FirmowidUI.Components.Button.button>
       <FirmowidUI.Components.Button.button
         :if={not @icon_only}

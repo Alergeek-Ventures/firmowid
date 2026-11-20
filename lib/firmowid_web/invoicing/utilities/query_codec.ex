@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   @subfilter_values %{
     "sprzedazowe" => :sprzedazowe,
     "zakupowe" => :zakupowe,
+    "niedopasowane" => :niedopasowane,
     "wplywy" => :wplywy,
     "wydatki" => :wydatki
   }
@@ -34,7 +35,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   @invoicing_index_param_keys ~w(miesiac filtr podfiltr)
 
   @type filter :: :invoices | :transactions
-  @type subfilter :: :sprzedazowe | :zakupowe | :wplywy | :wydatki
+  @type subfilter :: :sprzedazowe | :zakupowe | :niedopasowane | :wplywy | :wydatki
   @type creator_tab :: :last_counterparties | :last_invoices
   @type counterparty_type :: CounterpartyTypeCodec.counterparty_type()
   @type invoice_language :: :pl | :en
