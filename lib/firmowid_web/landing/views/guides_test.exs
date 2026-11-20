@@ -89,6 +89,16 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/funkcje/urlopy"
   end
 
+  test "the analysis feature page draws the split of 100 zł and compares programs", %{conn: conn} do
+    html = conn |> get(~p"/funkcje/analiza") |> html_response(200)
+
+    assert html =~ Guides.feature_page().split_headline
+    assert html =~ "Wynagrodzenia i ZUS"
+    assert html =~ "width: 38%; background: var(--color-rust-800)"
+    assert html =~ ~s(<tr class="firmowid">)
+    assert html =~ ~s(href="#jak-liczy-analiza")
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end
