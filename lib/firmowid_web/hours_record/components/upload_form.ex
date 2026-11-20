@@ -23,8 +23,16 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
       socket
       |> attach_access_hook(:ash_scope)
       |> assign(step: 1, file_error?: false, touched?: false)
-      |> assign_split(:sign, gettext("Sign it with %{link}", link: "__LINK__"))
-      |> assign_split(:drop, gettext("Drag a file or %{link}", link: "__LINK__"))
+      |> assign_split(
+        :sign_before,
+        :sign_after,
+        gettext("Sign it with %{link}", link: "__LINK__")
+      )
+      |> assign_split(
+        :drop_before,
+        :drop_after,
+        gettext("Drag a file or %{link}", link: "__LINK__")
+      )
       |> allow_upload(:hours_record,
         max_entries: 1,
         max_file_size: 10_000_000,
@@ -357,9 +365,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   end
 
   # A sentence with a link inside is translated whole; the link text is cut out of it.
-  defp assign_split(socket, key, sentence) do
+  defp assign_split(socket, before_key, after_key, sentence) do
     [before, rest] = String.split(sentence, "__LINK__", parts: 2)
-    assign(socket, [{:"#{key}_before", before}, {:"#{key}_after", rest}])
+    assign(socket, [{before_key, before}, {after_key, rest}])
   end
 
   # Steps before the current one are done; the last one is done once its file is ready.
