@@ -490,6 +490,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
                 :for={item <- if(tier in @expanded, do: items, else: Enum.take(items, @folded))}
                 item={item}
                 fresh={item.id in @fresh}
+                today={@today}
               />
               <.button
                 :if={length(items) > @folded}
@@ -526,6 +527,16 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SmoothHeight">
           // Animates a card from its old height to its new one when rows are
           // unfolded, folded, resolved or arrive live; rows that arrive fade in.
+          //
+          // A row put aside or decided here (`inbox:leave`, see the queue's
+          // `leave/3`) first dissolves in place; only then is its event sent.
+          // When the answer takes it off, the rows under it glide up from where
+          // they were, and a folded row that takes the free place slides in
+          // from the card's bottom edge.
+          const FADE_MS = 200
+          const MOVE = { duration: 280, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
+          const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
           export default {
             mounted() {
               this.remember()
@@ -533,6 +544,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               window.addEventListener("resize", this.onResize)
               this.observer = new MutationObserver((mutations) => this.changed(mutations))
               this.observer.observe(this.el, { childList: true })
+              this.el.addEventListener("inbox:leave", (event) => this.leave(event.target, event.detail))
             },
             destroyed() {
               window.removeEventListener("resize", this.onResize)
@@ -541,10 +553,35 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             remember() {
               this.height = this.el.getBoundingClientRect().height
             },
+            leave(row, { event, value }) {
+              if (this.leaving) return
+              if (reducedMotion()) return this.pushEvent(event, value)
+              const fade = row.animate(
+                [{ opacity: 1, filter: "blur(0)" }, { opacity: 0, filter: "blur(4px)" }],
+                { duration: FADE_MS, easing: "ease-out", fill: "forwards" }
+              )
+              this.leaving = { row, sent: false }
+              // A timer rather than the animation's end: a background tab pauses
+              // animations, which would hold the event back.
+              setTimeout(() => {
+                this.leaving.sent = true
+                this.pushEvent(event, value, () => {
+                  // The answer did not take the row off (it failed): it comes back.
+                  if (row.isConnected) fade.cancel()
+                  this.leaving = null
+                })
+              }, FADE_MS)
+            },
+            // Where every row stands before the answer changes the card.
+            beforeUpdate() {
+              if (this.leaving?.sent)
+                this.tops = new Map([...this.el.children].map((el) => [el, el.getBoundingClientRect().top]))
+            },
             changed(mutations) {
               const from = this.height
               this.remember()
-              if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+              if (reducedMotion()) return
+              if (this.tops) return this.glide(from)
               if (Math.abs(this.height - from) < 1) return
               const timing = { duration: 250, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
               this.el.animate([{ height: `${from}px` }, { height: `${this.height}px` }], timing)
@@ -552,6 +589,20 @@ defmodule FirmowidWeb.Inbox.Views.Index do
                 .flatMap((mutation) => [...mutation.addedNodes])
                 .filter((node) => node.nodeType === Node.ELEMENT_NODE)
                 .forEach((node) => node.animate([{ opacity: 0 }, { opacity: 1 }], timing))
+            },
+            // FLIP: rows that stayed start where they stood and glide to their
+            // new place; rows that arrived start below the card's bottom edge.
+            glide(from) {
+              const tops = this.tops
+              this.tops = null
+              if (Math.abs(this.height - from) >= 1)
+                this.el.animate([{ height: `${from}px` }, { height: `${this.height}px` }], MOVE)
+              for (const el of this.el.children) {
+                const top = el.getBoundingClientRect().top
+                const delta = tops.has(el) ? tops.get(el) - top : el.getBoundingClientRect().height
+                if (Math.abs(delta) < 1) continue
+                el.animate([{ transform: `translateY(${delta}px)` }, { transform: "translateY(0)" }], MOVE)
+              }
             }
           }
         </script>
@@ -625,7 +676,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     query = String.downcase(query)
 
     Enum.filter(items, fn item ->
-      [item.title, item.person, item.context, Map.get(item, :date_range)]
+      [item.title, item.person, item.context, Map.get(item, :date_range), Map.get(item, :amount)]
       |> Enum.reject(&is_nil/1)
       |> Enum.any?(&(&1 |> String.downcase() |> String.contains?(query)))
     end)

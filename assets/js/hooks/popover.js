@@ -35,6 +35,10 @@ export default {
     }
 
     document.body.style.pointerEvents = "none";
+    // Sticky, so a live update does not reset the trigger's open look.
+    if (reference.hasAttribute("aria-expanded")) {
+      this.js().setAttribute(reference, "aria-expanded", "true");
+    }
 
     this.cleanUp = autoUpdate(reference, this.el, () => {
       computePosition(reference, this.el, {
@@ -65,6 +69,10 @@ export default {
 
   hidePopover() {
     document.body.style.pointerEvents = null;
+    const reference = document.getElementById(this.el.dataset.reference);
+    if (reference?.hasAttribute("aria-expanded")) {
+      this.js().setAttribute(reference, "aria-expanded", "false");
+    }
     this.cleanUp?.();
     this.cleanUp = null;
   },
