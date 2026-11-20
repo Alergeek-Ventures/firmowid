@@ -21,7 +21,7 @@ Ministerstwo Finansów podaje w odpowiedziach na pytania podatników, że KSeF n
 
 Faktura, która ma numer KSeF, jest w systemie, a według art. 106na ustawy o VAT za datę jej otrzymania przez nabywcę uznaje się dzień nadania tego numeru, niezależnie od tego, czy klient do KSeF zajrzał. Osoba prywatna albo firma z zagranicy, która dostaje fakturę poza systemem, otrzymuje ją w dniu, w którym faktura faktycznie do niej dotrze.
 
-[Firmowid](/cennik), nasz program, pokazuje przy każdej fakturze numer KSeF i stan wysyłki, pozwala ponowić wysłanie odrzuconej faktury, a mail z fakturą do klienta wychodzi dopiero po nadaniu numeru.
+[Firmowid](/ksef), nasz program, pokazuje przy każdej fakturze numer KSeF i stan wysyłki, pozwala ponowić wysłanie odrzuconej faktury, a mail z fakturą do klienta wychodzi dopiero po nadaniu numeru.
 
 ![Sześć przyczyn, dla których klient nie widzi faktury w KSeF: błędny NIP nabywcy (korekta do zera i nowa faktura), plik odrzucony (wysłać ponownie), niewysłana faktura offline24, nabywca bez dostępu do KSeF (PDF z kodem QR), biuro rachunkowe bez uprawnienia i brak powiadomień z KSeF.](/images/guides/kontrahent-nie-widzi-faktury-ksef-przyczyny.webp)
 

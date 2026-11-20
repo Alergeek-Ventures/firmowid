@@ -17,6 +17,8 @@ Według harmonogramu Ministerstwa Finansów wyjątek dla firm, których sprzeda�
 | Numer KSeF w tytule przelewu | między czynnymi podatnikami VAT, a także w MPP |
 | Zwolnienie z VAT do 240 000 zł (w pierwszym roku proporcjonalnie) | nie zwalnia z KSeF |
 
+Pierwszą fakturę dla firmy wystawisz w Aplikacji Podatnika KSeF albo w programie połączonym z systemem, na przykład w naszym [Firmowidzie](/ksef), gdzie plan za 0 zł nie liczy wystawionych faktur.
+
 ## Pierwsze wpłaty
 
 Czynny podatnik VAT, który płaci innemu czynnemu podatnikowi, podaje od 1 stycznia 2027 r. w tytule przelewu numer KSeF faktury. Firma zwolniona z VAT sama ich nie wpisuje, chyba że płaci w mechanizmie podzielonej płatności, a klient może je podać w przelewie do niej dobrowolnie.
