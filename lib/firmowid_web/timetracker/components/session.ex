@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Views.Index
+  alias Phoenix.HTML.FormField
+  alias Phoenix.LiveView.Rendered
 
   attr :sessions, :list, required: true
   attr :active_projects, :list, required: true
@@ -22,22 +24,16 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     doc: "the project and month the list is narrowed to; its rows leave out the project"
 
   def render(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :same_presence?,
-        assigns.sessions |> Enum.uniq_by(& &1.is_remote) |> length() == 1
-      )
-
     ~H"""
     <% parent_session = hd(@sessions) %>
     <% form_id = "edit-session-form-#{parent_session.id}" %>
+    <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
     <.form
       :let={sessions_form}
       as={:sessions_form}
       id={form_id}
       for={GroupedSessionForm.from_sessions(@sessions)}
-      phx-submit="validate_and_update_list_onsubmit"
+      phx-submit={JS.push("validate_and_update_list_onsubmit") |> hide_popover(popover_id)}
       phx-change="validate_and_update_list_onchange"
       phx-auto-recover="ignore"
       class={[
@@ -158,7 +154,6 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
       <.work_mode :if={!@filter} sessions={@sessions} />
 
-      <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <span class={[
         "-mr-2 flex w-18 shrink-0 justify-end max-md:ml-auto",
@@ -175,7 +170,27 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           data-disabled={parent_session.end_datetime != nil}
           variant="unstyled"
         >
-          {TimeFormatter.format_timer(total_duration)}
+          <% label = TimeFormatter.format_timer(total_duration) %>
+          <%!-- Running sessions get their text from the Timer hook. A finished one
+          pops in the digits a save changed. --%>
+          <%= if parent_session.end_datetime do %>
+            <span
+              id={"session-duration-#{parent_session.id}"}
+              class="group/digits inline-flex"
+              data-value={label}
+              data-changed-only
+              phx-hook="NumberPopIn"
+            >
+              <span
+                :for={digit <- String.graphemes(label)}
+                class="inline-block will-change-[transform,opacity,filter] group-data-animating/digits:data-changed:animate-[t-digit-pop-in_var(--digit-dur)_var(--digit-ease)_both] motion-reduce:animate-none!"
+              >
+                {digit}
+              </span>
+            </span>
+          <% else %>
+            {label}
+          <% end %>
         </.button>
       </span>
 
@@ -208,68 +223,55 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </.link>
       </.tooltip>
 
+      <% single? = length(@sessions) == 1 %>
       <.popover
         id={popover_id}
         reference_id={form_id}
         placement="bottom-end"
-        class="space-y-6 rounded-lg border border-grey-200 bg-white px-6 py-4 shadow-lg"
+        class={[
+          "origin-top-right space-y-8 rounded border border-grey-200 bg-white px-6 py-4 shadow-small",
+          dropdown_styles()
+        ]}
       >
-        <div class="grid grid-cols-[repeat(5,auto)] gap-x-4 gap-y-3">
-          <div class="col-span-5 grid grid-cols-subgrid text-sm text-grey-500">
+        <%!-- One session sets its work mode below; several get a column each. --%>
+        <div class={[
+          "grid gap-x-4",
+          if(single?,
+            do: "grid-cols-[58px_136px_109px_109px_24px]",
+            else: "grid-cols-[58px_136px_109px_109px_120px_24px]"
+          )
+        ]}>
+          <div class="col-span-full grid grid-cols-subgrid text-sm/[1.55] text-grey-500">
             <p class="col-start-2 px-2">{gettext("Date")}</p>
             <p class="px-2">{pgettext("time range column", "From")}</p>
             <p class="px-2">{pgettext("time range column", "To")}</p>
+            <p :if={!single?} class="px-2">{pgettext("session column", "Place")}</p>
           </div>
-          <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-4">
+          <div class="col-span-full mt-2 grid grid-cols-subgrid items-center gap-y-6">
             <.inputs_for :let={session} field={sessions_form[:start_end_times]}>
               <.input type="hidden" field={session[:id]} />
               <%= if overnight_session?(session) do %>
-                <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-2">
-                  <p class="line-clamp-1 text-sm text-grey-500">
+                <div class="col-span-full grid grid-cols-subgrid items-center gap-y-2">
+                  <p class={session_label_styles()}>
                     {gettext("Session %{number}", number: session.index + 1)}
                   </p>
-                  <.input
-                    type="date"
-                    field={session[:date]}
-                  />
-                  <.input
-                    type="time"
-                    step="60"
+                  <.date_field field={session[:date]} />
+                  <.time_field
                     field={session[:start_time]}
                     value={format_time(session[:start_time].value)}
                   />
-
-                  <.input
-                    type="time"
-                    name="time_placeholder"
-                    value=""
-                    readonly
-                    disabled
-                  />
-
-                  <div />
+                  <.time_field name="time_placeholder" value="" readonly disabled />
+                  <.workplace_select :if={!single?} field={session[:is_remote]} />
                   <div />
 
-                  <.input
-                    type="date"
-                    field={session[:end_date]}
-                  />
-
-                  <.input
-                    type="time"
-                    name="time_placeholder"
-                    value=""
-                    readonly
-                    disabled
-                  />
-
-                  <.input
-                    type="time"
-                    step="60"
+                  <div />
+                  <.date_field field={session[:end_date]} />
+                  <.time_field name="time_placeholder" value="" readonly disabled />
+                  <.time_field
                     field={session[:end_time]}
                     value={format_time(session[:end_time].value)}
                   />
-
+                  <div :if={!single?} />
                   <.button
                     type="button"
                     phx-click="collapse_overnight_session"
@@ -282,29 +284,23 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     variant="unstyled"
                     aria-label={gettext("Shorten session to one day")}
                   >
-                    <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
+                    <Lucideicons.trash_2 class={trash_icon_styles()} />
                   </.button>
                 </div>
               <% else %>
-                <p class="line-clamp-1 text-sm text-grey-500">
+                <p class={session_label_styles()}>
                   {gettext("Session %{number}", number: session.index + 1)}
                 </p>
-                <.input
-                  type="date"
-                  field={session[:date]}
-                />
-                <.input
-                  type="time"
-                  step="60"
+                <.date_field field={session[:date]} />
+                <.time_field
                   field={session[:start_time]}
                   value={format_time(session[:start_time].value)}
                 />
-                <.input
-                  type="time"
-                  step="60"
+                <.time_field
                   field={session[:end_time]}
                   value={format_time(session[:end_time].value)}
                 />
+                <.workplace_select :if={!single?} field={session[:is_remote]} />
                 <.button
                   type="button"
                   phx-click="delete_session"
@@ -312,7 +308,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   variant="unstyled"
                   aria-label={gettext("Delete session")}
                 >
-                  <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
+                  <Lucideicons.trash_2 class={trash_icon_styles()} />
                 </.button>
               <% end %>
             </.inputs_for>
@@ -321,41 +317,21 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
         <div class="flex items-center justify-end gap-3">
           <%!-- On phones the popover overflows the left edge, so keep the choice beside the buttons. --%>
-          <%!-- A task mixing office and remote sessions keeps each session's own choice. --%>
-          <div :if={@same_presence?} class="flex gap-1 md:mr-auto">
-            <label
-              :for={
-                {value, label} <- [
-                  {false, pgettext("presence", "in the office")},
-                  {true, pgettext("presence", "remotely")}
-                ]
-              }
-              class="cursor-pointer"
-            >
-              <input
-                type="radio"
-                name={sessions_form[:is_remote].name}
-                value={to_string(value)}
-                checked={sessions_form[:is_remote].value == value}
-                class="peer sr-only"
-              />
-              <span class="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap text-grey-700 transition-colors peer-checked:bg-grey-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--focus-ring) hover:bg-grey-200 peer-checked:hover:bg-grey-700">
-                <Lucideicons.building_2 :if={!value} class="size-4" aria-hidden="true" />
-                <Lucideicons.house :if={value} class="size-4" aria-hidden="true" />
-                {label}
-              </span>
-            </label>
-          </div>
+          <.workplace_switch
+            :if={single?}
+            name={sessions_form[:start_end_times].name <> "[0][is_remote]"}
+            remote={parent_session.is_remote}
+          />
           <.button
             type="button"
             variant="outline"
-            class="text-sm"
             size="small"
+            class="rounded! text-grey-900"
             phx-click={hide_popover(popover_id)}
           >
             {gettext("Cancel")}
           </.button>
-          <.button type="submit" class="text-sm" size="small">
+          <.button type="submit" variant="special" size="small" class="rounded!">
             {gettext("Save")}
           </.button>
         </div>
@@ -524,7 +500,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   end
 
   @doc """
-  Entrance of the time tracker's dropdowns (project, work mode): they grow and
+  Entrance of the time tracker's dropdowns (project, work mode, session edit): they grow and
   fade in each time they open, whatever opens them. The caller sets the origin.
   """
   @spec dropdown_styles() :: String.t()
@@ -538,7 +514,159 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     "cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-grey-200 hover:text-grey-800 focus-visible:bg-grey-200 focus-visible:text-grey-800 focus-visible:outline-none"
   end
 
-  attr :field, Phoenix.HTML.FormField, required: true
+  @doc """
+  Date field of the time tracker's session forms, with the calendar icon from
+  Figma. Chromium's own picker button stays, invisible, under the icon so a click
+  still opens the picker; Firefox's is cut off by the frame (`time_field_styles/1`).
+  """
+  @spec date_field(map()) :: Rendered.t()
+  attr :field, FormField, required: true
+
+  def date_field(assigns) do
+    ~H"""
+    <div class="relative">
+      <.input
+        type="date"
+        field={@field}
+        class={field_frame_styles()}
+        input_class={[
+          "text-grey-700! [&::-webkit-calendar-picker-indicator]:opacity-0",
+          time_field_styles()
+        ]}
+      />
+      <Lucideicons.calendar_1
+        class="pointer-events-none absolute top-[9px] right-3 size-4 text-grey-700"
+        aria-hidden="true"
+      />
+    </div>
+    """
+  end
+
+  @doc "Time field of the time tracker's session forms: centred, without a clock button."
+  @spec time_field(map()) :: Rendered.t()
+  attr :field, FormField, default: nil
+  attr :value, :string, required: true
+  attr :rest, :global, include: ~w(name disabled readonly)
+
+  def time_field(assigns) do
+    ~H"""
+    <.input
+      type="time"
+      step="60"
+      field={@field}
+      value={@value}
+      class={field_frame_styles()}
+      input_class={[
+        "text-center text-black! disabled:text-grey-400! [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center supports-[-moz-appearance:none]:pl-1!",
+        time_field_styles()
+      ]}
+      {@rest}
+    />
+    """
+  end
+
+  # The frame carries the border and clips the field: Chromium hides its picker
+  # buttons through a pseudo-element, Firefox offers none, so there the field is
+  # widened by its button and the frame cuts the button off. The time then gets a
+  # smaller left padding to stay centred.
+  defp field_frame_styles do
+    "overflow-hidden rounded border border-grey-200 bg-white focus-within:border-grey-700"
+  end
+
+  defp time_field_styles do
+    "block h-8 rounded-none! border-0! bg-transparent! text-base/[1.35]! supports-[-moz-appearance:none]:w-[calc(100%+36px)]!"
+  end
+
+  attr :field, FormField, required: true
+
+  # Where one of several edited sessions was worked. The option only changes the
+  # hidden input; the label follows its value through CSS, as the server renders
+  # the form again only after saving.
+  defp workplace_select(assigns) do
+    assigns = assign(assigns, :list_id, "#{assigns.field.id}-options")
+
+    ~H"""
+    <div class="group/place relative" phx-click-away={JS.hide(to: "##{@list_id}")}>
+      <input type="hidden" id={@field.id} name={@field.name} value={to_string(@field.value)} />
+      <.button
+        id={"#{@field.id}-button"}
+        type="button"
+        variant="unstyled"
+        aria-haspopup="listbox"
+        phx-click={
+          JS.toggle(to: "##{@list_id}", display: "flex") |> JS.focus_first(to: "##{@list_id}")
+        }
+        class="flex h-[34px] w-full cursor-pointer items-center gap-2.5 rounded border border-grey-200 bg-grey-50 px-3 text-left text-base/[1.35] text-black focus:border-grey-700 focus:outline-hidden"
+      >
+        <span class="min-w-0 flex-1 truncate group-has-[input[value=true]]/place:hidden">
+          {pgettext("workplace", "In the office")}
+        </span>
+        <span class="hidden min-w-0 flex-1 truncate group-has-[input[value=true]]/place:block">
+          {pgettext("workplace", "Remotely")}
+        </span>
+        <Lucideicons.chevron_down class="size-4 shrink-0 text-grey-700" aria-hidden="true" />
+      </.button>
+      <ul
+        id={@list_id}
+        phx-hook="ListboxKeys"
+        class={[
+          "absolute inset-x-0 top-full z-50 mt-1 hidden origin-top flex-col gap-1 rounded-lg border border-grey-200 bg-grey-50 p-1",
+          dropdown_styles()
+        ]}
+      >
+        <li :for={{remote?, label} <- work_mode_options()}>
+          <.button
+            type="button"
+            variant="unstyled"
+            class={["w-full text-left", dropdown_item_styles()]}
+            phx-keydown={JS.hide(to: "##{@list_id}") |> JS.focus(to: "##{@field.id}-button")}
+            phx-key="escape"
+            phx-click={
+              JS.set_attribute({"value", to_string(remote?)}, to: "##{@field.id}")
+              |> JS.hide(to: "##{@list_id}")
+              |> JS.focus(to: "##{@field.id}-button")
+            }
+          >
+            {label}
+          </.button>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  attr :name, :string, required: true
+  attr :remote, :boolean, required: true
+
+  # Where a single edited session was worked, styled like the switch in the inbox.
+  defp workplace_switch(assigns) do
+    ~H"""
+    <div
+      role="radiogroup"
+      aria-label={gettext("Workplace")}
+      class="mr-auto flex items-center gap-0.5 rounded-sm bg-grey-100 p-0.5"
+    >
+      <label :for={{remote?, label} <- work_mode_options()} class="cursor-pointer">
+        <input
+          type="radio"
+          name={@name}
+          value={to_string(remote?)}
+          checked={@remote == remote?}
+          class="peer sr-only"
+        />
+        <span class="flex items-center rounded-[3px] px-2.5 py-1 text-sm/[normal] font-medium whitespace-nowrap text-grey-600 transition-colors peer-checked:bg-white peer-checked:text-black peer-checked:shadow-[0_1px_2px_0_rgb(0_0_0/0.08)] peer-focus-visible:outline-2 peer-focus-visible:outline-(--focus-ring) hover:text-grey-900">
+          {label}
+        </span>
+      </label>
+    </div>
+    """
+  end
+
+  defp session_label_styles, do: "line-clamp-1 text-sm font-medium text-grey-700"
+
+  defp trash_icon_styles, do: "size-6 text-grey-500 transition-colors hover:text-grey-700"
+
+  attr :field, FormField, required: true
 
   defp title_input(assigns) do
     ~H"""

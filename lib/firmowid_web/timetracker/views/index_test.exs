@@ -300,7 +300,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       assert has_element?(
                lv,
-               "#edit-session-form-#{session.id} input[name='sessions_form[is_remote]'][value='true'][checked]"
+               "#edit-session-form-#{session.id} input[name='sessions_form[start_end_times][0][is_remote]'][value='true'][checked]"
              )
     end
 

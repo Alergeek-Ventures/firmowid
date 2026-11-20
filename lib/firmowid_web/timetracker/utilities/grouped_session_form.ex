@@ -8,13 +8,13 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
   embedded_schema do
     field :title, :string
     field :project_id, :binary_id
-    field :is_remote, :boolean
 
     embeds_many :start_end_times, SessionStartEndTime do
       field :date, :date
       field :end_date, :date
       field :start_time, :time
       field :end_time, :time
+      field :is_remote, :boolean
     end
   end
 
@@ -24,7 +24,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
   def changeset(form, attrs) do
     form
-    |> cast(attrs, [:title, :project_id, :is_remote])
+    |> cast(attrs, [:title, :project_id])
     |> cast_embed(:start_end_times, with: &start_end_time_changeset/2)
     |> validate_required([:title, :project_id])
     |> validate_length(:start_end_times, min: 1)
@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
   defp start_end_time_changeset(start_end_time, attrs) do
     start_end_time
-    |> cast(attrs, [:id, :date, :start_time, :end_time, :end_date])
+    |> cast(attrs, [:id, :date, :start_time, :end_time, :end_date, :is_remote])
     |> validate_required([:id, :date, :start_time])
   end
 
@@ -42,7 +42,6 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
     changeset(%{
       title: parent_session.title,
       project_id: parent_session.project_id,
-      is_remote: parent_session.is_remote,
       start_end_times:
         sessions
         |> Enum.sort_by(& &1.start_datetime)
@@ -55,7 +54,8 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
             date: start_date,
             end_date: end_date || start_date,
             start_time: DateTime.to_time(session.start_datetime),
-            end_time: session.end_datetime && DateTime.to_time(session.end_datetime)
+            end_time: session.end_datetime && DateTime.to_time(session.end_datetime),
+            is_remote: session.is_remote
           }
         end)
     })

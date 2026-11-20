@@ -542,23 +542,18 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     session_updates =
       Enum.map(sessions, fn session ->
-        times =
-          form.start_end_times
-          |> Enum.find(fn s -> s.id == session.id end)
-          |> SessionForm.times_to_datetimes(socket.assigns.timezone)
+        entry = Enum.find(form.start_end_times, &(&1.id == session.id))
 
-        {start_datetime, end_datetime} = times
+        {start_datetime, end_datetime} =
+          SessionForm.times_to_datetimes(entry, socket.assigns.timezone)
 
-        attrs =
-          put_presence(
-            %{
-              title: form.title,
-              project_id: form.project_id,
-              start_datetime: start_datetime,
-              end_datetime: end_datetime
-            },
-            form.is_remote
-          )
+        attrs = %{
+          title: form.title,
+          project_id: form.project_id,
+          start_datetime: start_datetime,
+          end_datetime: end_datetime,
+          is_remote: entry.is_remote
+        }
 
         {session, attrs}
       end)
@@ -566,17 +561,12 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     ash_update_sessions(session_updates, socket)
   end
 
-  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id} = form, socket) do
+  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id}, socket) do
     sessions = fetch_sessions_by_ids(ids, socket)
-    attrs = put_presence(%{title: title, project_id: project_id}, form["is_remote"])
+    attrs = %{title: title, project_id: project_id}
 
     ash_update_sessions(Enum.map(sessions, &{&1, attrs}), socket)
   end
-
-  # A task in the filtered list can mix office and remote sessions; its form then
-  # has no presence choice and each session keeps its own.
-  defp put_presence(attrs, nil), do: attrs
-  defp put_presence(attrs, is_remote), do: Map.put(attrs, :is_remote, is_remote)
 
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
     now = DateTime.now!(socket.assigns.timezone)

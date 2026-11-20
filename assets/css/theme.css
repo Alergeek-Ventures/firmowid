@@ -12,6 +12,8 @@
 
   /* Elevation: resting cards; floating overlays use shadow-lg */
   --shadow-card: 0 1px 6px 0 rgb(0 0 0 / 0.1);
+  /* Figma's "Small shadow": a bordered overlay that barely lifts (session edit popover) */
+  --shadow-small: 0 1px 6px 0 rgb(0 0 0 / 0.02);
 
   /* Extended spacing */
   --spacing-navbar: var(--navbar-height);
