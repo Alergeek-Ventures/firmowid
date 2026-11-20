@@ -26,7 +26,8 @@ defmodule Firmowid.Assistant.Telemetry do
   Returns the ReqLLM options that mark the requests of one turn of `conversation`,
   run in `scope`, so that their events can be attributed. Each call starts a new trace.
   """
-  @spec request_options(%{id: term()}, %{actor: %{id: term()}, tenant: term()}) :: keyword()
+  @spec request_options(%{:id => term(), optional(atom()) => term()}, Firmowid.Scope.t()) ::
+          keyword()
   def request_options(%{id: conversation_id}, %{actor: %{id: user_id}, tenant: organization_id}) do
     context = %{
       user_id: to_string(user_id),
