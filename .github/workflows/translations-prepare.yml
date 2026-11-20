@@ -25,7 +25,7 @@ permissions:
 jobs:
   prepare:
     name: Export Accent PO catalog
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       contents: read
     outputs:
