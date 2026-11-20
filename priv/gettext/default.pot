@@ -9693,6 +9693,8 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/management/views/projects.html.heex
+#: lib/firmowid_web/timetracker/components/session.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""

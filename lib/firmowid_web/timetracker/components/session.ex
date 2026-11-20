@@ -128,6 +128,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         <ul
           id={"session-project-options-#{parent_session.id}"}
           role="listbox"
+          aria-label={gettext("Project")}
           phx-hook="ListboxKeys"
           class="flex flex-col overflow-auto"
         >
@@ -443,6 +444,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <ul
         id={"session-work-mode-options-#{@id}"}
         role="listbox"
+        aria-label={gettext("Workplace")}
         phx-hook="ListboxKeys"
         class="flex flex-col"
       >
@@ -600,6 +602,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <ul
         id={@list_id}
         role="listbox"
+        aria-label={gettext("Workplace")}
         phx-hook="ListboxKeys"
         class={[
           "absolute inset-x-0 top-full z-50 mt-1 hidden origin-top flex-col",
