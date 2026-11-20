@@ -18,6 +18,7 @@ import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { LandingHero } from "./landing_hero";
 import { LandingPricing } from "./landing_pricing";
 import { NumberPopIn } from "./number_pop_in";
+import { ScrollIntoView } from "./scroll_into_view";
 import { ImageLoadReveal } from "./image_load_reveal";
 import { AssistantChat } from "./assistant";
 
@@ -32,6 +33,7 @@ export const Hooks = {
   TippyWhenTruncated,
   AirDatepicker,
   Timer,
+  ScrollIntoView,
   FocusOnMount,
   ListboxKeys,
   Popover,
