@@ -23,6 +23,26 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert html =~ ~s("@type":"FAQPage")
   end
 
+  test "a guide ends with three other guides to read next, its category first", %{conn: conn} do
+    {:ok, guide} = Guides.fetch("revolut-wise-program-do-faktur")
+    read_next = Guides.read_next(guide)
+
+    assert length(read_next) == 3
+    refute guide in read_next
+    assert hd(read_next).category == guide.category
+
+    html = conn |> get(guide.path) |> html_response(200)
+
+    assert html =~ Guides.index_page().read_next
+    for next <- read_next, do: assert(html =~ ~s(href="#{next.path}"))
+  end
+
+  test "a help article has no read-next list", %{conn: conn} do
+    html = conn |> get(~p"/pomoc/polaczenie-z-ksef") |> html_response(200)
+
+    refute html =~ ~s(id="read-next")
+  end
+
   test "the bank feature page pairs transfers with invoices and compares prices", %{conn: conn} do
     html = conn |> get(~p"/funkcje/bank") |> html_response(200)
 

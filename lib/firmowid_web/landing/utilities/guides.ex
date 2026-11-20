@@ -97,7 +97,13 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   @index_page @index_path
               |> YamlElixir.read_from_file!()
-              |> then(&%{heading: Map.fetch!(&1, "heading"), intro: Map.fetch!(&1, "intro")})
+              |> then(
+                &%{
+                  heading: Map.fetch!(&1, "heading"),
+                  intro: Map.fetch!(&1, "intro"),
+                  read_next: Map.fetch!(&1, "read_next")
+                }
+              )
 
   to_category = fn category ->
     %{
@@ -282,8 +288,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @spec in_section(section()) :: [guide()]
   def in_section(section), do: Enum.filter(@guides, &(&1.section == section))
 
-  @doc "Returns the heading and introduction of the guide index."
-  @spec index_page() :: %{heading: String.t(), intro: String.t()}
+  @doc "Returns the heading and introduction of the guide index and the heading of the read-next list."
+  @spec index_page() :: %{heading: String.t(), intro: String.t(), read_next: String.t()}
   def index_page, do: @index_page
 
   @doc "Returns the label of links from the /funkcje tiles to the feature pages."
@@ -311,6 +317,23 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
         guides = Enum.filter(pages, &(&1.category.slug == category.slug)),
         guides != [],
         do: {category, guides}
+  end
+
+  @doc """
+  Lists `count` other guides to read after `guide`: the most recently updated
+  ones from its category, then, if the category has too few, the most recently
+  updated ones from the other categories.
+  """
+  @spec read_next(guide(), pos_integer()) :: [guide()]
+  def read_next(guide, count \\ 3) do
+    {same, other} =
+      :guide
+      |> in_section()
+      |> Enum.reject(&(&1.slug == guide.slug))
+      |> Enum.sort_by(& &1.updated, {:desc, Date})
+      |> Enum.split_with(&(&1.category.slug == guide.category.slug))
+
+    Enum.take(same ++ other, count)
   end
 
   @doc "Finds a page of a section by its slug."
