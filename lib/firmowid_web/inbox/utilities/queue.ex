@@ -554,6 +554,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   defp counterparty_name(invoice, :sales), do: invoice.buyer_display_name_label
 
+  defp counterparty_name(invoice, :cost), do: invoice.effective_seller_display_name || invoice.effective_seller
+
   # Spelled out in the registers, legal forms take most of a narrow line:
   # "ACME SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ" reads "ACME sp. z o.o.",
   # the name itself keeps its case. Longer forms come first, as they contain
