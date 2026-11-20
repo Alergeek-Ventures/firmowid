@@ -78,3 +78,5 @@ Nie pobiera urzędowego poświadczenia odbioru (UPO) i nie eksportuje faktur do 
 
 - [Faktury z wysyłką do KSeF](/ksef)
 - [Paczka dokumentów dla biura księgowego](/pomoc/paczka-dla-biura-ksiegowego)
+- [Obca faktura w KSeF: co zrobić przed zapłatą](/poradnik/obca-faktura-w-ksef)
+- [Limit 10 000 zł brutto w KSeF](/poradnik/limit-10000-ksef)
