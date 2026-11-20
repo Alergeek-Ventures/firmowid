@@ -6,6 +6,7 @@ updated: 2026-11-20
 landing:
   kicker: "Funkcje · AI"
   note: "zmiany zatwierdzasz Ty"
+  author: franek
   facts:
     - label: "Asystent AI w aplikacji"
       value: "w każdym planie"
