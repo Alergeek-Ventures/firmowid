@@ -22,7 +22,7 @@ Można to zrobić wyciągiem MT940, CSV lub XML, wgrywanym ręcznie po pobraniu 
 
 | Program | Jak wchodzą transakcje | Jak łączy z fakturą | Tani albo darmowy próg | Główne ograniczenie |
 |---|---|---|---|---|
-| Firmowid | Open Banking (GoCardless); strona podaje 29 banków i fintechów | automatyczne parowanie przelewów | Darmowy: 1 konto bankowe, faktury i KSeF bez limitu | brak księgowości i magazynu |
+| [Firmowid](/funkcje/bank) | Open Banking (GoCardless); strona podaje 29 banków i fintechów | automatyczne parowanie przelewów | Darmowy: 1 konto bankowe, faktury i KSeF bez limitu | brak księgowości i magazynu |
 | wFirma | integracja z bankiem oraz import CSV, MT940 i XML | automatyczne parowanie i sugestie, ręcznie albo nocą | stały plan 0 zł niepotwierdzony; test 30 dni | odbiór KSeF dopiero w pakiecie księgowym; cena dynamiczna |
 | Fakturownia | Kontomatik albo import pliku | automatyczne łączenie płatności z fakturami | Micro: 3 faktury sprzedażowe / mies. | powyżej 3 faktur plan płatny |
 | Mobilna Faktura | Open Banking PSD2 przez GoCardless, 2300+ banków UE; także CSV/MT940 | automatyczne dopasowanie transakcji do faktur | Free: 3 faktury / mies., bez połączenia z bankiem | oficjalny cennik opisuje znacznie szerszy system niż samo fakturowanie |
