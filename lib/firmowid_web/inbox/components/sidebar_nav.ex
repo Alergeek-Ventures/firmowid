@@ -144,7 +144,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           data-tippy-delay="[300, 0]"
           data-tippy-truncate-selector="[data-label]"
           class={[
-            "relative flex h-8 min-w-0 items-center justify-center rounded-md font-medium transition-colors duration-150 md:in-data-[sidebar=collapsed]:size-7",
+            "relative flex h-8 min-w-0 items-center justify-center rounded-md font-medium transition-colors duration-100 motion-reduce:transition-none md:in-data-[sidebar=collapsed]:size-7",
             if(@layer == layer, do: "text-white", else: "text-grey-400 hover:text-white")
           ]}
         >

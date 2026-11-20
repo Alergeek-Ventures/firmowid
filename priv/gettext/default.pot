@@ -7599,6 +7599,12 @@ msgctxt "organization onboarding"
 msgid "Log out"
 msgstr ""
 
+#: lib/firmowid_web/infrastructure/layouts.ex
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Logged in as"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgctxt "income tax"
@@ -8947,12 +8953,6 @@ msgstr ""
 msgid "Organization"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts.ex
-#, elixir-autogen, elixir-format
-msgctxt "avatar menu"
-msgid "Organization"
-msgstr ""
-
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Organization activity"
@@ -8971,6 +8971,12 @@ msgstr ""
 #: lib/firmowid_web/admin/views/settlement.ex
 #, elixir-autogen, elixir-format
 msgid "Organization not found."
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts.ex
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Organizations"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/utilities/leave_presentation.ex

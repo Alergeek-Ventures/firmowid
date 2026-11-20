@@ -370,14 +370,19 @@ appeared or changed. Nothing loops or moves on its own, and every animation
 stops under `prefers-reduced-motion` (`motion-reduce:transition-none`,
 `motion-reduce:animate-none!`, and the hooks skip it).
 
-- **Colour change** (100ms): hover and press states of buttons.
+- **Colour change** (100ms): hover and press states of buttons and of every
+  navigation row (sidebar links, layer switch, collapse button, account menu items).
 - **Dropdown entrance** (in `dropdown_panel_styles/0` and the menu; the session
   edit popover uses `dropdown_styles/0` in `FirmowidWeb.Timetracker.Components.Session`): 150ms ease-out, scale 95% to
   100% and opacity 0 to 1 through `@starting-style` (`starting:`), so it plays
   every time the element is shown, whatever shows it. Set the origin to the side
   it unfolds from (`origin-top`, `origin-top-right`). Used by the project, work
-  mode and workplace lists and the session edit popover. Closing has no
-  animation.
+  mode and workplace lists, the session edit popover and the sidebar's account
+  menu (`origin-bottom`, it unfolds upwards from the account button).
+- **Dropdown exit** (`account_menu_out/0` in `FirmowidWeb.Inbox.Components.Sidebar`):
+  100ms ease-in, the entrance reversed (opacity 1 to 0, scale 100% to 95%),
+  played by `JS.hide`/`JS.toggle` before the element is hidden. Only the
+  account menu closes this way; the other dropdowns close without animation.
 - **Revealed fields** (`list_enter/0` in `FirmowidWeb.Timetracker.Views.Index`):
   200ms ease-out, rising 8px from opacity 0, for content that opens in place,
   such as the manual time fields. It leaves no classes behind, as a lingering

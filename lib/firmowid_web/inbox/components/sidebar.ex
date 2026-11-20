@@ -179,8 +179,19 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         <.button
           variant="unstyled"
           type="button"
-          phx-click={JS.toggle(to: "#app-sidebar-account", display: "flex")}
-          phx-click-away={JS.hide(to: "#app-sidebar-account")}
+          phx-click={
+            JS.toggle(
+              to: "#app-sidebar-account",
+              display: "flex",
+              out: account_menu_out(),
+              time: 100
+            )
+            |> JS.toggle_class("bg-grey-900 text-white")
+          }
+          phx-click-away={
+            JS.hide(to: "#app-sidebar-account", transition: account_menu_out(), time: 100)
+            |> JS.remove_class("bg-grey-900 text-white")
+          }
           id="app-sidebar-account-button"
           class={link_styles(false)}
           phx-hook="TippyWhenTruncated"
@@ -195,7 +206,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         <div
           id="app-sidebar-account"
           style="display: none"
-          class="fixed bottom-16 left-3 z-50 w-60 flex-col gap-2 rounded-md bg-black p-3 font-semibold shadow-lg ring-1 ring-grey-700 max-md:inset-x-3 max-md:w-auto"
+          class="fixed bottom-14 left-3 z-50 w-58 origin-bottom flex-col rounded-[8px] bg-grey-950 p-2 shadow-[0_1px_6px_rgb(0_0_0/0.4)] ring-1 ring-grey-800 transition-[opacity,scale] duration-150 ease-out ring-inset motion-reduce:transition-none max-md:inset-x-3 max-md:w-auto starting:scale-95 starting:opacity-0"
         >
           <Layouts.account_menu
             current_user={@current_user}
@@ -206,6 +217,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       </div>
     </aside>
     """
+  end
+
+  # The account menu shrinks and fades out in 100 ms; it opens through
+  # `starting:` on the panel itself (DESIGN.md, Motion: Dropdown).
+  defp account_menu_out do
+    {"transition-[opacity,scale] duration-100! ease-in! motion-reduce:transition-none", "scale-100 opacity-100",
+     "scale-95 opacity-0"}
   end
 
   # The inbox carries its layer in the URL; elsewhere the page decides, and
@@ -235,7 +253,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       variant="unstyled"
       type="button"
       class={[
-        "-my-0.5 -mr-1.25 flex size-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-white/10 active:bg-white/15 md:in-data-[sidebar=collapsed]:mt-0 md:in-data-[sidebar=collapsed]:mr-0 md:in-data-[sidebar=collapsed]:-mb-1",
+        "-my-0.5 -mr-1.25 flex size-8 shrink-0 items-center justify-center rounded-[2px] text-white transition-colors duration-100 hover:bg-white/10 active:bg-white/15 motion-reduce:transition-none md:in-data-[sidebar=collapsed]:mt-0 md:in-data-[sidebar=collapsed]:mr-0 md:in-data-[sidebar=collapsed]:-mb-1",
         @class
       ]}
       aria-label={@label}
@@ -305,11 +323,10 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   @spec link_styles(boolean()) :: list(String.t())
   def link_styles(active?) do
     [
-      "relative flex w-full items-center gap-3 px-2 py-1.5 text-left leading-5 transition-colors md:in-data-[sidebar=collapsed]:px-1.75",
+      "relative flex w-full items-center gap-3 px-2 py-1.5 text-left leading-5 transition-colors duration-100 motion-reduce:transition-none md:in-data-[sidebar=collapsed]:px-1.75",
       if(active?,
-        do:
-          "rounded-sm bg-grey-900 text-white md:in-data-[sidebar=collapsed]:rounded-md md:in-data-[sidebar=collapsed]:bg-grey-800",
-        else: "rounded-md text-grey-300 hover:bg-grey-900/60 hover:text-white"
+        do: "rounded-[2px] bg-grey-900 text-white md:in-data-[sidebar=collapsed]:bg-grey-800",
+        else: "rounded-[2px] text-grey-300 hover:bg-grey-900/60 hover:text-white"
       )
     ]
   end
