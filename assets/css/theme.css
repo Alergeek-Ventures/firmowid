@@ -10,9 +10,9 @@
   --font-landing: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Elevation: resting cards; floating overlays use shadow-lg */
+  /* Elevation: resting cards; floating overlays use shadow-small */
   --shadow-card: 0 1px 6px 0 rgb(0 0 0 / 0.1);
-  /* Figma's "Small shadow": a bordered overlay that barely lifts (session edit popover) */
+  /* Figma's "Small shadow": overlays (menus, popovers, modals, toasts) that barely lift above their ring */
   --shadow-small: 0 1px 6px 0 rgb(0 0 0 / 0.02);
 
   /* Extended spacing */

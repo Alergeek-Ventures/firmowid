@@ -119,22 +119,15 @@
                 role="listbox"
                 phx-hook="ListboxKeys"
                 class={[
-                  "absolute inset-x-0 top-full z-50 mt-1 hidden max-h-80 origin-top flex-col gap-1 overflow-auto rounded-lg border border-grey-200 bg-grey-50 p-1",
-                  FirmowidWeb.Timetracker.Components.Session.dropdown_styles()
+                  "absolute inset-x-0 top-full z-50 mt-1 hidden max-h-80 origin-top flex-col overflow-auto",
+                  dropdown_panel_styles()
                 ]}
               >
                 <li :for={project <- @active_projects} role="none">
                   <%!-- Buttons, so Tab reaches each option and Enter or Space picks it; LiveView
                   reads Escape on the focused element only, so each option closes the list. --%>
-                  <.button
-                    type="button"
-                    variant="unstyled"
-                    role="option"
-                    aria-selected={to_string(project.id == project_field.value)}
-                    class={[
-                      "w-full text-left",
-                      FirmowidWeb.Timetracker.Components.Session.dropdown_item_styles()
-                    ]}
+                  <.dropdown_option
+                    selected={project.id == project_field.value}
                     phx-keydown={
                       JS.hide(to: "##{project_list_id}") |> JS.focus(to: "#session-form-project")
                     }
@@ -147,7 +140,7 @@
                     }
                   >
                     {project.name}
-                  </.button>
+                  </.dropdown_option>
                 </li>
               </ul>
             </div>
