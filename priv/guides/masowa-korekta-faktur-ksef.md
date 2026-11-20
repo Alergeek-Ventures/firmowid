@@ -21,13 +21,13 @@ Dla każdej błędnej faktury zapisz:
 
 ## Plan wysyłki
 
-![Sześć etapów masowej korekty faktur w KSeF: od podziału dokumentów i ustaleń z księgową po wysyłkę partiami i raport.](/images/guides/masowa-korekta-faktur-ksef-plan-wysylki.webp)
+![Sześć etapów masowej korekty faktur w KSeF: od podziału dokumentów i ustaleń z biurem księgowym po wysyłkę partiami i raport.](/images/guides/masowa-korekta-faktur-ksef-plan-wysylki.webp)
 *Plan wysyłki korekt i co zachować do kontroli.*
 
 | Etap | Co zrobić | Co zachować do kontroli |
 |---|---|---|
 | 1 | Podziel dokumenty według rodzaju błędu i okresu rozliczeniowego | listę faktur w każdej grupie |
-| 2 | Ustal z księgową sposób ujęcia korekt w VAT i podatku dochodowym | zaakceptowaną listę zmian |
+| 2 | Ustal z biurem księgowym sposób ujęcia korekt w VAT i podatku dochodowym | zaakceptowaną listę zmian |
 | 3 | Wygeneruj korekty w programie | numery własne korekt i powiązania z dokumentami źródłowymi |
 | 4 | Wyślij najpierw małą partię | status każdej wysyłki i komunikaty o odrzuceniu |
 | 5 | Po przyjęciu partii porównaj liczbę dokumentów i kwoty | numery KSeF przyjętych korekt |

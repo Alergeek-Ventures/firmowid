@@ -1,6 +1,6 @@
 ---
 title: "Jak wybrać program do faktur? 9 rzeczy, które warto sprawdzić przed rejestracją"
-description: "Na co patrzeć przy wyborze programu do faktur z KSeF: limit dokumentów, koszty, bank, waluty, użytkownicy, czas pracy, eksport dla księgowej i cena po próbie."
+description: "Na co patrzeć przy wyborze programu do faktur z KSeF: limit dokumentów, koszty, bank, waluty, użytkownicy, czas pracy, eksport dla biura księgowego i cena po próbie."
 published: 2026-11-02
 updated: 2026-11-02
 category: wybor-programu
@@ -48,10 +48,10 @@ Jeśli fakturujesz klientów z UE, sprawdź, czy program sam ustawia odwrotne ob
 
 ## 5. Sprawdź limit użytkowników i uprawnienia
 
-Policz osoby, które będą korzystać z programu: wspólnik, księgowa, osoba od fakturowania. Sprawdź, czy:
+Policz osoby, które będą korzystać z programu: wspólnik, biuro księgowe, osoba od fakturowania. Sprawdź, czy:
 
 - plan ma limit użytkowników;
-- można dać księgowej dostęp tylko do dokumentów;
+- można dać biuru księgowemu dostęp tylko do dokumentów;
 - pracownik może korzystać z części programu bez wglądu w finanse firmy.
 
 ## 6. Sprawdź ewidencję czasu pracy (jeśli rozliczasz się z godzin)
@@ -60,14 +60,14 @@ Jeśli wystawiasz faktury na podstawie godzin, a godziny są w innym narzędziu,
 
 Jeśli wystawiasz kilka faktur miesięcznie za stałą usługę, ten punkt możesz pominąć.
 
-## 7. Sprawdź, co dostanie Twoja księgowa
+## 7. Sprawdź, co dostanie Twoje biuro księgowe
 
 Masz dwie drogi:
 
 - program z księgowością (KPiR, ryczałt, ZUS, deklaracje) w jednym miejscu;
 - program do faktur plus biuro rachunkowe, któremu co miesiąc przekazujesz dokumenty.
 
-W drugim przypadku sprawdź, jak wygląda eksport: czy jest paczka dokumentów za miesiąc, czy trzeba ściągać pliki pojedynczo. Zapytaj też księgową, w jakim formacie chce je dostawać.
+W drugim przypadku sprawdź, jak wygląda eksport: czy jest paczka dokumentów za miesiąc, czy trzeba ściągać pliki pojedynczo. Zapytaj też biuro księgowe, w jakim formacie chce je dostawać.
 
 ## 8. Sprawdź, co stanie się z danymi, gdy zrezygnujesz
 
@@ -88,17 +88,17 @@ Porównuj cenę planu, którego będziesz używać za pół roku. Zobacz:
 - czy okres próbny wymaga karty i co się dzieje po jego końcu;
 - czy dodatkowe konto bankowe, użytkownik albo OCR są płatne osobno.
 
-![Dziewięć rzeczy do sprawdzenia przed rejestracją w programie do faktur, od najważniejszych: 1. KSeF w Twoim planie, czyli wysyłka w planie darmowym i automatyczny odbiór kosztów. 2. Jak liczony jest limit: sprzedaż czy też koszty, korekty, co po przekroczeniu. 3. Połączenie z bankiem: dopasowanie przelewów, liczba kont, fintechy. 4. Waluty i klienci z UE: odwrotne obciążenie, waluty, VAT-EU. 5. Użytkownicy i uprawnienia, w tym dostęp księgowej. 6. Ewidencja czasu pracy, jeśli rozliczasz się z godzin. 7. Co dostanie księgowa: księgowość w programie albo eksport za miesiąc. 8. Dane po rezygnacji: eksport, zamknięcie konta, własny serwer. 9. Cena po okresie próbnym: netto czy brutto, plan roczny, dopłaty.](/images/guides/jak-wybrac-program-do-faktur-9-punktow.webp)
+![Dziewięć rzeczy do sprawdzenia przed rejestracją w programie do faktur, od najważniejszych: 1. KSeF w Twoim planie, czyli wysyłka w planie darmowym i automatyczny odbiór kosztów. 2. Jak liczony jest limit: sprzedaż czy też koszty, korekty, co po przekroczeniu. 3. Połączenie z bankiem: dopasowanie przelewów, liczba kont, fintechy. 4. Waluty i klienci z UE: odwrotne obciążenie, waluty, VAT-EU. 5. Użytkownicy i uprawnienia, w tym dostęp biura księgowego. 6. Ewidencja czasu pracy, jeśli rozliczasz się z godzin. 7. Co dostanie biuro księgowe: księgowość w programie albo eksport za miesiąc. 8. Dane po rezygnacji: eksport, zamknięcie konta, własny serwer. 9. Cena po okresie próbnym: netto czy brutto, plan roczny, dopłaty.](/images/guides/jak-wybrac-program-do-faktur-9-punktow.webp)
 
 ## Jak sprawdzić program w 30 minut
 
-Zanim przeniesiesz wszystko, zrób krótki test. Po nim będziesz wiedzieć, czy program obsłuży Twój typowy miesiąc: jedną fakturę, koszty, przelewy i eksport dla księgowej.
+Zanim przeniesiesz wszystko, zrób krótki test. Po nim będziesz wiedzieć, czy program obsłuży Twój typowy miesiąc: jedną fakturę, koszty, przelewy i eksport dla biura księgowego.
 
 1. Załóż konto i połącz KSeF (najpierw na środowisku testowym, zobacz [jak przetestować KSeF](/poradnik/jak-bezpiecznie-przetestowac-ksef)).
 2. Wystaw fakturę testową taką jak Twoje typowe, łącznie z walutą i stawką, których używasz najczęściej.
 3. Sprawdź, czy pojawiły się faktury kosztowe z ostatnich tygodni.
 4. Podłącz bank i zobacz, czy przelewy same trafiły do faktur.
-5. Wygeneruj eksport za miesiąc i wyślij go księgowej z pytaniem, czy jej to wystarczy.
+5. Wygeneruj eksport za miesiąc i wyślij go biuru księgowemu z pytaniem, czy mu to wystarczy.
 
 ## Gdzie znaleźć porównanie programów
 

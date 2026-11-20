@@ -26,10 +26,10 @@ O tym, jak wybrać program do faktur, pisaliśmy już w osobnym poradniku. W fir
 3. Wystaw testową fakturę i przeprowadź ją przez KSeF.
 4. Dodaj przelew z tytułem takim, jakich używają Twoi klienci.
 5. Sprawdź, czy program połączył wpłatę z właściwą fakturą.
-6. Pobierz dokumenty dla księgowej.
+6. Pobierz dokumenty dla biura księgowego.
 7. Powtórz próbę z rolą zwykłego pracownika.
 
-![Siedem kroków testu programu dla firmy usługowej: projekt, czas dwóch osób, faktura w KSeF, przelew i dokumenty dla księgowej.](/images/guides/program-do-faktur-firma-uslugowa-test.webp)
+![Siedem kroków testu programu dla firmy usługowej: projekt, czas dwóch osób, faktura w KSeF, przelew i dokumenty dla biura księgowego.](/images/guides/program-do-faktur-firma-uslugowa-test.webp)
 *Test na jednej fakturze, dwóch osobach i jednym przelewie.*
 
 ## Kiedy wybrać jeden program, a kiedy kilka
@@ -54,7 +54,7 @@ O tym, jak wybrać program do faktur, pisaliśmy już w osobnym poradniku. W fir
 | bank | 1 konto z parowaniem przelewów w planie Darmowym |
 | użytkownicy | 2 w planie Darmowym, 5 w planie Przedsiębiorca |
 | role | administrator, księgowość, fakturowanie, pracownik |
-| dokumenty dla księgowej | paczka ZIP we wszystkich planach |
+| dokumenty dla biura księgowego | paczka ZIP we wszystkich planach |
 | plan Przedsiębiorca | 29 zł netto miesięcznie |
 | plan Firma | 149 zł netto miesięcznie |
 
