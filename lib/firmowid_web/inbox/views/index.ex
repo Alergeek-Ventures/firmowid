@@ -11,9 +11,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   holds while the page stays open, live updates included, and resets when the
   layer changes. The search narrows the groups to matching items.
 
-  Any item can be put aside for the whole company, for some days or for good
-  (`Firmowid.Core.InboxSnooze`); those wait folded under the queue until they
-  come back or someone brings them back.
+  Any item but an urgent one can be put aside for the whole company, for some
+  days or for good (`Firmowid.Core.InboxSnooze`). Those put aside until a day
+  are counted next to the title, which opens their list: there each can be
+  brought back at once or removed for good. Every such step can be undone from
+  its toast.
 
   Under the company's queue sit the actions the organization does most often
   (`FirmowidWeb.Inbox.Utilities.Shortcuts`); a cost invoice from outside KSeF
@@ -194,16 +196,17 @@ defmodule FirmowidWeb.Inbox.Views.Index do
       |> Queue.items(scope, organization, today, taxes?: flag_enabled?(:taxes, socket.assigns))
       |> Queue.split_put_aside(scope)
 
-    assign(socket, items: items, put_aside: put_aside)
+    # Items hidden for good are not listed anywhere.
+    assign(socket,
+      items: items,
+      put_aside: Enum.filter(put_aside, fn {_item, snooze} -> snooze.until end)
+    )
   end
 
   @impl true
   def handle_event("toggle_group", %{"tier" => tier}, socket) do
     tier =
-      Enum.find(
-        [:urgent, :people, :personal, :books, :info, :put_aside],
-        &(Atom.to_string(&1) == tier)
-      )
+      Enum.find([:urgent, :people, :personal, :books, :info], &(Atom.to_string(&1) == tier))
 
     expanded =
       if tier in socket.assigns.expanded,
@@ -235,20 +238,60 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   # Without `days` the item is put aside for good.
   def handle_event("snooze_item", %{"id" => id} = params, socket) do
-    if Enum.any?(socket.assigns.items, &(&1.id == id)),
-      do:
-        Core.snooze_inbox_item!(id, params["days"] && String.to_integer(params["days"]), scope: socket.assigns.ash_scope)
+    if Enum.any?(socket.assigns.items, &(&1.id == id)) do
+      days = params["days"] && String.to_integer(params["days"])
+      Core.snooze_inbox_item!(id, days, scope: socket.assigns.ash_scope)
+      put_aside_toast(id, days, socket.assigns.today)
+    end
 
     refresh_queue(socket)
   end
 
+  # Brought back from the list of items put aside; undoing puts it aside again
+  # until the same day.
   def handle_event("restore_item", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
 
     # Someone else may have brought it back already; the refresh shows the queue as it is.
     case Core.get_inbox_snooze!(id, scope: scope, not_found_error?: false) do
-      nil -> :ok
-      snooze -> Core.restore_inbox_item!(snooze, scope: scope)
+      nil ->
+        :ok
+
+      snooze ->
+        Core.restore_inbox_item!(snooze, scope: scope)
+
+        restored_toast(id, days_left(snooze.until, socket))
+    end
+
+    refresh_queue(socket)
+  end
+
+  # Removed from the list of items put aside: it stays hidden for good.
+  def handle_event("remove_item", %{"id" => id}, socket) do
+    case Enum.find(socket.assigns.put_aside, fn {item, _snooze} -> item.id == id end) do
+      nil ->
+        :ok
+
+      {_item, snooze} ->
+        Core.snooze_inbox_item!(id, nil, scope: socket.assigns.ash_scope)
+        removed_toast(id, days_left(snooze.until, socket))
+    end
+
+    refresh_queue(socket)
+  end
+
+  # From a toast: puts the item back where it was, aside until a day (`days`)
+  # or in the queue.
+  def handle_event("undo_item", %{"id" => id} = params, socket) do
+    scope = socket.assigns.ash_scope
+
+    case params["days"] do
+      nil ->
+        with %{} = snooze <- Core.get_inbox_snooze!(id, scope: scope, not_found_error?: false),
+             do: Core.restore_inbox_item!(snooze, scope: scope)
+
+      days ->
+        Core.snooze_inbox_item!(id, String.to_integer(days), scope: scope)
     end
 
     refresh_queue(socket)
@@ -374,6 +417,66 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     {:noreply, socket}
   end
 
+  # Days until a snooze ends, counted in the organization's days, so putting
+  # the item aside again brings it back on the same day; as text, like the
+  # menu's `days`.
+  defp days_left(until, socket), do: days_left(until, socket.assigns.today, socket.assigns.timezone)
+
+  @doc false
+  @spec days_left(DateTime.t(), Date.t(), String.t()) :: String.t()
+  def days_left(until, today, timezone) do
+    until
+    |> DateTime.shift_zone!(timezone)
+    |> DateTime.to_date()
+    |> Date.diff(today)
+    |> max(1)
+    |> to_string()
+  end
+
+  @doc """
+  Toast after putting an item aside until a day, or after removing it for good
+  without `days` (red and longer, like `removed_toast/2`).
+  """
+  @spec put_aside_toast(String.t(), pos_integer() | nil, Date.t()) :: String.t()
+  def put_aside_toast(id, nil, _today), do: undo_toast(gettext("Item removed"), %{id: id}, :error, 10_000)
+
+  def put_aside_toast(id, days, today),
+    do:
+      undo_toast(gettext("Item put aside until %{date}", date: Queue.short_date(Date.add(today, days), today)), %{id: id})
+
+  @doc "Toast after bringing back an item that was aside for `days` more."
+  @spec restored_toast(String.t(), String.t()) :: String.t()
+  def restored_toast(id, days), do: undo_toast(gettext("Item is back in the inbox"), %{id: id, days: days})
+
+  @doc """
+  Toast after removing for good an item that was aside for `days` more: red,
+  and it stays longer, as only its undo can bring the item back.
+  """
+  @spec removed_toast(String.t(), String.t()) :: String.t()
+  def removed_toast(id, days), do: undo_toast(gettext("Item removed"), %{id: id, days: days}, :error, 10_000)
+
+  # The undo goes back through the page (`undo_item`) and closes the toast.
+  # LiveToast shows a toast for 6 seconds unless told otherwise.
+  defp undo_toast(message, value, kind \\ :info, duration \\ nil) do
+    LiveToast.send_toast(kind, message,
+      duration: duration,
+      action: fn assigns ->
+        assigns = assign(assigns, :value, value)
+
+        ~H"""
+        <.link
+          kind="text"
+          size="small"
+          phx-click={JS.push("undo_item", value: @value) |> LiveToast.dismiss()}
+          class="shrink-0"
+        >
+          {gettext("Undo")}
+        </.link>
+        """
+      end
+    )
+  end
+
   defp refresh_queue(socket) do
     send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
 
@@ -428,7 +531,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               format: :full
             )}
           </p>
-          <h1 class="text-3xl leading-[normal] font-bold text-black">{greeting(@items)}</h1>
+          <div class="flex flex-wrap items-baseline gap-x-3">
+            <h1 class="text-3xl leading-[normal] font-bold text-black">{greeting(@items)}</h1>
+            <.put_aside_link :if={@put_aside != []} count={length(@put_aside)} />
+          </div>
         </div>
         <div class="flex items-center gap-4 max-md:w-full">
           <form phx-change="search" phx-submit="search" class="w-70 max-md:min-w-0 max-md:flex-1">
@@ -458,7 +564,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         id="inbox-columns"
         phx-hook=".SessionPlacement"
         class={[
-          "group grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_20rem]",
+          "group/columns grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_20rem] @3xl:gap-x-12",
           if(@items == [], do: "items-stretch", else: "items-start")
         ]}
       >
@@ -517,7 +623,6 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               </.button>
             </div>
           </section>
-          <.put_aside :if={@put_aside != []} entries={@put_aside} expanded={:put_aside in @expanded} />
           <.shortcuts
             :if={@shortcuts != []}
             shortcuts={@shortcuts}
@@ -669,6 +774,12 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           />
         </aside>
       </div>
+      <.put_aside_modal
+        :if={@put_aside != []}
+        entries={@put_aside}
+        today={@today}
+        timezone={@timezone}
+      />
     </div>
     """
   end

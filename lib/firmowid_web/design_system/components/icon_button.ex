@@ -13,7 +13,7 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
   @spec icon_button(map()) :: Phoenix.LiveView.Rendered.t()
   attr :label, :string, required: true, doc: "Accessible name, also shown as the native tooltip."
   attr :size, :string, values: ~w(small big), default: "small"
-  attr :variant, :string, values: ~w(ghost outline tertiary menu), default: "ghost"
+  attr :variant, :string, values: ~w(ghost outline tertiary destructive menu), default: "ghost"
   attr :type, :string, default: "button"
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
@@ -41,11 +41,12 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
   defp icon_button_size_styles("small"), do: "size-7.5 rounded-sm [&>svg]:size-4"
   defp icon_button_size_styles("big"), do: "size-9 rounded-sm [&>svg]:size-6"
 
-  # The menu trigger rests grey and darkens on a grey background while hovered,
-  # focused or open (`aria-expanded`, set by the Popover hook).
+  # The menu trigger rests grey, darkens while its row (`group`) is hovered and
+  # sits on a grey background while hovered itself, focused or open
+  # (`aria-expanded`, set by the Popover hook). Touch screens have no hover.
   defp icon_button_variant_styles("menu"),
     do: [
-      "border-transparent text-grey-600",
+      "border-transparent text-grey-600 group-hover:text-grey-900",
       "hover:bg-grey-200 hover:text-grey-900 focus-visible:bg-grey-200 focus-visible:text-grey-900",
       "aria-expanded:bg-grey-200 aria-expanded:text-grey-900 disabled:text-grey-400"
     ]

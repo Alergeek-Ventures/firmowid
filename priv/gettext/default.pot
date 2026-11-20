@@ -300,6 +300,13 @@ msgid_plural "%{count} projects"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} put aside"
+msgid_plural "%{count} put aside"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} remaining"
@@ -2977,7 +2984,7 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
-msgid "Comes back on %{date}"
+msgid "Coming back on their own"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex
@@ -6159,16 +6166,6 @@ msgstr ""
 msgid "Health insurance"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Hidden for everyone in the company."
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Hidden for good"
-msgstr ""
-
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Hide"
@@ -6182,11 +6179,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Hide sessions"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Hide this item"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -7034,12 +7026,12 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
-msgid "It will not come back to the inbox until someone brings it back."
+msgid "It will not come back to the inbox, even if the invoice is still overdue."
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
-msgid "It will not come back to the inbox, even if the invoice is still overdue."
+msgid "It will not come back to the inbox."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -7072,14 +7064,34 @@ msgstr ""
 msgid "Item %{number}: unit"
 msgstr ""
 
+#: lib/firmowid_web/inbox/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Item is back in the inbox"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Item options"
 msgstr ""
 
+#: lib/firmowid_web/inbox/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Item put aside until %{date}"
+msgstr ""
+
+#: lib/firmowid_web/inbox/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Item removed"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Items"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Items put aside"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
@@ -7838,6 +7850,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "More employee details are needed"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "More options"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/views/index.html.heex
@@ -9800,17 +9817,6 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
-msgid "Put aside"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox section"
-msgid "Put aside"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
 msgid "Put aside until"
 msgstr ""
 
@@ -10052,6 +10058,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgid "Remove means of transport"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Remove notification"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
@@ -10980,6 +10991,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Show %{count} feature"
 msgid_plural "Show all %{count} features"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Show %{count} item put aside"
+msgid_plural "Show %{count} items put aside"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -12700,6 +12718,11 @@ msgstr ""
 msgid "They do not count as waiting. You can add them to your counterparties at any time."
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "They will come back to the inbox on their own, on the chosen day."
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Things waiting for you."
@@ -13415,6 +13438,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "Under the GDPR, you have the following rights:"
+msgstr ""
+
+#: lib/firmowid_web/inbox/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Undo"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -14904,6 +14932,11 @@ msgstr ""
 #: lib/firmowid_web/design_system/components/core_components.ex
 #, elixir-autogen, elixir-format
 msgid "close"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "comes back %{date}"
 msgstr ""
 
 #: lib/firmowid/invoicing/validations/validate_name_fields.ex

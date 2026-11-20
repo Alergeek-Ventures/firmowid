@@ -83,6 +83,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        today: today,
        items: scenario.items,
        put_aside: [],
+       hidden: [],
        presence: scenario.presence,
        month: scenario.month,
        month_duration: Map.get(scenario, :month_duration),
@@ -151,30 +152,27 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   def handle_event(event, _params, socket) when event in ["set_workplace", "stop_session", "start_session"],
     do: {:noreply, socket}
 
-  # Puts an item aside in the scenario only, as the inbox does for the whole company.
+  # Puts an item aside in the scenario only, as the inbox does for the whole
+  # company, with the same toasts; an item hidden for good waits in `hidden`,
+  # so its toast can still undo it.
   def handle_event("snooze_item", %{"id" => id} = params, socket) do
-    {snoozed, items} = Enum.split_with(socket.assigns.items, &(&1.id == id))
+    days = params["days"] && String.to_integer(params["days"])
+    Index.put_aside_toast(id, days, socket.assigns.today)
+    {:noreply, place(socket, id, days)}
+  end
 
-    until =
-      params["days"] && DateTime.shift(DateTime.utc_now(), day: String.to_integer(params["days"]))
-
-    {:noreply,
-     assign(socket,
-       items: items,
-       put_aside: socket.assigns.put_aside ++ Enum.map(snoozed, &{&1, %{until: until}})
-     )}
+  def handle_event("remove_item", %{"id" => id}, socket) do
+    Index.removed_toast(id, days_left(socket, id))
+    {:noreply, place(socket, id, nil)}
   end
 
   def handle_event("restore_item", %{"id" => id}, socket) do
-    {restored, put_aside} =
-      Enum.split_with(socket.assigns.put_aside, fn {item, _snooze} -> item.id == id end)
-
-    {:noreply,
-     assign(socket,
-       items: Enum.map(restored, &elem(&1, 0)) ++ socket.assigns.items,
-       put_aside: put_aside
-     )}
+    Index.restored_toast(id, days_left(socket, id))
+    {:noreply, place(socket, id, :queue)}
   end
+
+  def handle_event("undo_item", %{"id" => id} = params, socket),
+    do: {:noreply, place(socket, id, if(params["days"], do: String.to_integer(params["days"]), else: :queue))}
 
   def handle_event("decide_item", %{"id" => id, "decision" => decision}, socket) do
     LiveToast.send_toast(
@@ -186,6 +184,43 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
     )
 
     {:noreply, update(socket, :items, &Enum.reject(&1, fn item -> item.id == id end))}
+  end
+
+  defp days_left(socket, id) do
+    {_item, snooze} = Enum.find(socket.assigns.put_aside, fn {item, _snooze} -> item.id == id end)
+    Index.days_left(snooze.until, socket.assigns.today, socket.assigns.timezone)
+  end
+
+  # Takes the item from wherever it is and puts it in the queue (`:queue`),
+  # aside for some days, or hidden for good (`nil`).
+  defp place(socket, id, where) do
+    %{items: items, put_aside: put_aside, hidden: hidden} = socket.assigns
+    {found, items} = Enum.split_with(items, &(&1.id == id))
+    {aside, put_aside} = Enum.split_with(put_aside, fn {item, _snooze} -> item.id == id end)
+    {gone, hidden} = Enum.split_with(hidden, &(&1.id == id))
+
+    case found ++ Enum.map(aside, &elem(&1, 0)) ++ gone do
+      [] ->
+        socket
+
+      [item | _] ->
+        case where do
+          :queue ->
+            assign(socket, items: [item | items], put_aside: put_aside, hidden: hidden)
+
+          nil ->
+            assign(socket, items: items, put_aside: put_aside, hidden: [item | hidden])
+
+          days ->
+            until = DateTime.shift(DateTime.utc_now(), day: days)
+
+            assign(socket,
+              items: items,
+              put_aside: put_aside ++ [{item, %{until: until}}],
+              hidden: hidden
+            )
+        end
+    end
   end
 
   @impl true
