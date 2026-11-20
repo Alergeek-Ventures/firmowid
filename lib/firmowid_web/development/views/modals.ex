@@ -31,14 +31,12 @@ defmodule FirmowidWeb.Development.Views.Modals do
         </p>
       </header>
 
-      <.frame source="lib/firmowid_web/feedback/components/form.ex">
-        <.modal id="gallery-feedback">
+      <.frame source="lib/firmowid_web/support/components/form.ex">
+        <.modal id="gallery-support">
           <:header>
-            <h2 class="mb-2 text-xl font-semibold">{gettext("Share your feedback")}</h2>
+            <h2 class="mb-2 text-xl font-semibold">{gettext("Send us a message")}</h2>
             <p class="text-sm text-grey-700">
-              {gettext(
-                "Your opinion helps us develop Firmowid. Tell us what we can improve, what works well, or what you are missing."
-              )}
+              {gettext("Found a bug or have an idea? Share it with us — we read every message.")}
             </p>
           </:header>
           <.body_placeholder text="Pole tekstowe i przyciski" />

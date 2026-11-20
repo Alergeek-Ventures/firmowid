@@ -16,7 +16,8 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
     "/_x/3d81/" => "/s/",
     "/_x/4c6e/" => "/flags/",
     "/_x/5ab2/" => "/array/",
-    "/_x/6f93/" => "/static/"
+    "/_x/6f93/" => "/static/",
+    "/_x/7c2e/" => "/api/conversations/v1/"
   }
   @posthog_methods ~w(GET HEAD POST)
   @sentry_path "/_x/8e2f"
@@ -129,7 +130,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
   defp posthog_headers(conn) do
     headers =
       Enum.filter(conn.req_headers, fn {name, _} ->
-        name in ["user-agent" | @forwarded_headers]
+        name in ["user-agent", "x-conversations-token" | @forwarded_headers]
       end)
 
     [{"x-forwarded-for", client_ip(conn)} | headers]

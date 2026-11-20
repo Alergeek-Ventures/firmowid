@@ -2340,6 +2340,7 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/support/components/form.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
@@ -2919,7 +2920,6 @@ msgid "Click to confirm the connection"
 msgstr ""
 
 #: lib/firmowid_web/core/toast.ex
-#: lib/firmowid_web/feedback/components/form.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -4003,6 +4003,11 @@ msgstr ""
 msgid "Could not send the settlement. Try again."
 msgstr ""
 
+#: lib/firmowid_web/support/components/form.ex
+#, elixir-autogen, elixir-format
+msgid "Could not send your request. Please try again."
+msgstr ""
+
 #: lib/firmowid/ksef/credential.ex
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
@@ -4446,11 +4451,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Departure date"
-msgstr ""
-
-#: lib/firmowid_web/feedback/components/form.ex
-#, elixir-autogen, elixir-format
-msgid "Describe your idea or suggestion, or report a problem"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -5468,11 +5468,6 @@ msgctxt "month name in a date"
 msgid "February"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/sidebar.ex
-#, elixir-autogen, elixir-format
-msgid "Feedback"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Fees and commissions"
@@ -5878,6 +5873,12 @@ msgstr ""
 #: lib/firmowid_web/auth/views/login.ex
 #, elixir-autogen, elixir-format
 msgid "Forgot your password?"
+msgstr ""
+
+#: lib/firmowid_web/development/views/modals.ex
+#: lib/firmowid_web/support/components/form.ex
+#, elixir-autogen, elixir-format
+msgid "Found a bug or have an idea? Share it with us — we read every message."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -10764,10 +10765,10 @@ msgid "Seller"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
-#: lib/firmowid_web/feedback/components/form.ex
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/support/components/form.ex
 #, elixir-autogen, elixir-format
 msgid "Send"
 msgstr ""
@@ -10790,6 +10791,12 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Send the file"
+msgstr ""
+
+#: lib/firmowid_web/development/views/modals.ex
+#: lib/firmowid_web/support/components/form.ex
+#, elixir-autogen, elixir-format
+msgid "Send us a message"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
@@ -10953,12 +10960,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "profit share"
 msgid "Share"
-msgstr ""
-
-#: lib/firmowid_web/development/views/modals.ex
-#: lib/firmowid_web/feedback/components/form.ex
-#, elixir-autogen, elixir-format
-msgid "Share your feedback"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -11567,6 +11568,16 @@ msgctxt "avatar menu"
 msgid "Superadmin panel"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/sidebar.ex
+#, elixir-autogen, elixir-format
+msgid "Support"
+msgstr ""
+
+#: lib/firmowid_web/support/components/form.ex
+#, elixir-autogen, elixir-format
+msgid "Support request sent"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Supported banks and fintechs"
@@ -11713,11 +11724,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "weekday abbreviation"
 msgid "Th"
-msgstr ""
-
-#: lib/firmowid_web/feedback/components/form.ex
-#, elixir-autogen, elixir-format
-msgid "Thank you for your feedback!"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -14060,11 +14066,6 @@ msgstr ""
 msgid "What are you working on?"
 msgstr ""
 
-#: lib/firmowid_web/feedback/components/form.ex
-#, elixir-autogen, elixir-format
-msgid "What can we improve?"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
@@ -14090,6 +14091,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "What else can you do?"
+msgstr ""
+
+#: lib/firmowid_web/support/components/form.ex
+#, elixir-autogen, elixir-format
+msgid "What happened, or what would make Firmowid more useful for you?"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
@@ -14722,15 +14728,9 @@ msgstr ""
 msgid "Your matters"
 msgstr ""
 
-#: lib/firmowid_web/development/views/modals.ex
-#: lib/firmowid_web/feedback/components/form.ex
+#: lib/firmowid_web/support/components/form.ex
 #, elixir-autogen, elixir-format
-msgid "Your opinion helps us develop Firmowid. Tell us what we can improve, what works well, or what you are missing."
-msgstr ""
-
-#: lib/firmowid_web/feedback/components/form.ex
-#, elixir-autogen, elixir-format
-msgid "Your opinion is very important to us and will help us improve the application."
+msgid "Your message"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
