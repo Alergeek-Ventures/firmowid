@@ -43,7 +43,7 @@ W planie Micro Fakturowni, w IFIRMIE i w PolskiejFakturze limit wynosi trzy fakt
 
 ## Programy bez limitu faktur
 
-Program na własny komputer bez limitu faktur to ProFak, udostępniany z kodem na licencji autora, albo KsefInvoice, darmowy, choć zamknięty. W chmurze bez limitu faktur działa plan Darmowy naszego [Firmowida](/cennik), w którym są też dwa konta użytkowników, jedno konto bankowe z automatycznym dopasowaniem przelewów do faktur, ewidencja czasu w trzech projektach i 10 kredytów OCR miesięcznie, a kod programu udostępniamy na licencji AGPL-3.0. Księgowości ani magazynu Firmowid nie prowadzi, dlatego przy KPiR, ryczałcie i ZUS w jednym miejscu lepiej sprawdzą się IFIRMA, inFakt albo wFirma.
+Program na własny komputer bez limitu faktur to ProFak, udostępniany z kodem na licencji autora, albo KsefInvoice, darmowy, choć zamknięty. W chmurze bez limitu faktur działa plan Darmowy naszego [Firmowida](/ksef), w którym są też dwa konta użytkowników, jedno konto bankowe z automatycznym dopasowaniem przelewów do faktur, ewidencja czasu w trzech projektach i 10 kredytów OCR miesięcznie, a kod programu udostępniamy na licencji AGPL-3.0. Księgowości ani magazynu Firmowid nie prowadzi, dlatego przy KPiR, ryczałcie i ZUS w jednym miejscu lepiej sprawdzą się IFIRMA, inFakt albo wFirma.
 
 Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwo udostępnia na swojej stronie, a pytanie, [czy program do KSeF trzeba w ogóle kupować](/poradnik/czy-trzeba-kupowac-program-do-ksef), omawiamy w osobnym poradniku.
 
