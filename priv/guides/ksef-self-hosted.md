@@ -6,7 +6,7 @@ updated: 2026-11-07
 category: ai-api-i-open-source
 ---
 
-O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku](/poradnik/jak-bezpiecznie-przetestowac-ksef). Przy instalacji self-hosted do tej próby dochodzi odtworzenie bazy z kopii na innym serwerze. CISA zaleca przechowywanie kopii oddzielnie od systemu, którego dotyczą. Aktualizacje aplikacji, certyfikat TLS i konta użytkowników obsługuje wtedy administrator firmy. Dotyczy to również naszego Firmowida, którego kod na licencji AGPL-3.0 można uruchomić na własnym serwerze.
+O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku](/poradnik/jak-bezpiecznie-przetestowac-ksef). Przy instalacji self-hosted do tej próby dochodzi odtworzenie bazy z kopii na innym serwerze. CISA zaleca przechowywanie kopii oddzielnie od systemu, którego dotyczą. Aktualizacje aplikacji, certyfikat TLS i konta użytkowników obsługuje wtedy administrator firmy. Dotyczy to również naszego Firmowida, którego [kod na licencji AGPL-3.0](/open-source) można uruchomić na własnym serwerze.
 
 ## Trzy sposoby przechowywania danych
 

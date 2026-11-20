@@ -21,7 +21,7 @@ O tym, od kiedy KSeF obowiązuje poszczególne firmy, pisaliśmy już [w poradni
 | Kategoria | Projekt | Podstawa wyróżnienia |
 |---|---|---|
 | Najwięcej gwiazdek w głównym rankingu | MyCompany | 370★ na GitHubie 5.11.2026 |
-| Pełny przepływ małej firmy usługowej | **Firmowid** | jedyny projekt w zestawieniu łączący KSeF, automatyczne dopasowywanie przelewów oraz ewidencję czasu i projektów w jednej self-hostowalnej aplikacji |
+| Pełny przepływ małej firmy usługowej | **[Firmowid](/open-source)** | jedyny projekt w zestawieniu łączący KSeF, automatyczne dopasowywanie przelewów oraz ewidencję czasu i projektów w jednej self-hostowalnej aplikacji |
 | E-commerce i OMS | OpenLinker | integracje sprzedażowe i logistyczne oraz KSeF; projekt sklasyfikowany osobno od ogólnych programów do faktur |
 | Asystent dla JDG oparty na AI | JDG Księgowy | projekt zaprojektowany jako asystent księgowy i automatyzacja, a nie klasyczna aplikacja webowa |
 
