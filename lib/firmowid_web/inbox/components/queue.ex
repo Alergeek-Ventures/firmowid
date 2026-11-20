@@ -230,78 +230,75 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   def put_aside_modal(assigns) do
     ~H"""
     <.modal id="inbox-put-aside">
-      <div class="flex flex-col gap-6">
-        <%!-- Room for the close button: 32px wide, 16px from the text. --%>
-        <div class="flex flex-col gap-1 pr-12">
-          <h2 id="inbox-put-aside-title" class="text-xl/6.5 font-medium text-black">
-            {gettext("Items put aside")}
-          </h2>
-          <p id="inbox-put-aside-description" class="text-sm/[1.35] text-grey-600">
-            {gettext("They will come back to the inbox on their own, on the chosen day.")}
-          </p>
+      <:header>
+        <h2 id="inbox-put-aside-title" class="text-xl/6.5 font-medium text-black">
+          {gettext("Items put aside")}
+        </h2>
+        <p id="inbox-put-aside-description" class="mt-1 text-sm/[1.35] text-grey-600">
+          {gettext("They will come back to the inbox on their own, on the chosen day.")}
+        </p>
+      </:header>
+      <section class="flex flex-col gap-1">
+        <div class="flex items-baseline gap-2">
+          <h3 class="text-caps-sm/none font-medium text-grey-900 uppercase">
+            {gettext("Coming back on their own")}
+          </h3>
+          <span class="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 px-1.5 text-caps-sm font-semibold text-grey-700 tabular-nums">
+            {length(@entries)}
+          </span>
         </div>
-        <section class="flex flex-col gap-1">
-          <div class="flex items-baseline gap-2">
-            <h3 class="text-caps-sm/none font-medium text-grey-900 uppercase">
-              {gettext("Coming back on their own")}
-            </h3>
-            <span class="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 px-1.5 text-caps-sm font-semibold text-grey-700 tabular-nums">
-              {length(@entries)}
+        <ul>
+          <li
+            :for={{item, snooze} <- @entries}
+            id={"put-aside-#{item.id}"}
+            class="flex items-center gap-4 border-b border-grey-100 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3"
+          >
+            <span class={[
+              "flex size-10 shrink-0 items-center justify-center rounded-sm",
+              icon_styles(item)
+            ]}>
+              <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
             </span>
-          </div>
-          <ul>
-            <li
-              :for={{item, snooze} <- @entries}
-              id={"put-aside-#{item.id}"}
-              class="flex items-center gap-4 border-b border-grey-100 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3"
-            >
-              <span class={[
-                "flex size-10 shrink-0 items-center justify-center rounded-sm",
-                icon_styles(item)
-              ]}>
-                <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
-              </span>
-              <div class="flex min-w-0 flex-1 flex-col gap-1">
-                <p class="truncate text-base/[21px] font-medium text-black">
-                  {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
-                </p>
-                <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
-              </div>
-              <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
-                {gettext("comes back %{date}",
-                  date:
-                    snooze.until
-                    |> DateTime.shift_zone!(@timezone)
-                    |> DateTime.to_date()
-                    |> Queue.short_date(@today)
-                )}
+            <div class="flex min-w-0 flex-1 flex-col gap-1">
+              <p class="truncate text-base/[21px] font-medium text-black">
+                {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
               </p>
-              <div class="flex shrink-0 items-center gap-3">
-                <.icon_button
-                  id={"put-aside-#{item.id}-remove"}
-                  label={gettext("Remove notification")}
-                  variant="destructive"
-                  class="w-8"
-                  phx-click="remove_item"
-                  phx-value-id={item.id}
-                >
-                  <Lucideicons.trash_2 aria-hidden="true" />
-                </.icon_button>
-                <.button
-                  id={"put-aside-#{item.id}-restore"}
-                  type="button"
-                  size="small"
-                  variant="tertiary"
-                  phx-click="restore_item"
-                  phx-value-id={item.id}
-                >
-                  {gettext("Bring back")}
-                </.button>
-              </div>
-            </li>
-          </ul>
-        </section>
-      </div>
+              <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
+            </div>
+            <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
+              {gettext("comes back %{date}",
+                date:
+                  snooze.until
+                  |> DateTime.shift_zone!(@timezone)
+                  |> DateTime.to_date()
+                  |> Queue.short_date(@today)
+              )}
+            </p>
+            <div class="flex shrink-0 items-center gap-3">
+              <.icon_button
+                id={"put-aside-#{item.id}-remove"}
+                label={gettext("Remove notification")}
+                variant="destructive"
+                class="w-8"
+                phx-click="remove_item"
+                phx-value-id={item.id}
+              >
+                <Lucideicons.trash_2 aria-hidden="true" />
+              </.icon_button>
+              <.button
+                id={"put-aside-#{item.id}-restore"}
+                type="button"
+                size="small"
+                variant="tertiary"
+                phx-click="restore_item"
+                phx-value-id={item.id}
+              >
+                {gettext("Bring back")}
+              </.button>
+            </div>
+          </li>
+        </ul>
+      </section>
     </.modal>
     """
   end
