@@ -394,6 +394,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/funkcje/faktury-ksef", LegacyIndex, :invoicing
     get "/funkcje/fakturowanie", LegacyIndex, :invoicing
     get "/funkcje/urlopy", LegacyIndex, :leave
+    get "/funkcje/asystent", LegacyIndex, :assistant
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
     get "/", Preview, :home
     get "/landing", Preview, :landing

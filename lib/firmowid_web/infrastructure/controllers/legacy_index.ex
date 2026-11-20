@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   @moduledoc """
   Redirects legacy URLs: `/index.html` to the root path, the former invoicing
-  feature pages to `/ksef` and `/funkcje/urlopy` to `/funkcje/zespol`.
+  feature pages to `/ksef`, `/funkcje/urlopy` to `/funkcje/zespol` and
+  `/funkcje/asystent` to `/funkcje/claude-chatgpt-mcp`.
   """
   use FirmowidWeb, :controller
 
@@ -30,5 +31,14 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
     conn
     |> put_status(301)
     |> redirect(to: ~p"/funkcje/zespol")
+  end
+
+  @doc """
+  Permanently redirects `/funkcje/asystent` to the AI page, which covers the assistant.
+  """
+  def assistant(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/funkcje/claude-chatgpt-mcp")
   end
 end
