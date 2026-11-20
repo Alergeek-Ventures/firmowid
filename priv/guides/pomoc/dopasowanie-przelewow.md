@@ -92,4 +92,4 @@ Z naszego doświadczenia najwięcej daje jedna rzecz: poproś klientów, żeby w
 
 - [Bank i dopasowanie przelewów do faktur](/funkcje/bank)
 - [Jak podłączyć konto bankowe](/pomoc/podlaczenie-konta-bankowego)
-- [Program do faktur z dopasowaniem przelewów: import to nie Open Banking](/poradnik/dopasowanie-przelewow-do-faktur)
+- [Które programy dopasowują przelewy do faktur: import to nie Open Banking](/poradnik/dopasowanie-przelewow-do-faktur)

@@ -1,5 +1,5 @@
 ---
-title: "Program do faktur z dopasowaniem przelewów: import to nie Open Banking"
+title: "Które programy dopasowują przelewy do faktur: import to nie Open Banking"
 description: "Import MT940 to nie Open Banking. Porównanie programów, które łączą przelewy z fakturami, i limitów ich darmowych planów."
 published: 2026-11-06
 updated: 2026-11-11
