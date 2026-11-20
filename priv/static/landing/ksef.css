@@ -66,6 +66,8 @@
 .kin article{padding:24px 22px;background:#fff;border:1px solid var(--g200);border-radius:4px}
 .kin h3{font-size:17px;font-weight:600;line-height:1.3}
 .kin p{margin-top:8px;font-size:14.5px;line-height:1.5;color:var(--g700)}
+.kin--two{grid-template-columns:repeat(2,1fr)}
+.kfree--facts td:first-child{width:38%;font-weight:600}
 
 /* steps */
 .ksteps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
