@@ -44,10 +44,22 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <a
-              href={~p"/#zespol"}
+              href={~p"/funkcje"}
               class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
             >
-              {gettext("About us")}
+              {gettext("Features")}
+            </a>
+            <a
+              href={~p"/ksef"}
+              class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
+            >
+              KSeF
+            </a>
+            <a
+              href={~p"/cennik"}
+              class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
+            >
+              {gettext("Pricing")}
             </a>
             <a
               href={@repository}
