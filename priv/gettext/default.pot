@@ -545,6 +545,21 @@ msgctxt "duration"
 msgid "%{seconds} s"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "%{size} MB"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "%{size} kB"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "%{size} · ready to send"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #, elixir-autogen, elixir-format
 msgid "%{title} - which documents should I attach?"
@@ -1131,11 +1146,6 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Add the signed file (.xml)"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Add the signed timesheet"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
@@ -1949,6 +1959,11 @@ msgstr ""
 msgid "Back to the home page"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Back to the time tracker"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #: lib/firmowid_web/organization/views/index.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -2372,6 +2387,17 @@ msgstr ""
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgctxt "hours record badge"
+msgid "Cancellation"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Cancellation request sent on %{date} at %{time}. Until the decision the timesheet stays sent. Once accepted, you will return to the “Download” step."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
@@ -3487,6 +3513,12 @@ msgstr ""
 msgid "Correction"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgctxt "hours record badge"
+msgid "Correction"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Correction %{number}"
@@ -3531,6 +3563,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Correction reason"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Correction request sent on %{date} at %{time}. Until the decision the timesheet stays sent. Once accepted, you will return to the “Download” step."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
@@ -4025,6 +4062,7 @@ msgstr ""
 msgid "Could not upload the contract. Try again."
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex
 #: lib/firmowid_web/management/views/employee.ex
 #: lib/firmowid_web/settings/views/index.ex
@@ -4616,13 +4654,14 @@ msgid "Don't see your bank? Add an account manually by entering its IBAN. You ca
 msgstr ""
 
 #: lib/firmowid_web/bank_sync/views/create.ex
+#: lib/firmowid_web/hours_record/components/document.ex
 #: lib/firmowid_web/invoicing/components/bank_transfer_modal.ex
 #, elixir-autogen, elixir-format
 msgid "Done"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
-#: lib/firmowid_web/hours_record/components/upload_form.ex
+#: lib/firmowid_web/hours_record/components/document.ex
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
 #: lib/firmowid_web/invoicing/components/download_modal.ex
 #: lib/firmowid_web/invoicing/components/invoice_download_modal.ex
@@ -4646,6 +4685,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/download_modal.ex
 #, elixir-autogen, elixir-format
 msgid "Download all invoices issued or with a sale date in this month"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Download and sign the timesheet after the current month ends. Until then the hours may still change."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/download_modal.ex
@@ -4681,6 +4725,11 @@ msgstr ""
 msgid "Download the request"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Download the sent file"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Download the settlement"
@@ -4689,6 +4738,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Download the signed settlement"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Download the timesheet"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/status.ex
@@ -4706,6 +4760,7 @@ msgstr ""
 msgid "Downloaded from KSeF"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/document.ex
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
@@ -4750,6 +4805,11 @@ msgstr ""
 msgid "Drag a file here or %{link}"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Drag a file or %{link}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Drag an invoice/receipt here or choose a file from your computer"
@@ -4773,6 +4833,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Drop the file"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Drop the file to upload it"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -6194,16 +6259,12 @@ msgstr ""
 msgid "Hours that count themselves"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Hours worked"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "Hours worked:"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6395,11 +6456,6 @@ msgstr ""
 msgid "If you have an *invoice* for accommodation, add it as the main settlement document."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Image too large"
-msgstr ""
-
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "In 3 months"
@@ -6418,6 +6474,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "In one place."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgctxt "hours record badge"
+msgid "In progress"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
@@ -7794,14 +7856,14 @@ msgstr ""
 msgid "More options"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "Most demanding project:"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Most popular"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Most time"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
@@ -8434,12 +8496,6 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
-msgid "None"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgctxt "hours record badge"
 msgid "None"
 msgstr ""
 
@@ -9082,6 +9138,11 @@ msgstr ""
 msgid "PDF time tracking and payroll report"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "PDF, JPG or PNG · up to 10 MB"
+msgstr ""
+
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "PDF, up to 8 MB. For files up to 32 MB, we try lossless compression locally on Firmowid's server. PDFs with electronic signatures are not modified."
@@ -9710,6 +9771,11 @@ msgstr ""
 msgid "Projects that are not archived."
 msgstr ""
 
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Projects without hours in %{month} (%{count})"
+msgstr ""
+
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Proof of expenses"
@@ -10010,6 +10076,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Remove selected file"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Remove the file"
 msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
@@ -10485,6 +10556,7 @@ msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/hours_record/components/change_request.ex
+#: lib/firmowid_web/hours_record/components/document.ex
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr ""
@@ -10767,6 +10839,11 @@ msgctxt "hours record badge"
 msgid "Sent"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Sent on %{date} at %{time}."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "Sent to KSeF"
@@ -11033,7 +11110,6 @@ msgid "Sickness insurance"
 msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
-#: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Sign"
@@ -11052,6 +11128,11 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Sign in as owner"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Sign it with %{link}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/views/delegation.ex
@@ -11080,11 +11161,6 @@ msgstr ""
 msgid "Sign the file"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Sign timesheet"
-msgstr ""
-
 #: lib/firmowid_web/auth/views/forgot_password.ex
 #: lib/firmowid_web/auth/views/login.ex
 #: lib/firmowid_web/auth/views/registration.ex
@@ -11111,11 +11187,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Signed settlement preview"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Signed!"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/login.ex
@@ -11280,6 +11351,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "session"
 msgid "Start"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Start a session"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -11462,6 +11538,7 @@ msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Summary"
@@ -11471,11 +11548,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Summary"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/views/index.html.heex
-#, elixir-autogen, elixir-format
-msgid "Summary:"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex
@@ -11508,6 +11580,16 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "Synchronizing and viewing company bank accounts (Open Banking)"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Take back the cancellation request"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Take back the correction request"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
@@ -12483,6 +12565,7 @@ msgstr ""
 msgid "The session could not be changed here. Open Time tracking."
 msgstr ""
 
+#: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgid "The session is running"
@@ -12932,9 +13015,14 @@ msgstr ""
 #: lib/firmowid_web/hours_record/views/index.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/inbox/utilities/navigation.ex
-#: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgctxt "hours record page"
+msgid "Timesheet"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgctxt "timesheet link"
 msgid "Timesheet"
 msgstr ""
 
@@ -12947,6 +13035,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Timesheet change request, %{month}"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Timesheet document"
 msgstr ""
 
 #: lib/firmowid_web/management/views/employees.ex
@@ -13035,6 +13128,12 @@ msgstr ""
 msgid "To protect your account, log in again before closing it. After logging in you will come back here."
 msgstr ""
 
+#: lib/firmowid_web/hours_record/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgctxt "hours record badge"
+msgid "To sign"
+msgstr ""
+
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "To the fullest extent permitted by applicable law, Alergeek Ventures is not liable for any damages arising from the use of or inability to use the Service, including in particular direct, indirect, incidental, consequential damages, lost profits, data loss, business interruption, or any other financial or non-financial losses."
@@ -13053,11 +13152,6 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Token"
-msgstr ""
-
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Too many files"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -13254,6 +13348,12 @@ msgctxt "KSeF signing link"
 msgid "Trusted Profile"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgctxt "hours record signing link"
+msgid "Trusted Profile"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Try for free"
@@ -13321,11 +13421,6 @@ msgstr ""
 #: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to refresh the invoice status. Try again."
-msgstr ""
-
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Unacceptable file type"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -13472,11 +13567,6 @@ msgstr ""
 msgid "Updated:"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex
-#, elixir-autogen, elixir-format
-msgid "Upload"
-msgstr ""
-
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Upload a PDF file. Other scan formats are not supported for signed orders."
@@ -13548,6 +13638,7 @@ msgid "Upload the signed contract"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Upload the signed file"
 msgstr ""
@@ -13570,6 +13661,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Uploading..."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "Uploading… %{progress}%"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -14169,6 +14265,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "With this rate the buyer accounts for VAT, which assumes a VAT-registered business. VIES does not confirm that. Keep other proof or reconsider the rate."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "Withdraw and upload another file"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/change_request.ex
@@ -14819,6 +14920,7 @@ msgstr ""
 msgid "cannot be empty"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "choose from your computer"
@@ -15409,6 +15511,11 @@ msgstr ""
 msgid "selected %{selected} of %{limit}"
 msgstr ""
 
+#: lib/firmowid_web/hours_record/components/document.ex
+#, elixir-autogen, elixir-format
+msgid "sent %{date}"
+msgstr ""
+
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
@@ -15609,6 +15716,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "updated: %{time}"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex
+#, elixir-autogen, elixir-format
+msgid "upload a PDF, JPG or PNG up to 10 MB."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex

@@ -33,7 +33,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     |> put_resp_content_type("application/pdf")
     |> put_resp_header(
       "content-disposition",
-      "attachment; filename=Ewidencja #{date}.pdf"
+      "attachment; filename=#{pdf_filename(Date.from_iso8601!(date))}"
     )
     |> send_resp(200, pdf_binary)
   end
@@ -85,5 +85,11 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         |> LiveToast.put_toast(:error, gettext("You do not have access to this timesheet."))
         |> redirect(to: ~p"/czasosledz")
     end
+  end
+
+  @doc "Name of the month's timesheet PDF, for example `Ewidencja_11_2026.pdf`."
+  @spec pdf_filename(Date.t()) :: String.t()
+  def pdf_filename(%Date{} = date) do
+    "Ewidencja_#{date.month |> Integer.to_string() |> String.pad_leading(2, "0")}_#{date.year}.pdf"
   end
 end

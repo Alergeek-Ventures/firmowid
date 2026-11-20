@@ -51,7 +51,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
 
     assert html =~ "Hours Project"
     assert html =~ "Ewidencja godzin"
-    assert html =~ "BRAK"
+    assert html =~ "Do podpisu"
 
     lv
     |> element("button[phx-click='toggle-project'][phx-value-id='#{project.id}']")
@@ -67,7 +67,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     |> render_click()
 
     lv
-    |> element("button[phx-click='sign']")
+    |> element("#hours-record-confirm-sign")
     |> render_click()
 
     upload_fixture = Path.expand("../../../test/fixtures/receipt.png", __DIR__)
@@ -82,7 +82,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     |> form("#upload-form", %{})
     |> render_submit()
 
-    assert render(lv) =~ "WYSŁANO"
+    refute has_element?(lv, "#upload-form")
 
     scope = %Scope{actor: employee, tenant: employee.member.organization_id}
     {:ok, submitted_record} = HoursRecord.by_month(employee.member.id, 4, 2026, scope: scope)
