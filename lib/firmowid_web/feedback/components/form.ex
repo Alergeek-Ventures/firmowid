@@ -27,13 +27,15 @@ defmodule FirmowidWeb.Feedback.Components.Form do
     ~H"""
     <div id={@id}>
       <.modal id="feedback-modal" on_cancel={JS.push("reset", target: "##{@id}")}>
-        <div :if={!@submitted}>
+        <:header :if={!@submitted}>
           <h2 class="mb-2 text-xl font-semibold">{gettext("Share your feedback")}</h2>
-          <p class="mb-6 text-sm text-grey-700">
+          <p class="text-sm text-grey-700">
             {gettext(
               "Your opinion helps us develop Firmowid. Tell us what we can improve, what works well, or what you are missing."
             )}
           </p>
+        </:header>
+        <div :if={!@submitted}>
           <form id={"#{@id}-form"} phx-submit="save" phx-target={"##{@id}"} class="space-y-6">
             <div>
               <label for="feedback-content" class="mb-2 block text-sm font-medium">

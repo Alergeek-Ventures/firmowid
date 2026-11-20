@@ -35,6 +35,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :class, :any, default: nil
+
+  slot :header,
+    doc: "Title and description, as one box beside the close button, 16px clear of it."
+
   slot :inner_block, required: true
 
   def modal(assigns) do
@@ -65,16 +69,23 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
               class="relative hidden rounded-sm border border-grey-700/10 bg-white p-10 shadow-small transition"
             >
-              <%!-- Figma's "Button / Zamknij": 32×30, a 16px cross, level with the content's top right
-              corner. It floats, so the heading beside it wraps 16px before it instead of under it. --%>
-              <button
-                phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                type="button"
-                class="float-right ml-4 flex h-7.5 w-8 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900"
-                aria-label={gettext("close")}
-              >
-                <Lucideicons.x class="size-4" aria-hidden="true" />
-              </button>
+              <%!-- Figma's header: the title box fills the row, 16px before "Button / Zamknij"
+              (32×30, a 16px cross). Without a header the button floats, so the content wraps
+              16px before it. --%>
+              <div class={["gap-4", if(@header != [], do: "mb-6 flex items-start", else: "contents")]}>
+                <div :if={@header != []} class="min-w-0 flex-1">{render_slot(@header)}</div>
+                <button
+                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                  type="button"
+                  class={[
+                    "flex h-7.5 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900",
+                    @header == [] && "float-right ml-4"
+                  ]}
+                  aria-label={gettext("close")}
+                >
+                  <Lucideicons.x class="size-4" aria-hidden="true" />
+                </button>
+              </div>
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
