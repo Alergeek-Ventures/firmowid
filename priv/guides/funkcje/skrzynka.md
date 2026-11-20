@@ -57,7 +57,7 @@ Pracownik widzi tylko grupę „Ty”. Sprawę można odłożyć na jakiś czas 
 
 Stan na 18.11.2026, strony producentów, m.in. [wFirma](https://pomoc.wfirma.pl/-smart-lista), [Fakturownia](https://fakturownia.pl/inbox-skrzynka-odbiorcza-na-wydatki), [Qonto](https://support-be.qonto.com/hc/en-us/articles/32779292193937), [Calamari](https://help.calamari.io/en/articles/24543-how-to-approve-reject-a-leave-request).
 
-Zobacz też: [Bank](/funkcje/bank) · [Faktury z KSeF](/funkcje/fakturowanie)
+Zobacz też: [Bank](/funkcje/bank) · [Faktury z KSeF](/ksef)
 
 ## Najczęstsze pytania
 

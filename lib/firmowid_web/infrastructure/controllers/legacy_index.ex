@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   @moduledoc """
   Redirects legacy URLs: `/index.html` to the root path and
-  `/funkcje/faktury-ksef` to `/funkcje/fakturowanie`.
+  the former invoicing feature pages to `/ksef`.
   """
   use FirmowidWeb, :controller
 
@@ -15,11 +15,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   end
 
   @doc """
-  Permanently redirects `/funkcje/faktury-ksef` to `/funkcje/fakturowanie`.
+  Permanently redirects `/funkcje/faktury-ksef` and `/funkcje/fakturowanie` to `/ksef`.
   """
   def invoicing(conn, _params) do
     conn
     |> put_status(301)
-    |> redirect(to: ~p"/funkcje/fakturowanie")
+    |> redirect(to: ~p"/ksef")
   end
 end
