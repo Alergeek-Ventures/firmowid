@@ -94,6 +94,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:load_more, fn -> nil end)
       |> assign_new(:by_month, fn -> false end)
       |> assign_new(:more_loading, fn -> false end)
+      |> assign_new(:name_first_month, fn -> false end)
 
     ~H"""
     <%!-- The hook keeps rows in place itself when rows load above, so the browser must not as well.
@@ -156,12 +157,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               phx-hook="ScrollStyle"
               data-classes="border-b-4 border-solid border-grey-700/40"
               data-scroll-offset="90"
-              class={[
-                "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
-                column == "party" && "pl-5",
-                column == "project" &&
-                  "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
-              ]}
+              class={
+                [
+                  "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
+                  column == "party" && "pl-5",
+                  # The heading ends where the project pill does, not at its arrows: the cell's
+                  # own 1.5rem, the selector's 0.5rem, and the arrows' 1rem with the gap before them.
+                  column == "project" &&
+                    "pr-14 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
+                ]
+              }
             >
               <.column_label column={column} />
             </th>
@@ -183,6 +188,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             columns={columns(@mode, @projects)}
             return_to={@return_to}
             can_write_invoicing={@can_write_invoicing}
+            name_first_month={@name_first_month}
           />
           <.placeholder_rows :if={@more_loading} columns={columns(@mode, @projects)} by_month={false} />
         </tbody>
@@ -341,7 +347,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :month, month)
 
     ~H"""
-    <.month_row month={@month} />
+    <.month_row month={@month} name_first={@name_first_month} />
     """
   end
 
@@ -447,7 +453,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   # Separates the months of a list that spans all of them with a line naming the month.
   # From md the first month needs none: the column headings start it, and the month
   # picker above names the month on top. On phones the picker scrolls away, so there
-  # every month is named.
+  # every month is named; a list filtered down to few entries names its first month too,
+  # as its months lie far apart.
   #
   # The line takes one cell and spans the row from it: a cell spanning every column would
   # make a column of its own while the project column is hidden, which takes room from
@@ -460,7 +467,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       id={"month-#{Date.to_iso8601(@month)}"}
       data-month={Date.to_iso8601(@month)}
       data-label={@label}
-      class="relative max-md:block max-md:scroll-mt-navbar md:first:hidden"
+      class={["relative max-md:block max-md:scroll-mt-navbar", !@name_first && "md:first:hidden"]}
     >
       <th scope="colgroup" class="h-[30px] p-0 font-medium max-md:block">
         <div class="absolute inset-0 flex items-center gap-4 pt-3 pb-1">

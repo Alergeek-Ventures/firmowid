@@ -224,7 +224,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         <%!-- The picker scrolls to the month, and the filters sit beside it. --%>
         <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters
           params={@params}
-          unmatched_count={@unmatched_count}
+          unmatched_count={unmatched_in_month(@unmatched_count, @visible_month)}
         />
       </div>
 
@@ -312,6 +312,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <EntriesTable.table
         mode={@params.filter}
         by_month
+        name_first_month={@params.subfilter == :niedopasowane}
         invoicing_entries={
           listed_entries(@invoicing_entries, @newest_entries) &&
             window_entries(listed_entries(@invoicing_entries, @newest_entries), @entries_window)
@@ -763,43 +764,56 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     end)
   end
 
-  # The "unmatched" filter of a list counts its entries still waiting to be matched: invoices
-  # without a payment or transactions without a document. It shows only while there is
-  # something on the other side to match them with.
+  # The "unmatched" filter of a list counts its entries still waiting to be matched, month by
+  # month: invoices without a payment or transactions without a document. It shows only while
+  # there is something on the other side to match them with.
   defp start_unmatched_count(socket, filter, scope) do
     start_async(socket, :unmatched_count, fn ->
-      if count_unmatched(other_side(filter), scope) > 0,
-        do: count_unmatched(filter, scope),
-        else: 0
+      if unmatched_by_month(other_side(filter), scope) == %{},
+        do: %{},
+        else: unmatched_by_month(filter, scope)
     end)
   end
 
   defp other_side(:invoices), do: :transactions
   defp other_side(:transactions), do: :invoices
 
-  defp count_unmatched(:transactions, scope) do
+  defp unmatched_by_month(:transactions, scope) do
     %{reconciliation: :pending}
     |> Finances.query_to_list_transactions(scope: scope)
-    |> Ash.count!(scope: scope)
+    |> Ash.Query.select([:booking_date])
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.booking_date)
+    |> count_by_month()
   end
 
-  defp count_unmatched(:invoices, scope) do
-    cost =
-      @unmatched_cost
-      |> Map.put(:merge_corrections, true)
-      |> Invoicing.query_to_list_cost_invoices(scope: scope)
+  defp unmatched_by_month(:invoices, scope) do
+    [
+      Invoicing.query_to_list_cost_invoices(Map.put(@unmatched_cost, :merge_corrections, true),
+        scope: scope
+      ),
+      Invoicing.query_to_list_sales_invoices(Map.put(@unmatched_sales, :merge_corrections, true),
+        scope: scope
+      )
+    ]
+    |> Enum.flat_map(fn query ->
+      query
       |> Ash.Query.filter(not is_nil(issue_date))
-      |> Ash.count!(scope: scope)
-
-    sales =
-      @unmatched_sales
-      |> Map.put(:merge_corrections, true)
-      |> Invoicing.query_to_list_sales_invoices(scope: scope)
-      |> Ash.Query.filter(not is_nil(issue_date))
-      |> Ash.count!(scope: scope)
-
-    cost + sales
+      |> Ash.Query.select([:issue_date])
+      |> Ash.read!(scope: scope)
+      |> Enum.map(& &1.issue_date)
+    end)
+    |> count_by_month()
   end
+
+  defp count_by_month(dates), do: dates |> Enum.reject(&is_nil/1) |> Enum.frequencies_by(&Date.beginning_of_month/1)
+
+  # The month on screen counts its own unmatched entries; until the list reports which month
+  # that is, every month counts.
+  defp unmatched_in_month(nil, _month), do: nil
+  defp unmatched_in_month(by_month, nil), do: by_month |> Map.values() |> Enum.sum()
+
+  defp unmatched_in_month(by_month, month), do: Map.get(by_month, Date.beginning_of_month(month), 0)
 
   @impl true
   def handle_async(:invoicing_entries, {:ok, entries}, socket) do

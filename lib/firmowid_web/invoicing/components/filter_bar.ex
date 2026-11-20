@@ -64,6 +64,8 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
           patch={build_url(@params.month, @params.filter, subfilter)}
           data-segment
           data-active={@side == subfilter}
+          phx-mounted={subfilter == :niedopasowane && segment_in()}
+          phx-remove={subfilter == :niedopasowane && segment_out()}
           aria-current={@side == subfilter && "page"}
           class="relative flex h-full items-center justify-center gap-1.5 rounded-[2px] px-3 text-sm font-medium whitespace-nowrap text-grey-700 transition-colors hover:text-grey-900 data-active:bg-grey-200 data-active:text-grey-900 max-md:flex-1 [:has(>[data-highlight][data-ready])>&]:bg-transparent!"
         >
@@ -125,6 +127,15 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     </div>
     """
   end
+
+  # The unmatched segment comes and goes with the month on screen: it folds its width and
+  # fades, so the bar shrinks smoothly instead of jumping.
+  # The segment's own colour transition would win over this one, so this one is important.
+  @segment_fold "overflow-hidden transition-[opacity,max-width,padding,color]! duration-300 ease-in-out motion-reduce:transition-none!"
+
+  defp segment_in, do: JS.transition({@segment_fold, "max-w-0 px-0! opacity-0", "max-w-40 opacity-100"}, time: 300)
+
+  defp segment_out, do: JS.transition({@segment_fold, "max-w-40 opacity-100", "max-w-0 px-0! opacity-0"}, time: 300)
 
   defp side_filters(:invoices),
     do: [

@@ -84,6 +84,17 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     render_async(transactions)
     assert has_element?(transactions, "#side-filter a", ~r/Niedopasowane\s*1/)
 
+    # Scrolled to a month without unmatched invoices, the filter goes; back, it returns.
+    month = Date.beginning_of_month(invoice.issue_date)
+
+    render_hook(invoices, "visible-month", %{
+      "month" => month |> Date.shift(month: -1) |> Date.to_iso8601()
+    })
+
+    refute has_element?(invoices, "#side-filter a", "Niedopasowane")
+    render_hook(invoices, "visible-month", %{"month" => Date.to_iso8601(month)})
+    assert has_element?(invoices, "#side-filter a", ~r/Niedopasowane\s*1/)
+
     {:ok, unmatched, _html} = live(conn, ~p"/fakturowanie?filtr=faktury&podfiltr=niedopasowane")
     render_async(unmatched)
     assert has_element?(unmatched, "#invoicing-entries tr[id='#{invoice.id}-row']")
