@@ -345,6 +345,43 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert Repo.get!(Session, afternoon.id).is_remote
     end
 
+    test "keeps the chosen workplace when another field changes before Save", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      yesterday = Date.add(Date.utc_today(), -1)
+
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Office day",
+          start_datetime: DateTime.new!(yesterday, ~T[09:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(yesterday, ~T[12:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+      form_selector = "#edit-session-form-#{session.id}"
+
+      lv
+      |> form(form_selector, %{
+        sessions_form: %{"start_end_times" => %{"0" => %{"is_remote" => "true"}}}
+      })
+      |> render_change()
+
+      lv
+      |> form(form_selector, %{sessions_form: %{"title" => "Remote day"}})
+      |> render_change()
+
+      lv |> form(form_selector) |> render_submit()
+
+      updated_session = Repo.get!(Session, session.id)
+      assert updated_session.title == "Remote day"
+      assert updated_session.is_remote
+    end
+
     test "edits an adjacent session through the minute-only form", %{
       conn: conn,
       user: user,
