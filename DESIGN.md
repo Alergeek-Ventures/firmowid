@@ -467,6 +467,7 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 | Need | Primitive | Notes |
 |---|---|---|
 | Action | `FirmowidUI.Components.Button.button` / `Link.link kind="button"` | Variants and sizes below. |
+| Text link | `Link.link kind="text"` | Figma's "Link": Geist Medium, small 14/18 or big 16/21, `grey-700`, `grey-900` on hover, `rust-700` while pressed; a 16px icon 4px after the text. |
 | Icon-only action | `icon_button` | `label` is required (accessible name and tooltip); a square, small 30px, big 36px. |
 | Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. Two variants, list and dropdown (see Menus and Dropdowns). |
 | Status | `badge` | 24px pill; tones `neutral`, `success`, `danger`, `cost`, `sales`. |
@@ -504,6 +505,14 @@ expression of the Two Sides of the Ledger Rule.
 - **Component:** `FirmowidWeb.Management.Components.Card` (`rounded-md bg-white p-6 shadow`) with `card_header`.
 - **Background:** white surface on the canvas.
 - **Internal Padding:** 24px standard, 16px compact.
+
+### Toasts
+- **Component:** `FirmowidWeb.Core.Toast` styles LiveToast; Figma's "Toast" (General components, Toasty [DESIGN.md]).
+- **Shape:** 384px wide in the bottom right corner, a 1px `grey-700` border at 10% (rgba(78,78,78,0.1)), 4px radius, the small shadow. Kinds: info (`grey-100`, black text, `grey-700` info icon), success (`moss-200`, `moss-700`, circle check), notice (`teal-200`, `teal-800`, inbox), error (`brick-200`, `brick-700`, alert circle). The icon is 16px, 12px before the text.
+- **Text:** the icon, the message (14/1.35) and a 20px close button with a 16px cross in the text's colour; one line, 12px by 16px padding, at least 52px tall. For news with nothing to do, such as files being processed.
+- **Text and action:** the same line with an action in place of the close button. Actions are small text links (Geist Medium 14/18, `grey-700`, `grey-900` on hover, `brick-700` and `brick-800` on error): "Undo" with the return arrow (`Toast.undo_action/1`) after a step that can be undone, "View" with a chevron (`Toast.view_action/1`) for a record the toast reports.
+- **Title and text:** 16px padding, at least 76px tall; the title in Geist Medium 14/18, 4px above the message, and the close button at the top right.
+- **When:** offer Undo only when there is something to undo. A toast stays 6 seconds; one that reports a removal stays 10.
 
 ### Inputs / Fields
 - **Style:** one style for every field (`FirmowidUI.Components.Inputs.input/1`): 1px grey-200 border, white background (grey-50 for selects), 8px radius, 16px text set tight, 6px by 12px padding, about 34px tall. Placeholders and selects showing their prompt use pale grey text.

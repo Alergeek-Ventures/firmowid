@@ -39,6 +39,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Core.Toast
   alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Inbox.Utilities.Queue
@@ -464,14 +465,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         assigns = assign(assigns, :value, value)
 
         ~H"""
-        <.link
-          kind="text"
-          size="small"
-          phx-click={JS.push("undo_item", value: @value) |> LiveToast.dismiss()}
-          class="shrink-0"
-        >
-          {gettext("Undo")}
-        </.link>
+        <Toast.undo_action on_click={JS.push("undo_item", value: @value)} />
         """
       end
     )
