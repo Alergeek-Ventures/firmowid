@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       ],
       visual: :invoices,
       image: "/images/guides/funkcje/faktury-lista.webp",
-      page: "fakturowanie"
+      path: "/ksef"
     },
     %{
       tags: [gettext_noop("invoicing"), gettext_noop("bank accounts")],
@@ -295,8 +295,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               feature.visual == :team && "lg:max-w-100"
             ]}>
               <a
-                :if={feature.page}
-                href={~p"/funkcje/#{feature.page}"}
+                href={feature_href(feature)}
                 class={[
                   "after:absolute after:inset-0 after:rounded-2xl after:content-['']",
                   feature.visual == :team && "whitespace-pre-line"
@@ -304,9 +303,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               >
                 {feature.title}
               </a>
-              <span :if={!feature.page} class={[feature.visual == :team && "whitespace-pre-line"]}>
-                {feature.title}
-              </span>
             </h3>
             <p class="text-base/6.75 text-grey-700 lg:text-h5">
               {feature.description}
@@ -323,7 +319,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               </li>
             </ul>
             <p
-              :if={feature.page}
               aria-hidden="true"
               class="mt-6 text-sm font-semibold text-(--landing-accent) transition-opacity lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
             >
@@ -797,6 +792,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       end)
     end)
   end
+
+  # A feature links to its own page, or to the landing page that covers it.
+  defp feature_href(%{path: path}), do: path
+  defp feature_href(%{page: page}), do: ~p"/funkcje/#{page}"
 
   defp localize_features(features) do
     Enum.map(features, fn feature ->

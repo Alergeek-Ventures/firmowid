@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
     assert html =~ "Faktury KSeF bez limitu."
     assert html =~ ~s(<link rel="canonical" href="https://firmowid.pl/ksef">)
-    assert html =~ ~s(href="/funkcje/fakturowanie")
+    refute html =~ "/funkcje/fakturowanie"
     assert html =~ Endpoint.static_path("/landing/ksef.css")
     assert html =~ Endpoint.static_path("/landing/ksef.js")
     assert html =~ ~s("@type": "FAQPage")

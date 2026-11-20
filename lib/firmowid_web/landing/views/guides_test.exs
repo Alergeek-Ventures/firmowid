@@ -66,19 +66,16 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert short == "Korekta faktury w KSeF · Firmowid"
   end
 
-  test "the invoicing feature page replaces /funkcje/faktury-ksef", %{conn: conn} do
-    html = conn |> get(~p"/funkcje/fakturowanie") |> html_response(200)
-    assert title(html) == "Wystawianie faktur: VAT, korekty i faktury w walutach"
-
-    assert build_conn() |> get("/funkcje/faktury-ksef") |> redirected_to(301) ==
-             "/funkcje/fakturowanie"
+  test "the KSeF page replaces the invoicing feature pages", %{conn: conn} do
+    assert conn |> get("/funkcje/fakturowanie") |> redirected_to(301) == "/ksef"
+    assert build_conn() |> get("/funkcje/faktury-ksef") |> redirected_to(301) == "/ksef"
 
     features = build_conn() |> get(~p"/funkcje") |> html_response(200)
     sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
 
-    assert features =~ ~s(href="/funkcje/fakturowanie")
-    assert sitemap =~ "/funkcje/fakturowanie</loc>"
-    refute features =~ "/funkcje/faktury-ksef"
+    assert features =~ ~s(href="/ksef")
+    refute features =~ "/funkcje/fakturowanie"
+    refute sitemap =~ "/funkcje/fakturowanie"
     refute sitemap =~ "/funkcje/faktury-ksef"
   end
 
