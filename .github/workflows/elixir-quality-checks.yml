@@ -18,7 +18,7 @@ concurrency:
 jobs:
   extract-versions:
     name: Extract versions from .tool-versions
-    runs-on: ubuntu-latest
+    runs-on: selenge
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
@@ -44,7 +44,7 @@ jobs:
 
   quality_checks:
     name: Formatting, Credo, and Unused Deps
-    runs-on: ubuntu-latest
+    runs-on: selenge
     needs:
       - extract-versions
 
@@ -153,7 +153,7 @@ jobs:
   # PLTs take ~10 min to build, so dialyzer runs alongside the other checks.
   dialyzer:
     name: Dialyzer
-    runs-on: ubuntu-latest
+    runs-on: selenge
     needs:
       - extract-versions
 

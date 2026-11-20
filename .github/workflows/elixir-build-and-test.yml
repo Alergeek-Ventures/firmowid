@@ -36,7 +36,7 @@ jobs:
   benchmark-translations:
     name: Export existing main HEAD catalog (read only)
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark }}
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       contents: read
     outputs:
@@ -88,7 +88,7 @@ jobs:
 
   secret-scan:
     name: Scan repository for secrets
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       contents: read
 
@@ -106,7 +106,7 @@ jobs:
 
   extract-versions:
     name: Extract versions and service images
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       contents: read
       packages: read
@@ -200,7 +200,7 @@ jobs:
           (needs.publish-seaweedfs.result == 'success' || needs.publish-seaweedfs.result == 'skipped') &&
           (inputs.catalog-version != '' || needs.translations.result == 'success' || needs.benchmark-translations.result == 'success') }}
 
-    runs-on: ubuntu-latest
+    runs-on: selenge
     timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 120 || 360 }}
 
     needs:
@@ -337,7 +337,7 @@ jobs:
     name: Publish coverage summary and PR comment
     # The unused translations branch is skipped; do not propagate that to reporting.
     if: ${{ !cancelled() && needs.build.result == 'success' && !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
-    runs-on: ubuntu-latest
+    runs-on: selenge
     needs: build
     permissions:
       actions: read
