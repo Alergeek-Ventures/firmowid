@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: bank-i-platnosci
 ---
 
-GoCardless, przez który [Firmowid](/cennik) łączy się z bankami, ma na liście Revolut i Wise obok PKO BP, Pekao, mBanku i ING, więc konto w euro z Wise podłącza się tak samo jak firmowe konto w polskim banku, przez Open Banking.
+GoCardless, przez który [Firmowid](/funkcje/bank) łączy się z bankami, ma na liście Revolut i Wise obok PKO BP, Pekao, mBanku i ING, więc konto w euro z Wise podłącza się tak samo jak firmowe konto w polskim banku, przez Open Banking.
 
 | Instytucja | Rodzaj | Połączenie w Firmowidzie |
 |---|---|---|
