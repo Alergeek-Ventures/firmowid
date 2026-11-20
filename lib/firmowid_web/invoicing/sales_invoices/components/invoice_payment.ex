@@ -236,10 +236,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       <%!-- Bank account selector modal --%>
       <div class="absolute">
         <.modal id="bank_account_selector_modal" class="max-w-4xl">
-          <h2 class="mb-2 text-xl font-medium">{gettext("Change account")}</h2>
-          <p class="mb-6 text-grey-600">
-            {gettext("Choose the bank account to receive the payment.")}
-          </p>
+          <:header>
+            <h2 class="mb-2 text-xl font-medium">{gettext("Change account")}</h2>
+            <p class="text-grey-600">
+              {gettext("Choose the bank account to receive the payment.")}
+            </p>
+          </:header>
 
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>

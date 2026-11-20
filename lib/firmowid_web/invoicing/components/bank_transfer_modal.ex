@@ -34,8 +34,10 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         class="max-w-[1000px]"
         on_cancel={hide_modal("bank-transfer-modal")}
       >
-        <div class="flex flex-col gap-12">
+        <:header>
           <h3 class="text-center text-lg font-semibold">{gettext("Transfer details")}</h3>
+        </:header>
+        <div class="flex flex-col gap-12">
           <div class="grid grid-cols-[min-content_1fr_min-content] items-center gap-4">
             <%= for {label, value} <- [
             {gettext("Recipient"), @invoice.seller},

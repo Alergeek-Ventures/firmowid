@@ -611,9 +611,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <.leave_requests_table requests={@filtered_leave_requests} />
 
       <.modal id="leave-request-modal" class="max-w-xl">
-        <h2 class="mb-8 text-xl font-medium">
-          {gettext("Absence request")}
-        </h2>
+        <:header>
+          <h2 class="text-xl font-medium">
+            {gettext("Absence request")}
+          </h2>
+        </:header>
         <.form
           for={@leave_request_form}
           id="leave-request-form"

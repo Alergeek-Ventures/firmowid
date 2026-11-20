@@ -176,7 +176,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         id="leave-request-review-modal"
         on_cancel={JS.push("clear_selected_leave_request", target: @myself)}
       >
-        <div :if={@selected_request} id={"leave-review-#{@selected_request.id}"} class="space-y-8">
+        <:header :if={@selected_request}>
           <div class="flex items-center gap-3">
             <span class="flex size-6.5 shrink-0 items-center justify-center rounded bg-grey-100 text-grey-700">
               <.reason_icon reason={@selected_request.reason} />
@@ -195,7 +195,8 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               </span>
             </div>
           </div>
-
+        </:header>
+        <div :if={@selected_request} id={"leave-review-#{@selected_request.id}"} class="space-y-8">
           <div class="text-base whitespace-pre-line text-black" phx-no-format>{(@selected_request.note != "" && @selected_request.note) || gettext("The request has no content.")}</div>
 
           <div class="flex items-center justify-between">

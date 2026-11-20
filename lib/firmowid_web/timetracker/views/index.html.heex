@@ -440,14 +440,13 @@
   show={true}
   on_cancel={JS.push("cancel_overlap_save")}
 >
+  <:header>
+    <h3 class="text-lg font-bold text-grey-900">{gettext("Overlapping sessions")}</h3>
+    <p class="mt-1 text-sm text-grey-700">
+      {gettext("The new session overlaps existing ones. Saving requires the changes below:")}
+    </p>
+  </:header>
   <div class="space-y-6">
-    <div>
-      <h3 class="text-lg font-bold text-grey-900">{gettext("Overlapping sessions")}</h3>
-      <p class="mt-1 text-sm text-grey-700">
-        {gettext("The new session overlaps existing ones. Saving requires the changes below:")}
-      </p>
-    </div>
-
     <%!-- New session preview --%>
     <FirmowidWeb.Timetracker.Components.Overlap.new_session_card
       title={@trim_plan.new_session_attrs[:title]}

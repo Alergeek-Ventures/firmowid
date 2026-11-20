@@ -74,11 +74,13 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
       </FirmowidUI.Components.Button.button>
 
       <.modal id="download-modal" on_cancel={hide_modal("download-modal")}>
-        <div class="flex flex-col gap-8 p-4">
-          <h3 class="text-lg font-semibold text-balance">{gettext("Download invoices")}</h3>
+        <:header>
+          <h3 class="mb-8 text-lg font-semibold text-balance">{gettext("Download invoices")}</h3>
           <p class="text-pretty">
             <.intro_part :for={part <- @intro_parts} part={part} month={@month} />
           </p>
+        </:header>
+        <div class="flex flex-col gap-8 p-4">
           <div class="flex flex-col gap-3">
             <.filter_checkbox
               name="include_digital"

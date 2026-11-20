@@ -144,13 +144,8 @@
     </div>
   </div>
   <.modal :if={@current_hours_record} id="hours-record-change-request">
-    <.form
-      for={@change_request_form}
-      id="hours-record-change-request-form"
-      phx-submit="request-change"
-      class="flex flex-col gap-6"
-    >
-      <h2 id="hours-record-change-request-title" class="font-bold">
+    <:header>
+      <h2 id="hours-record-change-request-title" class="mb-6 font-bold">
         {gettext("Request correction or cancellation")}
       </h2>
       <p id="hours-record-change-request-description">
@@ -158,6 +153,13 @@
           "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
         )}
       </p>
+    </:header>
+    <.form
+      for={@change_request_form}
+      id="hours-record-change-request-form"
+      phx-submit="request-change"
+      class="flex flex-col gap-6"
+    >
       <.input
         field={@change_request_form[:change_request_kind]}
         type="select"

@@ -118,14 +118,15 @@ defmodule FirmowidWeb.Management.Components.Roles do
       on_cancel={hide_modal("organization_invite_modal")}
       class="max-w-lg"
     >
-      <div class="space-y-8">
-        <h3 class="text-xl font-medium">{gettext("Invite a new employee")}</h3>
+      <:header>
+        <h3 class="mb-8 text-xl font-medium">{gettext("Invite a new employee")}</h3>
         <p>
           {gettext(
             "Choose a role, then generate a code. An employee who enters it when creating an account will automatically join your organization."
           )}
         </p>
-
+      </:header>
+      <div class="space-y-8">
         <.form
           for={%{}}
           phx-submit="create_organization_invite"
@@ -183,14 +184,15 @@ defmodule FirmowidWeb.Management.Components.Roles do
       on_cancel={JS.push("clear_selected_user")}
       class="max-w-lg"
     >
-      <div class="space-y-8">
-        <h3 class="text-xl font-medium">{gettext("Changing the role")}</h3>
+      <:header>
+        <h3 class="mb-8 text-xl font-medium">{gettext("Changing the role")}</h3>
         <p>
           {gettext("You are changing the role of user %{user}. Their current role is:",
             user: present(@user.member.name || to_string(@user.email))
           )}
         </p>
-
+      </:header>
+      <div class="space-y-8">
         <.form
           for={%{}}
           phx-submit="update_user_role"

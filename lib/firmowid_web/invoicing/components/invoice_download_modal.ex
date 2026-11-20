@@ -36,14 +36,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
       </FirmowidUI.Components.Button.button>
 
       <.modal id={@modal_id} on_cancel={hide_modal(@modal_id)}>
+        <:header>
+          <h3 class="text-lg font-semibold">{gettext("Download PDF")}</h3>
+          <p class="mt-2 text-sm text-grey-700">
+            {gettext("Choose whether to include the page with the internal comment.")}
+          </p>
+        </:header>
         <div class="flex flex-col gap-6 p-1">
-          <div>
-            <h3 class="text-lg font-semibold">{gettext("Download PDF")}</h3>
-            <p class="mt-2 text-sm text-grey-700">
-              {gettext("Choose whether to include the page with the internal comment.")}
-            </p>
-          </div>
-
           <.form
             for={@switch_form}
             id={"#{@modal_id}-note-filter-form"}

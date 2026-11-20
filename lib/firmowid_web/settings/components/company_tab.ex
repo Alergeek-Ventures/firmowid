@@ -472,16 +472,18 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     </article>
 
     <.modal id={"confirm_delete_bank_account_#{@account.id}"}>
-      <h3 class="text-lg font-semibold text-grey-900">
-        {gettext("Confirm deletion")}
-      </h3>
-      <p class="mt-3 text-sm text-grey-700">
-        {gettext(
-          "Are you sure you want to delete this bank account? We will also delete the related transactions."
-        )}
-      </p>
+      <:header>
+        <h3 class="text-lg font-semibold text-grey-900">
+          {gettext("Confirm deletion")}
+        </h3>
+        <p class="mt-3 text-sm text-grey-700">
+          {gettext(
+            "Are you sure you want to delete this bank account? We will also delete the related transactions."
+          )}
+        </p>
+      </:header>
 
-      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <.button
           type="button"
           variant="tertiary"
@@ -514,18 +516,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       id="manual_bank_account_modal_company"
       on_cancel={hide_modal("manual_bank_account_modal_company")}
     >
+      <:header>
+        <h3 class="text-lg font-semibold text-grey-900">
+          {gettext("Add a bank account manually")}
+        </h3>
+        <p class="mt-2 text-sm text-grey-700">
+          {gettext(
+            "This feature lets you add an account without a bank integration. Transaction synchronization will be disabled."
+          )}
+        </p>
+      </:header>
       <div class="space-y-4">
-        <div>
-          <h3 class="text-lg font-semibold text-grey-900">
-            {gettext("Add a bank account manually")}
-          </h3>
-          <p class="mt-2 text-sm text-grey-700">
-            {gettext(
-              "This feature lets you add an account without a bank integration. Transaction synchronization will be disabled."
-            )}
-          </p>
-        </div>
-
         <.form
           for={%{}}
           phx-submit="create_manual_bank_account"

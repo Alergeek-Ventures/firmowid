@@ -119,8 +119,8 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           </form>
       <% end %>
       <.modal id="hours-record-sign-warning">
-        <div class="flex flex-col gap-6">
-          <h2 id="hours-record-sign-warning-title" class="font-bold">
+        <:header>
+          <h2 id="hours-record-sign-warning-title" class="mb-6 font-bold">
             {gettext("Check your hours before signing")}
           </h2>
           <p id="hours-record-sign-warning-description">
@@ -128,6 +128,8 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               "Check the month, hours and your details in the downloaded document. Submitting the signed record will lock editing of this month's hours. Later changes require a correction or cancellation request to your organization administrators."
             )}
           </p>
+        </:header>
+        <div class="flex flex-col gap-6">
           <div class="flex flex-wrap justify-end gap-3">
             <.button
               type="button"
