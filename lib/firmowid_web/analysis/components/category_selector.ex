@@ -59,10 +59,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               do: JS.push("open-categories", target: @target),
               else: show_popover(@popover_id)
           }
-          class="flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 transition hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
+          class="group/categories flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
           <.badges tags={@tags} colors={@colors} limit={@limit} />
-          <.icon name="hero-chevron-up-down-mini" class="size-4 shrink-0 text-grey-500" />
+          <.icon
+            name="hero-chevron-up-down-mini"
+            class="size-4 shrink-0 text-grey-500 transition-colors group-hover/categories:text-grey-700"
+          />
         </FirmowidUI.Components.Button.button>
         <%!-- A lazy selector opens as soon as it is rendered, which its first click asked for. --%>
         <.popover
@@ -279,7 +282,8 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
 
   @doc """
   Renders categories on one line: the first `limit` and a count of the rest, with
-  all names in the title. An empty list shows an explicit unassigned badge.
+  all names in the title. An empty list shows an explicit unassigned badge. Inside an
+  editable trigger, hovering it darkens the badges themselves.
   """
   @spec badges(map()) :: Rendered.t()
   def badges(assigns) do
@@ -292,13 +296,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
     >
       <span
         :if={@tags == []}
-        class="inline-flex items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-600"
+        class="inline-flex items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-600 transition-colors group-hover/categories:bg-grey-200/50"
       >
         <.color_dot color={Map.fetch!(@colors, :unassigned)} />{gettext("Unassigned")}
       </span>
       <span
         :for={tag <- Enum.take(@tags, @limit)}
-        class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-700"
+        class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-700 transition-colors group-hover/categories:bg-grey-200/50"
       >
         <.omitted_dot :if={tag.kind == :internal} />
         <.color_dot :if={tag.kind != :internal} color={tag_color(tag, @colors)} />
@@ -306,7 +310,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       </span>
       <span
         :if={length(@tags) > @limit}
-        class="shrink-0 rounded-full bg-grey-100 px-1.5 py-0.5 text-xs text-grey-700"
+        class="shrink-0 rounded-full bg-grey-100 px-1.5 py-0.5 text-xs text-grey-700 transition-colors group-hover/categories:bg-grey-200/50"
       >
         +{length(@tags) - @limit}
       </span>
