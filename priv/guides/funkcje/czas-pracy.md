@@ -38,6 +38,10 @@ landing:
 
 Korzystaliśmy z paru różnych programów do mierzenia czasu dostępnych na rynku, ale nic nie było tak proste i intuicyjne jak Czasośledź. Żaden nie dawał połączenia z kontrahentami ani analizy finansowej, a za każdy trzeba było płacić dodatkowo. Teraz licznik stoi pod projektem, a godziny same trafiają do miesięcznej ewidencji.
 
+Czas mierzymy przy projektach, więc od razu wiadomo, ile go na nie spędzamy. Koszt pracy w projekcie pomaga nam wycenić kolejny projekt. Pomaga też w rozmowach z klientem, kiedy opowiadamy, ile czasu co zajęło. Dla klienta czas to koszt, więc rozmowy są dużo bardziej merytoryczne.
+
+Faktury kosztowe też przypisujemy do projektów. Jeśli jakiś koszt wynikał z konkretnego projektu, widzimy, jak wpływa na końcowy zysk z projektu.
+
 ## Jak to działa
 
 Wpisujesz, nad czym pracujesz, wybierasz projekt i klikasz „Start”. Licznik zatrzymujesz przyciskiem „Stop”. Zapomniany stoper program zatrzyma automatycznie po 12 godzinach, więc nie nabije doby.
@@ -65,6 +69,20 @@ Przykład na kartach: jedna osoba, 32 godziny w miesiącu i stawka 120 zł za go
 | Zestawienie dla klienta | 14 wpisów | Plik CSV projektu: osoba, data, czas trwania i tytuł każdego wpisu. |
 
 Więcej: [Ewidencja godzin: PDF i podpis](/pomoc/ewidencja-godzin).
+
+## Projekty
+
+Projekt ma nazwę, kontrahenta i listę osób, które mogą mierzyć w nim czas. Firmowid liczy koszt pracy w projekcie: godziny każdej osoby razy jej stawka. W widoku miesiąca widać godziny każdej osoby w projekcie.
+
+Faktury i przelewy przypisujesz do projektu w [Analizie](/funkcje/analiza). Widać tam przychody, koszty z faktur i koszt pracy projektu.
+
+| | |
+|---|---|
+| Projekt | nazwa, kontrahent, lista osób |
+| Koszt pracy | godziny razy stawka osoby |
+| Faktury i przelewy | przypisywane w Analizie |
+| Budżet projektu | nie |
+| Zakończony projekt | archiwum, godziny zostają |
 
 ## Zespół
 
@@ -130,3 +148,15 @@ Tak, wpisem ręcznym z datą i godzinami. Po wysłaniu ewidencji za dany miesią
 
 ### Czy to ewidencja czasu pracy z Kodeksu pracy?
 Nie. Ewidencja godzin w Firmowidzie to miesięczne zestawienie do umowy zlecenia.
+
+### Jak Firmowid liczy koszt pracy w projekcie?
+Mnoży godziny każdej osoby przez jej stawkę. Opis jest w sekcji [Projekty](#projekty).
+
+### Czy faktury i koszty można przypisać do projektu?
+Tak, w Analizie. Widać tam przychody, koszty i koszt pracy projektu.
+
+### Czy projekt ma budżet?
+Nie. Firmowid pokazuje godziny i koszt pracy, ale nie pilnuje limitu godzin ani kwoty.
+
+### Co się dzieje z zakończonym projektem?
+Trafia do archiwum, a godziny zostają.
