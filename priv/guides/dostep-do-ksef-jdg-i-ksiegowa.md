@@ -10,7 +10,7 @@ Z dostępem do KSeF w jednoosobowej działalności wiąże się mniej formalnoś
 
 ## Token i certyfikat
 
-Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, które użytkownik generuje w Aplikacji Podatnika KSeF. Certyfikat typu 2 jest ponadto potrzebny do wygenerowania drugiego kodu QR, z napisem „CERTYFIKAT”, na fakturze z trybu offline przekazywanej nabywcy przed jej przesłaniem do systemu. W Firmowidzie, naszym programie do faktur, typ połączenia wybiera się w ustawieniach KSeF, a przy certyfikacie zapisana jest data jego wygaśnięcia.
+Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, które użytkownik generuje w Aplikacji Podatnika KSeF. Certyfikat typu 2 jest ponadto potrzebny do wygenerowania drugiego kodu QR, z napisem „CERTYFIKAT”, na fakturze z trybu offline przekazywanej nabywcy przed jej przesłaniem do systemu. W Firmowidzie, naszym programie do faktur, [typ połączenia wybiera się w ustawieniach KSeF](/pomoc/polaczenie-z-ksef), a przy certyfikacie zapisana jest data jego wygaśnięcia.
 
 ## Uprawnienia dla biura księgowego
 
