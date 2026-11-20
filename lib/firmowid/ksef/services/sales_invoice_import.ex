@@ -150,10 +150,11 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceImport do
   end
 
   # Invoices skipped by an earlier import that this one recorded, e.g. after a fix.
+  # Notified, so the inbox drops them right away.
   defp clear_skipped(ksef_numbers, scope) do
     SkippedKsefSalesInvoice
     |> Ash.Query.filter(ksef_number in ^ksef_numbers)
-    |> SkippedKsefSalesInvoice.destroy!(scope: scope)
+    |> SkippedKsefSalesInvoice.destroy!(scope: scope, bulk_options: [notify?: true])
   end
 
   # An invoice Firmowid submitted is numbered and locked before KSeF assigns its KSeF number.
