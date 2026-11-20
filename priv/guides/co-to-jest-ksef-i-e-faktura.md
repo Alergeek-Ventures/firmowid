@@ -16,7 +16,7 @@ Plik PDF pełni przy e-fakturze funkcję wizualizacji, czyli czytelnej wersji da
 
 ## Co zmienia się 1 stycznia 2027 r.
 
-Z początkiem 2027 r. wygasa wyjątek dla sprzedaży do 10 000 zł brutto miesięcznie, a do płatności między czynnymi podatnikami VAT stosuje się art. 108g ustawy o VAT, który wymaga podania w tytule przelewu [numeru KSeF opłacanej faktury](/poradnik/numer-ksef-w-przelewie-2027). Faktury dla konsumentów mogą nadal powstawać poza systemem, natomiast jednoosobowa działalność gospodarcza, także [zwolniona z VAT](/poradnik/zwolnienie-z-vat-a-ksef-2027), wystawia faktury dla firm już tylko w KSeF.
+Z początkiem 2027 r. [wygasa wyjątek dla sprzedaży do 10 000 zł brutto miesięcznie](/poradnik/ksef-od-1-stycznia-2027-male-firmy), a do płatności między czynnymi podatnikami VAT stosuje się art. 108g ustawy o VAT, który wymaga podania w tytule przelewu [numeru KSeF opłacanej faktury](/poradnik/numer-ksef-w-przelewie-2027). Faktury dla konsumentów mogą nadal powstawać poza systemem, natomiast jednoosobowa działalność gospodarcza, także [zwolniona z VAT](/poradnik/zwolnienie-z-vat-a-ksef-2027), wystawia faktury dla firm już tylko w KSeF.
 
 ## Czym wystawić fakturę w KSeF
 
