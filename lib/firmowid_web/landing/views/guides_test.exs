@@ -99,6 +99,19 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert html =~ ~s(href="#jak-liczy-analiza")
   end
 
+  test "the AI page covers the assistant and replaces /funkcje/asystent", %{conn: conn} do
+    html = conn |> get(~p"/funkcje/claude-chatgpt-mcp") |> html_response(200)
+
+    assert html =~ ~s(id="asystent-ai-w-aplikacji")
+    assert html =~ ~s(href="#zatwierdzanie-zmian")
+    assert html =~ ~s(<tr class="firmowid">)
+
+    assert build_conn() |> get("/funkcje/asystent") |> redirected_to(301) ==
+             "/funkcje/claude-chatgpt-mcp"
+
+    refute build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/funkcje/asystent"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end
