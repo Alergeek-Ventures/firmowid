@@ -2,7 +2,7 @@
 title: "Rozliczenie delegacji online: polecenie, zaliczka, diety"
 description: "Delegacje w Firmowidzie: wniosek, polecenie wyjazdu, zaliczka, paragony, diety krajowe i zagraniczne, podpis Profilem Zaufanym. Porównanie z innymi programami."
 published: 2026-11-18
-updated: 2026-11-18
+updated: 2026-11-20
 landing:
   kicker: "Funkcje · Delegacje"
   note: "diety liczą się same"
@@ -41,7 +41,7 @@ Później dostaję od pracownika wstępne rozliczenie delegacji. Mogę weryfikow
 
 | Program | Wniosek i polecenie | Odczyt paragonów | Diety zagraniczne | Podpis | Cena |
 |---|---|---|---|---|---|
-| Firmowid | tak, PDF | tak | tak | Profil Zaufany | 0 zł do 2 osób, 29 zł netto do 5 osób |
+| Firmowid | tak, PDF | tak | tak | Profil Zaufany | 149 zł netto miesięcznie, bez limitu osób |
 | tomHRM | wniosek jako polecenie | nie wspomniano | w wersji PRO | nie opisano | od 199 zł miesięcznie |
 | Symfonia eDokumenty | tak | OCR faktur | tak | nie opisano | bez ceny |
 | wFirma | wydruk polecenia | nie | bez modułu | nie | w pakiecie kadrowym |
