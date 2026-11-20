@@ -22,7 +22,7 @@ JDG nie jest z KSeF zwolniona. Jeśli nie wiesz, czy twoja sprzedaż podlega obo
 
 Wystarczy [Aplikacja Podatnika KSeF 2.0](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/). Wystawisz w niej i odbierzesz faktury, zrobisz korektę, nadasz uprawnienia i pobierzesz UPO.
 
-Jeśli wolisz program zintegrowany z KSeF, sprawdź cenę, funkcje, eksport danych i nadawanie dostępu innym osobom.
+Jeśli wolisz program zintegrowany z KSeF, sprawdź cenę, funkcje, eksport danych i nadawanie dostępu innym osobom. Jak wygląda to w naszym programie, pokazuje instrukcja [połączenia Firmowida z KSeF](/pomoc/polaczenie-z-ksef).
 
 ## 3. Przygotuj dostęp
 
