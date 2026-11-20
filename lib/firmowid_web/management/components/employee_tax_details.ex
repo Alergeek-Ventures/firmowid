@@ -227,16 +227,15 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
         class="max-w-xl!"
         on_cancel={JS.push("close-tax-details", target: @myself)}
       >
+        <:header>
+          <h2 id={"#{@id}-dialog-title"} class="text-lg/snug font-medium">
+            {gettext("Declaration history")}
+          </h2>
+          <p id={"#{@id}-dialog-description"} class="mt-2 text-sm/snug text-grey-600">
+            {gettext("Choose a date to see the employee's declarations.")}
+          </p>
+        </:header>
         <div class="flex flex-col gap-6">
-          <header class="flex flex-col gap-2 pe-5">
-            <h2 id={"#{@id}-dialog-title"} class="text-lg/snug font-medium">
-              {gettext("Declaration history")}
-            </h2>
-            <p id={"#{@id}-dialog-description"} class="text-sm/snug text-grey-600">
-              {gettext("Choose a date to see the employee's declarations.")}
-            </p>
-          </header>
-
           <details :for={declaration <- @declarations} class="border-bs border-grey-200 pbs-4">
             <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-sm text-sm/snug active:bg-grey-100">
               <span class="font-medium">{format_date(declaration.applies_from)}</span>

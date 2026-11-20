@@ -50,10 +50,12 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
   def documents_modal(assigns) do
     ~H"""
     <.modal id={@id} on_cancel={hide_modal(@id)} class="max-w-[600px]">
-      <h2 id={"#{@id}-title"} class="flex items-center gap-2 text-base font-medium text-black">
-        {@icon}{gettext("%{title} - which documents should I attach?", title: @title)}
-      </h2>
-      <div id={"#{@id}-description"} class="mt-5 flex flex-col gap-2 text-sm text-black">
+      <:header>
+        <h2 id={"#{@id}-title"} class="flex items-center gap-2 text-base font-medium text-black">
+          {@icon}{gettext("%{title} - which documents should I attach?", title: @title)}
+        </h2>
+      </:header>
+      <div id={"#{@id}-description"} class="flex flex-col gap-2 text-sm text-black">
         <%= case @kind do %>
           <% "transport" -> %>
             <.modal_paragraph heading={pgettext("transport documents", "Do you have an invoice?")}>

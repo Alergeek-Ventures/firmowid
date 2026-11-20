@@ -319,8 +319,8 @@
 </div>
 
 <.modal id="delete_project_modal">
-  <div class="space-y-6">
-    <h3 class="text-lg font-medium">
+  <:header>
+    <h3 class="mb-6 text-lg font-medium">
       <.delete_project_prompt name={@project.name} />
     </h3>
     <p class="text-sm text-grey-700">
@@ -328,6 +328,8 @@
         "This operation is irreversible. All data related to this project will be permanently deleted."
       )}
     </p>
+  </:header>
+  <div class="space-y-6">
     <div class="flex justify-end gap-4">
       <.button
         type="button"

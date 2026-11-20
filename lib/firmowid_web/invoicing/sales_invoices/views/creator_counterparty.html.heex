@@ -332,9 +332,11 @@
   show={@open_counterparty_modal}
   on_cancel={JS.push("close_counterparty_modal")}
 >
-  <h2 class="mb-6 text-xl font-semibold text-grey-900">
-    {gettext("Enter the counterparty details")}
-  </h2>
+  <:header>
+    <h2 class="text-xl font-semibold text-grey-900">
+      {gettext("Enter the counterparty details")}
+    </h2>
+  </:header>
 
   <.form
     for={@counterparty_form}

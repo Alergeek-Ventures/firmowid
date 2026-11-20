@@ -295,9 +295,11 @@
       </.button>
     </div>
     <.modal id="buyer-edit-modal">
-      <h2 class="mb-6 text-xl font-semibold text-grey-900">
-        {gettext("Edit buyer details")}
-      </h2>
+      <:header>
+        <h2 class="text-xl font-semibold text-grey-900">
+          {gettext("Edit buyer details")}
+        </h2>
+      </:header>
 
       <div class="space-y-6">
         <div class="rounded-lg bg-grey-50 px-5 py-3">

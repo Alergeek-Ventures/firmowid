@@ -113,7 +113,9 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
       </.card>
 
       <.modal id="salary-history-modal">
-        <h2 class="mb-4 text-xl font-medium">{gettext("Rate history")}</h2>
+        <:header>
+          <h2 class="text-xl font-medium">{gettext("Rate history")}</h2>
+        </:header>
         <div class="flex scrollbar-card max-h-[400px] flex-col gap-2 divide-grey-100 overflow-y-auto">
           <%= if Enum.empty?(@salary_history) do %>
             <p class="text-grey-700">{gettext("No data")}</p>

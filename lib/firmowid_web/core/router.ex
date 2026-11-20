@@ -358,6 +358,7 @@ defmodule FirmowidWeb.Core.Router do
         live "/development", Development.Views.Index, :index
         live "/development/design-system", Development.Views.DesignSystem, :index
         live "/development/skrzynka", Development.Views.InboxScenarios, :index
+        live "/development/modale", Development.Views.Modals, :index
       end
     end
   end
