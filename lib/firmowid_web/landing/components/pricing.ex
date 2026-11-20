@@ -377,7 +377,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             index == 1 && "lg:bg-rust-500"
           ]}
         ></span>
-        <span :if={value == false} aria-hidden="true" class="text-[#737373]">—</span>
+        <span :if={value == false} aria-hidden="true" class="text-[#737373]">–</span>
         <span :if={is_boolean(value)} class="sr-only">{if value,
           do: gettext("Included"),
           else: gettext("Not included")}</span>
