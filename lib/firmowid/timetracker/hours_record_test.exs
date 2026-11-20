@@ -3,6 +3,7 @@ defmodule Firmowid.Timetracker.HoursRecordTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Firmowid.Blobs.Blob
   alias Firmowid.Timetracker.HoursRecord
 
@@ -67,7 +68,7 @@ defmodule Firmowid.Timetracker.HoursRecordTest do
       upload_path = Briefly.create!(extname: ".pdf")
       File.write!(upload_path, "%PDF-1.4 timesheet #{System.unique_integer()}")
 
-      assert {:error, %Ash.Error.Forbidden{}} =
+      assert {:error, %Forbidden{}} =
                HoursRecord.create(
                  %{
                    member_id: other_user.member.id,
@@ -82,6 +83,61 @@ defmodule Firmowid.Timetracker.HoursRecordTest do
 
       assert Repo.aggregate(Blob, :count) == 0
     end
+  end
+
+  describe "withdraw_change_request/2" do
+    test "the author takes back a pending request", %{user: user, scope: scope} do
+      record = insert_requested_record!(user)
+
+      assert {:ok, record} = HoursRecord.withdraw_change_request(record, scope: scope)
+      assert is_nil(record.change_requested_at)
+      assert is_nil(record.change_request_kind)
+      assert is_nil(record.change_request_reason)
+      assert record.submission_status == :submitted
+    end
+
+    # Admins pass every Timetracker action through the domain bypass.
+    test "another employee cannot take it back", %{user: user} do
+      record = insert_requested_record!(user)
+      employee = user_in_org_fixture(user.member.organization_id, %{role: :employee})
+      employee_scope = %Firmowid.Scope{actor: employee, tenant: user.member.organization_id}
+
+      assert {:error, %Forbidden{}} =
+               HoursRecord.withdraw_change_request(record, scope: employee_scope)
+    end
+
+    test "a request the administrators decided on stays", %{user: user, scope: scope} do
+      record = insert_requested_record!(user, change_request_decision: :rejected)
+
+      assert {:error, _error} = HoursRecord.withdraw_change_request(record, scope: scope)
+
+      assert %{change_request_kind: :cancellation} =
+               Repo.get!(HoursRecord, record.id, skip_organization_id: true)
+    end
+  end
+
+  defp insert_requested_record!(user, attrs \\ []) do
+    blob = seed_blob!(user.member.organization_id)
+
+    Repo.insert!(
+      struct!(
+        %HoursRecord{
+          id: Ash.UUIDv7.generate(),
+          member_id: user.member.id,
+          blob_id: blob.id,
+          month: 4,
+          year: 2025,
+          number_of_hours: 160,
+          submission_status: :submitted,
+          change_requested_at: DateTime.utc_now(),
+          change_request_kind: :cancellation,
+          change_request_reason: "Wrong hours",
+          organization_id: user.member.organization_id
+        },
+        attrs
+      ),
+      skip_organization_id: true
+    )
   end
 
   describe "submitted check" do

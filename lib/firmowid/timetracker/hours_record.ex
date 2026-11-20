@@ -42,6 +42,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
     define :by_month, args: [:member_id, :month, :year]
     define :create
     define :request_change
+    define :withdraw_change_request
     define :review_change_request, args: [:decision]
     define :notify_admins, args: [:signal]
   end
@@ -128,6 +129,23 @@ defmodule Firmowid.Timetracker.HoursRecord do
       validate changing(:change_requested_at, from: nil)
 
       emit Signals, :hours_record_change_requested, fields: [hours_record_id: :id]
+    end
+
+    update :withdraw_change_request do
+      description "Take back a change request the administrators have not decided on yet."
+      accept []
+      require_atomic? false
+
+      change filter(
+               expr(
+                 submission_status == :submitted and not is_nil(change_requested_at) and
+                   is_nil(change_request_decision)
+               )
+             )
+
+      change set_attribute(:change_requested_at, nil)
+      change set_attribute(:change_request_kind, nil)
+      change set_attribute(:change_request_reason, nil)
     end
 
     update :review_change_request do
@@ -226,7 +244,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
       authorize_if CreatingForActorMember
     end
 
-    policy action(:request_change) do
+    policy action([:request_change, :withdraw_change_request]) do
       authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
