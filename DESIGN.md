@@ -356,12 +356,42 @@ Shadows belong to those cards and to overlays that float above the page.
 ### Shadow Vocabulary
 - **Card** (`shadow-card`, a token in `assets/css/theme.css`): only on the cards described above.
 - **Overlay** (`shadow-lg` plus a 1px graphite/10 ring): modals, popovers, dropdowns and toasts.
+- **Small** (`shadow-small`, Figma's "Small shadow": `0 1px 6px` black at 2%): bordered overlays from the newer Figma screens, such as the time tracker's session edit popover. The `grey-200` border does the separating; the shadow only softens the edge.
 - **Error tooltip** (`box-shadow: 0 2px 8px rgba(0,0,0,0.15)`): field-level error bubbles.
 
 ### Named Rules
 **The Flat by Default Rule.** A surface at rest has no shadow. Lists, tables, forms, toolbars and page sections sit flat on the canvas or on white, separated by tone or a `grey-200` line. Reach for a card only when the content is one self-contained record, and never nest cards.
 
 **The Paper on Canvas Rule.** A surface rises by being whiter than what is under it. Reach for `shadow-lg` only for things that float: modals, popovers, dropdowns and toasts.
+
+## Motion
+
+Motion is short and only confirms what the user just did: something opened,
+appeared or changed. Nothing loops or moves on its own, and every animation
+stops under `prefers-reduced-motion` (`motion-reduce:transition-none`,
+`motion-reduce:animate-none!`, and the hooks skip it).
+
+- **Colour change** (100ms): hover and press states of buttons.
+- **Dropdown entrance** (`dropdown_styles/0` in
+  `FirmowidWeb.Timetracker.Components.Session`): 150ms ease-out, scale 95% to
+  100% and opacity 0 to 1 through `@starting-style` (`starting:`), so it plays
+  every time the element is shown, whatever shows it. Set the origin to the side
+  it unfolds from (`origin-top`, `origin-top-right`). Used by the project, work
+  mode and workplace lists and the session edit popover. Closing has no
+  animation.
+- **Revealed fields** (`list_enter/0` in `FirmowidWeb.Timetracker.Views.Index`):
+  200ms ease-out, rising 8px from opacity 0, for content that opens in place,
+  such as the manual time fields. It leaves no classes behind, as a lingering
+  translate would anchor sticky headers and popovers.
+- **State colour** (300ms ease-out): a value changing meaning, such as the
+  time tracker's idle counter darkening from `grey-300` to `grey-500` once the
+  form can start.
+- **Changed number** (`t-digit-pop-in` in `assets/css/shared.css`, played by the
+  `NumberPopIn` hook): 500ms, each digit rising 8px out of a 2px blur with a
+  slight overshoot, 70ms apart. With `data-changed-only` only the digits that
+  differ from the previous value move, which marks what a save changed (the
+  session time in the time tracker list); without it all digits play (landing
+  pricing).
 
 ## Focus
 
