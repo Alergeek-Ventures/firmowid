@@ -34,7 +34,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
   alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.LiveView.JS
   alias Phoenix.Socket.Broadcast
+
+  require Ash.Query
 
   # Load definitions for invoice queries
   @cost_invoice_loads [
@@ -63,6 +66,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # Files of one upload change state in bursts, each change asking for the whole
   # page again; long enough to gather a burst, short enough to feel immediate.
   @gather_ms 500
+
+  # Invoices still waiting for a payment, for the "unmatched" filters and their counts.
+  @unmatched_cost %{date_field: :issue_date, reconciliation: :pending}
+  @unmatched_sales %{date_field: :issue_date, reconciliation: :pending, submission: :confirmed}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -150,12 +157,56 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     assigns = assign(assigns, drop_before: drop_before, drop_after: drop_after)
 
     ~H"""
-    <%!-- From md the action labels show as the bar has room for them, which also depends on
-         the sidebar: issuing an invoice keeps its label longest, then the invoice from outside
-         KSeF, then the download; on phones the actions float and keep their labels. Above the
-         bar as much room as between it and the column headings below it, the same before and
-         while scrolling: the bar starts at the top of the page, as it sticks there. --%>
-    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3 md:@container md:-mt-4 md:gap-4 md:pt-11 md:pb-3">
+    <%!-- From md the action labels show as the bar has room for them, which depends on the
+         sidebar, the month and the filters shown: the hook folds them one by one until the bar
+         fits, the download first, then the invoice from outside KSeF to its short name and to
+         its icon, and issuing an invoice last; on phones the actions float and keep their
+         labels. Above the bar as much room as between it and the column headings below it,
+         the same before and while scrolling: the bar starts at the top of the page, as it
+         sticks there. --%>
+    <div
+      id="invoicing-toolbar"
+      phx-hook=".FoldActions"
+      phx-mounted={JS.ignore_attributes("data-fold-*")}
+      class="group/toolbar sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 data-fold-wrap:flex-wrap data-fold-wrap:gap-y-3 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3 md:-mt-4 md:gap-4 md:pt-11 md:pb-3"
+    >
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".FoldActions">
+        // Each step folds one more action, in this order, until the bar fits its width.
+        // Folded fully and still too wide, the actions wrap under the filters.
+        const STEPS = ["data-fold-download", "data-fold-ksef-short", "data-fold-ksef", "data-fold-issue", "data-fold-wrap"];
+
+        export default {
+          mounted() {
+            this.desktop = window.matchMedia("(min-width: 48rem)");
+            this.fit = () => this.fold();
+            this.observer = new ResizeObserver(this.fit);
+            this.observer.observe(this.el);
+            this.observer.observe(this.el.firstElementChild);
+            this.desktop.addEventListener("change", this.fit);
+            this.fold();
+          },
+          updated() {
+            this.fold();
+          },
+          destroyed() {
+            this.observer.disconnect();
+            this.desktop.removeEventListener("change", this.fit);
+          },
+          fold() {
+            STEPS.forEach(step => this.el.removeAttribute(step));
+            if (!this.desktop.matches) return;
+            for (const step of STEPS) {
+              if (this.fits()) return;
+              this.el.setAttribute(step, "");
+            }
+          },
+          fits() {
+            const [filters, actions] = this.el.children;
+            const gap = parseFloat(getComputedStyle(this.el).columnGap) || 0;
+            return filters.scrollWidth + gap + actions.scrollWidth <= this.el.clientWidth;
+          }
+        }
+      </script>
       <div class="flex items-center gap-3 max-md:flex-wrap">
         <%!-- The label is the month scrolled to, set in the browser; the server renders the
              first one and leaves the input alone afterwards. --%>
@@ -171,12 +222,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         />
 
         <%!-- The picker scrolls to the month, and the filters sit beside it. --%>
-        <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters params={@params} />
+        <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters
+          params={@params}
+          unmatched_count={@unmatched_count}
+        />
       </div>
 
       <div
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
-        class="flex flex-row gap-2 max-md:contents @min-[66.5rem]:gap-3"
+        class="flex flex-row gap-3 max-md:contents"
       >
         <%!-- The download reads the month itself, so it shows while the rows load and
              goes only when the list turns out empty. --%>
@@ -192,7 +246,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         <.page_actions
           :if={can_write_invoicing?(@current_user)}
           label={gettext("Add invoice")}
-          class="md:gap-2! md:*:gap-2! @min-[66.5rem]:gap-3! @min-[66.5rem]:*:gap-3!"
+          class="md:gap-3! md:*:gap-3!"
         >
           <:action>
             <form id="upload-form" phx-change="upload" phx-submit="upload">
@@ -204,7 +258,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 for={@uploads.file.ref}
                 variant="tertiary"
                 accent="rust"
-                class="relative md:[&>svg]:size-5!"
+                class="relative md:group-data-fold-ksef/toolbar:px-1.75! md:[&>svg]:size-5!"
                 data-fab
               >
                 <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
@@ -226,8 +280,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                   />
                 <% end %>
                 <Lucideicons.file />
-                <span class="block sm:grow sm:text-center md:@max-[62.5rem]:sr-only">
+                <span class="block sm:grow sm:text-center md:group-data-fold-ksef-short/toolbar:hidden">
                   {gettext("Invoice from outside KSeF")}
+                </span>
+                <span class="hidden md:group-data-fold-ksef/toolbar:sr-only md:group-data-fold-ksef-short/toolbar:block">
+                  {pgettext("toolbar short label", "Outside KSeF")}
                 </span>
               </FirmowidUI.Components.Button.button>
             </form>
@@ -239,10 +296,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               variant="tertiary"
               accent="teal"
               id="sales-invoice-link"
+              class="md:group-data-fold-issue/toolbar:px-1.75!"
               data-fab
             >
               <Lucideicons.square_pen class="size-6 md:size-5!" />
-              <span class="md:@max-[51.5rem]:sr-only">
+              <span class="md:group-data-fold-issue/toolbar:sr-only">
                 {gettext("Issue invoice")}
               </span>
             </.link>
@@ -303,6 +361,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     if is_nil(parsed.filter) do
       {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company), replace: true)}
     else
+      # The other list counts other unmatched entries, so its count gives way until read.
+      socket =
+        if socket.assigns[:params][:filter] == parsed.filter,
+          do: socket,
+          else: assign(socket, :unmatched_count, nil)
+
       socket =
         socket
         |> assign(:params, parsed)
@@ -705,9 +769,48 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     socket
     |> CostInvoiceUpload.assign_counts()
+    |> start_unmatched_count(filter, scope)
     |> start_async(:invoicing_entries, fn ->
       nil |> fetch_entries(nil, filter, subfilter, scope, expected?) |> with_month_separators()
     end)
+  end
+
+  # The "unmatched" filter of a list counts its entries still waiting to be matched: invoices
+  # without a payment or transactions without a document. It shows only while there is
+  # something on the other side to match them with.
+  defp start_unmatched_count(socket, filter, scope) do
+    start_async(socket, :unmatched_count, fn ->
+      if count_unmatched(other_side(filter), scope) > 0,
+        do: count_unmatched(filter, scope),
+        else: 0
+    end)
+  end
+
+  defp other_side(:invoices), do: :transactions
+  defp other_side(:transactions), do: :invoices
+
+  defp count_unmatched(:transactions, scope) do
+    %{reconciliation: :pending}
+    |> Finances.query_to_list_transactions(scope: scope)
+    |> Ash.count!(scope: scope)
+  end
+
+  defp count_unmatched(:invoices, scope) do
+    cost =
+      @unmatched_cost
+      |> Map.put(:merge_corrections, true)
+      |> Invoicing.query_to_list_cost_invoices(scope: scope)
+      |> Ash.Query.filter(not is_nil(issue_date))
+      |> Ash.count!(scope: scope)
+
+    sales =
+      @unmatched_sales
+      |> Map.put(:merge_corrections, true)
+      |> Invoicing.query_to_list_sales_invoices(scope: scope)
+      |> Ash.Query.filter(not is_nil(issue_date))
+      |> Ash.count!(scope: scope)
+
+    cost + sales
   end
 
   @impl true
@@ -722,6 +825,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_async(:invoicing_entries, {:exit, reason}, _socket), do: exit(reason)
+
+  def handle_async(:unmatched_count, {:ok, count}, socket), do: {:noreply, assign(socket, :unmatched_count, count)}
+
+  def handle_async(:unmatched_count, {:exit, reason}, _socket), do: exit(reason)
 
   # The newest months show until every entry arrives, unless the params changed meanwhile or
   # every entry is already there. Without newest entries, the placeholders stay rather than
@@ -903,8 +1010,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # The side filters of the lists: sales or purchase invoices, incoming or outgoing transactions.
   defp entry_reads(:invoices, :sprzedazowe), do: [{:sales_invoices, @issued}]
   defp entry_reads(:invoices, :zakupowe), do: [{:cost_invoices, @issued}]
+
+  # Invoices of both sides still waiting for a payment; matching one takes it off the list.
+  defp entry_reads(:invoices, :niedopasowane),
+    do: [{:cost_invoices, @unmatched_cost}, {:sales_invoices, @unmatched_sales}]
+
   defp entry_reads(:transactions, :wplywy), do: [{:transactions, %{}, :income}]
   defp entry_reads(:transactions, :wydatki), do: [{:transactions, %{}, :expense}]
+
+  defp entry_reads(:transactions, :niedopasowane), do: [{:transactions, %{reconciliation: :pending}}]
 
   defp entry_reads(:invoices, _subfilter), do: [{:cost_invoices, @issued}, {:sales_invoices, @issued}]
 

@@ -9002,6 +9002,12 @@ msgctxt "transaction direction filter"
 msgid "Outgoing"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/views/index.ex
+#, elixir-autogen, elixir-format
+msgctxt "toolbar short label"
+msgid "Outside KSeF"
+msgstr ""
+
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
@@ -13353,6 +13359,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Unlink salary"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
+#, elixir-autogen, elixir-format
+msgctxt "list filter"
+msgid "Unmatched"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex

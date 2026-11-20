@@ -64,6 +64,31 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     assert Invoicing.get_cost_invoice!(invoice.id, scope: scope).skip_invoicing
   end
 
+  test "the unmatched filter shows only with something on both sides to match", %{conn: conn} do
+    user = admin_fixture()
+    conn = log_in_user(conn, user)
+    invoice = corrected_cost_invoice_fixture!(user)
+
+    # An unmatched invoice alone has nothing to be matched with.
+    {:ok, invoices, _html} = live(conn, ~p"/fakturowanie?filtr=faktury")
+    render_async(invoices)
+    refute has_element?(invoices, "#side-filter a", "Niedopasowane")
+
+    transaction_fixture!(user, invoice.seller, invoice.issue_date, "FREE")
+
+    {:ok, invoices, _html} = live(conn, ~p"/fakturowanie?filtr=faktury")
+    render_async(invoices)
+    assert has_element?(invoices, "#side-filter a", ~r/Niedopasowane\s*1/)
+
+    {:ok, transactions, _html} = live(conn, ~p"/fakturowanie?filtr=transakcje")
+    render_async(transactions)
+    assert has_element?(transactions, "#side-filter a", ~r/Niedopasowane\s*1/)
+
+    {:ok, unmatched, _html} = live(conn, ~p"/fakturowanie?filtr=faktury&podfiltr=niedopasowane")
+    render_async(unmatched)
+    assert has_element?(unmatched, "#invoicing-entries tr[id='#{invoice.id}-row']")
+  end
+
   test "opens when the month param is not a single value", %{conn: conn} do
     conn = log_in_user(conn, admin_fixture())
 

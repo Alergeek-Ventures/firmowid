@@ -16,15 +16,26 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   """
   attr :params, :map, required: true
 
+  attr :unmatched_count, :integer,
+    default: nil,
+    doc: "Unmatched entries of the list; their filter shows only above zero, or while it is open."
+
   def inbox_filters(assigns) do
-    sides = side_filters(assigns.params.filter)
-    side = if Keyword.has_key?(sides, assigns.params.subfilter), do: assigns.params.subfilter
+    %{params: params, unmatched_count: unmatched_count} = assigns
+    sides = side_filters(params.filter)
+
+    # The unmatched entries get a fourth segment while there are any to match, and keep it
+    # while it is open, so the list emptying by matching does not take the segment away.
+    unmatched =
+      if params.subfilter == :niedopasowane or (unmatched_count || 0) > 0,
+        do: [{:niedopasowane, pgettext("list filter", "Unmatched"), nil, unmatched_count}],
+        else: []
 
     segments =
-      [
-        {nil, pgettext("counterparty invoice filter", "All"), nil}
-        | Enum.map(sides, fn {key, {label, side}} -> {key, label, side} end)
-      ]
+      [{nil, pgettext("counterparty invoice filter", "All"), nil, nil}] ++
+        Enum.map(sides, fn {key, {label, side}} -> {key, label, side, nil} end) ++ unmatched
+
+    side = if Enum.any?(segments, &(elem(&1, 0) == params.subfilter)), do: params.subfilter
 
     assigns = assign(assigns, segments: segments, side: side)
 
@@ -48,7 +59,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
         />
         <%!-- The hook's highlight takes over from the chosen segment's own. --%>
         <.link
-          :for={{subfilter, label, side} <- @segments}
+          :for={{subfilter, label, side, count} <- @segments}
           kind="unstyled"
           patch={build_url(@params.month, @params.filter, subfilter)}
           data-segment
@@ -66,6 +77,12 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
             ]}
           ></span>
           {label}
+          <span
+            :if={count && count > 0}
+            class="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-grey-700 px-1.25 text-caps-sm/none font-medium text-white"
+          >
+            {count}
+          </span>
         </.link>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SideFilter">
           export default {
