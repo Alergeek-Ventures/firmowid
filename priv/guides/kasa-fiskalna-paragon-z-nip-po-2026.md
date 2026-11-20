@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: ksef-w-praktyce
 ---
 
-Do 31 grudnia 2026 r. podatnicy objęci KSeF mogą jeszcze wystawiać faktury przy użyciu kas rejestrujących, a paragon fiskalny z NIP nabywcy do 450 zł brutto uznaje się za fakturę uproszczoną. Ministerstwo Finansów podaje w odpowiedziach na pytania, że do tego czasu takie dokumenty nie muszą trafiać do KSeF, a później wszystkie faktury będą wystawiane przy użyciu systemu. Od 2027 r. faktura do transakcji zaewidencjonowanej na kasie fiskalnej online musi więc zostać wystawiona w KSeF, jeżeli sprzedaż dotyczy podatnika.
+Do 31 grudnia 2026 r. podatnicy objęci KSeF mogą jeszcze wystawiać faktury przy użyciu kas rejestrujących, a paragon fiskalny z NIP nabywcy do 450 zł brutto uznaje się za fakturę uproszczoną. Ministerstwo Finansów podaje w odpowiedziach na pytania, że do tego czasu takie dokumenty nie muszą trafiać do KSeF, a [później wszystkie faktury będą wystawiane przy użyciu systemu](/poradnik/ksef-od-1-stycznia-2027-male-firmy). Od 2027 r. faktura do transakcji zaewidencjonowanej na kasie fiskalnej online musi więc zostać wystawiona w KSeF, jeżeli sprzedaż dotyczy podatnika.
 
 ## Sprzedaż dla klientów indywidualnych
 
