@@ -54,6 +54,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           optional(:decisions) => [decision()],
           optional(:date_range) => String.t(),
           optional(:days_late) => pos_integer(),
+          optional(:amount) => String.t(),
           id: String.t(),
           tier: tier(),
           icon: String.t(),
@@ -534,11 +535,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       days_late: Date.diff(today, invoice.effective_due_date),
       icon: "file-chart-column",
       title: overdue_invoice_title(invoice, side),
-      context:
-        gettext("%{amount} · due %{date}",
-          amount: Money.to_string!(Money.abs(invoice.effective_amount)),
-          date: Calendar.strftime(invoice.effective_due_date, "%d.%m.%Y")
-        ),
+      amount: Money.to_string!(Money.abs(invoice.effective_amount)),
+      context: gettext("due %{date}", date: Calendar.strftime(invoice.effective_due_date, "%d.%m.%Y")),
       person: counterparty_name(invoice, side),
       action: gettext("Review"),
       href:

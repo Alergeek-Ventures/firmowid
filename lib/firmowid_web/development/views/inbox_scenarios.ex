@@ -718,11 +718,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
           do: gettext("Overdue sales invoice %{number}", number: number),
           else: gettext("Overdue cost invoice %{number}", number: number)
         ),
-      context:
-        gettext("%{amount} · due %{date}",
-          amount: amount,
-          date: Calendar.strftime(due, "%d.%m.%Y")
-        ),
+      amount: amount,
+      context: gettext("due %{date}", date: Calendar.strftime(due, "%d.%m.%Y")),
       person: counterparty,
       action: gettext("Review"),
       href: "#"

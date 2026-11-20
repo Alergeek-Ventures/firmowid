@@ -21,6 +21,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   attr :item, :map, required: true
   attr :fresh, :boolean, default: false, doc: "arrived while the page was open; it lights up once"
 
+  attr :today, Date,
+    required: true,
+    doc: "the organization's today, for the days the menu puts it aside until"
+
   def item_row(assigns) do
     assigns = assign(assigns, :decisions, Map.get(assigns.item, :decisions, []))
 
@@ -28,7 +32,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     <article
       id={"item-#{@item.id}"}
       class={[
-        "flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4",
+        "group/row flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4",
         @fresh && "motion-safe:animate-arrive"
       ]}
     >
@@ -53,16 +57,20 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             {@item.person}
           </span>
           <span :if={@item.person} aria-hidden="true">·</span>
-          <span>
-            {@item.context}
-            <span :if={Map.get(@item, :days_late, 0) > 0} class="text-brick-700">
-              {ngettext("(%{count} day late)", "(%{count} days late)", @item.days_late)}
-            </span>
-          </span>
+          <span>{@item.context}</span>
+        </p>
+      </div>
+      <div
+        :if={Map.has_key?(@item, :amount)}
+        class="flex shrink-0 flex-col items-end gap-1 whitespace-nowrap"
+      >
+        <p class="text-base/[normal] font-medium text-black">{@item.amount}</p>
+        <p class="text-sm/[1.35] text-brick-700">
+          {ngettext("%{count} day late", "%{count} days late", @item.days_late)}
         </p>
       </div>
       <%!-- On phones the actions wrap under the text, level with the title. --%>
-      <div class="flex shrink-0 flex-wrap items-center gap-4 max-md:w-full max-md:justify-end max-md:pl-14">
+      <div class="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:justify-end max-md:pl-14">
         <%= if @item.tier == :urgent do %>
           <.link kind="button" navigate={@item.href} size="small" variant="special">
             {@item.action}
@@ -79,10 +87,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 label={decision.label}
                 variant="tertiary"
                 class="w-8"
-                phx-click="decide_item"
-                phx-value-id={@item.id}
-                phx-value-decision={decision.action}
-                phx-disable-with=""
+                phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
               >
                 <Lucideicons.render! name={decision.icon} aria-hidden="true" />
               </.icon_button>
@@ -92,10 +97,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 type="button"
                 size="small"
                 variant="tertiary"
-                phx-click="decide_item"
-                phx-value-id={@item.id}
-                phx-value-decision={decision.action}
-                phx-disable-with=""
+                phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
               >
                 <Lucideicons.render! name={decision.icon} aria-hidden="true" />{decision.label}
               </.button>
@@ -110,40 +112,74 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             {@item.action}
           </.link>
         <% end %>
-        <.snooze_menu item={@item} />
+        <.snooze_menu item={@item} today={@today} />
       </div>
     </article>
     """
   end
 
-  attr :item, :map, required: true
+  # Hands `event` for the item to the card's SmoothHeight hook
+  # (`inbox:leave`): the row dissolves first, then the hook sends the event and
+  # the rows under it glide up once the answer takes it off.
+  defp leave(id, event, value \\ %{}) do
+    JS.dispatch("inbox:leave",
+      to: "#item-#{id}",
+      detail: %{event: event, value: Map.put(value, :id, id)}
+    )
+  end
 
-  # Puts the item aside for the whole company (`Firmowid.Core.InboxSnooze`).
+  attr :item, :map, required: true
+  attr :today, Date, required: true
+
+  # Puts the item aside for the whole company (`Firmowid.Core.InboxSnooze`);
+  # each option shows the day the item comes back.
   defp snooze_menu(assigns) do
     ~H"""
-    <.menu id={"item-#{@item.id}-snooze"} label={gettext("Put aside")}>
+    <.menu
+      id={"item-#{@item.id}-snooze"}
+      label={gettext("Put aside")}
+      trigger_class="group-hover/row:text-grey-900"
+      panel_class="w-70"
+    >
+      <p class="px-3 py-2 text-caps-sm/none font-medium text-grey-600 uppercase" aria-hidden="true">
+        {gettext("Put aside until")}
+      </p>
       <.menu_item
         :for={{days, label} <- snooze_options()}
-        phx-click="snooze_item"
-        phx-value-id={@item.id}
-        phx-value-days={days}
+        class="justify-between gap-4"
+        phx-click={leave(@item.id, "snooze_item", %{days: to_string(days)})}
       >
-        {label}
+        <span class="font-medium text-black">{label}</span>
+        <span class="text-grey-600">{comes_back(Date.add(@today, days), @today)}</span>
       </.menu_item>
       <div class="my-1 h-px bg-grey-100" role="separator"></div>
-      <.menu_item phx-click="snooze_item" phx-value-id={@item.id}>
-        {gettext("Hide for good")}
+      <.menu_item
+        tone="danger"
+        class="flex-col items-start gap-1 py-2"
+        phx-click={leave(@item.id, "snooze_item")}
+      >
+        <span class="font-medium">{gettext("Hide this item")}</span>
+        <span class="text-sm/[1.35] whitespace-normal text-grey-600">{hide_for_good_note(@item)}</span>
       </.menu_item>
     </.menu>
     """
   end
 
-  defp snooze_options,
-    do: [
-      {7, gettext("Put aside for 7 days")},
-      {30, gettext("Put aside for 30 days")},
-      {90, gettext("Put aside for 90 days")}
-    ]
+  defp snooze_options, do: [{7, gettext("In a week")}, {30, gettext("In a month")}, {90, gettext("In 3 months")}]
+
+  # "śr 18.11", with the year once it is another one: "wt 9.02.2027". The
+  # abbreviated weekday loses its dot ("śr." in CLDR).
+  defp comes_back(date, today) do
+    format = if date.year == today.year, do: "d.MM", else: "d.MM.y"
+    weekday = date |> Firmowid.Cldr.Date.to_string!(format: "EEE") |> String.trim_trailing(".")
+
+    "#{weekday} #{Firmowid.Cldr.Date.to_string!(date, format: format)}"
+  end
+
+  defp hide_for_good_note(%{days_late: _}),
+    do: gettext("It will not come back to the inbox, even if the invoice is still overdue.")
+
+  defp hide_for_good_note(_item), do: gettext("It will not come back to the inbox until someone brings it back.")
 
   @doc """
   Items the company put aside, folded under the queue: each says when it comes

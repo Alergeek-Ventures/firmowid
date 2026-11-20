@@ -61,7 +61,6 @@ msgid "%{amount} stayed"
 msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
-#: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} · due %{date}"
 msgstr ""
@@ -227,6 +226,13 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "%{count} day ago"
 msgid_plural "%{count} days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} day late"
+msgid_plural "%{count} days late"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -569,13 +575,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "%{working} of %{count} working"
 msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "(%{count} day late)"
-msgid_plural "(%{count} days late)"
-msgstr[0] ""
-msgstr[1] ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
@@ -6185,14 +6184,14 @@ msgstr ""
 msgid "Hide description"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Hide for good"
-msgstr ""
-
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Hide sessions"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Hide this item"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -6462,6 +6461,21 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Image too large"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "In 3 months"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "In a month"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "In a week"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -7016,6 +7030,16 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Issuing…"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "It will not come back to the inbox until someone brings it back."
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "It will not come back to the inbox, even if the invoice is still overdue."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -9781,17 +9805,7 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
-msgid "Put aside for 30 days"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Put aside for 7 days"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Put aside for 90 days"
+msgid "Put aside until"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -14949,6 +14963,7 @@ msgid "draft sales invoice"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "due %{date}"
 msgstr ""

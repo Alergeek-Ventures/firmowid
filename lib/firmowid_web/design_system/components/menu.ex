@@ -20,6 +20,15 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
   attr :label, :string, required: true, doc: "Accessible name of the trigger and the menu."
   attr :placement, :string, default: "bottom-end"
   attr :class, :any, default: nil
+
+  attr :trigger_class, :any,
+    default: nil,
+    doc: "Extra trigger classes, for example darkening it while its row is hovered."
+
+  attr :panel_class, :any,
+    default: nil,
+    doc: "Extra classes of the menu panel, for example its width."
+
   slot :trigger, doc: "Custom trigger content; defaults to a vertical ellipsis icon."
   slot :inner_block, required: true
 
@@ -29,7 +38,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
       <.icon_button
         id={"#{@id}-trigger"}
         label={@label}
+        variant="menu"
+        class={@trigger_class}
         aria-haspopup="menu"
+        aria-expanded="false"
         phx-click={show_popover("#{@id}-menu")}
       >
         <%= if @trigger != [] do %>
@@ -39,10 +51,14 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
         <% end %>
       </.icon_button>
       <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement={@placement}>
+        <%!-- Dropdown entrance (DESIGN.md, Motion): it unfolds from the trigger's corner. --%>
         <div
           role="menu"
           aria-label={@label}
-          class="flex min-w-48 flex-col rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10"
+          class={[
+            "flex min-w-48 origin-top-right flex-col rounded-sm bg-white p-1 shadow-lg ring-1 ring-grey-700/10 transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0",
+            @panel_class
+          ]}
         >
           {render_slot(@inner_block)}
         </div>
@@ -92,7 +108,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
 
   defp menu_item_base_styles,
     do:
-      "flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2.5 text-left text-sm whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0"
+      "flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-sm px-3 text-left text-sm whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0"
 
   defp menu_item_tone_styles("default"), do: "text-grey-900 hover:bg-grey-100"
   defp menu_item_tone_styles("danger"), do: "text-brick-700 hover:bg-brick-100"
