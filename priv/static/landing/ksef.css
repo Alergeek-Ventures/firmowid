@@ -51,7 +51,7 @@
 .ks-src a{text-decoration:underline;text-underline-offset:2px}
 .ks-src a:hover{color:var(--r700)}
 
-.kfree{margin-top:clamp(40px,5vw,64px)}
+.kfree{margin-top:0}
 .kfree h3{font-size:clamp(20px,2.2vw,26px);font-weight:600;letter-spacing:-.02em;margin-bottom:18px}
 .kfree__scroll{overflow-x:auto}
 .kfree table{width:100%;border-collapse:collapse;font-size:15px;text-align:left}
