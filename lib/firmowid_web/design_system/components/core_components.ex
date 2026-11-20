@@ -65,11 +65,12 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
               class="relative hidden rounded-sm border border-grey-700/10 bg-white p-10 shadow-small transition"
             >
-              <%!-- Figma's "Button / Zamknij": 32×30, a 16px cross, level with the content's top right corner. --%>
+              <%!-- Figma's "Button / Zamknij": 32×30, a 16px cross, level with the content's top right
+              corner. It floats, so the heading beside it wraps 16px before it instead of under it. --%>
               <button
                 phx-click={JS.exec("data-cancel", to: "##{@id}")}
                 type="button"
-                class="absolute top-10 right-10 flex h-7.5 w-8 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900"
+                class="float-right ml-4 flex h-7.5 w-8 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900"
                 aria-label={gettext("close")}
               >
                 <Lucideicons.x class="size-4" aria-hidden="true" />
