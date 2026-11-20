@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: wybor-programu
 ---
 
-Fakturownia zostawiła w cenniku plan Micro za 0 zł także po wejściu KSeF, więc 11 listopada 2026 r. dawał on trzy faktury sprzedaży miesięcznie z wysyłką do systemu, koszty bez limitu i jednego użytkownika, ale bez połączenia z bankiem. Czwarta faktura w miesiącu wymaga już płatnego planu albo innego programu. Bez limitu faktur i za darmo działa [Aplikacja Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwa, a spośród programów w chmurze podobny plan ma nasz [Firmowid](/cennik), który dokłada do tego konto bankowe i ewidencję czasu w trzech projektach.
+Fakturownia zostawiła w cenniku plan Micro za 0 zł także po wejściu KSeF, więc 11 listopada 2026 r. dawał on trzy faktury sprzedaży miesięcznie z wysyłką do systemu, koszty bez limitu i jednego użytkownika, ale bez połączenia z bankiem. Czwarta faktura w miesiącu wymaga już płatnego planu albo innego programu. Bez limitu faktur i za darmo działa [Aplikacja Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwa, a spośród programów w chmurze podobny plan ma nasz [Firmowid](/ksef), który dokłada do tego konto bankowe i ewidencję czasu w trzech projektach.
 
 ## Porównanie planów za 0 zł
 

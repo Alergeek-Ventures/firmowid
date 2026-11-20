@@ -6,7 +6,7 @@ updated: 2026-11-06
 category: wybor-programu
 ---
 
-O tym, czy do KSeF trzeba kupować program, pisaliśmy już osobno, dlatego tutaj sprawdzimy tylko dodatkowe czynności, które pojawiają się w JDG. Bezpłatna Aplikacja Podatnika KSeF 2.0 służy do wystawiania, odbierania i przeglądania faktur oraz korekt. W naszym Firmowidzie plan Darmowy obejmuje 2 użytkowników, 1 konto bankowe z parowaniem przelewów i ewidencję czasu do 3 projektów, natomiast KPiR, ryczałt, ZUS i deklaracje nie są jego funkcjami.
+O tym, czy do KSeF trzeba kupować program, pisaliśmy już osobno, dlatego tutaj sprawdzimy tylko dodatkowe czynności, które pojawiają się w JDG. Bezpłatna Aplikacja Podatnika KSeF 2.0 służy do wystawiania, odbierania i przeglądania faktur oraz korekt. W naszym [Firmowidzie](/ksef) plan Darmowy obejmuje 2 użytkowników, 1 konto bankowe z parowaniem przelewów i ewidencję czasu do 3 projektów, natomiast KPiR, ryczałt, ZUS i deklaracje nie są jego funkcjami.
 
 ## Wybór według pracy
 

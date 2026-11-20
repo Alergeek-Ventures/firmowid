@@ -25,6 +25,8 @@ W środowisku testowym wszystko może być fikcyjne, łącznie z danymi logowani
 3. Wystaw i wyślij fakturę, sprawdź status, pobierz dokument i UPO (Urzędowe Poświadczenie Odbioru).
 4. W Demo sprawdź osobno logowanie i uprawnienia, nadal bez danych prawdziwego kontrahenta.
 
+Po udanej próbie prawdziwe faktury wyślesz z Aplikacji Podatnika KSeF albo z programu połączonego z systemem, na przykład z naszego [Firmowida](/ksef).
+
 ## XML i PDF
 
 Faktura w KSeF to plik XML według schemy FA(3). PDF jest tylko jej czytelną wersją i nie zastępuje XML-a. Więcej w poradniku [co to jest KSeF i e-faktura](/poradnik/co-to-jest-ksef-i-e-faktura), a całą drogę na produkcji opisuje [pierwsza faktura w KSeF](/poradnik/pierwsza-faktura-ksef).

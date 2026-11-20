@@ -22,7 +22,7 @@ Za samo wystawianie i odbieranie faktur w KSeF nie trzeba płacić ani złotówk
 
 ## Firmowid
 
-Nasz [Firmowid](/cennik) ma plan Darmowy za 0 zł bez limitu czasu i bez karty, w którym faktury sprzedaży oraz wysyłka i pobieranie z KSeF nie mają limitu, a jedno konto bankowe podłączone przez Open Banking samo dopasowuje przelewy do faktur.
+Nasz [Firmowid](/ksef) ma plan Darmowy za 0 zł bez limitu czasu i bez karty, w którym faktury sprzedaży oraz wysyłka i pobieranie z KSeF nie mają limitu, a jedno konto bankowe podłączone przez Open Banking samo dopasowuje przelewy do faktur.
 
 | Plan | Cena netto miesięcznie | Przy płatności rocznej |
 |---|---|---|
