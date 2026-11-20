@@ -37,7 +37,7 @@ O tym, kto może pobierać informacje z rachunku bankowego, rozstrzyga ustawa z 
 
 ## Źródła
 
-- [Komisja Nadzoru Finansowego, „Informacje ogólne — działalność AISP”](https://www.knf.gov.pl/dla_rynku/procesy_licencyjne/platniczy/AISP/Informacje_Ogolne_Dzialalnosc_AISP); dostęp 5.11.2026.
+- [Komisja Nadzoru Finansowego, „Informacje ogólne: działalność AISP”](https://www.knf.gov.pl/dla_rynku/procesy_licencyjne/platniczy/AISP/Informacje_Ogolne_Dzialalnosc_AISP); dostęp 5.11.2026.
 - Firmowid: [firmowid.pl/cennik](https://firmowid.pl/cennik), [firmowid.pl/funkcje](https://firmowid.pl/funkcje); dostęp 22.10.2026.
 - wFirma: [pomoc.wfirma.pl/-automatyczne-parowanie-transakcji-bankowych](https://pomoc.wfirma.pl/-automatyczne-parowanie-transakcji-bankowych), [pomoc.wfirma.pl/-sugestie-parowania-w-banku-jak-system-podpowiada-rozliczenia-przelewow](https://pomoc.wfirma.pl/-sugestie-parowania-w-banku-jak-system-podpowiada-rozliczenia-przelewow), [wfirma.pl/program-do-fakturowania](https://wfirma.pl/program-do-fakturowania); dostęp 24.10.2026.
 - Fakturownia: [pomoc.fakturownia.pl/580203-Import-platnosci-z-banku](https://pomoc.fakturownia.pl/580203-Import-platnosci-z-banku), [pomoc.fakturownia.pl/164964491-Polaczenie-z-kontem-bankowym-w-Fakturowni](https://pomoc.fakturownia.pl/164964491-Polaczenie-z-kontem-bankowym-w-Fakturowni), [fakturownia.pl/cennik](https://fakturownia.pl/cennik); dostęp 26.10.2026.

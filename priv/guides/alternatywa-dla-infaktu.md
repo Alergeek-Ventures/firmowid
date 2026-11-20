@@ -38,7 +38,7 @@ Obowiązek wystawiania faktur w KSeF dotyczy większości firm od 1 kwietnia 202
 
 ## Źródła
 
-- podatki.gov.pl — Aplikacja Podatnika KSeF 2.0 (dostęp: 2026-11-10)
+- podatki.gov.pl: Aplikacja Podatnika KSeF 2.0 (dostęp: 2026-11-10)
 - infakt.pl/cennik (dostęp: 2026-11-10)
 - firmowid.pl/cennik (dostęp: 2026-11-10)
 - faktura.pl/cennik, fakturownia.pl/cennik (dostęp: 2026-11-11)
