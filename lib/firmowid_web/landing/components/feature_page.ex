@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Landing.Components.FeaturePage do
   @moduledoc """
   Landing layout of a feature page (`/funkcje/:slug`), in the style of the home
-  page and the case studies: a hero with the screenshot (or transfers paired with invoices, or a running timer) on a sheet of paper, the
+  page and the case studies: a hero with the screenshot (or transfers paired with invoices, a running timer, or the split of each 100 zł of revenue) on a sheet of paper, the
   facts strip, the introduction quoted in a dark block, sections with tables and
   captioned screenshots, logo rows, collapsible questions and the closing call to action.
 
@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
             </div>
 
             <figure
-              :if={@layout.hero || @landing.match != [] || @landing.timer}
+              :if={@layout.hero || @landing.match != [] || @landing.timer || @landing.split}
               class="relative m-0 mb-10 lg:mb-0"
             >
               <div
@@ -211,7 +211,49 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                 </div>
               </div>
               <div
-                :if={@layout.hero && @landing.match == [] && !@landing.timer}
+                :if={@landing.split}
+                class="rotate-[1.2deg] rounded-[4px] bg-white p-5 font-sans shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-7"
+              >
+                <p class="text-caps-sm font-semibold tracking-[.08em] text-grey-600 uppercase">
+                  {@landing.split.period}
+                </p>
+                <p class="mt-3 text-[clamp(22px,2.6vw,30px)] leading-[1.15] font-bold tracking-[-0.02em]">
+                  {@texts.split_headline}
+                  <span class="rounded-[4px] bg-teal-700 px-2 whitespace-nowrap text-white">
+                    {@landing.split.left} zł
+                  </span>
+                </p>
+                <div class="mt-6 flex h-9 overflow-hidden rounded-[4px]" aria-hidden="true">
+                  <span
+                    :for={{cost, index} <- Enum.with_index(@landing.split.costs)}
+                    class="feature-timer__bar block h-full"
+                    style={"width: #{cost.share}%; background: #{split_color(index)}"}
+                  ></span>
+                  <span class="block h-full flex-1 bg-teal-700"></span>
+                </div>
+                <div
+                  :for={{cost, index} <- Enum.with_index(@landing.split.costs)}
+                  class="mt-3 flex items-center gap-3 text-sm"
+                >
+                  <span
+                    class="size-2.5 shrink-0 rounded-[2px]"
+                    style={"background: #{split_color(index)}"}
+                  ></span>
+                  <span class="min-w-0 flex-1 truncate font-medium">{cost.name}</span>
+                  <span class="font-semibold tabular-nums">{cost.share} {@texts.split_of}</span>
+                </div>
+                <div class="mt-3 flex items-center gap-3 border-t border-grey-200 pt-3 text-sm">
+                  <span class="size-2.5 shrink-0 rounded-[2px] bg-teal-700"></span>
+                  <span class="min-w-0 flex-1 truncate font-medium text-teal-800">
+                    {@texts.split_left}
+                  </span>
+                  <span class="font-semibold text-teal-800 tabular-nums">
+                    {@landing.split.left} {@texts.split_of}
+                  </span>
+                </div>
+              </div>
+              <div
+                :if={@layout.hero && @landing.match == [] && !@landing.timer && !@landing.split}
                 class="rotate-[1.2deg] rounded-[4px] bg-white p-2.5 shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-3.5"
               >
                 <img
@@ -315,6 +357,20 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
       <.cta_footer />
     </div>
     """
+  end
+
+  # Cost segments of the split bar, from the largest to the smallest.
+  defp split_color(index) do
+    Enum.at(
+      [
+        "var(--color-rust-800)",
+        "var(--color-rust-600)",
+        "var(--color-rust-400)",
+        "var(--color-rust-200)"
+      ],
+      index,
+      "var(--color-grey-300)"
+    )
   end
 
   defp pad(number), do: number |> Integer.to_string() |> String.pad_leading(2, "0")
