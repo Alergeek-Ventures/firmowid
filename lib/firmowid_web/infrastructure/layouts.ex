@@ -85,7 +85,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         {pgettext("avatar menu", "Organizations")}
       </div>
       <div
-        class={[account_menu_org_styles(), "bg-grey-900 font-medium text-white"]}
+        class={["bg-grey-900 font-medium text-white", account_menu_org_styles()]}
         title={@current_org.display_name}
         aria-current="true"
       >
@@ -106,9 +106,9 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
               type="submit"
               variant="unstyled"
               class={[
+                "w-full cursor-pointer text-left",
                 account_menu_org_styles(),
-                account_menu_hover_styles(),
-                "w-full cursor-pointer text-left"
+                account_menu_hover_styles()
               ]}
               title={organization.display_name}
             >
@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         <% else %>
           <div
             id={"unavailable-organization-#{organization.id}"}
-            class={[account_menu_org_styles(), "text-grey-500"]}
+            class={["text-grey-500", account_menu_org_styles()]}
             title={organization.display_name}
           >
             <.org_avatar name={organization.display_name} class="bg-grey-900 text-grey-500" />
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       <.link
         kind="unstyled"
         navigate={~p"/organizacja"}
-        class={[account_menu_org_styles(), "text-grey-500 hover:bg-grey-900 hover:text-white"]}
+        class={["text-grey-500 hover:bg-grey-900 hover:text-white", account_menu_org_styles()]}
       >
         <span
           class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-dashed border-grey-700 text-grey-300"
@@ -176,7 +176,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       <FirmowidUI.Components.Button.button
         type="submit"
         variant="unstyled"
-        class={[account_menu_item_styles(), "w-full cursor-pointer"]}
+        class={["w-full cursor-pointer", account_menu_item_styles()]}
       >
         <span class="min-w-0 flex-1 truncate">{pgettext("avatar menu", "Log out")}</span>
         <Lucideicons.log_out class="size-4.5 shrink-0" aria-hidden="true" />
