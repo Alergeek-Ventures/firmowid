@@ -561,11 +561,23 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     ash_update_sessions(session_updates, socket)
   end
 
-  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id}, socket) do
-    sessions = fetch_sessions_by_ids(ids, socket)
-    attrs = %{title: title, project_id: project_id}
+  # Saves the workplace with the title and project: the form is rendered again
+  # from the stored sessions, which would otherwise put back the old choice.
+  def edit_sessions_realtime(ids, form, socket) do
+    form =
+      form
+      |> GroupedSessionForm.changeset()
+      |> Ecto.Changeset.apply_changes()
 
-    ash_update_sessions(Enum.map(sessions, &{&1, attrs}), socket)
+    session_updates =
+      ids
+      |> fetch_sessions_by_ids(socket)
+      |> Enum.map(fn session ->
+        entry = Enum.find(form.start_end_times, &(&1.id == session.id))
+        {session, %{title: form.title, project_id: form.project_id, is_remote: entry.is_remote}}
+      end)
+
+    ash_update_sessions(session_updates, socket)
   end
 
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
