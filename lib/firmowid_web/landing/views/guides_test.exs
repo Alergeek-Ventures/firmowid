@@ -79,6 +79,16 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute sitemap =~ "/funkcje/faktury-ksef"
   end
 
+  test "the team page covers leave requests and replaces /funkcje/urlopy", %{conn: conn} do
+    html = conn |> get(~p"/funkcje/zespol") |> html_response(200)
+
+    assert html =~ ~s(id="urlopy-i-nieobecnosci")
+    assert html =~ ~s(href="#ile-to-kosztuje")
+    assert html =~ ~s(<tr class="firmowid">)
+    assert build_conn() |> get("/funkcje/urlopy") |> redirected_to(301) == "/funkcje/zespol"
+    refute build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/funkcje/urlopy"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end

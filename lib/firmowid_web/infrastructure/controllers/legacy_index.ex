@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   @moduledoc """
-  Redirects legacy URLs: `/index.html` to the root path and
-  the former invoicing feature pages to `/ksef`.
+  Redirects legacy URLs: `/index.html` to the root path, the former invoicing
+  feature pages to `/ksef` and `/funkcje/urlopy` to `/funkcje/zespol`.
   """
   use FirmowidWeb, :controller
 
@@ -21,5 +21,14 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
     conn
     |> put_status(301)
     |> redirect(to: ~p"/ksef")
+  end
+
+  @doc """
+  Permanently redirects `/funkcje/urlopy` to the team page, which covers leave requests.
+  """
+  def leave(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/funkcje/zespol")
   end
 end
