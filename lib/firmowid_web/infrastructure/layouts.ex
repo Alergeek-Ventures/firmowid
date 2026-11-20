@@ -60,23 +60,38 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   attr :organizations, :list, required: true
 
   @doc """
-  The sidebar's account menu: email, organization switcher, settings and logging out.
+  The sidebar's account menu (Figma "Menu konta"): who is logged in, the
+  organization switcher, settings and logging out.
   """
   def account_menu(assigns) do
     ~H"""
-    <div class="truncate border-b border-grey-700/50 p-2 pb-4 text-xs text-white/50 lowercase">
-      {@current_user.email}
-    </div>
-    <div
-      id="organization-switcher"
-      class="flex flex-col gap-2 border-b border-grey-700/50 pb-2"
-    >
-      <div class="truncate p-2 pb-0 text-xs text-white/50">
-        {pgettext("avatar menu", "Organization")}
+    <div class="flex items-center gap-2.5 p-2">
+      <span
+        class="flex size-8 shrink-0 items-center justify-center rounded-full bg-grey-800 text-[13px] font-semibold text-white uppercase"
+        aria-hidden="true"
+      >
+        {@current_user.email |> to_string() |> String.first()}
+      </span>
+      <div class="flex min-w-0 flex-col gap-0.5">
+        <span class="text-caps-sm/[14px] text-grey-500">{pgettext("avatar menu", "Logged in as")}</span>
+        <span class="truncate text-[13px]/[17px] font-medium text-white lowercase">
+          {@current_user.email}
+        </span>
       </div>
-      <div class="flex items-center justify-between gap-2 p-2" title={@current_org.display_name}>
-        <span class="truncate">{@current_org.display_name}</span>
-        <.icon name="hero-check" class="size-4 shrink-0" />
+    </div>
+    <.account_menu_separator />
+    <div id="organization-switcher" class="flex flex-col gap-0.5">
+      <div class="truncate px-2 pt-1 pb-1.5 text-caps-sm/[14px] font-semibold text-grey-500 uppercase">
+        {pgettext("avatar menu", "Organizations")}
+      </div>
+      <div
+        class={[account_menu_org_styles(), "bg-grey-900 font-medium text-white"]}
+        title={@current_org.display_name}
+        aria-current="true"
+      >
+        <.org_avatar name={@current_org.display_name} class="bg-white text-black" />
+        <span class="min-w-0 flex-1 truncate">{@current_org.display_name}</span>
+        <Lucideicons.check class="size-4 shrink-0" aria-hidden="true" />
       </div>
       <%= for organization <- @organizations, organization.id != @current_org.id do %>
         <%= if Firmowid.Core.usable_organization?(@current_user, organization) do %>
@@ -90,19 +105,25 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
             <FirmowidUI.Components.Button.button
               type="submit"
               variant="unstyled"
-              class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
+              class={[
+                account_menu_org_styles(),
+                account_menu_hover_styles(),
+                "w-full cursor-pointer text-left"
+              ]}
               title={organization.display_name}
             >
-              <span class="block truncate p-2">{organization.display_name}</span>
+              <.org_avatar name={organization.display_name} class="bg-grey-800 text-white" />
+              <span class="min-w-0 flex-1 truncate">{organization.display_name}</span>
             </FirmowidUI.Components.Button.button>
           </.form>
         <% else %>
           <div
             id={"unavailable-organization-#{organization.id}"}
-            class="flex items-center justify-between gap-2 p-2 text-white/50"
+            class={[account_menu_org_styles(), "text-grey-500"]}
             title={organization.display_name}
           >
-            <span class="truncate">{organization.display_name}</span>
+            <.org_avatar name={organization.display_name} class="bg-grey-900 text-grey-500" />
+            <span class="min-w-0 flex-1 truncate">{organization.display_name}</span>
             <span class="shrink-0 text-xs">{pgettext("avatar menu", "No plan")}</span>
           </div>
         <% end %>
@@ -110,37 +131,40 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       <.link
         kind="unstyled"
         navigate={~p"/organizacja"}
-        class="flex items-center justify-between rounded-md p-2 hover:bg-grey-700/50"
+        class={[account_menu_org_styles(), "text-grey-500 hover:bg-grey-900 hover:text-white"]}
       >
+        <span
+          class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-dashed border-grey-700 text-grey-300"
+          aria-hidden="true"
+        >
+          <Lucideicons.plus class="size-3.5" />
+        </span>
         {pgettext("avatar menu", "Add organization")}
-        <.icon name="hero-plus" class="size-4" />
       </.link>
     </div>
-    <.link
-      kind="unstyled"
-      navigate={~p"/ustawienia"}
-      class="rounded-md p-2 hover:bg-grey-700/50"
-    >
-      {pgettext("avatar menu", "Settings")}
-    </.link>
-    <%= if @current_user.member.role == :admin do %>
+    <.account_menu_separator />
+    <div class="flex flex-col gap-0.5">
+      <.link kind="unstyled" navigate={~p"/ustawienia"} class={account_menu_item_styles()}>
+        {pgettext("avatar menu", "Settings")}
+      </.link>
       <.link
+        :if={@current_user.member.role == :admin}
         kind="unstyled"
         navigate={~p"/ustawienia/konta-bankowe"}
-        class="rounded-md p-2 hover:bg-grey-700/50"
+        class={account_menu_item_styles()}
       >
         {pgettext("avatar menu", "Bank accounts")}
       </.link>
-    <% end %>
-    <%= if @current_user.system_role == :superuser do %>
       <.link
+        :if={@current_user.system_role == :superuser}
         kind="unstyled"
         navigate={~p"/admin/rozliczenia"}
-        class="rounded-md p-2 hover:bg-grey-700/50"
+        class={account_menu_item_styles()}
       >
         {pgettext("avatar menu", "Superadmin panel")}
       </.link>
-    <% end %>
+    </div>
+    <.account_menu_separator />
     <.form
       for={%{}}
       id="app-logout-form"
@@ -152,16 +176,62 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       <FirmowidUI.Components.Button.button
         type="submit"
         variant="unstyled"
-        class="block w-full cursor-pointer rounded-md text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
+        class={[account_menu_item_styles(), "w-full cursor-pointer"]}
       >
-        <span class="flex w-full items-center justify-between p-2">
-          {pgettext("avatar menu", "Log out")}
-          <.icon name="hero-arrow-right-start-on-rectangle" />
-        </span>
+        <span class="min-w-0 flex-1 truncate">{pgettext("avatar menu", "Log out")}</span>
+        <Lucideicons.log_out class="size-4.5 shrink-0" aria-hidden="true" />
       </FirmowidUI.Components.Button.button>
     </.form>
     """
   end
+
+  defp account_menu_separator(assigns) do
+    ~H"""
+    <div class="py-1.5" aria-hidden="true">
+      <div class="h-px bg-grey-800"></div>
+    </div>
+    """
+  end
+
+  attr :name, :string, required: true
+  attr :class, :any, default: nil
+
+  # A 24 px square with the organization's initials, e.g. "KZ" for Kawiarnia Ziarno.
+  defp org_avatar(assigns) do
+    ~H"""
+    <span
+      class={[
+        "flex size-6 shrink-0 items-center justify-center rounded-sm text-[10px] leading-none font-semibold",
+        @class
+      ]}
+      aria-hidden="true"
+    >
+      {initials(@name)}
+    </span>
+    """
+  end
+
+  defp initials(name) do
+    name
+    |> to_string()
+    |> String.split(~r/[\s\-–]+/u, trim: true)
+    |> Enum.filter(&String.match?(&1, ~r/^\p{L}/u))
+    |> Enum.take(2)
+    |> Enum.map_join(&String.first/1)
+    |> String.upcase()
+  end
+
+  defp account_menu_org_styles,
+    do:
+      "flex h-9 items-center gap-2.5 rounded-[2px] px-2 text-sm/[18px] transition-colors duration-100 motion-reduce:transition-none"
+
+  defp account_menu_hover_styles, do: "text-grey-300 hover:bg-grey-900 hover:text-white active:bg-grey-800"
+
+  defp account_menu_item_styles,
+    do: [
+      "flex h-8 items-center gap-3 rounded-[2px] px-2 text-left text-sm/[18px] transition-colors duration-100 motion-reduce:transition-none",
+      account_menu_hover_styles()
+    ]
 
   # A member works inside the app navigation, except on a `focused` page of its own (onboarding).
   defp app_navigation?(assigns) do
