@@ -200,7 +200,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   @impl true
   def handle_event("toggle_group", %{"tier" => tier}, socket) do
     tier =
-      Enum.find([:urgent, :people, :personal, :books, :put_aside], &(Atom.to_string(&1) == tier))
+      Enum.find(
+        [:urgent, :people, :personal, :books, :info, :put_aside],
+        &(Atom.to_string(&1) == tier)
+      )
 
     expanded =
       if tier in socket.assigns.expanded,
@@ -682,9 +685,15 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     end)
   end
 
-  defp greeting([]), do: gettext("All done")
-
+  # Items for information only wait for nothing.
   defp greeting(items) do
+    case Enum.reject(items, &(&1.tier == :info)) do
+      [] -> gettext("All done")
+      waiting -> waiting_greeting(waiting)
+    end
+  end
+
+  defp waiting_greeting(items) do
     case Enum.count(items, &(&1.tier == :urgent)) do
       0 -> ngettext("%{count} item is waiting", "%{count} items are waiting", length(items))
       urgent -> ngettext("%{count} urgent item", "%{count} urgent items", urgent)

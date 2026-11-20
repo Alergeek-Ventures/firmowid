@@ -5,10 +5,12 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   Uses policy-scoped domain reads for integration alerts, counterparty EU VAT
   numbers that the periodic check rejected, company details that contradict the
-  registers, team approvals, personal signatures and settlements, and overdue
-  invoices; usage above the billing plan comes from `Firmowid.Billing.PlanLimits`.
-  Each item links to the page where it is dealt with; pending leave requests also
-  offer inline decisions.
+  registers, team approvals, personal signatures and settlements, overdue
+  invoices and sales invoices the KSeF import skipped; usage above the billing
+  plan comes from `Firmowid.Billing.PlanLimits`. Each item links to the page
+  where it is dealt with; pending leave requests also offer inline decisions.
+  Items for information only (`:info`) ask nothing of the company and link
+  nowhere; they follow the urgent ones, as they are rare and worth noticing.
 
   An item's id names its record and the stage or period of its problem, as the
   company puts items aside by id (`Firmowid.Core.InboxSnooze`): putting one stage
@@ -42,7 +44,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias FirmowidWeb.Settings.Utilities.RegisterCheck
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
-  @type tier :: :urgent | :people | :personal | :books
+  @type tier :: :urgent | :people | :personal | :books | :info
   @type decision :: %{
           action: atom(),
           record_id: String.t(),
@@ -55,14 +57,14 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           optional(:date_range) => String.t(),
           optional(:days_late) => pos_integer(),
           optional(:amount) => String.t(),
+          optional(:action) => String.t(),
+          optional(:href) => String.t(),
           id: String.t(),
           tier: tier(),
           icon: String.t(),
           title: String.t(),
           context: String.t(),
-          person: String.t() | nil,
-          action: String.t(),
-          href: String.t()
+          person: String.t() | nil
         }
 
   @doc """
@@ -77,7 +79,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   def items(:company, %{actor: %{member: %{role: role}}} = scope, organization, today, opts)
       when role in [:admin, :accountant] do
-    attention_items(scope, organization, opts) ++ overdue_invoice_items(scope, today)
+    attention_items(scope, organization, opts) ++
+      overdue_invoice_items(scope, today) ++ skipped_ksef_invoice_items(scope)
   end
 
   def items(:me, %{actor: %{member: %{id: member_id}}} = scope, _organization, today, _opts) do
@@ -126,7 +129,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   @doc "Groups items by tier, keeping tier order."
   @spec by_tier([item()]) :: [{tier(), [item()]}]
   def by_tier(items) do
-    for tier <- [:urgent, :people, :personal, :books],
+    for tier <- [:urgent, :info, :people, :personal, :books],
         tier_items = Enum.filter(items, &(&1.tier == tier)),
         tier_items != [],
         do: {tier, tier_items}
@@ -138,6 +141,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   def tier_label(:people), do: pgettext("inbox tier", "Awaiting approval")
   def tier_label(:personal), do: pgettext("inbox tier", "To do")
   def tier_label(:books), do: pgettext("inbox tier", "Books")
+  def tier_label(:info), do: pgettext("inbox tier", "KSeF sync")
 
   @doc "One-line explanation of a tier."
   @spec tier_hint(tier()) :: String.t()
@@ -145,6 +149,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   def tier_hint(:people), do: gettext("Someone on the team is waiting for your decision.")
   def tier_hint(:personal), do: gettext("Things waiting for you.")
   def tier_hint(:books), do: gettext("Overdue invoices with no matched payment.")
+  def tier_hint(:info), do: gettext("These invoices are already in KSeF. Nothing to do.")
 
   # Usage is counted only while a decision day is set. Nothing once the usage
   # fits the plan again, until the scheduled check ends the decision.
@@ -556,6 +561,34 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   defp overdue_invoice_title(invoice, :cost),
     do: gettext("Overdue cost invoice %{number}", number: invoice.invoice_identifier || invoice.id)
+
+  # A sales invoice issued outside Firmowid that the KSeF import could not record yet
+  # (`Firmowid.Invoicing.SkippedKsefSalesInvoice`). Engineers get the cause and the
+  # item goes away once a later import records the invoice, so it only informs.
+  defp skipped_ksef_invoice_items(scope) do
+    [scope: scope]
+    |> Invoicing.list_skipped_ksef_sales_invoices!()
+    |> Enum.map(fn invoice ->
+      %{
+        id: "ksef-skipped-#{invoice.id}",
+        tier: :info,
+        icon: "file-clock",
+        # Who it was issued to and for how much tell the company which invoice it is.
+        title:
+          [
+            invoice.buyer_name,
+            invoice.currency |> Money.new(invoice.gross_total) |> Money.to_string!()
+          ]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join(" · "),
+        context:
+          gettext("Issued %{date} · sync in progress",
+            date: Calendar.strftime(invoice.issue_date, "%d.%m.%Y")
+          ),
+        person: nil
+      }
+    end)
+  end
 
   @doc """
   Income and costs of `today`'s whole month, the same totals the analysis

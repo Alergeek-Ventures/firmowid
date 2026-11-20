@@ -7006,6 +7006,11 @@ msgctxt "entries table column"
 msgid "Issued"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Issued %{date} · sync in progress"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex
 #, elixir-autogen, elixir-format
 msgid "Issuing an invoice requires a KSeF connection. You can save it as a draft."
@@ -7267,6 +7272,12 @@ msgstr ""
 #: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF submission failed"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "inbox tier"
+msgid "KSeF sync"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
@@ -12677,6 +12688,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "These Terms of Service set out the rules for using the Firmowid online service (hereinafter: the “Service”), available at"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "These invoices are already in KSeF. Nothing to do."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex

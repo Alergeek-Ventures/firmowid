@@ -16,7 +16,8 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   @doc """
   A queue item: a tile coloured by its kind, the title, one meta line and its
   actions. Urgent items get the solid black button, leave requests decide in
-  place and everything else opens its page.
+  place, items for information only have no button and everything else opens
+  its page.
   """
   attr :item, :map, required: true
   attr :fresh, :boolean, default: false, doc: "arrived while the page was open; it lights up once"
@@ -104,6 +105,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             <% end %>
           </div>
           <.link
+            :if={Map.has_key?(@item, :href)}
             kind="button"
             navigate={@item.href}
             size="small"
@@ -255,6 +257,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       )
 
   defp icon_styles(%{tier: :urgent}), do: "bg-brick-200 text-brick-700"
+  defp icon_styles(%{tier: :info}), do: "bg-teal-200 text-teal-700"
   defp icon_styles(%{tier: :books, side: :cost}), do: "bg-rust-200 text-rust-700"
   defp icon_styles(%{tier: :books, side: :sales}), do: "bg-teal-200 text-teal-700"
   defp icon_styles(_item), do: "bg-grey-100 text-grey-900"
@@ -266,15 +269,12 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   def tier_header(assigns) do
     ~H"""
     <div class="flex items-center gap-2">
-      <h2 class={[
-        "text-caps-sm font-medium uppercase",
-        if(@tier == :urgent, do: "text-brick-700", else: "text-grey-900")
-      ]}>
+      <h2 class={["text-caps-sm font-medium uppercase", header_styles(@tier)]}>
         {Queue.tier_label(@tier)}
       </h2>
       <span class={[
         "flex size-4.5 shrink-0 items-center justify-center rounded-full text-caps-sm font-semibold tabular-nums",
-        if(@tier == :urgent, do: "bg-brick-200 text-brick-700", else: "bg-grey-200 text-grey-700")
+        badge_styles(@tier)
       ]}>
         {@count}
       </span>
@@ -284,6 +284,15 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     </div>
     """
   end
+
+  # Urgent groups stand out in brick; the rare KSeF sync group in calm teal.
+  defp header_styles(:urgent), do: "text-brick-700"
+  defp header_styles(:info), do: "text-teal-700"
+  defp header_styles(_tier), do: "text-grey-900"
+
+  defp badge_styles(:urgent), do: "bg-brick-200 text-brick-700"
+  defp badge_styles(:info), do: "bg-teal-200 text-teal-700"
+  defp badge_styles(_tier), do: "bg-grey-200 text-grey-700"
 
   @doc "Shown in place of the queue when nothing waits."
   attr :class, :any, default: nil

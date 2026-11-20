@@ -2,12 +2,13 @@ defmodule Firmowid.Invoicing.SkippedKsefSalesInvoice do
   @moduledoc """
   A sales invoice stored in KSeF that the import could not record yet.
 
-  The import records one for each invoice it skips, so the organization sees which of its
-  invoices are missing while engineers fix the cause, and removes it once a later import
-  records the invoice. `reason` is the technical cause, for engineers.
+  The import records one for each invoice it skips, so the organization sees in the inbox
+  which of its invoices are missing while engineers fix the cause, and removes it once a
+  later import records the invoice. `reason` is the technical cause, for engineers.
   """
 
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     otp_app: :firmowid,
     domain: Firmowid.Invoicing,
     data_layer: AshPostgres.DataLayer,
