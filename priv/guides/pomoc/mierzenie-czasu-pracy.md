@@ -90,3 +90,4 @@ Firmowid nie rejestruje wejść i wyjść z biura ani nie robi zrzutów ekranu. 
 
 - [Ewidencja godzin: PDF i podpis](/pomoc/ewidencja-godzin)
 - [Program do ewidencji czasu pracy w projektach](/funkcje/czas-pracy)
+- [Faktura za godziny pracy](/poradnik/fakturowanie-za-godziny-czas-pracy)
