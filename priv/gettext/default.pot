@@ -813,11 +813,6 @@ msgstr ""
 msgid "AI score: %{percent}% confidence"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex
-#, elixir-autogen, elixir-format
-msgid "About us"
-msgstr ""
-
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Above the %{plan} plan"
