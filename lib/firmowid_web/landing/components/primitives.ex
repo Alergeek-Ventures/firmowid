@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Plugs.Locale
+  alias FirmowidWeb.Landing.Utilities.Guides
   alias Phoenix.LiveView.Rendered
 
   @legal_entity Application.compile_env!(:firmowid, :legal_entity)
@@ -339,6 +340,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Features")}</a>
               <a
+                href={~p"/ksef"}
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
+              >KSeF</a>
+              <a
                 href={~p"/cennik"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Pricing")}</a>
@@ -350,6 +355,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 href={~p"/poradnik"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Guides")}</a>
+              <a
+                href={~p"/pomoc"}
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
+              >{Guides.help_index_page().heading}</a>
               <a
                 href={~p"/open-source"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
