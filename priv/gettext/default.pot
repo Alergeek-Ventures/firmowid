@@ -60,11 +60,6 @@ msgstr ""
 msgid "%{amount} stayed"
 msgstr ""
 
-#: lib/firmowid_web/development/views/inbox_scenarios.ex
-#, elixir-autogen, elixir-format
-msgid "%{amount} · due %{date}"
-msgstr ""
-
 #: lib/firmowid_web/management/components/employee_payout_details.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
@@ -14963,6 +14958,7 @@ msgid "draft sales invoice"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "due %{date}"
