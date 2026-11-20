@@ -121,7 +121,7 @@ Stan na 18.11.2026, według stron producentów: [Fakturownia](https://fakturowni
 | Rodzaje urlopu z Kodeksu pracy | nie są rozróżniane |
 | Listy płac, paski, ZUS | nie, zostają w biurze księgowym |
 
-Zobacz też: [Czas pracy w projektach](/funkcje/czas-pracy) · [Delegacje](/funkcje/delegacje) · [Skrzynka](/funkcje/skrzynka)
+Zobacz też: [Czas pracy w projektach](/funkcje/czas-pracy) · [Delegacje](/funkcje/delegacje) · [Skrzynka](/funkcje/skrzynka) · [Dostęp do KSeF i uprawnienia dla biura księgowego](/poradnik/dostep-do-ksef-jdg-i-ksiegowa)
 
 ## Najczęstsze pytania
 
