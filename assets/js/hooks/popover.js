@@ -1,4 +1,4 @@
-import { computePosition, autoUpdate, flip, size } from "@floating-ui/dom";
+import { computePosition, autoUpdate, flip, offset, size } from "@floating-ui/dom";
 
 // Distance kept between a popover and the viewport edges.
 const VIEWPORT_PADDING = 16;
@@ -45,6 +45,8 @@ export default {
         placement: this.el.dataset.placement,
         strategy: this.el.dataset.strategy || "absolute",
         middleware: [
+          // Gap between the trigger and the popover (`data-offset`, in px).
+          offset(Number(this.el.dataset.offset || 0)),
           flip({ padding: VIEWPORT_PADDING }),
           // Exposes the room left in the viewport, so long content can scroll within it.
           size({

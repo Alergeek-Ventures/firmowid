@@ -1,8 +1,11 @@
 defmodule FirmowidWeb.DesignSystem.Components.Menu do
   @moduledoc """
   Action menu opened from a trigger (by default a "more" icon button), built on the
-  design-system popover: it positions with floating-ui, traps focus and closes on
+  design-system popover: it opens 4px under the trigger, traps focus and closes on
   Escape or a click outside.
+
+  Its dropdown variant lists the options of a select field: `dropdown_panel_styles/0`
+  for the panel and `dropdown_option/1` for each option.
   """
 
   use FirmowidUI, :html
@@ -50,13 +53,18 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
           <Lucideicons.ellipsis_vertical />
         <% end %>
       </.icon_button>
-      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement={@placement}>
+      <.popover
+        id={"#{@id}-menu"}
+        reference_id={"#{@id}-trigger"}
+        placement={@placement}
+        data-offset="4"
+      >
         <%!-- Dropdown entrance (DESIGN.md, Motion): it unfolds from the trigger's corner. --%>
         <div
           role="menu"
           aria-label={@label}
           class={[
-            "flex min-w-48 origin-top-right flex-col rounded-sm bg-white p-1 shadow-lg ring-1 ring-grey-700/10 transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0",
+            "flex min-w-48 origin-top-right flex-col rounded-sm border border-grey-200 bg-white p-1 shadow-small transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0",
             @panel_class
           ]}
         >
@@ -106,10 +114,63 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
     """
   end
 
+  @doc """
+  Classes of a dropdown panel: field paper (grey-50) with the overlay shadow and the
+  dropdown entrance. The caller sets the display (`flex flex-col`, or `hidden` toggled
+  to flex), the width (the field's) and the 4px gap under the field.
+  """
+  @spec dropdown_panel_styles() :: String.t()
+  def dropdown_panel_styles do
+    "rounded-sm border border-grey-200 bg-grey-50 p-1 shadow-small transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0"
+  end
+
+  @doc """
+  Renders an option of a dropdown: a button (pass `phx-click` and friends through
+  `rest`) with a check on the right while it is `selected`.
+  """
+  @spec dropdown_option(map()) :: Rendered.t()
+  attr :selected, :boolean, required: true
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def dropdown_option(assigns) do
+    ~H"""
+    <button
+      type="button"
+      role="option"
+      aria-selected={to_string(@selected)}
+      class={[
+        "group/option justify-between",
+        menu_item_base_styles(),
+        menu_item_tone_styles("default"),
+        @class
+      ]}
+      {@rest}
+    >
+      <span class="min-w-0 truncate">{render_slot(@inner_block)}</span>
+      <%!-- The check from the design, not Lucide's; shown through aria-selected, which a
+      client-side pick may switch without the server. --%>
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.33"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        class="hidden group-aria-selected/option:block"
+      >
+        <path d="M3 8.5L7 12.5L13 3.5" />
+      </svg>
+    </button>
+    """
+  end
+
   defp menu_item_base_styles,
     do:
-      "flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-sm px-3 text-left text-sm whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0"
+      "flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-sm px-3 text-left text-sm/[1.35] whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0"
 
-  defp menu_item_tone_styles("default"), do: "text-grey-900 hover:bg-grey-100"
+  defp menu_item_tone_styles("default"), do: "text-grey-900 hover:bg-grey-200"
   defp menu_item_tone_styles("danger"), do: "text-brick-700 hover:bg-brick-100"
 end
