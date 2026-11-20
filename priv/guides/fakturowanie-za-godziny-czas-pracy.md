@@ -17,7 +17,7 @@ Klient dostaje fakturę, a do niej łatwo wygenerować raport godzin z projektu.
 | Element | Jak działa |
 |---|---|
 | Projekt | ma przypisanego klienta i pracowników |
-| Licznik czasu | start i stop pod wybranym projektem, sesje z tytułami |
+| [Licznik czasu](/funkcje/czas-pracy) | start i stop pod wybranym projektem, sesje z tytułami |
 | Raport godzin | plik CSV z godzinami projektu za miesiąc, z widoku projektu |
 | Szkic faktury | pozycja z liczbą godzin, jednostką i stawką, ręcznie, przez asystenta albo MCP |
 | KSeF | wysyłka po potwierdzeniu, numer KSeF, mail do klienta |
