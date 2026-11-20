@@ -6,7 +6,7 @@ updated: 2026-11-06
 category: firma-uslugowa
 ---
 
-O tym, jak wybrać program do faktur, pisaliśmy już w osobnym poradniku. W firmie usługowej przydaje się jeszcze ewidencja czasu wpisanego do konkretnego projektu oraz informacja, czy klient zapłacił. Przy zespole liczącym od 2 do 20 osób sprawdź więc program na jednej fakturze, dwóch użytkownikach i jednym przelewie z banku. Większość programów ma część tych funkcji; nasz Firmowid łączy faktury KSeF, ewidencję czasu i automatyczne dopasowanie transakcji do faktur.
+O tym, jak wybrać program do faktur, pisaliśmy już w osobnym poradniku. W firmie usługowej przydaje się jeszcze ewidencja czasu wpisanego do konkretnego projektu oraz informacja, czy klient zapłacił. Przy zespole liczącym od 2 do 20 osób sprawdź więc program na jednej fakturze, dwóch użytkownikach i jednym przelewie z banku. Większość programów ma część tych funkcji; nasz Firmowid łączy faktury KSeF, [ewidencję czasu](/funkcje/czas-pracy) i automatyczne dopasowanie transakcji do faktur.
 
 ## Lista funkcji do sprawdzenia
 
