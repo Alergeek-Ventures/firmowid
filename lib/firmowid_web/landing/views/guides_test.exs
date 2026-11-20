@@ -112,6 +112,17 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/funkcje/asystent"
   end
 
+  test "the time tracking feature page replaces /funkcje/projekty", %{conn: conn} do
+    assert conn |> get("/funkcje/projekty") |> redirected_to(301) == "/funkcje/czas-pracy"
+
+    html = build_conn() |> get(~p"/funkcje/czas-pracy") |> html_response(200)
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+
+    assert html =~ ~s(id="projekty")
+    assert html =~ ~s(href="#projekty")
+    refute sitemap =~ "/funkcje/projekty"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end
