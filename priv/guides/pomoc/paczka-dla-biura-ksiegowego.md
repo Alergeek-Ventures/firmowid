@@ -69,3 +69,4 @@ Zamiast paczki możesz zaprosić osobę z biura księgowego do firmy z rolą „
 
 - [Bank i dopasowanie przelewów do faktur](/funkcje/bank)
 - [Jak działa dopasowanie przelewów](/pomoc/dopasowanie-przelewow)
+- [Dostęp do KSeF i uprawnienia dla biura księgowego](/poradnik/dostep-do-ksef-jdg-i-ksiegowa)
