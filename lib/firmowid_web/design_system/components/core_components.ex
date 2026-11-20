@@ -8,8 +8,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   use Gettext, backend: Firmowid.Gettext
   use FirmowidWeb, :verified_routes
 
-  import FirmowidUI.Components.Inputs
-
   alias Firmowid.Blobs.Blob
   alias Firmowid.Blobs.PictureVariants
   alias Phoenix.HTML.Form
