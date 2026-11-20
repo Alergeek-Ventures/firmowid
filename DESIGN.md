@@ -355,14 +355,13 @@ Shadows belong to those cards and to overlays that float above the page.
 
 ### Shadow Vocabulary
 - **Card** (`shadow-card`, a token in `assets/css/theme.css`): only on the cards described above.
-- **Overlay** (`shadow-lg` plus a 1px graphite/10 ring): modals, popovers, dropdowns and toasts.
-- **Small** (`shadow-small`, Figma's "Small shadow": `0 1px 6px` black at 2%): bordered overlays from the newer Figma screens, such as the time tracker's session edit popover. The `grey-200` border does the separating; the shadow only softens the edge.
+- **Overlay** (`shadow-small`, Figma's "Small shadow": `0 1px 6px` black at 2%, plus a 1px grey-200 border, or a graphite/10 ring on modals and toasts): modals, popovers, dropdown menus and toasts, with a 4px radius. The ring does the separating; the shadow only softens the edge. It replaces the older `shadow-lg`, which some overlays outside the shared primitives still use.
 - **Error tooltip** (`box-shadow: 0 2px 8px rgba(0,0,0,0.15)`): field-level error bubbles.
 
 ### Named Rules
 **The Flat by Default Rule.** A surface at rest has no shadow. Lists, tables, forms, toolbars and page sections sit flat on the canvas or on white, separated by tone or a `grey-200` line. Reach for a card only when the content is one self-contained record, and never nest cards.
 
-**The Paper on Canvas Rule.** A surface rises by being whiter than what is under it. Reach for `shadow-lg` only for things that float: modals, popovers, dropdowns and toasts.
+**The Paper on Canvas Rule.** A surface rises by being whiter than what is under it. Reach for the overlay shadow (`shadow-small`) only for things that float: modals, popovers, dropdowns and toasts.
 
 ## Motion
 
@@ -372,8 +371,8 @@ stops under `prefers-reduced-motion` (`motion-reduce:transition-none`,
 `motion-reduce:animate-none!`, and the hooks skip it).
 
 - **Colour change** (100ms): hover and press states of buttons.
-- **Dropdown entrance** (`dropdown_styles/0` in
-  `FirmowidWeb.Timetracker.Components.Session`): 150ms ease-out, scale 95% to
+- **Dropdown entrance** (in `dropdown_panel_styles/0` and the menu; the session
+  edit popover uses `dropdown_styles/0` in `FirmowidWeb.Timetracker.Components.Session`): 150ms ease-out, scale 95% to
   100% and opacity 0 to 1 through `@starting-style` (`starting:`), so it plays
   every time the element is shown, whatever shows it. Set the origin to the side
   it unfolds from (`origin-top`, `origin-top-right`). Used by the project, work
@@ -469,7 +468,7 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 |---|---|---|
 | Action | `FirmowidUI.Components.Button.button` / `Link.link kind="button"` | Variants and sizes below. |
 | Icon-only action | `icon_button` | `label` is required (accessible name and tooltip); a square, small 30px, big 36px. |
-| Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. |
+| Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. Two variants, list and dropdown (see Menus and Dropdowns). |
 | Status | `badge` | 24px pill; tones `neutral`, `success`, `danger`, `cost`, `sales`. |
 | Inline notice | `alert` | Tones `neutral`, `success`, `danger`; `danger` uses `role="alert"`. Toasts stay for transient feedback. |
 | Nothing to show | `empty_state` | Dashed placeholder: icon, title, one sentence, the action that fills it; `small` (24px icon, 14px text) inside panels and lists. |
@@ -513,6 +512,13 @@ expression of the Two Sides of the Ledger Rule.
 - **Checkbox / Radio:** 16px squares with a 3px radius and graphite stroke.
 - **Switch:** a 38×24 pill. The grey track fills rust or teal when on, depending on the side it controls.
 
+### Menus and Dropdowns
+One primitive (`FirmowidWeb.DesignSystem.Components.Menu`) in two variants.
+- **Shared:** 1px grey-200 border, 4px radius, the overlay shadow (`shadow-small`), 4px padding. Items are 36px tall with 12px side padding and 14px text; hover fills them grey-200.
+- **List** (`menu` + `menu_item`, actions from a button): white, as wide as its content, 4px under the button.
+- **Dropdown** (`dropdown_panel_styles/0` + `dropdown_option/1`, options of a select field): grey-50 like the field, 4px under its trigger. Under a full-width field it is as wide as the field (the project in the time tracker form); under a compact trigger it is as wide as its longest option. The selected option (`aria-selected`) has a check on the right.
+- **In use:** the time tracker's project and work mode pickers, in the session rows and in the form.
+
 ### Navigation
 - **Sidebar:** a black column with the "Firmowid" wordmark and the collapse button on top, then the layer switch (company or the member's own), the inbox and the places of the current layer. Rows are 32px tall with an 18px icon and the label in `grey-300`; the current page sits on a `grey-900` fill. Collapsed, only the icons stay and a label shows as a tooltip.
 - **Account:** feedback and the account button sit at the bottom; the account button opens a black menu with the organization switcher, settings and logging out, whose items highlight with graphite/50.
@@ -538,7 +544,7 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 - **Don't** use rust or teal decoratively or for neutral actions. Their meaning is the ledger side.
 - **Don't** rely on the default `variant="primary"` for neutral actions; it renders rust.
 - **Don't** introduce new zinc, gray or rose Tailwind palettes. Legacy fields still use them; new work uses the grey, red and green scales from this file's frontmatter.
-- **Don't** wrap lists, tables or forms in shadowed cards, and never nest cards. `shadow-lg` belongs to floating overlays.
+- **Don't** wrap lists, tables or forms in shadowed cards, and never nest cards. The overlay shadow belongs to floating overlays.
 - **Don't** edit `assets/css/design-tokens.css` by hand.
 - **Don't** add a second typeface to the app UI or use `font-logo` outside the wordmark. The handwriting face belongs to the landing page only.
 - **Don't** use solid red or green blocks for destructive or success buttons. Use the tint fills.

@@ -190,6 +190,19 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
               <.menu_item phx-click="noop" tone="danger"><Lucideicons.trash_2 /> Usuń</.menu_item>
             </.menu>
           </div>
+          <%!-- Dropdown variant, shown open as it hangs under its field. --%>
+          <ul
+            role="listbox"
+            aria-label="Tryb pracy"
+            class={["flex w-60 flex-col", dropdown_panel_styles()]}
+          >
+            <li role="none">
+              <.dropdown_option selected phx-click="noop">W biurze</.dropdown_option>
+            </li>
+            <li role="none">
+              <.dropdown_option selected={false} phx-click="noop">Zdalnie</.dropdown_option>
+            </li>
+          </ul>
         </div>
       </.catalog_section>
 

@@ -122,21 +122,18 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         placement="bottom-end"
         id={select_id}
         reference_id={"project-select-#{parent_session.id}"}
-        class={[
-          "w-[230px] origin-top-right rounded-lg border border-grey-200 bg-grey-50",
-          dropdown_styles()
-        ]}
+        data-offset="4"
+        class={["origin-top-right", dropdown_panel_styles()]}
       >
         <ul
           id={"session-project-options-#{parent_session.id}"}
+          role="listbox"
           phx-hook="ListboxKeys"
-          class="flex flex-col gap-1 overflow-auto p-1"
+          class="flex flex-col overflow-auto"
         >
-          <li :for={project <- @active_projects}>
-            <.button
-              type="button"
-              variant="unstyled"
-              class={["w-full text-left", dropdown_item_styles()]}
+          <li :for={project <- @active_projects} role="none">
+            <.dropdown_option
+              selected={project.id == parent_session.project_id}
               phx-click={
                 JS.set_attribute(
                   {"value", project.id},
@@ -147,7 +144,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
               }
             >
               {project.name}
-            </.button>
+            </.dropdown_option>
           </li>
         </ul>
       </.popover>
@@ -440,27 +437,27 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       id={list_id}
       reference_id={"session-work-mode-#{@id}"}
       placement="bottom-end"
-      class={["w-40 origin-top-right rounded-lg border border-grey-200 bg-grey-50", dropdown_styles()]}
+      data-offset="4"
+      class={["origin-top-right", dropdown_panel_styles()]}
     >
       <ul
         id={"session-work-mode-options-#{@id}"}
+        role="listbox"
         phx-hook="ListboxKeys"
-        class="flex flex-col gap-1 p-1"
+        class="flex flex-col"
       >
-        <li :for={{remote?, label} <- work_mode_options()}>
-          <.button
-            type="button"
-            variant="unstyled"
+        <li :for={{remote?, label} <- work_mode_options()} role="none">
+          <.dropdown_option
+            selected={@mode == if(remote?, do: :remote, else: :office)}
             phx-click={
               JS.push("set_work_mode",
                 value: %{ids: Enum.map(@sessions, & &1.id), is_remote: remote?}
               )
               |> hide_popover(list_id)
             }
-            class={["w-full text-left", dropdown_item_styles()]}
           >
             {label}
-          </.button>
+          </.dropdown_option>
         </li>
       </ul>
     </.popover>
@@ -500,18 +497,12 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   end
 
   @doc """
-  Entrance of the time tracker's dropdowns (project, work mode, session edit): they grow and
-  fade in each time they open, whatever opens them. The caller sets the origin.
+  Entrance of the session edit popover: it grows and fades in each time it opens, whatever
+  opens it, like the dropdowns (`dropdown_panel_styles/0`). The caller sets the origin.
   """
   @spec dropdown_styles() :: String.t()
   def dropdown_styles do
     "transition-[opacity,scale] duration-150 ease-out starting:scale-95 starting:opacity-0 motion-reduce:transition-none"
-  end
-
-  @doc "An option in the time tracker's dropdowns (project, work mode)."
-  @spec dropdown_item_styles() :: String.t()
-  def dropdown_item_styles do
-    "cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-grey-200 hover:text-grey-800 focus-visible:bg-grey-200 focus-visible:text-grey-800 focus-visible:outline-none"
   end
 
   @doc """
@@ -608,27 +599,30 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       </.button>
       <ul
         id={@list_id}
+        role="listbox"
         phx-hook="ListboxKeys"
         class={[
-          "absolute inset-x-0 top-full z-50 mt-1 hidden origin-top flex-col gap-1 rounded-lg border border-grey-200 bg-grey-50 p-1",
-          dropdown_styles()
+          "absolute inset-x-0 top-full z-50 mt-1 hidden origin-top flex-col",
+          dropdown_panel_styles()
         ]}
       >
-        <li :for={{remote?, label} <- work_mode_options()}>
-          <.button
-            type="button"
-            variant="unstyled"
-            class={["w-full text-left", dropdown_item_styles()]}
+        <li :for={{remote?, label} <- work_mode_options()} role="none">
+          <%!-- The pick moves the check itself, as the server renders the form again
+          only after saving. --%>
+          <.dropdown_option
+            selected={to_string(@field.value) == to_string(remote?)}
             phx-keydown={JS.hide(to: "##{@list_id}") |> JS.focus(to: "##{@field.id}-button")}
             phx-key="escape"
             phx-click={
               JS.set_attribute({"value", to_string(remote?)}, to: "##{@field.id}")
+              |> JS.set_attribute({"aria-selected", "false"}, to: "##{@list_id} [role=option]")
+              |> JS.set_attribute({"aria-selected", "true"})
               |> JS.hide(to: "##{@list_id}")
               |> JS.focus(to: "##{@field.id}-button")
             }
           >
             {label}
-          </.button>
+          </.dropdown_option>
         </li>
       </ul>
     </div>

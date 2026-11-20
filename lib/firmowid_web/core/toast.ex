@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Core.Toast do
   def toast_class_fn(assigns) do
     [
       # base classes
-      "group/toast z-100 pointer-events-auto relative w-full items-center justify-between origin-center overflow-hidden rounded-lg p-4 shadow-lg border col-start-1 col-end-1 row-start-1 row-end-2",
+      "group/toast z-100 pointer-events-auto relative w-full items-center justify-between origin-center overflow-hidden rounded-sm p-4 shadow-small border border-grey-700/10 col-start-1 col-end-1 row-start-1 row-end-2",
       # keep compositing stable while live_toast animates transform/opacity
       "will-change-transform backface-hidden",
       # used to hide the disconnected flashes

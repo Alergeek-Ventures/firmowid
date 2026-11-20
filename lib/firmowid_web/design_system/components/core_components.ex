@@ -8,8 +8,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   use Gettext, backend: Firmowid.Gettext
   use FirmowidWeb, :verified_routes
 
-  import FirmowidUI.Components.Inputs
-
   alias Firmowid.Blobs.Blob
   alias Firmowid.Blobs.PictureVariants
   alias Phoenix.HTML.Form
@@ -65,18 +63,17 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="relative hidden rounded-md bg-white p-10 shadow-lg ring-1 shadow-grey-700/10 ring-grey-700/10 transition"
+              class="relative hidden rounded-sm border border-grey-700/10 bg-white p-10 shadow-small transition"
             >
-              <div class="absolute top-6 right-5">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="-m-3 flex-none p-3 text-grey-600 hover:text-grey-900"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="size-5" />
-                </button>
-              </div>
+              <%!-- Figma's "Button / Zamknij": 32×30, a 16px cross, level with the content's top right corner. --%>
+              <button
+                phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                type="button"
+                class="absolute top-10 right-10 flex h-7.5 w-8 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900"
+                aria-label={gettext("close")}
+              >
+                <Lucideicons.x class="size-4" aria-hidden="true" />
+              </button>
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
