@@ -1371,7 +1371,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <p class="mb-5 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase max-lg:mb-0 max-lg:self-start">
               {person.role}
             </p>
-            <div class="text-sm leading-[1.55] text-grey-700 max-lg:col-span-full max-lg:mt-5 lg:leading-[140%]">
+            <div class="text-sm/[1.55] text-grey-700 max-lg:col-span-full max-lg:mt-5 lg:leading-[140%]">
               <p
                 :for={paragraph <- String.split(person.bio, ~r/(?<=\.)\s+(?=\p{Lu})/u)}
                 class="mt-2 first:mt-0"
