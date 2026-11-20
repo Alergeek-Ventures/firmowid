@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     html = conn |> get(~p"/funkcje/czas-pracy") |> html_response(200)
 
     assert html =~ Guides.feature_page().timer_stop
-    assert html =~ "--timer-m: 40; --timer-s: 6; --timer-offset: -2406s"
+    assert html =~ "--timer-m: 48; --timer-s: 6; --timer-offset: -2886s"
     assert html =~ "TacoOverflow"
     assert html =~ ~s(<tr class="firmowid">)
     assert html =~ ~s(href="#ile-to-kosztuje")

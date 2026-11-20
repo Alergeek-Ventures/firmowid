@@ -2,7 +2,7 @@
 title: "Program do ewidencji czasu pracy w projektach"
 description: "Czasośledź mierzy czas pracy w projektach. Godziny trafiają do miesięcznej ewidencji, kosztu projektu i raportu wypłat, w tym samym programie co faktury i bank."
 published: 2026-11-18
-updated: 2026-11-19
+updated: 2026-11-20
 landing:
   kicker: "Funkcje · Czas pracy"
   note: "start, stop i gotowe"
@@ -17,10 +17,10 @@ landing:
     title: "Przegląd ofert na grudzień"
     project: "Firmowid"
     hours: 1
-    minutes: 40
+    minutes: 48
     seconds: 6
     month: "Listopad"
-    total: "41 h 58 min"
+    total: "39 h 48 min"
     projects:
       - name: "TacoOverflow"
         hours: "13 h"
@@ -32,8 +32,8 @@ landing:
         hours: "10 h"
         share: 77
       - name: "Firmowid"
-        hours: "7 h 58 min"
-        share: 61
+        hours: "5 h 48 min"
+        share: 45
 ---
 
 Korzystaliśmy z paru różnych programów do mierzenia czasu dostępnych na rynku, ale nic nie było tak proste i intuicyjne jak Czasośledź. Żaden nie dawał połączenia z kontrahentami ani analizy finansowej, a za każdy trzeba było płacić dodatkowo. Teraz licznik stoi pod projektem, a godziny same trafiają do miesięcznej ewidencji.

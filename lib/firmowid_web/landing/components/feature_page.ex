@@ -136,10 +136,10 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                 :if={@landing.timer}
                 class="rotate-[1.2deg] rounded-[4px] bg-white p-5 font-sans shadow-[0_1px_0_var(--color-grey-200),0_30px_60px_-30px_rgba(87,54,35,.45)] sm:p-7"
               >
-                <p class="truncate rounded-[4px] border border-grey-300 bg-grey-100 px-3.5 py-2.5 text-[15px] font-medium">
+                <p class="truncate rounded-[4px] border border-grey-300 bg-white px-3.5 py-2.5 text-[15px] font-medium">
                   {@landing.timer.title}
                 </p>
-                <p class="mt-2.5 flex items-center justify-between rounded-[4px] bg-rust-100 px-3.5 py-2.5 text-[15px] font-medium text-rust-800">
+                <p class="mt-2.5 flex items-center justify-between rounded-[4px] border border-grey-300 bg-grey-50 px-3.5 py-2.5 text-[15px] font-medium">
                   {@landing.timer.project}
                   <svg
                     viewBox="0 0 16 16"
@@ -152,7 +152,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                 </p>
                 <div class="mt-6 flex items-center justify-between gap-4">
                   <p
-                    class="feature-timer text-[clamp(34px,4vw,44px)] leading-none font-bold tracking-[-0.02em] text-rust-700 tabular-nums"
+                    class="feature-timer text-[clamp(34px,4vw,44px)] leading-none font-bold tracking-[-0.02em] text-[#0f0f0f] tabular-nums"
                     style={"--timer-m: #{@landing.timer.minutes}; --timer-s: #{@landing.timer.seconds}; --timer-offset: -#{@landing.timer.minutes * 60 + @landing.timer.seconds}s"}
                     aria-label={@texts.timer_running}
                   >
@@ -164,7 +164,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                       aria-hidden="true"
                     ></span>
                   </p>
-                  <span class="inline-flex min-h-11 items-center rounded-[4px] bg-rust-700 px-8 text-[15px] font-semibold text-white">
+                  <span class="inline-flex min-h-11 items-center rounded-[4px] bg-[#0f0f0f] px-8 text-[15px] font-semibold text-white">
                     {@texts.timer_stop}
                   </span>
                 </div>
