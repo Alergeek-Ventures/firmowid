@@ -6,7 +6,7 @@ updated: 2026-11-12
 category: ksef-w-praktyce
 ---
 
-Wśród podatników zwolnionych z VAT krąży przekonanie, że KSeF dotyczy wyłącznie firm rozliczających podatek. Ministerstwo Finansów odpowiada na to w swoich wyjaśnieniach, że fakturę w KSeF wystawia każdy podatnik, czynny i zwolniony, jeżeli ma obowiązek ją wystawić, a forma prawna firmy nie ma przy tym znaczenia. W 2026 r. wielu zwolnionych korzysta jeszcze z wyjątku dla sprzedaży udokumentowanej fakturami do 10 000 zł brutto w miesiącu, który wygasa 31 grudnia, więc od 1 stycznia 2027 r. ich faktury dla innych firm będą wystawiane już w systemie, poza wyjątkami opisanymi niżej.
+Wśród podatników zwolnionych z VAT krąży przekonanie, że KSeF dotyczy wyłącznie firm rozliczających podatek. Ministerstwo Finansów odpowiada na to w swoich wyjaśnieniach, że fakturę w KSeF wystawia każdy podatnik, czynny i zwolniony, jeżeli ma obowiązek ją wystawić, a forma prawna firmy nie ma przy tym znaczenia. W 2026 r. wielu zwolnionych korzysta jeszcze z wyjątku dla sprzedaży udokumentowanej fakturami do 10 000 zł brutto w miesiącu, który wygasa 31 grudnia, więc [od 1 stycznia 2027 r. ich faktury dla innych firm będą wystawiane już w systemie](/poradnik/ksef-od-1-stycznia-2027-male-firmy), poza wyjątkami opisanymi niżej.
 
 ## Faktura na żądanie nabywcy
 
