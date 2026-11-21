@@ -18,7 +18,9 @@ concurrency:
 jobs:
   docker-build:
     name: Verify Docker image builds successfully
-    runs-on: selenge
+    # Stays on GitHub's runners: its layer cache (type=gha) is next to them, and a
+    # public repository's hosted minutes are free.
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
