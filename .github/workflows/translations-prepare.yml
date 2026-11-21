@@ -43,6 +43,26 @@ jobs:
           echo "Run this workflow from a branch in the repository, or use a maintainer-triggered workflow."
           exit 1
 
+      # The ruleset allows one queued PR to build at a time; recheck this guard before increasing concurrency.
+      - name: Reject merge queue entries from forks before credentials
+        if: github.event_name == 'merge_group'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_GROUP_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$MERGE_GROUP_REF" =~ ^refs/heads/gh-readonly-queue/main/pr-([0-9]+)-[0-9a-f]{40}$ ]]; then
+            echo "Unexpected merge queue ref; cannot verify the pull request source."
+            exit 1
+          fi
+
+          head_repository=$(gh api "repos/$GITHUB_REPOSITORY/pulls/${BASH_REMATCH[1]}" --jq '.head.repo.full_name')
+          if [[ "$head_repository" != "$GITHUB_REPOSITORY" ]]; then
+            echo "Translation credentials are unavailable for fork pull requests."
+            echo "Run this workflow from a branch in the repository."
+            exit 1
+          fi
+
       - name: Validate exact full caller SHA
         run: |
           if [[ ! "$ACCENT_VERSION" =~ ^[0-9a-fA-F]{40}$ ]]; then
