@@ -46,6 +46,8 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       {:ok, guide} ->
         assign(socket,
           article: guide,
+          read_next: if(section == :guide, do: Guides.read_next(guide), else: []),
+          read_next_heading: Guides.index_page().read_next,
           share_url: Endpoint.url() <> guide.path,
           page_title: guide.title,
           meta_description: guide.description
@@ -114,6 +116,13 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       <div class="[&_table]:block [&_table]:overflow-x-auto [&_tr.firmowid]:bg-[#1c1f23] [&_tr.firmowid_*]:text-white [&_tr.firmowid>td:first-child]:ps-3 [&_tr.firmowid>td:last-child]:pe-3">
         {Phoenix.HTML.raw(@article.html)}
       </div>
+      <section :if={@read_next != []} id="read-next" class="mt-12 border-t border-grey-300 pt-6">
+        <h2>{@read_next_heading}</h2>
+        <article :for={guide <- @read_next}>
+          <h3><a href={guide.path}>{guide.title}</a></h3>
+          <p>{guide.description}</p>
+        </article>
+      </section>
       <div class="not-prose mt-12 flex flex-wrap items-center gap-3 border-t border-grey-300 pt-6 text-sm font-medium [&>a]:rounded-full [&>a]:border [&>a]:border-grey-300 [&>a]:px-4 [&>a]:py-2 [&>a:hover]:border-grey-900 [&>button]:rounded-full [&>button]:border [&>button]:border-grey-300 [&>button]:px-4 [&>button]:py-2 [&>button:hover]:border-grey-900">
         <.icon name="hero-share" class="size-5 text-grey-600" />
         <a
