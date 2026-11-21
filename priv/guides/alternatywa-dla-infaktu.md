@@ -6,7 +6,7 @@ updated: 2026-11-11
 category: wybor-programu
 ---
 
-Obowiązek wystawiania faktur w KSeF dotyczy większości firm od 1 kwietnia 2026 roku. Ministerstwo Finansów udostępnia w tym celu bezpłatną Aplikację Podatnika KSeF 2.0 pod adresem aplikacja.ksef.podatki.gov.pl, bez limitu faktur. W naszym Firmowidzie plan Darmowy kosztuje 0 zł, nie wymaga karty i nie ogranicza faktur sprzedaży oraz wysyłania i pobierania z KSeF. inFakt łączy ten obowiązek z pełną obsługą księgową w jednym abonamencie.
+Obowiązek wystawiania faktur w KSeF dotyczy większości firm od 1 kwietnia 2026 roku. Ministerstwo Finansów udostępnia w tym celu bezpłatną Aplikację Podatnika KSeF 2.0 pod adresem aplikacja.ksef.podatki.gov.pl, bez limitu faktur. W naszym [Firmowidzie](/ksef) plan Darmowy kosztuje 0 zł, nie wymaga karty i nie ogranicza faktur sprzedaży oraz wysyłania i pobierania z KSeF. inFakt łączy ten obowiązek z pełną obsługą księgową w jednym abonamencie.
 
 ## Opcje
 

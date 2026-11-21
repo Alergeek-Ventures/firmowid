@@ -42,7 +42,7 @@ Wyjątek dotyczy tylko wystawiania. Faktury od dostawców odbierasz przez KSeF n
 
 Do końca 2026 r. Od 1 stycznia 2027 r. [KSeF obowiązuje także firmy, które dotąd korzystały z tego wyjątku](/poradnik/ksef-od-1-stycznia-2027-male-firmy).
 
-Jeśli zbliżasz się do 10 000 zł w miesiącu, przygotuj dostęp do KSeF przed wystawieniem następnej faktury. Jeśli faktura przekraczająca próg poszła już poza KSeF, nie wystawiaj od razu drugiej. Najpierw ustal z biurem księgowym, jak ją przesłać, rozliczyć i poinformować nabywcę.
+Jeśli zbliżasz się do 10 000 zł w miesiącu, przygotuj dostęp do KSeF przed wystawieniem następnej faktury. Wystarczy do tego Aplikacja Podatnika KSeF albo program połączony z systemem, na przykład nasz [Firmowid](/ksef), który przy okazji pobiera faktury od dostawców. Jeśli faktura przekraczająca próg poszła już poza KSeF, nie wystawiaj od razu drugiej. Najpierw ustal z biurem księgowym, jak ją przesłać, rozliczyć i poinformować nabywcę.
 
 ## Źródła
 

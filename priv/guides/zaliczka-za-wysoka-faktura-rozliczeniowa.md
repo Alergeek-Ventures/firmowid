@@ -6,7 +6,7 @@ updated: 2026-11-06
 category: ksef-w-praktyce
 ---
 
-Jeżeli zafakturowana zaliczka jest wyższa niż ostateczna cena, różnicę zwracasz klientowi, a fakturę zaliczkową zmniejszasz fakturą korygującą. Art. 106f ust. 3 ustawy o VAT przewiduje fakturę końcową wtedy, gdy wcześniejsze faktury nie objęły całej zapłaty. Tutaj jest odwrotnie: wpłata przewyższa cenę towaru albo usługi. Korekta wystawiona w KSeF musi wskazywać fakturę pierwotną, w tym jej numer KSeF. W większości programów do faktur, w tym w naszym Firmowidzie, korektę można wystawić i ponowić jej wysyłkę.
+Jeżeli zafakturowana zaliczka jest wyższa niż ostateczna cena, różnicę zwracasz klientowi, a fakturę zaliczkową zmniejszasz fakturą korygującą. Art. 106f ust. 3 ustawy o VAT przewiduje fakturę końcową wtedy, gdy wcześniejsze faktury nie objęły całej zapłaty. Tutaj jest odwrotnie: wpłata przewyższa cenę towaru albo usługi. Korekta wystawiona w KSeF musi wskazywać fakturę pierwotną, w tym jej numer KSeF. W większości programów do faktur, w tym w naszym [Firmowidzie](/ksef), korektę można wystawić i ponowić jej wysyłkę.
 
 ## Przykład
 

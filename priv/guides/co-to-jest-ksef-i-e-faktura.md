@@ -20,7 +20,7 @@ Z początkiem 2027 r. [wygasa wyjątek dla sprzedaży do 10 000 zł brutto miesi
 
 ## Czym wystawić fakturę w KSeF
 
-Bezpłatna Aplikacja Podatnika KSeF pozwala wystawiać i odbierać faktury, nadawać uprawnienia pracownikom albo biuru rachunkowemu i pobierać Urzędowe Poświadczenie Odbioru, więc [zakup programu](/poradnik/czy-trzeba-kupowac-program-do-ksef) nie jest warunkiem korzystania z systemu. Programy do faktur łączą się z KSeF przez API i rozszerzają go o funkcje spoza zakresu ministerialnej aplikacji, w przypadku naszego Firmowida między innymi o dopasowanie przelewów z konta firmowego do wystawionych faktur. Ministerstwo udostępnia też środowisko testowe, w którym próbna faktura nie wywołuje skutków prawnych, w odróżnieniu od dokumentu wysłanego na produkcję, a cały proces opisuje poradnik o [pierwszej fakturze w KSeF](/poradnik/pierwsza-faktura-ksef).
+Bezpłatna Aplikacja Podatnika KSeF pozwala wystawiać i odbierać faktury, nadawać uprawnienia pracownikom albo biuru rachunkowemu i pobierać Urzędowe Poświadczenie Odbioru, więc [zakup programu](/poradnik/czy-trzeba-kupowac-program-do-ksef) nie jest warunkiem korzystania z systemu. Programy do faktur łączą się z KSeF przez API i rozszerzają go o funkcje spoza zakresu ministerialnej aplikacji, w przypadku naszego [Firmowida](/ksef) między innymi o dopasowanie przelewów z konta firmowego do wystawionych faktur. Ministerstwo udostępnia też środowisko testowe, w którym próbna faktura nie wywołuje skutków prawnych, w odróżnieniu od dokumentu wysłanego na produkcję, a cały proces opisuje poradnik o [pierwszej fakturze w KSeF](/poradnik/pierwsza-faktura-ksef).
 
 ## Źródła
 

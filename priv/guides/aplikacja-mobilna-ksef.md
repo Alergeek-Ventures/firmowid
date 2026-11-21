@@ -31,6 +31,8 @@ Logowanie idzie przez login.gov.pl: mObywatel, mojeID, e-dowód albo profil zauf
 
 Środowisko testowe działa tylko w przeglądarkowej Aplikacji Podatnika KSeF.
 
+Na komputerze faktury do KSeF wystawisz też w naszym [Firmowidzie](/ksef), który w planie Darmowym nie ogranicza ich liczby i sam łączy przelewy z konta firmowego z fakturami.
+
 ![Aplikacja Mobilna KSeF wystawia faktury i korekty, zapisuje kopie robocze, nabywców i rachunki, pobiera faktury z KSeF a bez internetu działa z wcześniej pobranym certyfikatem KSeF typu 2. Nie pokazuje szczegółów załącznika, nie wystawia faktur z załącznikiem i nie ma wersji testowej.](/images/guides/aplikacja-mobilna-ksef-co-potrafi.webp)
 
 ## Źródła

@@ -6,7 +6,7 @@ updated: 2026-11-06
 category: ksef-w-praktyce
 ---
 
-Ministerstwo Finansów odpowiedziało 18 września 2025 r. na pytanie, czy fakturę można edytować po wysłaniu do KSeF. Odpowiedź brzmi: nie. Przyjęta faktura staje się dokumentem prawnym, a błąd poprawia się fakturą korygującą. Od 1 lutego 2026 r. nie ma już not korygujących, dlatego nie wystawia się ich ani w systemie, ani poza nim. W większości programów do faktur, w tym w naszym Firmowidzie, korektę można wystawić i ponowić jej wysyłkę.
+Ministerstwo Finansów odpowiedziało 18 września 2025 r. na pytanie, czy fakturę można edytować po wysłaniu do KSeF. Odpowiedź brzmi: nie. Przyjęta faktura staje się dokumentem prawnym, a błąd poprawia się fakturą korygującą. Od 1 lutego 2026 r. nie ma już not korygujących, dlatego nie wystawia się ich ani w systemie, ani poza nim. W większości programów do faktur, w tym w naszym [Firmowidzie](/ksef), korektę można wystawić i ponowić jej wysyłkę.
 
 ## Najpierw przygotuj listę dokumentów
 
