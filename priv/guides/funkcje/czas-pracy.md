@@ -127,7 +127,7 @@ Stan na 19.11.2026, według cenników producentów, przy płatności co miesiąc
 | Paski, listy płac, deklaracje ZUS | nie |
 | Poza przeglądarką | REST API, Raycast, Claude i ChatGPT |
 
-Zobacz też: [Faktura za godziny pracy](/poradnik/fakturowanie-za-godziny-czas-pracy) · [Rentowność projektu w małej firmie](/poradnik/rentownosc-projektu-firma-uslugowa) · [Zespół i urlopy](/funkcje/zespol)
+Zobacz też: [Faktura za godziny pracy](/poradnik/fakturowanie-za-godziny-czas-pracy) · [Rentowność projektu w małej firmie](/poradnik/rentownosc-projektu-firma-uslugowa) · [Zespół i urlopy](/funkcje/zespol) · [Program do faktur dla firmy usługowej 2–20 osób](/poradnik/program-do-faktur-dla-firmy-uslugowej)
 
 ## Najczęstsze pytania
 

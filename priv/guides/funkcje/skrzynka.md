@@ -118,7 +118,7 @@ Stan na 18.11.2026, strony producentów, m.in. [wFirma](https://pomoc.wfirma.pl/
 | Oznaczanie jako załatwione | nie, sprawa znika automatycznie |
 | Skróty klawiaturowe | nie |
 
-Zobacz też: [Bank](/funkcje/bank) · [Faktury i KSeF](/ksef) · [Zespół](/funkcje/zespol) · [Delegacje](/funkcje/delegacje)
+Zobacz też: [Bank](/funkcje/bank) · [Faktury i KSeF](/ksef) · [Zespół](/funkcje/zespol) · [Delegacje](/funkcje/delegacje) · [Obca faktura w KSeF: co zrobić przed zapłatą](/poradnik/obca-faktura-w-ksef)
 
 ## Najczęstsze pytania
 

@@ -90,7 +90,7 @@ Stan na 18.11.2026, według stron producentów: [Fakturownia](https://fakturowni
 | Zapłacone gotówką | przycisk „Pomiń” |
 | Koniec miesiąca | paczka ZIP dla biura księgowego |
 
-Zobacz też: [Faktury i KSeF za 0 zł](/ksef) · [Skrzynka](/funkcje/skrzynka) · [Analiza kosztów](/funkcje/analiza)
+Zobacz też: [Faktury i KSeF za 0 zł](/ksef) · [Skrzynka](/funkcje/skrzynka) · [Analiza kosztów](/funkcje/analiza) · [Obca faktura w KSeF: co zrobić przed zapłatą](/poradnik/obca-faktura-w-ksef) · [Numer KSeF w tytule przelewu od 2027 r.](/poradnik/numer-ksef-w-przelewie-2027)
 
 ## Najczęstsze pytania
 

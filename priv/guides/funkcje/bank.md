@@ -133,7 +133,7 @@ Stan na 19.11.2026, według stron producentów, ceny za miesiąc przy płatnośc
 | Import wyciągu MT940 lub CSV | nie |
 | Zlecanie przelewów z Firmowida | nie |
 
-Zobacz też: [Revolut i Wise w programie do faktur z KSeF](/poradnik/revolut-wise-program-do-faktur) · [Program do faktur z dopasowaniem przelewów](/poradnik/dopasowanie-przelewow-do-faktur)
+Zobacz też: [Revolut i Wise w programie do faktur z KSeF](/poradnik/revolut-wise-program-do-faktur) · [Program do faktur z dopasowaniem przelewów](/poradnik/dopasowanie-przelewow-do-faktur) · [Numer KSeF w tytule przelewu od 2027 r.](/poradnik/numer-ksef-w-przelewie-2027)
 
 ## Najczęstsze pytania
 
