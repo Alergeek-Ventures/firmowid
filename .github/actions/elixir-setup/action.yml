@@ -1,12 +1,6 @@
 name: Setup Elixir Project
-description: Checks out the code, configures Elixir, fetches dependencies, and manages build caching.
+description: Enters devenv, fetches dependencies, and manages build caching.
 inputs:
-  elixir-version:
-    required: true
-    description: Elixir version to set up
-  otp-version:
-    required: true
-    description: OTP version to set up
   cache-key:
     required: false
     default: "v2"
@@ -30,22 +24,28 @@ inputs:
 
 outputs:
   otp-version:
-    description: "Exact OTP version selected by the BEAM setup step"
+    description: "Exact OTP version devenv provides"
     value: ${{ steps.beam.outputs.otp-version }}
   elixir-version:
-    description: "Exact Elixir version selected by the BEAM setup step"
+    description: "Exact Elixir version devenv provides"
     value: ${{ steps.beam.outputs.elixir-version }}
 
 runs:
   using: "composite"
   steps:
-    - name: Setup elixir
-      uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+    # devenv.nix owns Elixir, Erlang and Hex; its enterShell installs Hex.
+    - name: Enter devenv
+      uses: ./.github/actions/devenv
+
+    # Cache keys name the toolchain, so they never mix with setup-beam builds.
+    - name: Read BEAM versions
       id: beam
-      with:
-        elixir-version: ${{ inputs.elixir-version }}
-        otp-version: ${{ inputs.otp-version }}
-        install-hex: false
+      shell: bash
+      run: |
+        otp=$(erl -noshell -eval 'io:put_chars(erlang:system_info(otp_release)), halt().')
+        echo "otp-version=devenv-OTP-$(cat "$(erl -noshell -eval 'io:put_chars(code:root_dir()), halt().')/releases/$otp/OTP_VERSION")" >> "$GITHUB_OUTPUT"
+        echo "elixir-version=devenv-v$(elixir -e 'IO.write(System.version())')" >> "$GITHUB_OUTPUT"
+
 
     # Quality and Build/Test share compiled artifacts. Different compile-time
     # service ports invalidate the whole application, even on an exact cache hit.
@@ -95,11 +95,6 @@ runs:
       run: mix local.rebar --force
       shell: sh
       if: inputs.install-rebar == 'true'
-
-    # Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
-    - name: Install Hex
-      run: mix local.hex 2.7.0 --force
-      shell: sh
 
     - name: Install Dependencies
       run: mix deps.get

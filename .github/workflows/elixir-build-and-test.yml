@@ -55,8 +55,8 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Setup Accent CLI
-        uses: ./.github/actions/setup-accent
+      - name: Enter devenv
+        uses: ./.github/actions/devenv
 
       - name: Resolve existing main HEAD snapshot once
         id: catalog
@@ -265,11 +265,6 @@ jobs:
         with:
           catalog-version: ${{ inputs.catalog-version || needs.translations.outputs.catalog-version || needs.benchmark-translations.outputs.catalog-version }}
 
-      - name: Install document processing tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xsltproc qpdf
-
       - name: Generate isolated test keys
         run: |
           secret_key_base="$(openssl rand -base64 48)"
@@ -281,8 +276,6 @@ jobs:
         id: setup
         uses: ./.github/actions/elixir-setup
         with:
-          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
-          otp-version: ${{ needs.extract-versions.outputs.otp }}
           cache-key: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && format('coverage-benchmark-{0}-{1}', github.run_id, github.run_attempt) || 'v2' }}
 
       - name: Create and migrate database

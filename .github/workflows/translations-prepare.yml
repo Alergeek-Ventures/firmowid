@@ -81,8 +81,8 @@ jobs:
           ref: ${{ inputs.version || github.sha }}
           persist-credentials: false
 
-      - name: Setup Accent CLI
-        uses: ./.github/actions/setup-accent
+      - name: Enter devenv, which provides the Accent CLI
+        uses: ./.github/actions/devenv
 
       # A main commit keeps the snapshot it was first validated and deployed with.
       - name: Reuse the published snapshot of this main commit
