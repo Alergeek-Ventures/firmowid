@@ -37,15 +37,18 @@ runs:
     - name: Enter devenv
       uses: ./.github/actions/devenv
 
-    # Cache keys name the toolchain, so they never mix with setup-beam builds.
+    # Cache keys name the toolchain down to Erlang's store path: PLTs and _build
+    # point into it, and a devenv input refresh can move it without a new version.
+    # The names never match setup-beam builds either.
     - name: Read BEAM versions
       id: beam
       shell: bash
       run: |
+        root=$(erl -noshell -eval 'io:put_chars(code:root_dir()), halt().')
         otp=$(erl -noshell -eval 'io:put_chars(erlang:system_info(otp_release)), halt().')
-        echo "otp-version=devenv-OTP-$(cat "$(erl -noshell -eval 'io:put_chars(code:root_dir()), halt().')/releases/$otp/OTP_VERSION")" >> "$GITHUB_OUTPUT"
+        store=$(basename "${root%%/lib/erlang}")
+        echo "otp-version=devenv-OTP-$(cat "$root/releases/$otp/OTP_VERSION")-${store:0:8}" >> "$GITHUB_OUTPUT"
         echo "elixir-version=devenv-v$(elixir -e 'IO.write(System.version())')" >> "$GITHUB_OUTPUT"
-
 
     # Quality and Build/Test share compiled artifacts. Different compile-time
     # service ports invalidate the whole application, even on an exact cache hit.
