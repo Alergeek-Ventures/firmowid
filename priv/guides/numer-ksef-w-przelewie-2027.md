@@ -14,7 +14,7 @@ Identyfikator zbiorczy obejmuje co najmniej dwa numery KSeF, a według odpowiedz
 
 ## Przypadki opisane przez MF
 
-Ministerstwo wyjaśnia też, że numer podaje faktor lub inny podmiot płacący w imieniu nabywcy, o ile jest czynnym podatnikiem VAT, a nie podaje go nabywca przekazujący zapłatę komornikowi w ramach zajęcia wierzytelności dostawcy. Obowiązek nie obejmuje faktur wystawionych w trybie awaryjnym, a o jego zastosowaniu przesądza data płatności, dlatego faktura otrzymana w KSeF 23 grudnia 2026 r. i opłacona 2 stycznia 2027 r. wymaga już podania numeru. W Firmowidzie, naszym programie do faktur, wysyłka faktury mailem do klienta następuje domyślnie dopiero po nadaniu jej numeru KSeF.
+Ministerstwo wyjaśnia też, że numer podaje faktor lub inny podmiot płacący w imieniu nabywcy, o ile jest czynnym podatnikiem VAT, a nie podaje go nabywca przekazujący zapłatę komornikowi w ramach zajęcia wierzytelności dostawcy. Obowiązek nie obejmuje faktur wystawionych w trybie awaryjnym, a o jego zastosowaniu przesądza data płatności, dlatego faktura otrzymana w KSeF 23 grudnia 2026 r. i opłacona 2 stycznia 2027 r. wymaga już podania numeru. W Firmowidzie, naszym programie do faktur, wysyłka faktury mailem do klienta następuje domyślnie dopiero po nadaniu jej numeru KSeF. Przelewy, które potem przychodzą od klientów, program pobiera z banku i [sam łączy z fakturami](/funkcje/bank).
 
 ![Od 2027 r. numer KSeF w tytule przelewu podaje czynny podatnik VAT płacący innemu czynnemu podatnikowi, a zwolnionych z VAT to nie dotyczy, chyba że płacą w MPP. Przelew za kilka faktur jednego sprzedawcy ma identyfikator zbiorczy do 500 faktur. O obowiązku decyduje data płatności.](/images/guides/numer-ksef-w-przelewie-kto-podaje.webp)
 

@@ -26,7 +26,7 @@ Certyfikaty KSeF są dwa. Typ 1 służy do logowania, typ 2 do drugiego kodu QR 
 
 Według MF certyfikat jest osobistym poświadczeniem tożsamości. Nie pożycza się go.
 
-[Firmowid](/cennik), nasz program, przyjmuje token albo certyfikat. Przy certyfikacie zapisuje datę wygaśnięcia.
+[Firmowid](/pomoc/polaczenie-z-ksef), nasz program, przyjmuje token albo certyfikat. Przy certyfikacie zapisuje datę wygaśnięcia.
 
 ![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu; rozporządzenie pozwala logować się nim do 31 grudnia 2026 r. Certyfikatu nie przekazuje się biuru księgowemu, tylko nadaje mu uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
 

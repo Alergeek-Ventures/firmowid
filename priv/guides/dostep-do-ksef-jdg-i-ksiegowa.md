@@ -10,11 +10,11 @@ Z dostępem do KSeF w jednoosobowej działalności wiąże się mniej formalnoś
 
 ## Token i certyfikat
 
-Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, które użytkownik generuje w Aplikacji Podatnika KSeF. Certyfikat typu 2 jest ponadto potrzebny do wygenerowania drugiego kodu QR, z napisem „CERTYFIKAT”, na fakturze z trybu offline przekazywanej nabywcy przed jej przesłaniem do systemu. W Firmowidzie, naszym programie do faktur, typ połączenia wybiera się w ustawieniach KSeF, a przy certyfikacie zapisana jest data jego wygaśnięcia.
+Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, które użytkownik generuje w Aplikacji Podatnika KSeF. Certyfikat typu 2 jest ponadto potrzebny do wygenerowania drugiego kodu QR, z napisem „CERTYFIKAT”, na fakturze z trybu offline przekazywanej nabywcy przed jej przesłaniem do systemu. W Firmowidzie, naszym programie do faktur, [typ połączenia wybiera się w ustawieniach KSeF](/pomoc/polaczenie-z-ksef), a przy certyfikacie zapisana jest data jego wygaśnięcia.
 
 ## Uprawnienia dla biura księgowego
 
-Na pytanie przedsiębiorczyni, czy może przekazać biuru księgowemu pobrany certyfikat, ministerstwo odpowiada przecząco, bo certyfikat jest osobistym poświadczeniem tożsamości i korzysta z niego tylko osoba, na którą go wydano. Biuru księgowemu albo pracownikowi nadaje się zamiast tego uprawnienie do wystawiania lub przeglądania faktur, w Aplikacji Podatnika KSeF albo w programie połączonym z systemem przez API. Biuru rachunkowemu można nadać uprawnienie jako całemu podmiotowi i zaznaczyć, że wolno mu przekazywać je swoim pracownikom, dzięki czemu przedsiębiorca nie musi wskazywać każdej osoby z biura z osobna.
+Na pytanie przedsiębiorczyni, czy może przekazać biuru księgowemu pobrany certyfikat, ministerstwo odpowiada przecząco, bo certyfikat jest osobistym poświadczeniem tożsamości i korzysta z niego tylko osoba, na którą go wydano. Biuru księgowemu albo pracownikowi nadaje się zamiast tego uprawnienie do wystawiania lub przeglądania faktur, w Aplikacji Podatnika KSeF albo w programie połączonym z systemem przez API. Biuru rachunkowemu można nadać uprawnienie jako całemu podmiotowi i zaznaczyć, że wolno mu przekazywać je swoim pracownikom, dzięki czemu przedsiębiorca nie musi wskazywać każdej osoby z biura z osobna. W samym Firmowidzie biuro księgowe może też dostać własne konto z [rolą Księgowość](/funkcje/zespol).
 
 ![Właściciel JDG ma uprawnienia w KSeF automatycznie i loguje się Podpisem Zaufanym albo kwalifikowanym. Program do faktur łączy się tokenem albo certyfikatem z Aplikacji Podatnika KSeF. Biuru księgowemu właściciel nadaje uprawnienia, nie przekazuje certyfikatu.](/images/guides/dostep-do-ksef-wlasciciel-program-ksiegowa.webp)
 
