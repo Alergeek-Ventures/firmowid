@@ -25,15 +25,24 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert redirected_to(conn, 301) == ~p"/"
   end
 
-  test "serves the Bonobo case study and keeps it out of search indexes", %{conn: conn} do
-    conn = get(conn, ~p"/landing/bonobo")
+  test "serves the Bonobo case study to search engines", %{conn: conn} do
+    conn = get(conn, ~p"/historie/bonobo")
+    html = html_response(conn, 200)
 
-    assert html_response(conn, 200) =~ "Bonobo"
+    assert html =~ "Bonobo"
+    assert html =~ Endpoint.static_path("/landing/case-study.css")
+    assert html =~ ~s(<link rel="canonical" href="https://firmowid.pl/historie/bonobo">)
+    refute html =~ "noindex"
+    assert get_resp_header(conn, "x-robots-tag") == []
 
-    assert html_response(conn, 200) =~
-             Endpoint.static_path("/landing/case-study.css")
+    assert build_conn() |> get(~p"/sitemap.xml") |> response(200) =~
+             "/historie/bonobo</loc>"
+  end
 
-    assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+  test "redirects the former case study address", %{conn: conn} do
+    conn = get(conn, "/landing/bonobo")
+
+    assert redirected_to(conn, 301) == ~p"/historie/bonobo"
   end
 
   test "serves the KSeF pricing page to search engines, in Polish only", %{conn: conn} do
@@ -126,7 +135,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
 
       assert [_card] =
                page
-               |> LazyHTML.query(~s(a[data-landing-cta="case_bonobo"][href="/landing/bonobo"]))
+               |> LazyHTML.query(~s(a[data-landing-cta="case_bonobo"][href="/historie/bonobo"]))
                |> Enum.to_list()
 
       # Every link to the registration and sign-in pages is a named call to action.
@@ -270,7 +279,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     end
 
     test "the case study page has no placeholder either", %{conn: conn} do
-      refute conn |> get(~p"/landing/bonobo") |> html_response(200) =~ "__TELEMETRY_SCRIPT__"
+      refute conn |> get(~p"/historie/bonobo") |> html_response(200) =~ "__TELEMETRY_SCRIPT__"
     end
   end
 
@@ -285,7 +294,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
       uk =
         conn
         |> init_test_session(%{"locale" => "uk"})
-        |> get(~p"/landing/bonobo")
+        |> get(~p"/historie/bonobo")
         |> html_response(200)
 
       assert en =~ ~s(<html lang="en">)
