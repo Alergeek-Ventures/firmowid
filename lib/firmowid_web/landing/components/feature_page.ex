@@ -126,7 +126,7 @@ defmodule FirmowidWeb.Landing.Components.FeaturePage do
                     )
                   ]}>
                     <span class={[
-                      "absolute top-1/2 left-1/2 grid size-5 -translate-1/2 place-items-center rounded-full text-caps-sm leading-none font-bold sm:size-6",
+                      "absolute top-1/2 left-1/2 grid size-5 -translate-1/2 place-items-center rounded-full text-caps-sm/none font-bold sm:size-6",
                       if(row.suggested?,
                         do: "bg-rust-200 text-rust-800",
                         else: "bg-teal-700 text-white"
