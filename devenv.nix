@@ -5,10 +5,10 @@ let
   hex-version = "2.7.0";
 
   # The pinned nixpkgs ships pnpm 11.27.0, without the 11.28.9 fix for GHSA-xjj6-f33q-929c.
-  # https://github.com/pnpm/pnpm/releases/tag/v11.28.11
+  # https://github.com/pnpm/pnpm/releases/tag/v11.28.12
   pnpm = pkgs.pnpm_11.override {
-    version = "11.28.11";
-    hash = "sha256-UDyhf0BAB0B2VjXQH2+n2TLv5TNgTW9v5zvYtInnPrs=";
+    version = "11.28.12";
+    hash = "sha256-0MQvkjLJaFBWtDL4sHYxu6vSRdQO3pqYKRnHp62kCqc=";
     nodejs-slim = pkgs.nodejs-slim_26;
   };
 
