@@ -1,0 +1,13 @@
+name: Enter devenv
+description: >-
+  Loads the project's devenv into the job the way direnv does locally (.envrc),
+  so later steps run devenv's Elixir, Node and tools without a prefix.
+  Needs a runner with devenv and direnv, such as the selenge runners.
+runs:
+  using: composite
+  steps:
+    - name: Export the devenv environment
+      shell: bash
+      run: |
+        direnv allow .
+        direnv export gha >> "$GITHUB_ENV"

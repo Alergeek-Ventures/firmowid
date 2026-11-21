@@ -65,9 +65,6 @@ jobs:
       - name: Setup Elixir Project
         id: setup
         uses: ./.github/actions/elixir-setup
-        with:
-          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
-          otp-version: ${{ needs.extract-versions.outputs.otp }}
 
       # Install npm asset dependencies, including the Tailwind CLI
       - name: Install npm asset dependencies
@@ -174,9 +171,6 @@ jobs:
       - name: Setup Elixir Project
         id: setup
         uses: ./.github/actions/elixir-setup
-        with:
-          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
-          otp-version: ${{ needs.extract-versions.outputs.otp }}
 
       - name: Restore core PLT cache
         id: core_plt_cache
