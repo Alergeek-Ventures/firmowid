@@ -104,6 +104,7 @@ jobs:
           KEEP: "400"
         run: |
           set -euo pipefail
+          # shellcheck disable=SC2016 # This filter is evaluated by jq, not the shell.
           gh release view translation-snapshots --json assets --jq '
             .assets as $assets
             | ($assets | map(select(.name | endswith(".tar.gz"))) | sort_by(.createdAt) | reverse

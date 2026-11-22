@@ -28,12 +28,13 @@ jobs:
         run: |
           TOOL_ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
           TOOL_ERLANG=$(grep "^erlang " .tool-versions | awk '{print $2}')
-          TOOL_ELIXIR=$(echo "$TOOL_ELIXIR_FULL" | sed 's/-otp-.*//')
+          TOOL_ELIXIR=${TOOL_ELIXIR_FULL/-otp-*/}
 
           # Strip the @sha256:... digest before parsing version components
           BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"@]*\).*/\1/')
-          DOCKERFILE_ELIXIR=$(echo "$BUILDER_IMAGE" | sed 's/-erlang.*//')
-          DOCKERFILE_ERLANG=$(echo "$BUILDER_IMAGE" | sed 's/.*erlang-\([0-9.]*\)-.*/\1/')
+          DOCKERFILE_ELIXIR=${BUILDER_IMAGE%%-erlang*}
+          DOCKERFILE_ERLANG=${BUILDER_IMAGE#*erlang-}
+          DOCKERFILE_ERLANG=${DOCKERFILE_ERLANG%%-*}
 
           echo "=== Elixir / Erlang ==="
           echo ""
@@ -77,7 +78,7 @@ jobs:
           echo ""
           echo "✅ Elixir/Erlang versions in sync"
 
-      # ── Hex: devenv.nix owns the version (CI uses it), the Containerfile copies it ──
+      # ── Hex: devenv.nix owns the version; the Containerfile copies it ──
       - name: Compare Hex versions
         run: |
           echo "=== Hex ==="
@@ -95,7 +96,6 @@ jobs:
 
           MISMATCH=0
 
-          # CI runs in devenv, so its Hex is devenv.nix's own.
           CONTAINERFILE_HEX=$(sed -n 's/^ARG HEX_VERSION="\(.*\)"$/\1/p' deployment/Containerfile.app)
           if [ "$CONTAINERFILE_HEX" != "$DEVENV_HEX" ]; then
             echo "❌ Hex version mismatch in deployment/Containerfile.app: ${CONTAINERFILE_HEX:-unpinned}"

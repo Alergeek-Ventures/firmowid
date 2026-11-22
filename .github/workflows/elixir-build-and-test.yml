@@ -127,9 +127,9 @@ jobs:
         run: |
           ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
           OTP=$(grep "^erlang " .tool-versions | awk '{print $2}')
-          ELIXIR=$(echo "$ELIXIR_FULL" | sed 's/-otp-.*//')
-          echo "elixir=$ELIXIR" >> $GITHUB_OUTPUT
-          echo "otp=$OTP" >> $GITHUB_OUTPUT
+          ELIXIR=${ELIXIR_FULL/-otp-*/}
+          echo "elixir=$ELIXIR" >> "$GITHUB_OUTPUT"
+          echo "otp=$OTP" >> "$GITHUB_OUTPUT"
           echo "Detected from .tool-versions:"
           echo "  Elixir: $ELIXIR"
           echo "  OTP: $OTP"
@@ -148,8 +148,8 @@ jobs:
             SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:containerfile-${CONTAINERFILE_HASH}"
           fi
 
-          echo "paradedb_image=$PARADEDB_IMAGE" >> $GITHUB_OUTPUT
-          echo "seaweedfs_image=$SEAWEEDFS_IMAGE" >> $GITHUB_OUTPUT
+          echo "paradedb_image=$PARADEDB_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "seaweedfs_image=$SEAWEEDFS_IMAGE" >> "$GITHUB_OUTPUT"
           echo "Detected from local/compose.yml:"
           echo "  ParadeDB: $PARADEDB_IMAGE"
           echo "Selected SeaweedFS image:"
@@ -168,13 +168,13 @@ jobs:
           REF: ${{ github.ref }}
         run: |
           if docker manifest inspect "$SEAWEEDFS_IMAGE" >/dev/null 2>&1; then
-            echo "publish_required=false" >> $GITHUB_OUTPUT
+            echo "publish_required=false" >> "$GITHUB_OUTPUT"
             echo "✅ SeaweedFS image is available: $SEAWEEDFS_IMAGE"
             exit 0
           fi
 
           if [ "$REF" = "refs/heads/main" ]; then
-            echo "publish_required=true" >> $GITHUB_OUTPUT
+            echo "publish_required=true" >> "$GITHUB_OUTPUT"
             echo "Main will publish the missing wrapper before running tests: $SEAWEEDFS_IMAGE"
             exit 0
           fi
