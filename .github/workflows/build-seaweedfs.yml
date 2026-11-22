@@ -45,9 +45,9 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^FROM' deployment/Containerfile.seaweedfs | sed 's/.*seaweedfs://' | sed 's/@.*//')
-          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
           CONTAINERFILE_HASH=$(sha256sum deployment/Containerfile.seaweedfs | cut -d ' ' -f 1)
-          echo "containerfile_hash=$CONTAINERFILE_HASH" >> $GITHUB_OUTPUT
+          echo "containerfile_hash=$CONTAINERFILE_HASH" >> "$GITHUB_OUTPUT"
           echo "Detected SeaweedFS version: $VERSION"
 
       - name: Build and push

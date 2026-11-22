@@ -39,7 +39,6 @@ runs:
 
     # Cache keys name the toolchain down to Erlang's store path: PLTs and _build
     # point into it, and a devenv input refresh can move it without a new version.
-    # The names never match setup-beam builds either.
     - name: Read BEAM versions
       id: beam
       shell: bash
