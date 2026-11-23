@@ -269,6 +269,7 @@ defmodule Firmowid.Analysis.CategoryReview do
     status = if source == :confirmed, do: :confirmed, else: :pending
 
     largest = Enum.max_by(entries, & &1.amount, Decimal)
+    classifier = classifier(entries, side, source)
 
     %{
       side: side,
@@ -290,14 +291,19 @@ defmodule Firmowid.Analysis.CategoryReview do
       count: length(entries),
       suggestion: if(source != :confirmed, do: category),
       source: if(source != :confirmed, do: source),
-      # Each of its entries comes from the classifier, which stores a probability with its choice.
-      probability: if(source == :jev, do: entries |> Enum.map(& &1.probability) |> Enum.min()),
-      options: if(source == :jev, do: options(entries, side)),
+      probability: classifier.probability,
+      options: classifier.options,
       reason: reason(entries),
       status: status,
       category: if(status == :confirmed, do: category)
     }
   end
+
+  # Each entry of a group the classifier suggested has the probabilities it stored with its choice.
+  defp classifier(entries, side, :jev),
+    do: %{probability: entries |> Enum.map(& &1.probability) |> Enum.min(), options: options(entries, side)}
+
+  defp classifier(_entries, _side, _source), do: %{probability: nil, options: nil}
 
   # The categories at least half as likely as the likeliest one for the entry the classifier was
   # least sure of, likeliest first; the classifier names them as strings.
