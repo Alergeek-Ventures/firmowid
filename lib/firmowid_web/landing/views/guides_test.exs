@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     html = conn |> get(~p"/pomoc") |> html_response(200)
     help = Guides.help_index_page()
 
-    assert html =~ ">#{help.title}</title>"
+    assert html =~ ~r/<title[^>]*>\s*#{Regex.escape(help.title)}\s*<\/title>/
     assert html =~ ~s(<meta name="description" content="#{help.description}")
     assert html =~ "<h1>#{help.heading}</h1>"
   end
