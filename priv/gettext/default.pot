@@ -12382,7 +12382,6 @@ msgstr ""
 msgid "The most went to %{category}."
 msgstr ""
 
-#: lib/firmowid_web/development/views/modals.ex
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "The new session overlaps existing ones. Saving requires the changes below:"
@@ -12429,6 +12428,13 @@ msgid "The organization plan was saved."
 msgstr ""
 
 #: lib/firmowid_web/admin/views/settlement.ex
+msgid "The new session overlaps %{count} existing one. After saving it will change like this:"
+msgid_plural "The new session overlaps %{count} existing ones. After saving they will change like this:"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/development/views/modals.ex
+#, elixir-autogen, elixir-format
 #, elixir-autogen, elixir-format
 msgid "The organization was deleted from the database. Deleting external data may require manual verification."
 msgstr ""
