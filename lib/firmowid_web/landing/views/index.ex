@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
   alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Landing.Utilities.Guides
 
   @impl true
   def mount(_params, session, socket) do
@@ -118,7 +119,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
   defp metadata(:features) do
     [
       page_title: gettext("Firmowid features: KSeF, banking and your team"),
-      meta_description: gettext("Invoices, transaction matching, time tracking, leave and business trips in one place.")
+      meta_description: features_description(Gettext.get_locale(Firmowid.Gettext))
     ]
   end
 
@@ -136,4 +137,10 @@ defmodule FirmowidWeb.Landing.Views.Index do
       meta_description: gettext("Answers about KSeF, bank integrations, data security, migration and Firmowid plans.")
     ]
   end
+
+  # The Polish description lives with the feature pages, so changing it waits on no translation.
+  defp features_description("pl"), do: Guides.features_description()
+
+  defp features_description(_locale),
+    do: gettext("Invoices, transaction matching, time tracking, leave and business trips in one place.")
 end
