@@ -37,17 +37,37 @@ runs:
     - name: Enter devenv
       uses: ./.github/actions/devenv
 
-    # Cache keys name the toolchain down to Erlang's store path: PLTs and _build
-    # point into it, and a devenv input refresh can move it without a new version.
+    # Cache keys name the toolchain down to both BEAM store paths: PLTs, deps and
+    # _build point into them, and a devenv refresh can move either without a release bump.
     - name: Read BEAM versions
       id: beam
       shell: bash
       run: |
+        set -euo pipefail
         root=$(erl -noshell -eval 'io:put_chars(code:root_dir()), halt().')
         otp=$(erl -noshell -eval 'io:put_chars(erlang:system_info(otp_release)), halt().')
         store=$(basename "${root%%/lib/erlang}")
         otp_version=$(cat "$root/releases/$otp/OTP_VERSION")
-        elixir_version=$(elixir -e 'IO.write(System.version())')
+        elixir_identity=$(elixir -e '
+          lib_dir = :code.lib_dir(:elixir) |> to_string() |> Path.expand()
+          # The devenv wrapper can add a nested /lib/elixir before the final suffix.
+          root = lib_dir |> String.split("/lib/elixir", parts: 2) |> hd()
+          store = Path.basename(root)
+
+          unless String.ends_with?(lib_dir, "/lib/elixir") and
+                   Path.dirname(root) == "/nix/store" and
+                   Regex.match?(~r/^[0-9a-z]{32}-[^[:space:]]+$/, store) do
+            raise "expected Elixir at /nix/store/<identity>/lib/elixir"
+          end
+
+          IO.write([System.version(), " ", store])
+        ')
+        if [[ ! "$elixir_identity" =~ ^([^[:space:]]+)[[:space:]]([0-9a-z]{32}-[^[:space:]]+)$ ]]; then
+          echo "::error::Invalid Elixir version/store identity" >&2
+          exit 1
+        fi
+        elixir_version=${BASH_REMATCH[1]}
+        elixir_store=${BASH_REMATCH[2]}
         # Production builds from .tool-versions (version-sync-check ties it to the Containerfile).
         pinned_otp=$(awk '$1 == "erlang" { print $2 }' .tool-versions)
         pinned_elixir=$(awk '$1 == "elixir" { sub(/-otp-.*/, "", $2); print $2 }' .tool-versions)
@@ -56,7 +76,7 @@ runs:
           exit 1
         fi
         echo "otp-version=devenv-OTP-$otp_version-${store:0:8}" >> "$GITHUB_OUTPUT"
-        echo "elixir-version=devenv-v$elixir_version" >> "$GITHUB_OUTPUT"
+        echo "elixir-version=devenv-v$elixir_version-${elixir_store:0:8}" >> "$GITHUB_OUTPUT"
 
     # Quality and Build/Test share compiled artifacts. Different compile-time
     # service ports invalidate the whole application, even on an exact cache hit.
