@@ -124,7 +124,9 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
             "display_name" => organization.name,
             "full_name" => organization.name,
             "address" => organization.address,
-            "country" => "PL"
+            "country" => "PL",
+            "krs" => organization.krs,
+            "regon" => organization.regon
           })
 
         form =

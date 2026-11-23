@@ -90,6 +90,16 @@
                 {pgettext("counterparty", "Full name")}*
               </label>
               <.input field={@form[:full_name]} />
+
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:krs].id}>
+                {gettext("KRS number")}
+              </label>
+              <.input field={@form[:krs]} inputmode="numeric" autocomplete="off" />
+
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:regon].id}>
+                REGON
+              </label>
+              <.input field={@form[:regon]} inputmode="numeric" autocomplete="off" />
             <% else %>
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:given_name].id}>
                 {gettext("First name")}*

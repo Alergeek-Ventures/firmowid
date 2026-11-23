@@ -9,7 +9,14 @@ defmodule Firmowid.Test.Support.VatStatusApiStub do
 
   @behaviour Plug
 
-  @codes %{"1234563218" => "Z", "1111111111" => "B", "2222222222" => "N", "3333333333" => "N"}
+  @codes %{
+    "1234563218" => "Z",
+    "1111111111" => "B",
+    "2222222222" => "N",
+    "3333333333" => "N",
+    "4444444444" => "B",
+    "5555555555" => "B"
+  }
 
   @impl Plug
   def init(opts), do: opts

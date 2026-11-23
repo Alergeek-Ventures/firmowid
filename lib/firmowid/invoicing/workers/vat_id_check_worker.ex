@@ -101,7 +101,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
     end
   end
 
-  defp result(%{country: "PL", tax_id: nip}), do: NipRegistration.check(nip)
+  defp result(%{country: "PL", tax_id: nip, krs: krs}), do: NipRegistration.check(nip, krs)
 
   defp result(counterparty) do
     case EuVatNumber.check(counterparty.country, counterparty.tax_id) do

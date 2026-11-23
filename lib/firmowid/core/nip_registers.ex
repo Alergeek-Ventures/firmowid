@@ -21,15 +21,16 @@ defmodule Firmowid.Core.NipRegisters do
 
     attribute :krs_number, :string,
       public?: true,
-      description: "KRS number the VAT white list gives for the NIP; KRS itself cannot be searched by NIP."
+      description: "KRS number the counterparty gave or the VAT white list gives; KRS itself cannot be searched by NIP."
 
     attribute :krs, :atom,
       public?: true,
       constraints: [one_of: [:entered, :struck_off, :not_found, :other_nip]],
       description: """
-      Current KRS extract of `krs_number`: `:entered` with this NIP, `:struck_off`,
-      `:not_found` in the registers of entrepreneurs and of associations, or
-      `:other_nip` when the extract belongs to another NIP. Nil when not asked.
+      KRS entry of `krs_number`: `:entered` with this NIP, `:struck_off` (the full
+      extract shows this NIP), `:not_found` in the registers of entrepreneurs and of
+      associations, or `:other_nip` when the entry belongs to another NIP. Nil when
+      not asked.
       """
 
     attribute :ceidg, :atom,

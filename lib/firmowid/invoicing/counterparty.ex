@@ -19,7 +19,10 @@ defmodule Firmowid.Invoicing.Counterparty do
     domain: Firmowid.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    fragments: [Firmowid.Invoicing.Counterparty.VatIdCheck]
+    fragments: [
+      Firmowid.Invoicing.Counterparty.VatIdCheck,
+      Firmowid.Invoicing.Counterparty.RegisterNumbers
+    ]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -153,7 +156,9 @@ defmodule Firmowid.Invoicing.Counterparty do
         :mail_country,
         :email,
         :phone,
-        :description
+        :description,
+        :krs,
+        :regon
       ]
 
       change NormalizeBlankCounterpartyFields
@@ -162,7 +167,7 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       change {ClearIrrelevantBuyerFields,
               type_field: :type,
-              company_fields: [:tax_id, :full_name],
+              company_fields: [:tax_id, :full_name, :krs, :regon],
               individual_fields: [
                 :pesel,
                 :given_name,
@@ -202,7 +207,9 @@ defmodule Firmowid.Invoicing.Counterparty do
         :mail_country,
         :email,
         :phone,
-        :description
+        :description,
+        :krs,
+        :regon
       ]
 
       change NormalizeBlankCounterpartyFields
@@ -211,7 +218,7 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       change {ClearIrrelevantBuyerFields,
               type_field: :type,
-              company_fields: [:tax_id, :full_name],
+              company_fields: [:tax_id, :full_name, :krs, :regon],
               individual_fields: [
                 :pesel,
                 :given_name,
@@ -220,21 +227,21 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       change NormalizeCounterpartyTaxId
 
-      # A changed number or country has not been checked yet.
+      # A changed number, country or KRS number has not been checked yet.
       change set_attribute(:vat_id_status, nil) do
-        where any([changing(:tax_id), changing(:country)])
+        where any([changing(:tax_id), changing(:country), changing(:krs)])
       end
 
       change set_attribute(:vat_id_checked_at, nil) do
-        where any([changing(:tax_id), changing(:country)])
+        where any([changing(:tax_id), changing(:country), changing(:krs)])
       end
 
       change set_attribute(:nip_registers, nil) do
-        where any([changing(:tax_id), changing(:country)])
+        where any([changing(:tax_id), changing(:country), changing(:krs)])
       end
 
       change EnqueueVatIdCheck do
-        where any([changing(:tax_id), changing(:country)])
+        where any([changing(:tax_id), changing(:country), changing(:krs)])
       end
 
       change EnqueueWebsiteLookup
