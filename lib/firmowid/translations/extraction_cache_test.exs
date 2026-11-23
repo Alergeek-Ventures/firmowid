@@ -123,6 +123,34 @@ defmodule Firmowid.Translations.ExtractionCacheTest do
     assert ExtractionCache.run(unavailable, check) == :checked
   end
 
+  test "reports why verification was not reused and whether the marker was saved", %{
+    root: root,
+    options: options
+  } do
+    parent = self()
+    options = Keyword.put(options, :report, &send(parent, {:report, &1}))
+
+    assert ExtractionCache.run(options, fn -> :ok end) == :checked
+    assert_received {:report, "gettext extraction cache miss: marker unreadable (:enoent); " <> _}
+    assert_received {:report, "gettext extraction cache marker saved: root=" <> _}
+
+    assert ExtractionCache.run(options, fn -> :ok end) == :cached
+    refute_received {:report, _line}
+
+    File.write!(Path.join(root, "lib/source.ex"), "edited source\n")
+    assert ExtractionCache.run(options, fn -> :ok end) == :checked
+    assert_received {:report, "gettext extraction cache miss: marker differs " <> _}
+
+    assert ExtractionCache.run(Keyword.put(options, :force, true), fn ->
+             File.write!(Path.join(root, "lib/source.ex"), "edited during extraction\n")
+             :ok
+           end) == :checked
+
+    assert_received {:report, "gettext extraction cache miss: forced; " <> _}
+
+    assert_received {:report, "gettext extraction cache marker not saved: inputs changed during " <> _}
+  end
+
   defp git!(root, arguments) do
     assert {_output, 0} = System.cmd("git", arguments, cd: root, stderr_to_stdout: true)
   end
