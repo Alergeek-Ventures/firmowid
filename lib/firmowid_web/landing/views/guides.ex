@@ -39,6 +39,9 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     )
   end
 
+  # The open-source page is a feature page served at its own address.
+  defp assign_page(socket, :open_source, _params), do: assign_page(socket, :feature, %{"slug" => "open-source"})
+
   defp assign_page(socket, action, %{"slug" => slug}) do
     section = Map.fetch!(%{show: :guide, feature: :feature, help: :help}, action)
 
@@ -87,7 +90,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     """
   end
 
-  def render(%{live_action: :feature} = assigns) do
+  def render(%{live_action: action} = assigns) when action in [:feature, :open_source] do
     ~H"""
     <.feature_page article={@article} />
     """

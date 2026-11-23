@@ -3,7 +3,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   Redirects legacy URLs: `/index.html` to the root path, the former invoicing
   feature pages to `/ksef`, `/funkcje/urlopy` to `/funkcje/zespol`,
   `/funkcje/asystent` to `/funkcje/claude-chatgpt-mcp`, `/funkcje/projekty`
-  to `/funkcje/czas-pracy` and merged guides to the guides that replaced them.
+  to `/funkcje/czas-pracy`, `/funkcje/open-source` to `/open-source` and merged
+  guides to the guides that replaced them.
   """
   use FirmowidWeb, :controller
 
@@ -80,5 +81,15 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
     conn
     |> put_status(301)
     |> redirect(to: ~p"/funkcje/claude-chatgpt-mcp")
+  end
+
+  @doc """
+  Permanently redirects `/funkcje/open-source` to `/open-source`, where the
+  open-source feature page lives.
+  """
+  def open_source(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/open-source")
   end
 end

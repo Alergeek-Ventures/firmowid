@@ -147,6 +147,19 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/funkcje/asystent"
   end
 
+  test "the open-source page is a feature page at its own address", %{conn: conn} do
+    html = conn |> get(~p"/open-source") |> html_response(200)
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+    {:ok, page} = Guides.fetch("open-source", :feature)
+
+    assert page.path == "/open-source"
+    assert html =~ page.title
+    assert html =~ ~r/rel="canonical" href="[^"]*\/open-source"/
+    assert html =~ ~s(href="/poradnik/ksef-self-hosted")
+    assert build_conn() |> get("/funkcje/open-source") |> redirected_to(301) == "/open-source"
+    assert length(Regex.scan(~r/<loc>[^<]*\/open-source<\/loc>/, sitemap)) == 1
+  end
+
   test "the time tracking feature page replaces /funkcje/projekty", %{conn: conn} do
     assert conn |> get("/funkcje/projekty") |> redirected_to(301) == "/funkcje/czas-pracy"
 
