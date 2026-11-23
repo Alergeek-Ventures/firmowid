@@ -138,6 +138,7 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   features_index = YamlElixir.read_from_file!(@features_index_path)
 
   @feature_link_label Map.fetch!(features_index, "link_label")
+  @features_description Map.fetch!(features_index, "description")
 
   @feature_page features_index
                 |> Map.fetch!("page")
@@ -327,6 +328,10 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @doc "Returns the label of links from the /funkcje tiles to the feature pages."
   @spec feature_link_label() :: String.t()
   def feature_link_label, do: @feature_link_label
+
+  @doc "Returns the Polish search description of the /funkcje page."
+  @spec features_description() :: String.t()
+  def features_description, do: @features_description
 
   @doc "Returns the fixed texts of the feature page layout (links, buttons, quote author)."
   @spec feature_page() :: %{atom() => String.t()}

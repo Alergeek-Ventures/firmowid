@@ -95,6 +95,12 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     assert short == "Korekta faktury w KSeF · Firmowid"
   end
 
+  test "the features page has a Polish search description", %{conn: conn} do
+    html = conn |> get(~p"/funkcje") |> html_response(200)
+
+    assert html =~ ~s(<meta name="description" content="#{Guides.features_description()}")
+  end
+
   test "the KSeF page replaces the invoicing feature pages", %{conn: conn} do
     assert conn |> get("/funkcje/fakturowanie") |> redirected_to(301) == "/ksef"
     assert build_conn() |> get("/funkcje/faktury-ksef") |> redirected_to(301) == "/ksef"

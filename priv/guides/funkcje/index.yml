@@ -1,6 +1,9 @@
 # Feature pages are Polish only, so the link label on the /funkcje tiles is not translated.
 link_label: Dowiedz się więcej
 
+# Search description of /funkcje in Polish; English and Ukrainian keep the translated one.
+description: "Funkcje Firmowida: faktury i KSeF, faktury kosztowe, bank z dopasowaniem przelewów, Skrzynka, analiza, czas pracy, zespół, delegacje i asystent AI."
+
 # Fixed texts of the feature page layout (/funkcje/<slug>).
 page:
   back_label: "← Wszystkie funkcje"
