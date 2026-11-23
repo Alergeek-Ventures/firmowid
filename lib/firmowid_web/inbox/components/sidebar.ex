@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.DesignSystem.Components.FigmaIcon
   alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Infrastructure.Layouts
@@ -101,9 +102,9 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           label={gettext("Collapse or expand the menu")}
         >
           <%!-- Collapses on desktop; on phones it closes the menu the hamburger opened. --%>
-          <Lucideicons.panel_left
+          <.figma_icon
+            name="zwin_panel"
             class="size-5.5 max-md:hidden md:in-data-[sidebar=collapsed]:size-4.5"
-            aria-hidden="true"
           />
           <Lucideicons.x class="size-5.5 md:hidden" aria-hidden="true" />
         </.panel_button>
@@ -168,13 +169,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           phx-click={show_modal("support-modal")}
           class={link_styles(false)}
           phx-hook="TippyWhenTruncated"
-          data-tippy-content={gettext("Support")}
+          data-tippy-content={pgettext("sidebar", "Feedback")}
           data-tippy-placement="right"
           data-tippy-delay="[300, 0]"
           data-tippy-truncate-selector="[data-label]"
         >
-          <Lucideicons.message_square_text class="size-4.5 shrink-0" aria-hidden="true" />
-          <span data-label class={label_styles()}>{gettext("Support")}</span>
+          <.figma_icon name="feedback" class="size-4.5" />
+          <span data-label class={label_styles()}>{pgettext("sidebar", "Feedback")}</span>
         </.button>
         <.button
           variant="unstyled"
@@ -200,13 +201,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           data-tippy-delay="[300, 0]"
           data-tippy-truncate-selector="[data-label]"
         >
-          <Lucideicons.circle_user class="size-4.5 shrink-0" aria-hidden="true" />
+          <.figma_icon name="user_circle" class="size-4.5" />
           <span data-label class={label_styles()}>{@current_user.email}</span>
         </.button>
         <div
           id="app-sidebar-account"
           style="display: none"
-          class="fixed bottom-14 left-3 z-50 w-58 origin-bottom flex-col rounded-[8px] bg-grey-950 p-2 shadow-[0_1px_6px_rgb(0_0_0/0.4)] ring-1 ring-grey-800 transition-[opacity,scale] duration-150 ease-out ring-inset motion-reduce:transition-none max-md:inset-x-3 max-md:w-auto starting:scale-95 starting:opacity-0"
+          class="fixed bottom-14 left-3 z-50 w-58 origin-bottom flex-col rounded-[8px] bg-grey-950 p-2 shadow-small ring-1 ring-grey-800 transition-[opacity,scale] duration-150 ease-out ring-inset motion-reduce:transition-none max-md:inset-x-3 max-md:w-auto starting:scale-95 starting:opacity-0"
         >
           <Layouts.account_menu
             current_user={@current_user}
@@ -288,7 +289,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       data-tippy-delay="[300, 0]"
       data-tippy-truncate-selector="[data-label]"
     >
-      <Lucideicons.render! name={@destination.icon} class="size-4.5 shrink-0" aria-hidden="true" />
+      <.figma_icon :if={FigmaIcon.icon?(@destination.icon)} name={@destination.icon} class="size-4.5" />
+      <Lucideicons.render!
+        :if={!FigmaIcon.icon?(@destination.icon)}
+        name={@destination.icon}
+        class="size-4.5 shrink-0"
+        aria-hidden="true"
+      />
       <%!-- The badge sits inside the label, so it follows the name and fades with it when collapsed. --%>
       <span data-label class={label_styles()}>{@destination.label}
       <span
@@ -317,7 +324,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   A sidebar row as in the Figma "Sidebar / Link": 32 px tall, an 18 px icon 8 px
   in, grey-300 text, and the current page on a grey-900 fill. Collapsed ("Sidebar
   / Link ikona"), the inset shrinks to 7 px so the icon centers in a 32 px square
-  and the current page sits on a grey-800 fill with 6 px corners; it is relative
+  and the current page sits on a grey-800 fill with 4 px corners; it is relative
   for the corner badges.
   """
   @spec link_styles(boolean()) :: list(String.t())
@@ -325,8 +332,10 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
     [
       "relative flex w-full items-center gap-3 px-2 py-1.5 text-left leading-5 transition-colors duration-100 motion-reduce:transition-none md:in-data-[sidebar=collapsed]:px-1.75",
       if(active?,
-        do: "rounded-[2px] bg-grey-900 text-white md:in-data-[sidebar=collapsed]:bg-grey-800",
-        else: "rounded-[2px] text-grey-300 hover:bg-grey-900/60 hover:text-white"
+        do:
+          "rounded-[2px] bg-grey-900 text-white md:in-data-[sidebar=collapsed]:rounded-sm md:in-data-[sidebar=collapsed]:bg-grey-800",
+        else:
+          "rounded-[2px] text-grey-300 hover:bg-grey-900/60 hover:text-white md:in-data-[sidebar=collapsed]:rounded-sm"
       )
     ]
   end
