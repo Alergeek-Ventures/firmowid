@@ -68,7 +68,7 @@ Firmy, które wymieniają faktury jako pliki danych, mogą przesłać kod albo l
 
 [Firmowid](/ksef), nasz program, drukuje kod na każdej fakturze z numerem KSeF. Niczego się nie włącza.
 
-Pod kodem jest podpis „Sprawdź w KSeF”, na fakturach zagranicznych także „View in KSeF”. Klient, który dostał link do faktury, ma na jej stronie przycisk „Zobacz w KSeF”. Kodu „CERTYFIKAT” w Firmowidzie nie ma. Program nie wystawia faktur offline.
+Pod kodem jest podpis „Sprawdź w KSeF”, na fakturach zagranicznych także „View in KSeF”. Klient, który dostał link do faktury, ma na jej stronie przycisk „Zobacz w KSeF”.
 
 ![Faktura online z numerem KSeF ma jeden kod QR z numerem KSeF pod kodem. Faktura offline, jeszcze nieprzesłana do KSeF, ma dwa kody z napisami OFFLINE i CERTYFIKAT, a po nadaniu numeru KSeF jeden. Plik XML pobrany z KSeF przez nabywcę kodu nie ma. Kod dodaje program do faktur, a do drugiego kodu potrzebny jest certyfikat KSeF typu 2.](/images/guides/kod-qr-faktura-ksef-ile-kodow.webp)
 
