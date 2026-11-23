@@ -1,6 +1,6 @@
 ---
 title: "Program do analizy przychodów i kosztów małej firmy"
-description: "Analiza w Firmowidzie pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na 12 kategorii i liczy wynik każdego miesiąca. Cena, porównanie i ograniczenia."
+description: "Analiza Firmowida pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na 12 kategorii i liczy wynik miesiąca. Cena, porównanie i ograniczenia."
 published: 2026-11-18
 updated: 2026-11-20
 landing:
