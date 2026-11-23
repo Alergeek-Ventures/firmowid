@@ -1,8 +1,8 @@
 ---
 title: "Kod QR na fakturze KSeF: kiedy jest wymagany i co zawiera"
 description: "Kod QR jest wymagany, gdy fakturę z KSeF przekazujesz albo pokazujesz poza systemem. Faktura online ma jeden kod z numerem KSeF, faktura offline dwa."
-published: 2026-11-23
-updated: 2026-11-23
+published: 2026-11-25
+updated: 2026-11-25
 category: ksef-w-praktyce
 ---
 
