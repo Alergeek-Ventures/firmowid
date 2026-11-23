@@ -1,8 +1,8 @@
 ---
 title: "Zmiana programu do faktur przed 2027: KSeF, numeracja, dane"
 description: "Program do faktur można zmienić w każdej chwili, bo faktury z numerem KSeF zostają w systemie 10 lat. Przenosisz kontrahentów, numerację i połączenie."
-published: 2026-11-23
-updated: 2026-11-23
+published: 2026-11-26
+updated: 2026-11-26
 category: wybor-programu
 ---
 
