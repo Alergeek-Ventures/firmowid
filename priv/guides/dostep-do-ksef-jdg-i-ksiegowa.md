@@ -2,7 +2,7 @@
 title: "Dostęp do KSeF w jednoosobowej firmie i uprawnienia dla biura księgowego"
 description: "JDG ma dostęp do KSeF automatycznie. Jak się zalogować, kiedy potrzebny jest ZAW-FA, czemu nie dawać certyfikatu biuru księgowemu i jak nadać mu uprawnienia."
 published: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-23
 category: ksef-w-praktyce
 ---
 
@@ -10,7 +10,7 @@ Z dostępem do KSeF w jednoosobowej działalności wiąże się mniej formalnoś
 
 ## Token i certyfikat
 
-Do połączenia programu do faktur z KSeF służy token albo certyfikat KSeF, które użytkownik generuje w Aplikacji Podatnika KSeF. Certyfikat typu 2 jest ponadto potrzebny do wygenerowania drugiego kodu QR, z napisem „CERTYFIKAT”, na fakturze z trybu offline przekazywanej nabywcy przed jej przesłaniem do systemu. W Firmowidzie, naszym programie do faktur, [typ połączenia wybiera się w ustawieniach KSeF](/pomoc/polaczenie-z-ksef), a przy certyfikacie zapisana jest data jego wygaśnięcia.
+Program do faktur łączy się z KSeF tokenem albo certyfikatem, a czym się różnią i do czego służy certyfikat typu 2, opisujemy w poradniku o [certyfikacie KSeF](/poradnik/certyfikat-ksef-typ-1-i-2). W Firmowidzie, naszym programie do faktur, [typ połączenia wybiera się w ustawieniach KSeF](/pomoc/polaczenie-z-ksef).
 
 ## Uprawnienia dla biura księgowego
 
