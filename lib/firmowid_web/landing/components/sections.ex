@@ -656,10 +656,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   attr :standalone?, :boolean, default: false
 
   def open_source_section(assigns) do
-    assigns =
-      assigns
-      |> assign(:repository, @repository)
-      |> assign(:self_hosting_guide, self_hosting_guide(assigns.standalone?))
+    assigns = assign(assigns, :repository, @repository)
 
     ~H"""
     <section
@@ -680,14 +677,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-300 lg:mt-5">
             {gettext("Firmowid is open source. Host it yourself, without limits or fees.")}
-          </p>
-          <p :if={@self_hosting_guide} class="mt-4 text-base lg:text-[15px]/5.5">
-            <a
-              href={@self_hosting_guide.path}
-              class="text-grey-300 underline decoration-rust-500 underline-offset-[3px] hover:text-white"
-            >
-              {@self_hosting_guide.title} →
-            </a>
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-5 max-lg:mt-5 lg:mt-5">
             <.landing_button
@@ -719,19 +708,6 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     </section>
     """
   end
-
-  # The /open-source page links the Polish guide on self-hosting, titled as the guide itself,
-  # so the link adds no text to translate. Other languages and the home page band skip it.
-  defp self_hosting_guide(true = _standalone?) do
-    with "pl" <- Gettext.get_locale(Firmowid.Gettext),
-         {:ok, guide} <- Guides.fetch("ksef-self-hosted") do
-      guide
-    else
-      _other -> nil
-    end
-  end
-
-  defp self_hosting_guide(false = _standalone?), do: nil
 
   defp open_source_benefits do
     [
