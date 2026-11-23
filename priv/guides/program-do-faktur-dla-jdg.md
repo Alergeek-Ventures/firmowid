@@ -42,7 +42,7 @@ O tym, czy do KSeF trzeba kupować program, pisaliśmy już osobno, dlatego tuta
 
 ## Dalsze czytanie
 
-- [Czy trzeba kupować program do KSeF](https://firmowid.pl/poradnik/czy-trzeba-kupowac-program-do-ksef)
+- [Czy trzeba kupować program do KSeF](https://firmowid.pl/poradnik/ksef-w-banku-aplikacja-mf-czy-program)
 - [Jak wybrać program do faktur](https://firmowid.pl/poradnik/jak-wybrac-program-do-faktur)
 - [Cennik Firmowida](https://firmowid.pl/cennik)
 

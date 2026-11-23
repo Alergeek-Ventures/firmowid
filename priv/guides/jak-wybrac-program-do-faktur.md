@@ -109,7 +109,7 @@ Lista powyżej mówi, czego szukać. Żeby nie sprawdzać kilkudziesięciu cenni
 
 Firmowid jest w obu rankingach. Opisy są pisane w tym samym układzie dla każdego programu, więc łatwo zestawić cenniki i limity obok siebie.
 
-Jeśli chcesz porównać tylko plany za 0 zł, zobacz nasz poradnik [Darmowe programy do faktur KSeF](/poradnik/darmowe-programy-ksef). Jeśli nie wiesz, czy program jest Ci w ogóle potrzebny, przeczytaj [Czy trzeba kupować program do KSeF?](/poradnik/czy-trzeba-kupowac-program-do-ksef).
+Jeśli chcesz porównać tylko plany za 0 zł, zobacz nasz poradnik [Darmowe programy do faktur KSeF](/poradnik/darmowe-programy-ksef). Jeśli nie wiesz, czy program jest Ci w ogóle potrzebny, przeczytaj [Czy trzeba kupować program do KSeF?](/poradnik/ksef-w-banku-aplikacja-mf-czy-program).
 
 ## Gdzie w tej liście jest Firmowid
 

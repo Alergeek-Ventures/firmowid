@@ -3,8 +3,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
   Redirects legacy URLs: `/index.html` to the root path, the former invoicing
   feature pages to `/ksef`, `/funkcje/urlopy` to `/funkcje/zespol`,
   `/funkcje/asystent` to `/funkcje/claude-chatgpt-mcp`, `/funkcje/projekty`
-  to `/funkcje/czas-pracy` and the guide on invoicing without a subscription
-  to the guide on free KSeF programs.
+  to `/funkcje/czas-pracy` and merged guides to the guides that replaced them.
   """
   use FirmowidWeb, :controller
 
@@ -61,5 +60,15 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
     conn
     |> put_status(301)
     |> redirect(to: ~p"/poradnik/darmowe-programy-ksef")
+  end
+
+  @doc """
+  Permanently redirects the guides on buying a KSeF program and on the mobile
+  app to the guide comparing the ministry tools, banks and programs.
+  """
+  def ministry_tools(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/poradnik/ksef-w-banku-aplikacja-mf-czy-program")
   end
 end

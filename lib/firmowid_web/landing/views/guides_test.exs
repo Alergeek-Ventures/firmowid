@@ -163,6 +163,22 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute sitemap =~ "/poradnik/program-do-faktur-bez-abonamentu"
   end
 
+  test "two merged guides redirect to the ministry tools guide", %{conn: conn} do
+    target = "/poradnik/ksef-w-banku-aplikacja-mf-czy-program"
+
+    assert conn |> get("/poradnik/czy-trzeba-kupowac-program-do-ksef") |> redirected_to(301) ==
+             target
+
+    assert build_conn() |> get("/poradnik/aplikacja-mobilna-ksef") |> redirected_to(301) == target
+
+    html = build_conn() |> get(target) |> html_response(200)
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+
+    assert html =~ "Aplikacja mobilna KSeF"
+    refute sitemap =~ "/poradnik/aplikacja-mobilna-ksef"
+    refute sitemap =~ "/poradnik/czy-trzeba-kupowac-program-do-ksef"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end
