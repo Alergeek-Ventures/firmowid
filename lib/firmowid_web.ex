@@ -17,7 +17,9 @@ defmodule FirmowidWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images landing sounds templates favicon.png robots.txt llms.txt indexnow.txt c0b004ddd2754550aa792a231cf9e6f6.txt)
+  def static_paths,
+    do:
+      ~w(assets fonts images landing sounds templates favicon.png robots.txt llms.txt indexnow.txt c0b004ddd2754550aa792a231cf9e6f6.txt)
 
   def router do
     quote do
