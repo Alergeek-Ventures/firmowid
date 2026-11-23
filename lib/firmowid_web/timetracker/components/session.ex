@@ -221,9 +221,9 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           aria-label={filter_label}
         >
           <%!-- On hover the funnel darkens and fills in, with no background behind it. --%>
-          <Lucideicons.funnel
+          <.figma_icon
+            name="filter"
             class="size-4 transition-colors group-hover/filter:fill-current group-focus-visible/filter:fill-current"
-            aria-hidden="true"
           />
         </.link>
       </.tooltip>
@@ -289,7 +289,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     variant="unstyled"
                     aria-label={gettext("Shorten session to one day")}
                   >
-                    <Lucideicons.trash_2 class={trash_icon_styles()} />
+                    <.figma_icon name="trash" class={trash_icon_styles()} />
                   </.button>
                 </div>
               <% else %>
@@ -313,7 +313,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   variant="unstyled"
                   aria-label={gettext("Delete session")}
                 >
-                  <Lucideicons.trash_2 class={trash_icon_styles()} />
+                  <.figma_icon name="trash" class={trash_icon_styles()} />
                 </.button>
               <% end %>
             </.inputs_for>
@@ -482,7 +482,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
   defp work_mode_icon(%{mode: :office} = assigns) do
     ~H"""
-    <Lucideicons.building_2 class={["size-4 shrink-0", @class]} aria-hidden="true" />
+    <.figma_icon name="company" class={["size-4", @class]} />
     """
   end
 
@@ -521,6 +521,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   """
   @spec date_field(map()) :: Rendered.t()
   attr :field, FormField, required: true
+  attr :invalid, :boolean, default: false, doc: "Marks the field with a brick border."
 
   def date_field(assigns) do
     ~H"""
@@ -528,15 +529,15 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <.input
         type="date"
         field={@field}
-        class={field_frame_styles()}
+        class={field_frame_styles(@invalid)}
         input_class={[
           "text-grey-700! [&::-webkit-calendar-picker-indicator]:opacity-0",
           time_field_styles()
         ]}
       />
-      <Lucideicons.calendar_1
+      <.figma_icon
+        name="calendar"
         class="pointer-events-none absolute top-[9px] right-3 size-4 text-grey-700"
-        aria-hidden="true"
       />
     </div>
     """
@@ -546,6 +547,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   @spec time_field(map()) :: Rendered.t()
   attr :field, FormField, default: nil
   attr :value, :string, required: true
+  attr :invalid, :boolean, default: false, doc: "Marks the field with a brick border."
   attr :rest, :global, include: ~w(name disabled readonly)
 
   def time_field(assigns) do
@@ -555,7 +557,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       step="60"
       field={@field}
       value={@value}
-      class={field_frame_styles()}
+      class={field_frame_styles(@invalid)}
       input_class={[
         "text-center text-black! disabled:text-grey-400! [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:justify-center supports-[-moz-appearance:none]:pl-1!",
         time_field_styles()
@@ -569,8 +571,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   # buttons through a pseudo-element, Firefox offers none, so there the field is
   # widened by its button and the frame cuts the button off. The time then gets a
   # smaller left padding to stay centred.
-  defp field_frame_styles do
-    "overflow-hidden rounded border border-grey-200 bg-white focus-within:border-grey-700"
+  defp field_frame_styles(invalid?) do
+    [
+      "overflow-hidden rounded border bg-white",
+      if(invalid?, do: "border-brick-500", else: "border-grey-200 focus-within:border-grey-700")
+    ]
   end
 
   defp time_field_styles do
@@ -604,7 +609,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         <span class="hidden min-w-0 flex-1 truncate group-has-[input[value=true]]/place:block">
           {pgettext("workplace", "Remotely")}
         </span>
-        <Lucideicons.chevron_down class="size-4 shrink-0 text-grey-700" aria-hidden="true" />
+        <.figma_icon name="chevron_down" class="size-4 text-grey-700" />
       </.button>
       <ul
         id={@list_id}

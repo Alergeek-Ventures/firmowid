@@ -8,7 +8,7 @@
 
   <div class="sticky top-navbar z-40 flex items-center justify-between gap-4 bg-white py-4">
     <div class="flex shrink-0 items-center gap-2 max-md:min-w-0 max-md:shrink">
-      <Lucideicons.calendar_1 class="size-5 shrink-0" aria-hidden="true" />
+      <.figma_icon name="calendar" class="size-5" />
       <p class="line-clamp-1 font-medium text-grey-900 max-md:line-clamp-2 max-md:leading-5">
         {format_current_day_header(Date.utc_today())}
       </p>
@@ -78,7 +78,13 @@
         <.form
           id="session_form"
           phx-change={if @current_session, do: "validate_and_update", else: "validate"}
-          phx-submit={if @current_session, do: "end_session", else: "save"}
+          phx-submit={
+            cond do
+              @current_session && @is_form_extended -> "save_current_session"
+              @current_session -> "end_session"
+              true -> "save"
+            end
+          }
           for={@form}
           class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-40 flex w-full flex-col"
         >
@@ -129,10 +135,7 @@
                 <span class="min-w-0 flex-1 truncate">
                   {if chosen_project, do: chosen_project.name, else: gettext("Choose a project")}
                 </span>
-                <Lucideicons.chevron_down
-                  class="size-4 shrink-0 text-grey-700"
-                  aria-hidden="true"
-                />
+                <.figma_icon name="chevron_down" class="size-4 text-grey-700" />
               </.button>
               <ul
                 id={project_list_id}
@@ -187,14 +190,125 @@
                 aria-label={gettext("Enter time manually")}
                 aria-pressed={to_string(@is_form_extended)}
               >
-                <Lucideicons.square_pen />
+                <.figma_icon name="edit" />
               </.button>
             </div>
 
             <p :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>{error}</p>
+
+            <%!-- Figma "Edycja bieżącej sesji": the running session's date and times, with a
+            hint below that a problem with them replaces, in brick, and marks its field. --%>
+            <div
+              :if={@is_form_extended and @current_session}
+              id="current-session-times"
+              phx-mounted={list_enter()}
+              class="flex flex-col gap-2"
+            >
+              <div class="flex w-full gap-2">
+                <div class="flex w-40 shrink-0 flex-col gap-1">
+                  <label for={@form[:date].id} class="text-xs/[1.4] font-medium text-grey-500">
+                    {gettext("Date")}
+                  </label>
+                  <FirmowidWeb.Timetracker.Components.Session.date_field
+                    field={@form[:date]}
+                    invalid={match?({:error, :date, _}, @edit_check)}
+                  />
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col gap-1">
+                  <label
+                    for={@form[:start_time].id}
+                    class="text-xs/[1.4] font-medium text-grey-500"
+                  >
+                    {pgettext("time range column", "From")}
+                  </label>
+                  <FirmowidWeb.Timetracker.Components.Session.time_field
+                    field={@form[:start_time]}
+                    value={format_time(@form[:start_time].value)}
+                    invalid={match?({:error, :start_time, _}, @edit_check)}
+                  />
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col gap-1">
+                  <label for={@form[:end_time].id} class="text-xs/[1.4] font-medium text-grey-500">
+                    {pgettext("time range column", "To")}
+                  </label>
+                  <FirmowidWeb.Timetracker.Components.Session.time_field
+                    field={@form[:end_time]}
+                    value={format_time(@form[:end_time].value)}
+                    invalid={match?({:error, :end_time, _}, @edit_check)}
+                  />
+                </div>
+              </div>
+              <%= case @edit_check do %>
+                <% {:error, _field, message} -> %>
+                  <p
+                    id="current-session-times-error"
+                    class="text-xs/[1.4] font-medium text-brick-700"
+                  >
+                    {message}
+                  </p>
+                <% _ok -> %>
+                  <p class="text-xs/[1.4] font-medium text-grey-500">
+                    {gettext("Leave “To” empty and the session will go on until you stop it.")}
+                  </p>
+              <% end %>
+            </div>
           </div>
           <div class="flex flex-col items-center">
             <%= cond do %>
+              <% @is_form_extended and @current_session -> %>
+                <%!-- The timer follows the edited start; with an end it shows the length, and
+                with a problem in the times it has nothing to show. --%>
+                <div class="flex w-full min-w-0 flex-col items-center gap-6 pt-12 pb-2">
+                  <%= case @edit_check do %>
+                    <% {:ok, %{start_datetime: start, end_datetime: nil}} -> %>
+                      <p
+                        class="text-center text-3xl/tight font-bold text-grey-900 tabular-nums"
+                        id="timetracker-timer"
+                        data-start_time={start}
+                        phx-hook="Timer"
+                      >
+                        {TimeFormatter.format_timer(
+                          max(DateTime.diff(DateTime.utc_now(), start), 0),
+                          :with_seconds
+                        )}
+                      </p>
+                    <% {:ok, %{start_datetime: start, end_datetime: finish}} -> %>
+                      <p
+                        id="timetracker-edit-duration"
+                        class="text-center text-3xl/tight font-bold text-grey-900 tabular-nums"
+                      >
+                        {TimeFormatter.format_timer(DateTime.diff(finish, start), :with_seconds)}
+                      </p>
+                    <% _error -> %>
+                      <p
+                        id="timetracker-edit-duration"
+                        class="text-center text-3xl/tight font-bold text-grey-300 tabular-nums"
+                      >
+                        --:--:--
+                      </p>
+                  <% end %>
+
+                  <div class="flex items-center gap-2">
+                    <.button
+                      type="button"
+                      variant="outline"
+                      class="rounded!"
+                      phx-click="cancel_current_session_edit"
+                    >
+                      {gettext("Cancel")}
+                    </.button>
+                    <.button
+                      id="save-current-session"
+                      variant="special"
+                      class="rounded!"
+                      disabled={match?({:error, _, _}, @edit_check)}
+                    >
+                      {if match?({:ok, %{end_datetime: %DateTime{}}}, @edit_check),
+                        do: gettext("Save and stop"),
+                        else: gettext("Save")}
+                    </.button>
+                  </div>
+                </div>
               <% @is_form_extended -> %>
                 <div
                   id="session-form-times"
@@ -308,7 +422,7 @@
       <% total = calculate_total_duration(month_sessions) %>
       <div class="flex items-center justify-between gap-4 pb-1 pl-2">
         <p class="flex min-w-0 items-baseline gap-2 leading-[1.4]">
-          <span class="truncate text-lg font-medium text-grey-900">
+          <span class="truncate text-h5/[1.4] font-medium text-grey-900">
             {@filter.project.name} · {month_name(@filter.month)}
           </span>
           <span class="text-sm whitespace-nowrap text-grey-500">
@@ -333,7 +447,7 @@
             size="small"
             class="rounded!"
           >
-            <Lucideicons.x /> {gettext("All sessions")}
+            <.figma_icon name="close" /> {gettext("All sessions")}
           </.link>
         </div>
       </div>
@@ -366,8 +480,8 @@
         id="sessions-empty-state"
         class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-grey-300 px-8 py-12 text-center"
       >
-        <Lucideicons.clock class="mb-1 size-6 text-grey-900" aria-hidden="true" />
-        <p class="text-lg/[1.4] font-medium text-grey-900">
+        <.figma_icon name="czasosledz" class="mb-3 size-6 text-grey-900" />
+        <p class="text-h5/[1.4] font-medium text-grey-900">
           {gettext("Your sessions will appear here")}
         </p>
         <p class="max-w-90 text-sm/normal text-grey-600">
@@ -377,7 +491,7 @@
         </p>
         <p
           :if={@active_projects != [] and not @is_hours_record_submitted}
-          class="mt-2 text-sm text-grey-600"
+          class="mt-4 text-sm text-grey-600"
         >
           {gettext("Was the timer off?")}
           <.button
@@ -393,7 +507,7 @@
 
       <div :if={not Enum.empty?(@today_sessions)}>
         <div class="flex items-center justify-between pb-2 pl-2">
-          <p class="text-lg/[1.4] font-medium text-grey-900">{gettext("Your sessions today")}</p>
+          <p class="text-h5/[1.4] font-medium text-grey-900">{gettext("Your sessions today")}</p>
           <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
           <p
             class={total_pill_classes()}
@@ -455,55 +569,76 @@
   </div>
 </div>
 
+<%!-- Figma "Nakładające się sesje — modal (nowy styl)": asks before a session overlaps others,
+a new one or the running one whose times were edited. The session in question first, then
+each session it changes, its old times struck through before the new ones. --%>
 <.modal
   :if={@trim_plan}
   id="overlap-confirmation"
   show={true}
+  size="large"
   on_cancel={JS.push("cancel_overlap_save")}
 >
   <:header>
-    <h3 class="text-lg font-bold text-grey-900">{gettext("Overlapping sessions")}</h3>
-    <p class="mt-1 text-sm text-grey-700">
-      {gettext("The new session overlaps existing ones. Saving requires the changes below:")}
+    <h2 id="overlap-confirmation-title" class="text-xl/[30px] font-medium text-black">
+      {gettext("Sessions overlap")}
+    </h2>
+    <p id="overlap-confirmation-description" class="mt-2 text-base/[1.35] text-black">
+      {if Map.has_key?(@trim_plan, :edited_session),
+        do:
+          ngettext(
+            "This session overlaps %{count} existing one. After saving it will change like this:",
+            "This session overlaps %{count} existing ones. After saving they will change like this:",
+            length(@trim_plan.actions)
+          ),
+        else:
+          ngettext(
+            "The new session overlaps %{count} existing one. After saving it will change like this:",
+            "The new session overlaps %{count} existing ones. After saving they will change like this:",
+            length(@trim_plan.actions)
+          )}
     </p>
   </:header>
-  <div class="space-y-6">
-    <%!-- New session preview --%>
-    <FirmowidWeb.Timetracker.Components.Overlap.new_session_card
-      title={@trim_plan.new_session_attrs[:title]}
-      start_datetime={@trim_plan.new_start}
-      end_datetime={@trim_plan.new_end}
-      date={@trim_plan.new_start}
-      timezone={@timezone}
-    />
-
-    <%!-- Affected sessions --%>
-    <div class="space-y-3">
-      <p class="text-sm font-medium text-grey-700">{gettext("Changes to existing sessions:")}</p>
-
-      <FirmowidWeb.Timetracker.Components.Overlap.trim_action_card
-        :for={action <- @trim_plan.actions}
-        action={action}
+  <% edited? = Map.has_key?(@trim_plan, :edited_session) %>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6">
+      <FirmowidWeb.Timetracker.Components.Overlap.new_session_card
+        title={@trim_plan.new_session_attrs[:title]}
+        project={@projects_by_id[@trim_plan.new_session_attrs[:project_id]]}
+        start_datetime={@trim_plan.new_start}
+        end_datetime={@trim_plan.new_end}
+        date={@trim_plan.new_start}
         timezone={@timezone}
-        projects_by_id={@projects_by_id}
+        edited={edited?}
       />
+      <section class="flex flex-col gap-1">
+        <h3 class="text-caps-sm font-medium text-grey-500 uppercase">
+          {gettext("Changes to existing sessions")}
+        </h3>
+        <ul class="flex flex-col gap-2">
+          <FirmowidWeb.Timetracker.Components.Overlap.trim_action_card
+            :for={action <- @trim_plan.actions}
+            action={action}
+            timezone={@timezone}
+            projects_by_id={@projects_by_id}
+            edited={edited?}
+          />
+        </ul>
+      </section>
     </div>
-
-    <%!-- Action buttons --%>
-    <div class="flex w-full justify-end gap-4 pt-2">
+    <div class="flex justify-end gap-2">
       <.button
         type="button"
-        phx-click={
-          JS.push("cancel_overlap_save")
-          |> hide_modal("overlap-confirmation")
-        }
-        variant="secondary"
+        variant="outline"
+        size="small"
+        phx-click={JS.push("cancel_overlap_save") |> hide_modal("overlap-confirmation")}
       >
         {gettext("Cancel")}
       </.button>
       <.button
+        variant="special"
+        size="small"
         phx-click="confirm_overlap_save"
-        variant="primary"
         phx-disable-with={pgettext("overlap confirmation", "Saving...")}
       >
         {gettext("Save and adjust sessions")}

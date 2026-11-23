@@ -2,160 +2,134 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
   @moduledoc """
   Display components for the overlap confirmation modal in the timetracker.
 
-  Renders the "new session" preview card, affected session cards with
-  before/after comparisons, and action badges (trim, delete, split).
+  Renders the session being saved, then a row for each session it changes, with the old times
+  struck through beside the new ones and a badge for the change (shortened, deleted, split).
   """
   use FirmowidWeb, :html
 
-  # ── New session preview ──────────────────────────────────────────────
+  # ── Session in question ──────────────────────────────────────────────
 
   attr :title, :string, required: true
+  attr :project, :any, default: nil
   attr :start_datetime, :any, required: true
   attr :end_datetime, :any, required: true
   attr :date, :any, required: true
   attr :timezone, :string, required: true
+  attr :edited, :boolean, default: false, doc: "the running session with edited times"
 
-  @doc "Green card previewing the new session that will be created."
+  @doc "The session being saved, on grey-100: a new one, or the running one being edited."
   def new_session_card(assigns) do
     ~H"""
-    <div class="rounded-lg border border-moss-200 bg-moss-100 p-4">
-      <div class="mb-1 flex items-center gap-2">
-        <span class="inline-flex items-center rounded-full bg-moss-200 px-2 py-0.5 text-xs font-medium text-moss-700">
-          {gettext("New session")}
-        </span>
-        <span class="text-sm font-medium text-grey-900">
-          {@title}
-        </span>
+    <section class="flex flex-col gap-1">
+      <h3 class="text-caps-sm font-medium text-grey-500 uppercase">
+        {if @edited,
+          do: pgettext("session overlap", "Current session"),
+          else: gettext("New session")}
+      </h3>
+      <div class="flex flex-col gap-1 rounded-sm bg-grey-100 p-2">
+        <.session_heading title={@title} project={@project} />
+        <p class="text-sm/[1.4] text-grey-600 tabular-nums">
+          {format_date_local(@date, @timezone)}, {format_datetime_local(@start_datetime, @timezone)} – {format_datetime_local(
+            @end_datetime,
+            @timezone
+          )}
+        </p>
       </div>
-      <p class="text-sm text-moss-700">
-        {format_date_local(@date, @timezone)}, {format_datetime_local(@start_datetime, @timezone)} – {format_datetime_local(
-          @end_datetime,
-          @timezone
+    </section>
+    """
+  end
+
+  # ── Affected session ─────────────────────────────────────────────────
+
+  attr :action, :any, required: true
+  attr :timezone, :string, required: true
+  attr :projects_by_id, :map, required: true
+  attr :edited, :boolean, default: false
+
+  @doc """
+  Figma "Nakładanie · zmiana sesji": in a grey-100 outline, what happens to the session as a badge, its
+  name and project, then its old times struck through and what they become.
+  """
+  def trim_action_card(assigns) do
+    assigns = assign(assigns, :session, elem(assigns.action, 1))
+
+    ~H"""
+    <li class="flex flex-col gap-1 rounded-sm border border-grey-100 p-2">
+      <.session_heading title={@session.title} project={@projects_by_id[@session.project_id]}>
+        <%!-- Figma sets these badges' text a step lighter (700) than the badge primitive. --%>
+        <.badge
+          tone={trim_action_tone(@action)}
+          class={[
+            if(trim_action_tone(@action) == "danger", do: "text-brick-700!", else: "text-grey-700!")
+          ]}
+        >
+          {trim_action_label(@action)}
+        </.badge>
+      </.session_heading>
+      <p class="text-sm/[1.4] text-grey-500 tabular-nums">
+        <span class="line-through">{time_range(@session.start_datetime, @session.end_datetime, @timezone)}</span>{trim_action_after(
+          @action,
+          @session,
+          @timezone,
+          @edited
         )}
+      </p>
+    </li>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :project, :any, default: nil
+  slot :inner_block
+
+  defp session_heading(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2">
+      {render_slot(@inner_block)}
+      <p class="min-w-0 flex-1 truncate text-sm/[1.4] font-medium text-grey-900">{@title}</p>
+      <p :if={@project} class="shrink-0 text-xs/[1.4] font-medium text-grey-500 uppercase">
+        {@project.name}
       </p>
     </div>
     """
   end
 
-  # ── Affected session card ────────────────────────────────────────────
+  # What follows the struck-through times: an arrow and the new times, or why it goes away.
+  defp trim_action_after({:trim_end, session, new_end}, _session, timezone, _edited),
+    do: new_times(time_range(session.start_datetime, new_end, timezone))
 
-  attr :action, :any, required: true
-  attr :timezone, :string, required: true
-  attr :projects_by_id, :map, required: true
+  defp trim_action_after({:trim_start, session, new_start}, _session, timezone, _edited),
+    do: new_times(time_range(new_start, session.end_datetime, timezone))
 
-  @doc "Card showing an existing session's before/after state for a trim action."
-  def trim_action_card(assigns) do
-    assigns = assign(assigns, :session, elem(assigns.action, 1))
-
-    ~H"""
-    <div class="rounded-lg border border-grey-200 bg-grey-50 p-4">
-      <div class="mb-2 flex items-center justify-between gap-2">
-        <div class="flex min-w-0 items-center gap-2">
-          <span class={[
-            "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
-            trim_action_badge_styles(@action)
-          ]}>
-            {trim_action_label(@action)}
-          </span>
-          <span class="truncate text-sm font-medium text-grey-900">
-            {@session.title}
-          </span>
-        </div>
-        <span
-          :if={@projects_by_id[@session.project_id]}
-          class="shrink-0 text-xs text-grey-700"
-        >
-          {Map.get(@projects_by_id, @session.project_id).name}
-        </span>
-      </div>
-
-      <div class="flex flex-col gap-1 text-sm">
-        <div class="flex items-center gap-2">
-          <span class="w-12 shrink-0 text-grey-700">{gettext("Before:")}</span>
-          <span class="text-grey-700 line-through">
-            {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
-              @session.end_datetime,
-              @timezone
-            )}
-          </span>
-        </div>
-
-        <.trim_action_after action={@action} session={@session} timezone={@timezone} />
-      </div>
-    </div>
-    """
+  defp trim_action_after({:split, session, new_end, remainder}, _session, timezone, _edited) do
+    new_times(
+      gettext("%{first} and %{second}",
+        first: time_range(session.start_datetime, new_end, timezone),
+        second: time_range(remainder.start_datetime, remainder.end_datetime, timezone)
+      )
+    )
   end
 
-  # ── Trim action after ───────────────────────────────────────────────
+  defp trim_action_after({:delete, _session}, _session2, _timezone, edited) do
+    assigns = %{
+      reason:
+        if(edited,
+          do: gettext("fits entirely in this session"),
+          else: gettext("fits entirely in the new session")
+        )
+    }
 
-  attr :action, :any, required: true
-  attr :session, :any, required: true
-  attr :timezone, :string, required: true
-
-  defp trim_action_after(%{action: {:trim_end, _, new_end}} = assigns) do
-    assigns = assign(assigns, :new_end, new_end)
-
-    ~H"""
-    <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
-      <span class="font-medium text-grey-900">
-        {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
-          @new_end,
-          @timezone
-        )}
-      </span>
-    </div>
-    """
+    ~H|<span class="mx-2">·</span>{@reason}|
   end
 
-  defp trim_action_after(%{action: {:trim_start, _, new_start}} = assigns) do
-    assigns = assign(assigns, :new_start, new_start)
-
-    ~H"""
-    <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
-      <span class="font-medium text-grey-900">
-        {format_datetime_local(@new_start, @timezone)} – {format_datetime_local(
-          @session.end_datetime,
-          @timezone
-        )}
-      </span>
-    </div>
-    """
+  defp new_times(range) do
+    assigns = %{range: range}
+    # Figma's two spaces either side of the arrow, about 8px at 14px.
+    ~H|<span class="mx-2">→</span><span class="font-medium text-grey-900">{@range}</span>|
   end
 
-  defp trim_action_after(%{action: {:delete, _}} = assigns) do
-    ~H"""
-    <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
-      <span class="font-medium text-brick-700">{gettext("The session will be deleted")}</span>
-    </div>
-    """
-  end
-
-  defp trim_action_after(%{action: {:split, _, new_end, remainder}} = assigns) do
-    assigns = assign(assigns, new_end: new_end, remainder: remainder)
-
-    ~H"""
-    <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
-      <div class="flex flex-col gap-0.5">
-        <span class="font-medium text-grey-900">
-          {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
-            @new_end,
-            @timezone
-          )}
-        </span>
-        <span class="font-medium text-grey-900">
-          {format_datetime_local(@remainder.start_datetime, @timezone)} – {format_datetime_local(
-            @remainder.end_datetime,
-            @timezone
-          )}
-        </span>
-      </div>
-    </div>
-    """
-  end
+  defp time_range(start, finish, timezone),
+    do: "#{format_datetime_local(start, timezone)}–#{format_datetime_local(finish, timezone)}"
 
   # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -168,14 +142,9 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     end
   end
 
-  defp trim_action_badge_styles(action) do
-    case action do
-      {:trim_end, _, _} -> "bg-rust-200 text-rust-700"
-      {:trim_start, _, _} -> "bg-rust-200 text-rust-700"
-      {:delete, _} -> "bg-brick-200 text-brick-700"
-      {:split, _, _, _} -> "bg-teal-200 text-teal-800"
-    end
-  end
+  # Neutral for a session that only shrinks or splits, brick for one that goes away.
+  defp trim_action_tone({:delete, _}), do: "danger"
+  defp trim_action_tone(_action), do: "neutral"
 
   defp format_datetime_local(nil, _timezone), do: gettext("now (ongoing)")
 

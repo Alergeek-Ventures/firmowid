@@ -18,6 +18,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.TrimPlan
   alias FirmowidUI.Components.Inputs
+  alias FirmowidWeb.Infrastructure.Utilities.LocalTime
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
@@ -81,8 +82,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
      |> assign(:active_projects, active_projects)
      |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
      |> assign(:filter, nil)
-     |> assign_sessions()
      |> assign(:is_form_extended, false)
+     |> assign(:edit_check, nil)
+     |> assign_sessions()
      |> assign(:trim_plan, nil)}
   end
 
@@ -265,6 +267,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     |> update(:form, fn form ->
       case current_session do
         nil ->
+          form
+
+        # An open edit of the running session keeps what the user typed.
+        _session when socket.assigns.is_form_extended ->
           form
 
         session ->
@@ -608,8 +614,46 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
      )}
   end
 
+  def handle_event("toggle_extended_form", _, %{assigns: %{is_form_extended: true}} = socket) do
+    {:noreply, close_current_session_edit(socket)}
+  end
+
   def handle_event("toggle_extended_form", _, socket) do
-    {:noreply, update(socket, :is_form_extended, &(!&1))}
+    changeset =
+      socket.assigns.current_session
+      |> SessionForm.from_session(socket.assigns.timezone)
+      |> SessionForm.changeset(%{})
+
+    {:noreply,
+     socket
+     |> assign(:is_form_extended, true)
+     |> assign(:form, to_form(changeset))
+     |> assign(:edit_check, check_current_session_edit(changeset, socket))}
+  end
+
+  def handle_event("cancel_current_session_edit", _, socket) do
+    {:noreply, close_current_session_edit(socket)}
+  end
+
+  def handle_event("save_current_session", %{"session_form" => params}, socket) do
+    changeset = current_session_changeset(params, socket)
+
+    case check_current_session_edit(changeset, socket) do
+      {:ok, times} ->
+        form = Ecto.Changeset.apply_changes(changeset)
+
+        attributes =
+          Map.merge(times, %{
+            title: form.title,
+            project_id: form.project_id,
+            is_remote: form.is_remote
+          })
+
+        update_current_session_with_overlap_check(attributes, socket)
+
+      error ->
+        {:noreply, assign(socket, form: to_form(changeset), edit_check: error)}
+    end
   end
 
   def handle_event("validate", %{"session_form" => session}, socket) do
@@ -622,6 +666,21 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   def handle_event("validate_and_update_list_onchange", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
     edit_sessions_realtime(ids, form, socket)
+  end
+
+  # While the running session's times are open for editing, changes are only checked: they
+  # are saved with "Save" (Figma "Edycja bieżącej sesji").
+  def handle_event(
+        "validate_and_update",
+        %{"session_form" => form_params},
+        %{assigns: %{is_form_extended: true, current_session: %Session{}}} = socket
+      ) do
+    changeset = current_session_changeset(form_params, socket)
+
+    {:noreply,
+     socket
+     |> assign(:form, to_form(changeset))
+     |> assign(:edit_check, check_current_session_edit(changeset, socket))}
   end
 
   def handle_event("validate_and_update", %{"session_form" => form_params}, socket) do
@@ -646,14 +705,27 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   # See TOCTOU note in save_with_overlap_check/2 — stale plan is caught
   # by the DB trigger and surfaced as a retry toast.
   def handle_event("confirm_overlap_save", _params, socket) do
-    %{new_session_attrs: attrs, actions: actions} = socket.assigns.trim_plan
+    %{new_session_attrs: attrs, actions: actions} = trim_plan = socket.assigns.trim_plan
     scope = socket.assigns.ash_scope
 
-    result = OverlapResolver.execute(actions, attrs, scope)
+    result =
+      case trim_plan do
+        %{edited_session: %Session{} = session} ->
+          OverlapResolver.execute_update(actions, session, attrs, scope)
+
+        _new_session ->
+          OverlapResolver.execute(actions, attrs, scope)
+      end
 
     socket = assign(socket, trim_plan: nil)
 
     case result do
+      {:ok, edited} when is_map_key(trim_plan, :edited_session) ->
+        handle_session_save_result(
+          {:ok, edited},
+          assign(socket, is_form_extended: false, edit_check: nil)
+        )
+
       {:ok, new_session} ->
         handle_new_session_save_result({:ok, new_session}, socket)
 
@@ -770,6 +842,131 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   # A form field that casts to its current value stays out of the changeset's
   # changes, so the form returns the raw "HH:MM" param instead of a %Time{}.
+  # Saves the edited running session. When its new times overlap other sessions, it asks
+  # first in the same confirmation as a new session, listing how they will be adjusted.
+  defp update_current_session_with_overlap_check(attributes, socket) do
+    %{current_session: session, ash_scope: scope} = socket.assigns
+    start = NormalizeSessionBoundaries.datetime(attributes.start_datetime)
+
+    finish =
+      attributes.end_datetime && NormalizeSessionBoundaries.datetime(attributes.end_datetime)
+
+    overlapping =
+      case Session.list_overlapping(session.member_id, start, %{end_datetime: finish}, scope: scope) do
+        {:ok, sessions} -> {:ok, Enum.reject(sessions, &(&1.id == session.id))}
+        error -> error
+      end
+
+    case overlapping do
+      {:ok, []} ->
+        session
+        |> Session.update(attributes, scope: scope)
+        |> handle_session_save_result(assign(socket, is_form_extended: false, edit_check: nil))
+
+      {:ok, sessions} ->
+        case TrimPlan.compute(start, finish, sessions) do
+          {:ok, actions} ->
+            {:noreply,
+             assign(socket, :trim_plan, %{
+               new_session_attrs: attributes,
+               new_start: start,
+               new_end: finish,
+               actions: actions,
+               overlapping_sessions: sessions,
+               edited_session: session
+             })}
+
+          {:error, :locked_conflict, locked_sessions} ->
+            LiveToast.send_toast(
+              :error,
+              gettext(
+                "The session overlaps approved sessions: %{titles}. Change the time of the new session.",
+                titles: Enum.map_join(locked_sessions, ", ", & &1.title)
+              )
+            )
+
+            {:noreply, socket}
+        end
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, gettext("Could not check for conflicts. Try again."))
+        {:noreply, socket}
+    end
+  end
+
+  defp close_current_session_edit(socket) do
+    form =
+      case socket.assigns.current_session do
+        nil ->
+          socket.assigns.form
+
+        session ->
+          session
+          |> SessionForm.from_session(socket.assigns.timezone)
+          |> SessionForm.changeset(%{})
+          |> to_form()
+      end
+
+    assign(socket, is_form_extended: false, edit_check: nil, form: form)
+  end
+
+  defp current_session_changeset(params, socket) do
+    socket.assigns.current_session
+    |> SessionForm.from_session(socket.assigns.timezone)
+    |> SessionForm.changeset(params)
+  end
+
+  # Checks the edited times of the running session. Returns `{:ok, times}` with the UTC start
+  # and end (nil keeps it running), or `{:error, field, message}` for the field to mark.
+  defp check_current_session_edit(changeset, socket) do
+    form = Ecto.Changeset.apply_changes(changeset)
+    timezone = socket.assigns.timezone
+    now = DateTime.utc_now()
+    now_label = now |> DateTime.shift_zone!(timezone) |> Calendar.strftime("%H:%M")
+
+    with :ok <- check_edit_presence(form),
+         start = LocalTime.to_utc(form.date, form.start_time, timezone),
+         finish = form.end_time && LocalTime.to_utc(form.date, form.end_time, timezone),
+         :ok <- check_edit_start(start, now, now_label),
+         :ok <- check_edit_end(start, finish, now, now_label) do
+      {:ok, %{start_datetime: start, end_datetime: finish}}
+    end
+  end
+
+  defp check_edit_presence(%{date: nil}), do: {:error, :date, gettext("Enter the date.")}
+
+  defp check_edit_presence(%{start_time: nil}), do: {:error, :start_time, gettext("Enter the start time.")}
+
+  defp check_edit_presence(_form), do: :ok
+
+  defp check_edit_start(start, now, now_label) do
+    if DateTime.after?(start, now),
+      do: {:error, :start_time, gettext("The start cannot be later than now (%{time}).", time: now_label)},
+      else: :ok
+  end
+
+  defp check_edit_end(_start, nil, _now, _now_label), do: :ok
+
+  defp check_edit_end(start, finish, now, now_label) do
+    cond do
+      DateTime.compare(finish, start) == :eq ->
+        {:error, :end_time, gettext("The session must last at least a minute.")}
+
+      DateTime.before?(finish, start) ->
+        {:error, :end_time, gettext("“To” must be later than “From”.")}
+
+      DateTime.after?(finish, now) ->
+        {:error, :end_time,
+         gettext(
+           "The end cannot be later than now (%{time}). Leave “To” empty if the session is still going.",
+           time: now_label
+         )}
+
+      true ->
+        :ok
+    end
+  end
+
   def format_time(time) when is_binary(time), do: time
   def format_time(nil), do: nil
   def format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
