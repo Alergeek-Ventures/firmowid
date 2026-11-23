@@ -136,10 +136,20 @@ jobs:
             test "$(cat _build/gettext-extraction/verified)" = "$SOURCE_TREE"
             echo "Gettext extraction already verified for this exact source tree and toolchain."
           else
+            git ls-files --others --exclude-standard | sort > "$RUNNER_TEMP/gettext-untracked-before.txt"
             mix translations.extract.check
+            git ls-files --others --exclude-standard | sort > "$RUNNER_TEMP/gettext-untracked-after.txt"
+            # The first run is the authoritative check. The second one only confirms that the
+            # local cache recorded it; a miss there must not hide a passed verification, so it
+            # warns and lists what changed in the worktree for diagnosis.
             mix translations.extract.check > "$RUNNER_TEMP/gettext-local-cache-hit.log"
             cat "$RUNNER_TEMP/gettext-local-cache-hit.log"
-            grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            if ! grep -Fxq 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"; then
+              echo "::warning::The local Gettext extraction cache did not record the passed check."
+              echo "Untracked files that appeared during the check:"
+              comm -13 "$RUNNER_TEMP/gettext-untracked-before.txt" "$RUNNER_TEMP/gettext-untracked-after.txt"
+              git status --porcelain
+            fi
             mkdir -p _build/gettext-extraction
             printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
           fi
