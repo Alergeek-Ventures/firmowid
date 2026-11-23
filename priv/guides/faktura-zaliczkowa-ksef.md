@@ -1,8 +1,8 @@
 ---
 title: "Faktura zaliczkowa w KSeF: jak wystawić i rozliczyć zaliczkę"
 description: "Fakturę zaliczkową dla firmy wystawia się w KSeF jako rodzaj ZAL, a końcową jako ROZ z numerami KSeF zaliczek. Przy zaliczce 100% końcowej nie trzeba."
-published: 2026-11-23
-updated: 2026-11-23
+published: 2026-11-24
+updated: 2026-11-24
 category: ksef-w-praktyce
 ---
 
