@@ -92,7 +92,12 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   :if={downloadable_as_pdf?(@invoice)}
                   module={InvoiceDownloadModal}
                   id={"cost-download-#{@invoice.id}"}
-                  download_path={Navigation.cost_invoice_pdf_path(@invoice)}
+                  download_path={
+                    if(@invoice.ksef_number,
+                      do: Navigation.cost_invoice_archive_path(@invoice),
+                      else: Navigation.cost_invoice_pdf_path(@invoice)
+                    )
+                  }
                   trigger_variant="tertiary"
                   trigger_size="small"
                   button_label={gettext("Download PDF for printing")}
@@ -291,7 +296,12 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   defp preview(assigns) do
     invoice = assigns.invoice
     preview_type = preview_type(invoice.blob)
-    assigns = %{preview_url: invoice.blob && invoice.blob.url, id: invoice.id}
+
+    assigns = %{
+      preview_url: invoice.blob && invoice.blob.url,
+      id: invoice.id,
+      pdf_url: Navigation.cost_invoice_pdf_preview_path(invoice)
+    }
 
     case preview_type do
       :pdf ->
@@ -318,19 +328,28 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
       :xml ->
         ~H"""
-        <InvoiceDetails.scalable_invoice_preview id={"invoice-scaler-#{@id}"}>
-          <div
-            id={"invoice-preview-#{@id}"}
-            data-fa3-url={@preview_url}
-            phx-update="ignore"
-            phx-hook=".FA3Viewer"
-            class="size-full"
-          >
-            <div class="flex w-full items-center justify-center p-8 font-bold">
-              {gettext("Loading document...")}
+        <.link
+          kind="unstyled"
+          redirect={@pdf_url}
+          target="_blank"
+          rel="noopener"
+          class="block cursor-pointer"
+          aria-label={gettext("Open invoice preview in a new tab")}
+        >
+          <InvoiceDetails.scalable_invoice_preview id={"invoice-scaler-#{@id}"}>
+            <div
+              id={"invoice-preview-#{@id}"}
+              data-fa3-url={@preview_url}
+              phx-update="ignore"
+              phx-hook=".FA3Viewer"
+              class="pointer-events-none size-full"
+            >
+              <div class="flex w-full items-center justify-center p-8 font-bold">
+                {gettext("Loading document...")}
+              </div>
             </div>
-          </div>
-        </InvoiceDetails.scalable_invoice_preview>
+          </InvoiceDetails.scalable_invoice_preview>
+        </.link>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
           export default {

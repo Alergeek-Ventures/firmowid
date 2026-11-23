@@ -30,7 +30,13 @@ defmodule Firmowid.Invoicing.Services.CostInvoiceBasePdf.Ksef do
       |> Invoicing.hydrate_invoice_with_fa3_blob()
       |> Ash.load!([blob: [:url]], scope: ash_scope)
 
-    case Req.get(invoice.blob.url) do
+    fetch_xml(invoice.blob)
+  end
+
+  defp fetch_xml(nil), do: {:error, :missing_invoice_document}
+
+  defp fetch_xml(blob) do
+    case Req.get(blob.url) do
       {:ok, %{status: 200, body: body}} -> {:ok, body}
       {:ok, %{status: status}} -> {:error, {:xml_fetch_failed, status}}
       {:error, reason} -> {:error, {:xml_fetch_failed, reason}}

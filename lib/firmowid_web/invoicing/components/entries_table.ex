@@ -989,6 +989,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign(:party, invoice.effective_seller_display_name || invoice.seller)
+      |> assign(
+        :pdf_url,
+        if(invoice.ksef_number, do: Navigation.cost_invoice_pdf_preview_path(invoice))
+      )
       |> assign(:bank_badge, nil)
       |> assign(:invoice_source_badge_variant, invoice_source_badge_variant(invoice))
       |> assign(:description, invoice.description)
@@ -997,14 +1001,33 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         Navigation.cost_invoice_show_path(invoice, Map.get(assigns, :return_to))
       )
 
-    ~H"<.render_cell
-  party={@party}
-  navigate={@navigate}
-  description={@description}
-  bank_badge={@bank_badge}
-  invoice_source_badge_variant={@invoice_source_badge_variant}
-  column={@column}
-/>"
+    ~H"""
+    <.link
+      :if={@pdf_url}
+      kind="unstyled"
+      redirect={@pdf_url}
+      target="_blank"
+      rel="noopener"
+      class="block cursor-pointer hover:underline"
+    >
+      <.party_cell_content
+        party={@party}
+        description={@description}
+        bank_badge={@bank_badge}
+        invoice_source_badge_variant={@invoice_source_badge_variant}
+      />
+    </.link>
+    <.link :if={@pdf_url} kind="text" navigate={@navigate} size="small">{gettext("Invoice details")}</.link>
+    <.render_cell
+      :if={!@pdf_url}
+      party={@party}
+      navigate={@navigate}
+      description={@description}
+      bank_badge={@bank_badge}
+      invoice_source_badge_variant={@invoice_source_badge_variant}
+      column={@column}
+    />
+    """
   end
 
   defp render_cell(%{invoicing_entry: %SalesInvoice{} = invoice, column: "party"} = assigns) do

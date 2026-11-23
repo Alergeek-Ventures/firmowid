@@ -154,6 +154,16 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
     ~p"/kosztowe/#{id}/pobierz"
   end
 
+  @doc "Builds the single-document PDF preview path."
+  @spec cost_invoice_pdf_preview_path(CostInvoice.t() | Ash.UUID.t()) :: String.t()
+  def cost_invoice_pdf_preview_path(%CostInvoice{id: id}), do: cost_invoice_pdf_preview_path(id)
+  def cost_invoice_pdf_preview_path(id), do: ~p"/kosztowe/#{id}/pdf"
+
+  @doc "Builds the invoice-family ZIP download path."
+  @spec cost_invoice_archive_path(CostInvoice.t() | Ash.UUID.t()) :: String.t()
+  def cost_invoice_archive_path(%CostInvoice{id: id}), do: cost_invoice_archive_path(id)
+  def cost_invoice_archive_path(id), do: ~p"/kosztowe/#{id}/pobierz-zestaw"
+
   @doc """
   Builds the canonical cost-invoice PDF download path with query params.
   """
