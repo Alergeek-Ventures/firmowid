@@ -22,7 +22,7 @@ concurrency:
 jobs:
   commitlint:
     name: Conventional Commits (Angular)
-    runs-on: ubuntu-latest
+    runs-on: selenge
 
     steps:
       - name: Checkout repository

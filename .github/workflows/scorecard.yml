@@ -12,6 +12,8 @@ permissions: read-all
 jobs:
   analysis:
     name: Scorecard analysis
+    # Scorecard's API accepts published results only from GitHub-hosted Ubuntu runners:
+    # https://github.com/ossf/scorecard-action#workflow-restrictions
     runs-on: ubuntu-latest
     permissions:
       # Upload to code scanning; only people with write access see the alerts.
