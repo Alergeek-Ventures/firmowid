@@ -87,7 +87,7 @@ defmodule Firmowid.Analysis.CategoryReview do
   Lists at most `count` counterparties of the review whose category the owner
   should check first, as `{side, key}`: those the classifier suggested with
   several comparable `options` or without being almost sure, the larger amount
-  first.
+  of such suggestions first.
   """
   @spec to_check(map(), pos_integer()) :: [{IndustryTemplate.side(), String.t()}]
   def to_check(review, count) do
@@ -96,10 +96,13 @@ defmodule Firmowid.Analysis.CategoryReview do
       &(&1.source == :jev and
           (length(&1.options) > 1 or certainty(&1.probability) != :almost_sure))
     )
-    |> Enum.sort_by(& &1.amount, {:desc, Decimal})
-    |> Enum.map(&{&1.side, &1.key})
-    |> Enum.uniq()
+    |> Enum.group_by(&{&1.side, &1.key}, & &1.amount)
+    |> Enum.sort_by(
+      fn {_counterparty, amounts} -> Enum.reduce(amounts, &Decimal.add/2) end,
+      {:desc, Decimal}
+    )
     |> Enum.take(count)
+    |> Enum.map(&elem(&1, 0))
   end
 
   @doc "Reads the classifier's probability of its choice as how sure it is."

@@ -136,24 +136,31 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
     assert [%{count: 1}, %{count: 1}, %{count: 1}] = expense_groups(other_user)
   end
 
+  # A classified entry carries the classifier's probabilities, as stored entries always do.
   defp entry(name, attrs \\ []) do
-    Map.merge(
-      %{
-        side: :expenses,
-        month: ~D[2026-10-01],
-        name: name,
-        amount: Decimal.new("100.00"),
-        lines: [],
-        nip: nil,
-        transfer_names: [],
-        accounts: [],
-        salary_user_id: nil,
-        certain: nil,
-        classified: nil,
-        probability: nil
-      },
-      Map.new(attrs)
-    )
+    entry =
+      Map.merge(
+        %{
+          side: :expenses,
+          month: ~D[2026-10-01],
+          name: name,
+          amount: Decimal.new("100.00"),
+          lines: [],
+          nip: nil,
+          transfer_names: [],
+          accounts: [],
+          salary_user_id: nil,
+          certain: nil,
+          classified: nil,
+          probability: nil,
+          probabilities: nil
+        },
+        Map.new(attrs)
+      )
+
+    if entry.classified,
+      do: %{entry | probability: 0.9, probabilities: %{Atom.to_string(entry.classified) => 0.9}},
+      else: entry
   end
 
   defp expense_groups(user) do
