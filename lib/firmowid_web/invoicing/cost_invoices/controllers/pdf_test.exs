@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
   @moduledoc false
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
@@ -16,7 +16,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
     config = Application.fetch_env!(:firmowid, :gotenberg)
     Application.put_env(:firmowid, :gotenberg, Keyword.put(config, :plug, {Req.Test, :gotenberg}))
     on_exit(fn -> Application.put_env(:firmowid, :gotenberg, config) end)
-    Req.Test.stub(:gotenberg, &Plug.Conn.send_resp(&1, 200, "%PDF-1.4 stub"))
+
+    Req.Test.stub(:gotenberg, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      marker = Enum.join(Regex.run(~r/test-\d+/, body) || [])
+      Plug.Conn.send_resp(conn, 200, "%PDF-1.4 #{marker}")
+    end)
   end
 
   test "opens one KSeF PDF inline and downloads its whole correction tree from any member", %{
@@ -50,7 +55,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
       assert MapSet.new(entries, fn {name, _} -> to_string(name) end) ==
                MapSet.new([original, first, second, sibling], &"#{&1.id}.pdf")
 
-      assert Enum.all?(entries, fn {_, bytes} -> String.starts_with?(bytes, "%PDF-") end)
+      for document <- [original, first, second, sibling] do
+        assert {String.to_charlist("#{document.id}.pdf"), "%PDF-1.4 #{document.invoice_identifier}"} in entries
+      end
     end
 
     {:ok, view, _} = live(conn, ~p"/kosztowe/#{original.id}")
@@ -122,6 +129,30 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
       result = conn |> log_in_user(user) |> get(Navigation.cost_invoice_archive_path(original))
       assert response(result, 500) == "PDF generation failed"
       refute get_resp_header(result, "content-type") == ["application/zip"]
+    end)
+  end
+
+  test "denies an employee access to invoices in their own company", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_fixture(%{role: :employee, organization_id: admin.member.organization_id})
+    document = invoice(admin)
+    conn = log_in_user(conn, employee)
+
+    for path <- [
+          &Navigation.cost_invoice_archive_path/1,
+          &Navigation.cost_invoice_pdf_preview_path/1
+        ] do
+      assert conn |> get(path.(document)) |> response(404)
+    end
+  end
+
+  test "missing source PDF returns an error instead of an empty archive", %{conn: conn} do
+    user = admin_fixture()
+    document = invoice(user, ksef_number: nil, blob_id: nil)
+
+    capture_log(fn ->
+      result = conn |> log_in_user(user) |> get(Navigation.cost_invoice_archive_path(document))
+      assert response(result, 500) == "PDF generation failed"
     end)
   end
 
