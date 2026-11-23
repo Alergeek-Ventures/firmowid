@@ -529,7 +529,9 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     """
   end
 
-  # The whole row opens the categories; the chosen one is confirmed right away.
+  # The whole row opens the categories; the chosen one is confirmed right away. Arrow keys
+  # move between categories and closing the menu returns focus to the row. On touch
+  # screens its rows are full tap targets.
   defp counterparty(assigns) do
     assigns =
       assign(
@@ -544,8 +546,8 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         id={"#{@id}-trigger"}
         type="button"
         variant="unstyled"
-        aria-haspopup="dialog"
-        phx-click={show_popover("#{@id}-menu")}
+        aria-haspopup="menu"
+        phx-click={JS.push_focus(to: "##{@id}-trigger") |> show_popover("#{@id}-menu")}
         class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 text-start text-sm min-block-9 active:bg-grey-200 pointer-fine:hover:bg-white"
       >
         <span class={name_styles(@group.status)}>{@group.name}</span>
@@ -557,32 +559,46 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
       </FirmowidUI.Components.Button.button>
       <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-end">
-        <div class="flex max-h-(--popover-available-height) w-72 flex-col gap-1 overflow-y-auto overscroll-contain rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10">
-          <p class="px-3 pt-2 pb-1 text-xs text-grey-600">{reason(@group)}</p>
-          <FirmowidUI.Components.Button.button
-            :for={category <- category_options(@industry, @group)}
-            type="button"
-            variant="unstyled"
-            phx-click={
-              JS.push("confirm-category",
-                value: %{
-                  side: @group.side,
-                  key: @group.key,
-                  suggestion: to_string(@group.suggestion),
-                  source: to_string(@group.source),
-                  category: category
-                }
-              )
-              |> hide_popover("#{@id}-menu")
-            }
-            class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 text-start text-sm text-grey-900 min-block-9 active:bg-grey-200 pointer-fine:hover:bg-grey-100"
+        <div class="flex max-h-(--popover-available-height) flex-col gap-1 overflow-y-auto overscroll-contain rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10 inline-[min(24rem,calc(100vw-2rem))]">
+          <p id={"#{@id}-reason"} class="px-3 pt-2 pb-1 text-sm text-grey-600 pointer-fine:text-xs">
+            {reason(@group)}
+          </p>
+          <div
+            id={"#{@id}-options"}
+            role="menu"
+            aria-label={@group.name}
+            aria-describedby={"#{@id}-reason"}
+            phx-hook="ListboxKeys"
+            class="flex flex-col gap-1"
           >
-            {category_label(category)}
-            <Lucideicons.check
-              :if={category == (@group.category || @group.suggestion)}
-              class="size-4"
-            />
-          </FirmowidUI.Components.Button.button>
+            <FirmowidUI.Components.Button.button
+              :for={category <- category_options(@industry, @group)}
+              type="button"
+              variant="unstyled"
+              role="menuitemradio"
+              aria-checked={to_string(category == (@group.category || @group.suggestion))}
+              phx-click={
+                JS.push("confirm-category",
+                  value: %{
+                    side: @group.side,
+                    key: @group.key,
+                    suggestion: to_string(@group.suggestion),
+                    source: to_string(@group.source),
+                    category: category
+                  }
+                )
+                |> hide_popover("#{@id}-menu")
+              }
+              class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 text-start text-base text-grey-900 min-block-11 active:bg-grey-200 pointer-fine:text-sm pointer-fine:min-block-9 pointer-fine:hover:bg-grey-100"
+            >
+              {category_label(category)}
+              <Lucideicons.check
+                :if={category == (@group.category || @group.suggestion)}
+                class="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </FirmowidUI.Components.Button.button>
+          </div>
         </div>
       </.popover>
     </li>

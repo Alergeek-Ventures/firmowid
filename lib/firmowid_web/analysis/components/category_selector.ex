@@ -55,9 +55,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           aria-haspopup="listbox"
           aria-controls={"#{@popover_id}-listbox"}
           phx-click={
-            if @lazy and not @opened,
-              do: JS.push("open-categories", target: @target),
-              else: show_popover(@popover_id)
+            # Closing the selector returns focus to this trigger.
+            JS.push_focus(to: "##{@popover_id}-trigger")
+            |> then(fn js ->
+              if @lazy and not @opened,
+                do: JS.push(js, "open-categories", target: @target),
+                else: show_popover(js, @popover_id)
+            end)
           }
           class="group/categories flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
@@ -74,10 +78,15 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           reference_id={"#{@popover_id}-trigger"}
           placement="bottom-end"
           strategy="fixed"
-          class="overflow-hidden rounded-lg border border-grey-200 bg-white"
           phx-mounted={@lazy && show_popover(@popover_id)}
         >
-          <div id={"#{@popover_id}-combobox"} class="w-72" phx-hook=".CategoryCombobox">
+          <%!-- As wide as the screen allows and as tall as the room left around the trigger,
+               borders included; only the list scrolls. On touch screens the list may fill that room. --%>
+          <div
+            id={"#{@popover_id}-combobox"}
+            class="flex max-h-(--popover-available-height) flex-col overflow-hidden rounded-lg border border-grey-200 bg-white inline-[min(24rem,calc(100vw-2rem))]"
+            phx-hook=".CategoryCombobox"
+          >
             <input
               type="text"
               autocomplete="off"
@@ -85,13 +94,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               aria-label={gettext("Search categories")}
               aria-controls={"#{@popover_id}-listbox"}
               data-combobox-input
-              class="w-full border-0 border-b border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-500 focus:ring-0 focus:outline-none"
+              class="w-full shrink-0 border-0 border-b border-grey-200 px-3 py-2 text-base text-grey-700 placeholder:text-grey-500 focus:ring-0 focus:outline-none pointer-fine:text-sm"
             />
             <div
               id={"#{@popover_id}-listbox"}
               role="listbox"
               aria-multiselectable="true"
-              class="flex max-h-72 flex-col overflow-y-auto p-1 transition-opacity phx-click-loading:pointer-events-none phx-click-loading:opacity-50"
+              class="flex min-h-0 flex-col overflow-y-auto overscroll-contain p-1 transition-opacity pointer-fine:max-h-72 phx-click-loading:pointer-events-none phx-click-loading:opacity-50"
             >
               <FirmowidUI.Components.Button.button
                 :for={category <- @categories}
@@ -198,7 +207,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 <span class="min-w-0 truncate font-medium" data-combobox-create-name />
               </FirmowidUI.Components.Button.button>
             </div>
-            <div class="flex items-center justify-between gap-2 border-t border-grey-200 px-3 py-2 text-xs text-grey-700">
+            <div class="flex shrink-0 items-center justify-between gap-2 border-t border-grey-200 px-3 py-2 text-sm text-grey-700 pointer-fine:text-xs">
               <.icon
                 name="hero-arrow-path-mini"
                 class="invisible size-4 shrink-0 animate-spin phx-click-loading:visible"
@@ -337,7 +346,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   end
 
   defp option_styles do
-    "group flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-grey-700 transition hover:bg-grey-100 focus-visible:bg-grey-100 focus-visible:outline-none"
+    "group flex min-h-11 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-base text-grey-700 transition hover:bg-grey-100 focus-visible:bg-grey-100 focus-visible:outline-none pointer-fine:min-h-9 pointer-fine:text-sm"
   end
 
   defp tag_color(%{kind: :company}, colors), do: Map.fetch!(colors, :company)
