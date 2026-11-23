@@ -18,6 +18,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
 
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
+  alias FirmowidWeb.Inbox.Utilities.Shortcuts
   alias FirmowidWeb.Inbox.Views.Index
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
@@ -27,6 +28,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   @scenarios [
     {"zwykly-dzien", "Zwykły dzień"},
     {"wszystko-zrobione", "Wszystko zrobione"},
+    {"wszystko-zrobione-duzy-zespol", "Wszystko zrobione, duży zespół"},
     {"pilne", "Pilne: KSeF i bank"},
     {"ksef-niepodlaczony", "KSeF niepodłączony"},
     {"duzo-wnioskow", "Dużo wniosków"},
@@ -57,13 +59,24 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        page_title: "Skrzynka: scenariusze",
        scenarios: @scenarios,
        path: @path,
        no_padding: true,
-       hide_floating_assistant: true
-     )}
+       hide_floating_assistant: true,
+       # The organization's real shortcuts; the upload one only shows its button.
+       company_shortcuts:
+         Shortcuts.for_company(
+           socket.assigns.ash_scope,
+           socket.assigns.current_org,
+           DateTime.utc_now()
+         ),
+       currently_uploading_count: 0,
+       processing_blobs_count: 0
+     )
+     |> allow_upload(:file, accept: :any)}
   end
 
   @impl true
@@ -90,7 +103,11 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        fresh: MapSet.new(),
        query: "",
        expanded: MapSet.new(),
-       shortcuts: [],
+       shortcuts:
+         if(Map.get(scenario, :layer, :company) == :company,
+           do: socket.assigns.company_shortcuts,
+           else: []
+         ),
        session: Map.get(scenario, :session),
        last_session: Map.get(scenario, :last_session)
      )}
@@ -132,6 +149,9 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
 
     {:noreply, assign(socket, items: [item | socket.assigns.items], fresh: MapSet.new([item.id]))}
   end
+
+  # Files chosen on the upload shortcut go nowhere in the preview.
+  def handle_event("upload", _params, socket), do: {:noreply, socket}
 
   def handle_event(event, params, socket) when event in ["toggle_group", "search"],
     do: Index.handle_event(event, params, socket)
@@ -412,6 +432,11 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
 
   defp scenario("wszystko-zrobione", _today) do
     %{items: [], presence: presence(4, 2, 0), month: month("62 900 zł", "18 300 zł")}
+  end
+
+  # The empty state stretches along an office panel that folds its people.
+  defp scenario("wszystko-zrobione-duzy-zespol", _today) do
+    %{items: [], presence: presence(14, 6, 5), month: month("312 800 zł", "198 450 zł")}
   end
 
   defp scenario("pilne", today) do
