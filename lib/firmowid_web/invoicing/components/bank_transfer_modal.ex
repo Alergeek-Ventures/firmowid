@@ -39,15 +39,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         </:header>
         <div class="flex flex-col gap-12">
           <div class="grid grid-cols-[min-content_1fr_min-content] items-center gap-4">
-            <%= for {label, value} <- [
-            {gettext("Recipient"), @invoice.seller},
-            {gettext("Address"), @invoice.effective_seller_address},
-            {gettext("Account number"), @invoice.effective_account_number},
-            {gettext("Transfer title"),
-             gettext("Payment for invoice %{number}", number: @invoice.invoice_identifier)},
-            {gettext("Amount"), @invoice.effective_amount |> Money.abs() |> Money.to_decimal()},
-            {gettext("Currency"), @invoice.effective_amount.currency}
-          ] do %>
+            <%= for {label, value} <- transfer_fields(@invoice) do %>
               <label for={"transfer-#{label}"} class="self-start text-sm text-nowrap">
                 {label}
               </label>
@@ -85,4 +77,20 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
     </span>
     """
   end
+
+  defp transfer_fields(invoice) do
+    [{gettext("Recipient"), invoice.seller}] ++
+      seller_nip_field(invoice.effective_seller_nip) ++
+      [
+        {gettext("Address"), invoice.effective_seller_address},
+        {gettext("Account number"), invoice.effective_account_number},
+        {gettext("Transfer title"), gettext("Payment for invoice %{number}", number: invoice.invoice_identifier)},
+        {gettext("Amount"), invoice.effective_amount |> Money.abs() |> Money.to_decimal()},
+        {gettext("Currency"), invoice.effective_amount.currency}
+      ]
+  end
+
+  # Not every seller has a NIP (foreign sellers, scans without one); skip the row then.
+  defp seller_nip_field(nil), do: []
+  defp seller_nip_field(nip), do: [{"NIP", nip}]
 end

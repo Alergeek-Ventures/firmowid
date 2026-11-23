@@ -22,6 +22,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     :effective_due_date,
     :effective_seller_display_name,
     :effective_seller_address,
+    :effective_seller_nip,
     :effective_account_number,
     transactions: [:amount],
     blob: [:url],
