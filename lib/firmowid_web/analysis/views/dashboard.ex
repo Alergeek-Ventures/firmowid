@@ -8,7 +8,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   year summaries; a trends month opens the summary narrowed to it. Entries are
   assigned to projects in invoicing; tax estimates stay separate from realized
   totals. Each view can start an assistant conversation about what it shows, and
-  suggests questions about its figures.
+  suggests questions about its figures. A counterparty's confirmed category can be
+  undone from the toast that follows it, so a mistaken click is not final.
   """
   use FirmowidWeb, :live_view
 
@@ -28,6 +29,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias FirmowidWeb.Analysis.Components.ProjectSwitcher
   alias FirmowidWeb.Analysis.Utilities.Navigation
   alias FirmowidWeb.Analysis.Utilities.Periods
+  alias FirmowidWeb.Core.Toast
 
   @impl true
   def mount(_params, _session, socket) do
@@ -42,7 +44,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       {:ok,
        assign(socket,
          tag_definitions: TagDefinition.list_tag_definitions!(scope: scope),
-         page_title: pgettext("main navigation", "Analysis")
+         page_title: pgettext("main navigation", "Analysis"),
+         # What each category confirmation replaced, by the token its toast's undo sends back.
+         category_undos: %{}
        )}
     else
       {:ok, redirect(socket, to: ~p"/")}
@@ -88,6 +92,15 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       confirm_category(socket, group, category)
     else
       nil -> {:noreply, socket}
+    end
+  end
+
+  # From a confirmation's toast. The token only names what this page remembered, so a
+  # forged one changes nothing.
+  def handle_event("undo-category", %{"token" => token}, socket) do
+    case Map.pop(socket.assigns.category_undos, token) do
+      {nil, _undos} -> {:noreply, socket}
+      {undo, undos} -> undo_category(assign(socket, :category_undos, undos), undo)
     end
   end
 
@@ -145,6 +158,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp review_groups(_assigns), do: []
 
   defp confirm_category(socket, group, category) do
+    previous = counterparty_rules(group, socket.assigns.ash_scope)
+
     # Each of the counterparty's names gets the rule, so a period showing only one applies it too.
     result =
       Enum.reduce_while(group.names, nil, fn name, _result ->
@@ -164,22 +179,92 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       end)
 
     # A corrected suggestion teaches the classifier, so its other suggestions are refreshed.
-    if category != group.suggestion,
-      do:
-        for(
-          year <- years(socket.assigns.params.period),
-          do: Analysis.classify_categories_later(year, true, socket.assigns.ash_scope)
-        )
+    if category != group.suggestion, do: refresh_suggestions(socket)
 
     socket = load_review(socket)
 
     case result do
       {:ok, _rule} ->
+        token = Ecto.UUID.generate()
+        undo = %{group: group, category: category, previous: previous}
+        undo_toast(token, "#{group.name}: #{PeriodDetails.category_label(category)}")
+
+        {:noreply, update(socket, :category_undos, &Map.put(&1, token, undo))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
+    end
+  end
+
+  # Puts back the rules the confirmation replaced and forgets the ones it added, so the
+  # counterparty's earlier category, or its suggestion, applies again.
+  defp undo_category(socket, %{group: group, category: category, previous: previous}) do
+    scope = socket.assigns.ash_scope
+    previous = Map.new(previous, &{&1.counterparty_key, &1})
+
+    result =
+      group
+      |> counterparty_rules(scope)
+      |> Enum.reduce_while(:ok, fn rule, :ok ->
+        case restore_rule(rule, Map.get(previous, rule.counterparty_key), scope) do
+          {:error, _} = error -> {:halt, error}
+          _restored -> {:cont, :ok}
+        end
+      end)
+
+    # The classifier learned from the undone correction, so it relearns without it.
+    if category != group.suggestion, do: refresh_suggestions(socket)
+
+    socket = load_review(socket)
+
+    case result do
+      :ok ->
         {:noreply, socket}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
     end
+  end
+
+  # A name without a rule before the confirmation loses the one it got.
+  defp restore_rule(rule, nil, scope), do: CounterpartyCategory.forget(rule, scope: scope)
+
+  defp restore_rule(_rule, before, scope) do
+    before
+    |> Map.take([
+      :side,
+      :counterparty_key,
+      :counterparty_name,
+      :category,
+      :suggested_category,
+      :suggestion_source
+    ])
+    |> CounterpartyCategory.confirm(scope: scope)
+  end
+
+  # The owner's rules for the group's names, as one confirmation writes them.
+  defp counterparty_rules(group, scope) do
+    keys = MapSet.new(group.names, &CategoryReview.key/1)
+    rules = CounterpartyCategory.list!(scope: scope)
+    Enum.filter(rules, &(&1.side == group.side and &1.counterparty_key in keys))
+  end
+
+  defp refresh_suggestions(socket) do
+    for year <- years(socket.assigns.params.period),
+        do: Analysis.classify_categories_later(year, true, socket.assigns.ash_scope)
+  end
+
+  # LiveToast shows it for 6 seconds; its undo comes back through `undo-category`.
+  defp undo_toast(token, message) do
+    LiveToast.send_toast(:info, message,
+      action: fn assigns ->
+        assigns = assign(assigns, :token, token)
+
+        ~H"""
+        <Toast.undo_action on_click={JS.push("undo-category", value: %{token: @token})} />
+        """
+      end
+    )
   end
 
   defp load_view(%{assigns: %{params: %{view: :trends} = params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
