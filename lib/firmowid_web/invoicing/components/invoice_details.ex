@@ -130,7 +130,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   attr :is_cost_invoice, :boolean
   attr :amount, :any, required: true
-  attr :lang, :atom, default: :pl
+
+  attr :lang, :atom,
+    default: nil,
+    doc: "document language of the public share page; nil follows the interface locale"
+
   attr :paid, :boolean, default: false, doc: "paid when issued, so nothing is due"
 
   def invoice_amount(assigns) do
@@ -158,12 +162,16 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   defp invoice_amount_label(:en, _is_refund, true), do: "Paid"
   defp invoice_amount_label(:pl, _is_refund, true), do: "Zapłacono"
 
+  defp invoice_amount_label(nil, _is_refund, true), do: pgettext("invoice amount", "Paid")
+
   defp invoice_amount_label(lang, is_refund, false) do
     case {lang, is_refund} do
       {:en, true} -> "Total to refund"
       {:en, false} -> "Total to pay"
       {:pl, true} -> "Razem do zwrotu"
       {:pl, false} -> "Razem do zapłaty"
+      {nil, true} -> gettext("Total to refund")
+      {nil, false} -> gettext("Total to pay")
     end
   end
 
