@@ -2,7 +2,7 @@
 title: "Kontrahent nie widzi faktury w KSeF? 6 przyczyn i co zrobić"
 description: "Najczęściej to błędny NIP nabywcy: KSeF go nie sprawdza i faktura trafia do innej firmy. Inne przyczyny: plik odrzucony, offline24, brak uprawnień biura."
 published: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-23
 category: ksef-w-praktyce
 ---
 
@@ -16,6 +16,26 @@ Ministerstwo Finansów podaje w odpowiedziach na pytania podatników, że KSeF n
 | Nabywca to osoba prywatna albo firma z zagranicy | faktura w KSeF, nabywca bez dostępu | przekazać PDF z kodem QR |
 | Biuro rachunkowe nabywcy | faktura w systemie | nabywca nadaje biuru uprawnienie do przeglądania faktur |
 | Brak powiadomień z KSeF | faktura w systemie | wysłać klientowi PDF albo link |
+
+## Co sprawdzić po stronie klienta
+
+Zanim wystawca zacznie cokolwiek korygować, warto poprosić klienta o trzy sprawdzenia, bo często faktura jest w systemie, tylko nie tam, gdzie on patrzy.
+
+Pierwsze to kontekst logowania. Wspólnik spółki cywilnej zalogowany do Aplikacji Podatnika KSeF swoim NIP widzi faktury własnej działalności. Faktura wystawiona na NIP spółki leży w kontekście spółki, na który trzeba się przełączyć albo do którego trzeba mieć uprawnienie.
+
+Drugie to uprawnienia. Pracownik działu zakupów albo biuro księgowe zobaczą faktury kosztowe firmy dopiero po tym, jak właściciel nada im w KSeF uprawnienie do przeglądania faktur. Samo zalogowanie się podpisem czy profilem zaufanym takiego dostępu nie daje.
+
+Trzecie to wyszukiwarka. Faktury zakupowe i sprzedażowe są w aplikacji MF osobnymi listami, a zakres dat można liczyć od dnia wystawienia albo od dnia przyjęcia faktury przez KSeF. Dokument wystawiony ostatniego dnia miesiąca i wysłany dzień później w trybie offline wypada poza zakres ustawiony na poprzedni miesiąc według daty przyjęcia.
+
+Gdy klient nadal nic nie widzi, najszybszym dowodem jest kod QR z wizualizacji faktury. Po zeskanowaniu telefonem otwiera stronę Ministerstwa Finansów, która pokazuje, że dokument jest w KSeF, razem z jego danymi, więc rozmowa o tym, czy faktura w ogóle wyszła, kończy się po minucie, a zostaje tylko pytanie, na jaki NIP trafiła.
+
+## Faktura dla gminy i jej jednostek
+
+Szkoła, przedszkole czy ośrodek pomocy społecznej nie są nabywcą na fakturze. Nabywcą jest gmina ze swoim NIP, a jednostkę wpisuje się w strukturze FA(3) jako podmiot trzeci w roli odbiorcy. Gdy sprzedawca pominie to pole, faktura trafia do gminy, a księgowość jednostki jej nie znajdzie, dopóki gmina jej nie przekaże.
+
+## Kiedy faktury w KSeF nie ma i nie musi być
+
+Do 31 grudnia 2026 r. firma, której sprzedaż na fakturach nie przekracza 10 000 zł brutto w miesiącu, może je wystawiać poza KSeF ([jak liczyć ten limit](/poradnik/limit-10000-ksef)). Poza systemem mogą też powstawać faktury drukowane z kasy fiskalnej ([paragon z NIP i faktura z kasy](/poradnik/kasa-fiskalna-paragon-z-nip-po-2026)). Klient dostaje wtedy PDF albo wydruk, w KSeF nic nie znajdzie, a dokument i tak jest ważną fakturą. Oba wyjątki kończą się 1 stycznia 2027 r.
 
 ## Numer KSeF
 
