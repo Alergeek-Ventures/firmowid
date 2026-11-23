@@ -1,5 +1,8 @@
 defmodule Firmowid.Timetracker.SessionTest do
-  use Firmowid.DataCase, async: true
+  # "overlap prevention" commits an organization and users outside the sandbox
+  # (`Sandbox.unboxed_run`) until its `on_exit`. Concurrent tests that list
+  # organizations or users would see them, so the module runs after all async ones.
+  use Firmowid.DataCase, async: false
 
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
