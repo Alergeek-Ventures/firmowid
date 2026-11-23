@@ -11,21 +11,28 @@ defmodule Firmowid.Ksef.Actions.ConnectionStatus do
   @impl true
   def run(_input, _opts, %{actor: %User{member: %{organization_id: tenant, role: role}}, tenant: tenant})
       when is_binary(tenant) do
-    scope = %Scope{actor: %SystemActor{org_id: tenant, role: :ksef_session}, tenant: tenant}
-
-    # Authorization precedes this tenant-bound privileged projection; selecting metadata
-    # keeps encrypted credentials out of the read and never grants readers credential access.
-    with {:ok, credential} <-
-           Credential.get_internal(
-             scope: scope,
-             query: [select: [:status, :auth_type, :expires_on]]
-           ) do
+    with {:ok, credential} <- credential_metadata(tenant) do
       {:ok, project(credential, role == :admin)}
+    end
+  end
+
+  # The invoice issuing of a system actor bound to the organization, which never connects it.
+  def run(_input, _opts, %{actor: %SystemActor{org_id: tenant, role: :sales_invoice_processor}, tenant: tenant})
+      when is_binary(tenant) do
+    with {:ok, credential} <- credential_metadata(tenant) do
+      {:ok, project(credential, false)}
     end
   end
 
   # This must also reject mismatched tenants for admins, whose policy bypass is global.
   def run(_input, _opts, _context), do: {:error, Ash.Error.Forbidden.exception([])}
+
+  # Authorization precedes this tenant-bound privileged projection; selecting metadata
+  # keeps encrypted credentials out of the read and never grants readers credential access.
+  defp credential_metadata(tenant) do
+    scope = %Scope{actor: %SystemActor{org_id: tenant, role: :ksef_session}, tenant: tenant}
+    Credential.get_internal(scope: scope, query: [select: [:status, :auth_type, :expires_on]])
+  end
 
   defp project(nil, can_connect) do
     %{status: :disconnected, can_connect: can_connect, data_freshness: :unknown}

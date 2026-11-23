@@ -131,6 +131,7 @@ defmodule Firmowid.MixProject do
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
       {:sentry, "~> 14.0"},
+      {:stripity_stripe, "~> 3.3.3"},
       {:recase, "~> 0.9.0"},
       {:oban, "~> 2.21"},
       {:ecto_psql_extras, "~> 0.6"},

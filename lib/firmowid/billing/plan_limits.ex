@@ -126,7 +126,9 @@ defmodule Firmowid.Billing.PlanLimits do
   Usage within the plan ends a pending decision. Usage above it starts one,
   emailing the admins first, so a failed update sends again rather than never.
   From `decision_days/0` after the decision day, the newest excess is switched off.
-  Organizations without a plan are blocked and skipped.
+  Organizations without a plan are blocked and skipped. So are organizations on a
+  granted plan, a paid plan nobody pays for (`plan_granted?`): its limits are not
+  enforced and a pending decision ends.
   """
   @spec check(Organization.t(), Date.t()) :: {:ok, Organization.t()} | {:error, term()}
   def check(organization, today \\ LocalDate.today())
@@ -135,15 +137,22 @@ defmodule Firmowid.Billing.PlanLimits do
 
   def check(%Organization{} = organization, today) do
     scope = scope(organization.id)
+    organization = Ash.load!(organization, :plan_granted?, scope: scope)
+
+    if organization.plan_granted? do
+      end_decision(organization, scope)
+    else
+      check_usage(organization, today, scope)
+    end
+  end
+
+  defp check_usage(organization, today, scope) do
     usage = usage(organization)
     exceeded = PlanCatalog.exceeded(usage, organization.billing_plan)
 
     cond do
-      exceeded == [] and is_nil(organization.plan_limit_decision_on) ->
-        {:ok, organization}
-
       exceeded == [] ->
-        Core.update_organization_plan_limit_decision(organization, %{plan_limit_decision_on: nil}, scope: scope)
+        end_decision(organization, scope)
 
       is_nil(organization.plan_limit_decision_on) ->
         start_decision(organization, usage, exceeded, today, scope)
@@ -178,6 +187,12 @@ defmodule Firmowid.Billing.PlanLimits do
     with :ok <- maybe_restore(organization, previous_plan) do
       if organization.plan_limit_decision_on, do: check(organization), else: {:ok, organization}
     end
+  end
+
+  defp end_decision(%Organization{plan_limit_decision_on: nil} = organization, _scope), do: {:ok, organization}
+
+  defp end_decision(organization, scope) do
+    Core.update_organization_plan_limit_decision(organization, %{plan_limit_decision_on: nil}, scope: scope)
   end
 
   defp start_decision(organization, usage, exceeded, today, scope) do

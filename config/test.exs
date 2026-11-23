@@ -58,6 +58,9 @@ config :firmowid, :bank_data_api_client,
     retry_delay: 0
   ]
 
+# The seller id of the dev seeds (priv/repo/seeds/bytecraft.exs); a test issuing an advance
+# invoice creates its seller organization with it. BILLING_SELLER_ORGANIZATION_ID overrides it.
+config :firmowid, :billing, seller_organization_id: "00000000-0000-0000-0000-000000000001"
 config :firmowid, :ceidg_api_request_options, plug: Firmowid.Test.Support.CeidgApiStub
 config :firmowid, :ceidg_api_token, "test-ceidg-api-token"
 
@@ -90,6 +93,10 @@ config :firmowid, :s3,
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "test")
 
 config :firmowid, :start_gocardless_token_manager, false
+
+# The webhook tests sign their events with this secret. The billing tests that reach Stripe are
+# tagged `:external` and use the sandbox key (STRIPE_SECRET_KEY, see config/runtime.exs).
+config :firmowid, :stripe, webhook_secret: "test-webhook-secret"
 config :firmowid, :vat_status_api_request_options, plug: Firmowid.Test.Support.VatStatusApiStub
 config :firmowid, :vies_api_request_options, plug: Firmowid.Test.Support.ViesApiStub
 
