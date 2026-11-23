@@ -21,6 +21,7 @@ defmodule Firmowid.Analysis.CategoryReview do
           amount: Decimal.t(),
           lines: [String.t()],
           nip: String.t() | nil,
+          transfer_names: [String.t()],
           salary_user_id: Ash.UUID.t() | nil,
           certain: IndustryTemplate.category() | nil,
           classified: IndustryTemplate.category() | nil,
@@ -83,7 +84,9 @@ defmodule Firmowid.Analysis.CategoryReview do
   comes from: `:confirmed` by the owner in `rules`, else a `:certain` signal,
   else the classifier (`:jev`), else `{nil, nil}`. Names on invoices with the
   same NIP are one counterparty: they share the first of their keys, and a
-  rule confirmed for any of them.
+  rule confirmed for any of them. So do the names the bank gives it on
+  transfers paired with those invoices, which its other transfers carry
+  without a NIP.
   """
   @spec resolve([entry()], [map()]) :: [{entry(), String.t(), resolution()}]
   def resolve(entries, rules) do
@@ -110,14 +113,30 @@ defmodule Firmowid.Analysis.CategoryReview do
   end
 
   # Joins the keys of names written on invoices with the same NIP, transitively, under the
-  # alphabetically first of them. Transfers carry no NIP and join by their name's key.
+  # alphabetically first of them. Transfers carry no NIP and join by their name's key, which
+  # also joins the NIP when a transfer paired with one of its invoices has that name. A paired
+  # name claimed by another NIP, such as a payment operator's, joins none of them.
   defp shared_keys(entries) do
-    entries
-    |> Enum.flat_map(fn entry ->
-      case nip(entry.nip) do
-        nil -> []
-        nip -> [{{entry.side, nip}, key(entry.name)}]
-      end
+    names =
+      Enum.flat_map(entries, fn entry ->
+        case nip(entry.nip) do
+          nil ->
+            []
+
+          nip ->
+            [{{entry.side, nip}, key(entry.name), :written}] ++
+              for(name <- entry.transfer_names, do: {{entry.side, nip}, key(name), :paired})
+        end
+      end)
+
+    nips =
+      Enum.reduce(names, %{}, fn {{side, nip}, key, _origin}, nips ->
+        Map.update(nips, {side, key}, MapSet.new([nip]), &MapSet.put(&1, nip))
+      end)
+
+    names
+    |> Enum.filter(fn {{side, _nip}, key, origin} ->
+      origin == :written or MapSet.size(Map.fetch!(nips, {side, key})) == 1
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> Enum.reduce(%{}, fn {{side, _nip}, keys}, shared ->
