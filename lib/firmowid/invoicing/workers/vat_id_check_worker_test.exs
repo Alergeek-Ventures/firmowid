@@ -84,12 +84,11 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
       })
     end)
 
+    # 0000000002 is struck off both registers; 0000000003 is a foundation struck off the
+    # register of entrepreneurs (P) that stays in that of associations and foundations (S).
     Req.Test.stub(:krs_api, fn conn ->
-      case List.last(conn.path_info) do
-        "0000000002" ->
-          Plug.Conn.send_resp(conn, 204, "")
-
-        "0000000003" ->
+      case {List.last(conn.path_info), conn.query_string =~ "rejestr=S"} do
+        {"0000000003", true} ->
           Req.Test.json(conn, %{
             "odpis" => %{
               "dane" => %{
@@ -97,6 +96,9 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
               }
             }
           })
+
+        _struck_off ->
+          Plug.Conn.send_resp(conn, 204, "")
       end
     end)
 
