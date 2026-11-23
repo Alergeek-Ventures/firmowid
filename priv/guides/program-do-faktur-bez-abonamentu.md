@@ -6,7 +6,7 @@ updated: 2026-11-06
 category: wybor-programu
 ---
 
-O tym, czy do KSeF trzeba kupować program, pisaliśmy już w osobnym poradniku. Bez miesięcznego abonamentu możesz korzystać z Aplikacji Podatnika KSeF 2.0, bezpłatnego planu programu albo własnego serwera. W naszym Firmowidzie [plan Darmowy](/ksef) kosztuje 0 zł na zawsze, nie wymaga karty i obejmuje faktury sprzedaży oraz wysyłanie i pobieranie z KSeF bez limitu.
+O tym, czy do KSeF trzeba kupować program, pisaliśmy już w osobnym poradniku. Bez miesięcznego abonamentu możesz korzystać z Aplikacji Podatnika KSeF 2.0, bezpłatnego planu programu albo własnego serwera. W naszym Firmowidzie, [darmowym programie do faktur KSeF](/ksef), plan Darmowy kosztuje 0 zł na zawsze, nie wymaga karty i obejmuje faktury sprzedaży oraz wysyłanie i pobieranie z KSeF bez limitu.
 
 ## Trzy możliwości bez abonamentu
 
