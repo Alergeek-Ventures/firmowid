@@ -1016,6 +1016,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         bank_badge={@bank_badge}
         invoice_source_badge_variant={@invoice_source_badge_variant}
       />
+      <span class="sr-only">{gettext("Open invoice preview in a new tab")}</span>
     </.link>
     <.link :if={@pdf_url} kind="text" navigate={@navigate} size="small">{gettext("Invoice details")}</.link>
     <.render_cell

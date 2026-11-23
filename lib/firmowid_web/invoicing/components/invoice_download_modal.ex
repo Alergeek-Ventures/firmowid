@@ -6,12 +6,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
 
   attr :download_path, :string, required: true
   attr :button_label, :string, required: true
+  attr :archive?, :boolean, default: false
   attr :trigger_variant, :string, default: "tertiary"
   attr :trigger_size, :string, default: "small"
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, include_internal_note: true)}
+    {:ok, assign(socket, include_internal_note: true, archive?: false)}
   end
 
   @impl true
@@ -32,12 +33,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
         phx-click={show_modal(@modal_id)}
       >
         <Lucideicons.download />
-        <span class="max-xl:sr-only">{@button_label}</span>
+        <span class="max-xl:sr-only">{@button_label}{if @archive?, do: " (ZIP)"}</span>
       </FirmowidUI.Components.Button.button>
 
       <.modal id={@modal_id} on_cancel={hide_modal(@modal_id)}>
         <:header>
-          <h3 class="text-lg font-semibold">{gettext("Download PDF")}</h3>
+          <h3 class="text-lg font-semibold">
+            {if @archive?, do: gettext("Download invoices"), else: gettext("Download PDF")}{if @archive?,
+              do: " (ZIP)"}
+          </h3>
           <p class="mt-2 text-sm text-grey-700">
             {gettext("Choose whether to include the page with the internal comment.")}
           </p>
