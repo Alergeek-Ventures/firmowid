@@ -22,20 +22,28 @@ defmodule Firmowid.Translations.ExtractionCache do
   compiler/toolchain inputs. `:force` bypasses reuse. The check must return `:ok`
   or `{:error, reason}`; its errors and exceptions are preserved, never cached.
   Cache filesystem failures do not affect authoritative verification.
+
+  An optional one-arity `:report` callback receives a diagnostic line whenever
+  verification is not reused or the marker is not saved. Lines carry short
+  digests of each fingerprint component, never their values, so two runs can be
+  compared to see which input differs.
   """
   @spec run(keyword(), (-> :ok | {:error, term()})) :: :cached | :checked | {:error, term()}
   def run(options, check) do
     marker = Path.join(Keyword.fetch!(options, :build_path), ".gettext-extraction-check")
-    before = fingerprint(options)
+    report = Keyword.get(options, :report, fn _line -> :ok end)
+    force? = Keyword.get(options, :force, false)
+    before = measure(options)
 
-    if not Keyword.get(options, :force, false) and reusable?(marker, before, options) do
+    if not force? and reusable?(marker, before, options) do
       :cached
     else
+      report.("gettext extraction cache miss: #{miss_reason(force?, marker, before)}")
       discard_marker(marker)
 
       case check.() do
         :ok ->
-          save_success(marker, before, options)
+          report.(save_success(marker, before, options))
           :checked
 
         {:error, _reason} = error ->
@@ -47,16 +55,57 @@ defmodule Firmowid.Translations.ExtractionCache do
   @doc "Computes a content fingerprint, or returns an error when inventory or reads are unavailable."
   @spec fingerprint(keyword()) :: {:ok, String.t()} | {:error, term()}
   def fingerprint(options) do
+    with {:ok, components} <- measure(options), do: {:ok, hash(components)}
+  end
+
+  # Digests of each input, so that a differing fingerprint can be traced to its source.
+  defp measure(options) do
     root = Keyword.fetch!(options, :root)
     context = Keyword.fetch!(options, :context)
 
     with {:ok, paths} <- inventory(root),
          :ok <- check_directories(root, paths),
          {:ok, files} <- file_hashes(root, paths) do
-      {:ok, digest({@marker_version, Path.expand(root), context.(), files})}
+      {:ok,
+       %{
+         root: digest(Path.expand(root)),
+         context: digest(context.()),
+         files: digest(files),
+         count: length(files)
+       }}
     end
   rescue
-    _error in [ArgumentError, ErlangError, File.Error] -> {:error, :fingerprint_unavailable}
+    error in [ArgumentError, ErlangError, File.Error] ->
+      {:error, {:fingerprint_unavailable, Exception.message(error)}}
+  end
+
+  defp hash(components), do: digest({@marker_version, components})
+
+  defp describe({:ok, components}) do
+    "root=#{short(components.root)} context=#{short(components.context)} " <>
+      "files=#{short(components.files)} (#{components.count} files)"
+  end
+
+  defp describe({:error, reason}), do: "fingerprint unavailable: #{inspect(reason)}"
+
+  defp short(digest), do: binary_part(digest, 0, 8)
+
+  defp miss_reason(true, _marker, before), do: "forced; #{describe(before)}"
+
+  # sobelow_skip ["Traversal.FileModule"]
+  # Marker paths are local CLI build paths, never web-controlled input.
+  defp miss_reason(false, marker, before) do
+    case {File.read(marker), before} do
+      {{:error, reason}, _before} -> "marker unreadable (#{inspect(reason)}); #{describe(before)}"
+      {{:ok, _contents}, {:error, _reason}} -> describe(before)
+      {{:ok, contents}, {:ok, components}} -> marker_reason(contents, components, before)
+    end
+  end
+
+  defp marker_reason(contents, components, before) do
+    if contents == @marker_version <> hash(components),
+      do: "inputs changed while the marker was checked; #{describe(before)}",
+      else: "marker differs from current inputs; #{describe(before)}"
   end
 
   defp inventory(root) do
@@ -147,8 +196,8 @@ defmodule Firmowid.Translations.ExtractionCache do
 
   # sobelow_skip ["Traversal.FileModule"]
   # Marker paths are local CLI build paths, never web-controlled input.
-  defp reusable?(marker, {:ok, hash} = before, options) do
-    File.read(marker) == {:ok, @marker_version <> hash} and fingerprint(options) == before
+  defp reusable?(marker, {:ok, components} = before, options) do
+    File.read(marker) == {:ok, @marker_version <> hash(components)} and measure(options) == before
   end
 
   defp reusable?(_marker, {:error, _reason}, _options), do: false
@@ -160,27 +209,41 @@ defmodule Firmowid.Translations.ExtractionCache do
     :ok
   end
 
-  defp save_success(marker, {:ok, hash} = before, options) do
-    if fingerprint(options) == before, do: publish_marker(marker, hash, before, options)
-    :ok
+  # Returns the diagnostic line describing whether the marker was saved.
+  defp save_success(marker, {:ok, components} = before, options) do
+    case measure(options) do
+      ^before ->
+        case publish_marker(marker, components, before, options) do
+          :ok -> "gettext extraction cache marker saved: #{describe(before)}"
+          {:error, reason} -> "gettext extraction cache marker not saved: #{reason}"
+        end
+
+      changed ->
+        "gettext extraction cache marker not saved: inputs changed during verification; " <>
+          "before #{describe(before)}; after #{describe(changed)}"
+    end
   end
 
-  defp save_success(_marker, {:error, _reason}, _options), do: :ok
+  defp save_success(_marker, {:error, _reason} = before, _options) do
+    "gettext extraction cache marker not saved: #{describe(before)}"
+  end
 
   # sobelow_skip ["Traversal.FileModule"]
   # Writes only a digest to a uniquely named sibling in the CLI build directory.
   # The source and translation catalogs are never modified by this cache.
-  defp publish_marker(marker, hash, before, options) do
+  defp publish_marker(marker, components, before, options) do
     temporary = marker <> ".#{System.pid()}.#{System.unique_integer([:positive])}"
 
     try do
       with :ok <- File.mkdir_p(Path.dirname(marker)),
-           :ok <- File.write(temporary, @marker_version <> hash, [:exclusive]),
-           ^before <- fingerprint(options) do
-        _ = File.rename(temporary, marker)
+           :ok <- File.write(temporary, @marker_version <> hash(components), [:exclusive]),
+           ^before <- measure(options),
+           :ok <- File.rename(temporary, marker) do
+        :ok
+      else
+        {:error, reason} -> {:error, "cannot publish marker (#{inspect(reason)})"}
+        changed -> {:error, "inputs changed before publishing; #{describe(changed)}"}
       end
-
-      :ok
     after
       _ = File.rm(temporary)
     end

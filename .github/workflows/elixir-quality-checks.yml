@@ -139,7 +139,10 @@ jobs:
             mix translations.extract.check
             mix translations.extract.check > "$RUNNER_TEMP/gettext-local-cache-hit.log"
             cat "$RUNNER_TEMP/gettext-local-cache-hit.log"
-            grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            if ! grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"; then
+              echo "::error::The second extraction run did not reuse the first run's success marker; compare the 'gettext extraction cache' lines above."
+              exit 1
+            fi
             mkdir -p _build/gettext-extraction
             printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
           fi

@@ -31,7 +31,12 @@ defmodule Mix.Tasks.Translations.Extract.Check do
 
     options =
       options ++
-        [root: File.cwd!(), build_path: Mix.Project.build_path(), context: &compiler_context/0]
+        [
+          root: File.cwd!(),
+          build_path: Mix.Project.build_path(),
+          context: &compiler_context/0,
+          report: &IO.puts(:stderr, &1)
+        ]
 
     case ExtractionCache.run(options, &check_extraction!/0) do
       :cached -> Mix.shell().info("Gettext extraction verification unchanged (cached success).")
