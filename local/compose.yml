@@ -20,7 +20,9 @@ services:
       POSTGRES_INITDB_ARGS: --no-sync
       # Keep stock memory settings instead of 25% of host RAM per worktree.
       PDB_TUNE: "false"
-    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
+    # ParadeDB warns on every query its custom scans cannot serve (100k+ lines a week per
+    # host's journal); `SET paradedb.planner_warnings = 'warning'` brings them back in a session.
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off", "-c", "paradedb.planner_warnings=off"]
     ports:
       - "127.0.0.1:${DB_PORT:-5433}:5432"
     volumes:
