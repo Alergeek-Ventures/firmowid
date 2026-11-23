@@ -126,12 +126,25 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
     users = Core.list_users!(input, scope: scope, load: [member: [avatar_blob: [:url]]])
 
-    # 2. Time worked per member this month
+    # 2. Time worked per member: this month for the active, all their time for the archived
     time_by_member =
-      %{month: date.month, year: date.year}
-      |> Timetracker.list_sessions!(scope: scope)
-      |> Enum.group_by(& &1.member_id, & &1.duration)
-      |> Map.new(fn {member_id, durations} -> {member_id, Enum.sum(durations)} end)
+      case socket.assigns.live_action do
+        :index ->
+          %{month: date.month, year: date.year}
+          |> Timetracker.list_sessions!(scope: scope)
+          |> Enum.group_by(& &1.member_id, & &1.duration)
+          |> Map.new(fn {member_id, durations} -> {member_id, Enum.sum(durations)} end)
+
+        :archive ->
+          Map.new(users, fn user ->
+            durations =
+              %{member_id: user.member.id}
+              |> Timetracker.list_sessions!(scope: scope)
+              |> Enum.map(& &1.duration)
+
+            {user.member.id, Enum.sum(durations)}
+          end)
+      end
 
     # 3. Salaries as of this month]
     salaries =
@@ -381,7 +394,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
         redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
         class="max-md:hidden"
       >
-        <Lucideicons.file_text /> {gettext("Payroll report")}
+        <.figma_icon name="invoice_1" /> {gettext("Payroll report")}
       </.link>
       <.page_actions>
         <:action>
@@ -391,7 +404,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
             phx-click={show_modal("organization_invite_modal")}
             data-fab
           >
-            <.icon name="hero-plus-mini" class="size-6" />
+            <.figma_icon name="create" />
             <span class="max-md:sr-only">{gettext("Add employee")}</span>
           </.button>
         </:action>

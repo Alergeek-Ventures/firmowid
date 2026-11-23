@@ -13264,6 +13264,7 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Transaction amount"
 msgstr ""
+#: lib/firmowid_web/management/views/employees.html.heex
 
 #: lib/firmowid_web/analysis/components/entry_categories.ex
 #, elixir-autogen, elixir-format

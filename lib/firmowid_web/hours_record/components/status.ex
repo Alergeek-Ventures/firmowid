@@ -17,10 +17,10 @@ defmodule FirmowidWeb.HoursRecord.Components.Status do
     ~H"""
     <div class="flex min-w-0 flex-1 items-center gap-3.75">
       <span class="flex h-6 w-27.75 min-w-0 items-center justify-between gap-2.5 rounded-sm bg-grey-200 px-2 text-caps-sm/tight font-medium text-grey-700 uppercase">
-        {gettext("None")} <.icon name="hero-x-mark-micro" class="size-4" />
+        {gettext("None")} <.figma_icon name="close" class="size-4" />
       </span>
       <.tooltip id={"timesheet-missing-#{@user.id}"} text={gettext("No timesheet for this month")}>
-        <Lucideicons.file_x class="shrink-0 text-grey-400" aria-hidden="true" />
+        <.figma_icon name="brak_pliku" class="size-6 text-grey-400" />
       </.tooltip>
     </div>
     """
