@@ -493,7 +493,7 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
     <span
       class={[
         "col-span-2 row-start-2 flex h-6 gap-0.5 sm:col-span-1 sm:row-start-auto sm:h-7",
-        !@choosing and Decimal.eq?(@bin.total, 0) and "max-sm:hidden"
+        bar_styles(@choosing, @bin.total)
       ]}
       aria-hidden="true"
     >
@@ -532,16 +532,12 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
   # only suggested. The reviewed counterparty's money lies, as `item`, in the compartment of its
   # category, apart from the rest; `total` counts it in.
   defp bins(review, side, item) do
-    groups =
-      Enum.filter(review.groups, fn group ->
-        group.side == side and (group.category || group.suggestion) != nil and
-          (item == nil or {group.side, group.key} != item.key)
-      end)
+    groups = Enum.filter(review.groups, &(&1.side == side and not reviewed?(&1, item)))
 
     for %{key: key} <- Map.fetch!(review, side).categories do
       in_bin = Enum.filter(groups, &((&1.category || &1.suggestion) == key))
       {hatched, solid} = Enum.split_with(in_bin, &(&1.source == :jev))
-      item = if item && item.category == key, do: item
+      item = item_in(item, key)
 
       %{
         key: key,
@@ -552,6 +548,12 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
       }
     end
   end
+
+  defp reviewed?(_group, nil), do: false
+  defp reviewed?(group, item), do: {group.side, group.key} == item.key
+
+  defp item_in(%{category: key} = item, key), do: item
+  defp item_in(_item, _key), do: nil
 
   defp sum(groups), do: Enum.reduce(groups, Decimal.new(0), &Decimal.add(&1.amount, &2))
 
@@ -598,6 +600,10 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
 
   defp side_title(:expenses, period), do: gettext("Costs · %{period}", period: period)
   defp side_title(:income, period), do: gettext("Income · %{period}", period: period)
+
+  # An empty category outside a choice has no bar to show, so on a phone it takes no row for one.
+  defp bar_styles(false = _choosing, total), do: if(Decimal.eq?(total, 0), do: "max-sm:hidden")
+  defp bar_styles(true = _choosing, _total), do: nil
 
   defp progress_styles(true), do: "bg-black"
   defp progress_styles(false), do: "bg-grey-200"
