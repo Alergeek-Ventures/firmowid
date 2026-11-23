@@ -179,6 +179,14 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute sitemap =~ "/poradnik/czy-trzeba-kupowac-program-do-ksef"
   end
 
+  test "the guide on KSeF invoices with ChatGPT redirects to the AI page", %{conn: conn} do
+    assert conn |> get("/poradnik/faktury-ksef-chatgpt-claude-mcp") |> redirected_to(301) ==
+             "/funkcje/claude-chatgpt-mcp"
+
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+    refute sitemap =~ "/poradnik/faktury-ksef-chatgpt-claude-mcp"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end

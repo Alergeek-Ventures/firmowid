@@ -40,4 +40,4 @@ MCP jest dostępny w płatnych planach, od planu [Przedsiębiorca](/cennik).
 
 - Firmowid: kod źródłowy (AGPL-3.0), moduły czasu pracy, faktur i MCP, stan 11.11.2026.
 - Cenniki i opisy funkcji Fakturowni, inFaktu, Kadromierza i RCPonline, stan na listopad 2026.
-- Więcej o łączeniu programu z asystentem AI: [faktury w KSeF z ChatGPT i Claude](/poradnik/faktury-ksef-chatgpt-claude-mcp).
+- Więcej o łączeniu programu z asystentem AI: [faktury w KSeF z ChatGPT i Claude](/funkcje/claude-chatgpt-mcp).
