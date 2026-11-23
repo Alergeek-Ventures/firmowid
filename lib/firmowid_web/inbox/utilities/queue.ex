@@ -519,7 +519,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           :effective_due_date,
           :effective_amount,
           :effective_seller_display_name,
-          :effective_seller
+          :effective_seller,
+          :latest_correction_invoice
         ]
       )
 
@@ -583,6 +584,15 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   defp overdue_invoice_title(invoice, :sales),
     do: gettext("Overdue sales invoice %{number}", number: invoice.invoice_number)
+
+  # The amount, term and seller come from the corrections (`CostInvoice.effective_*`), so the
+  # title names the latest one next to the corrected invoice that payments are matched to.
+  defp overdue_invoice_title(%{latest_correction_invoice: %{} = correction} = invoice, :cost) do
+    gettext("Overdue cost invoice %{number} after correction %{correction}",
+      number: invoice.invoice_identifier || invoice.id,
+      correction: correction.invoice_identifier
+    )
+  end
 
   defp overdue_invoice_title(invoice, :cost),
     do: gettext("Overdue cost invoice %{number}", number: invoice.invoice_identifier || invoice.id)

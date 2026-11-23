@@ -76,10 +76,7 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
         nil -> attrs.issue_date
         date -> date
       end)
-      |> Map.update!(:due_date, fn
-        nil -> attrs.issue_date
-        date -> date
-      end)
+      |> put_due_date()
       |> put_amount()
       |> put_order_items()
 
@@ -97,6 +94,14 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
 
   defp parse_decimal(nil), do: nil
   defp parse_decimal(amount), do: Decimal.new(amount)
+
+  # A correction states only what it changes (art. 106j ust. 2 pkt 6 of the VAT Act): without
+  # TerminPlatnosci the term of the corrected invoice stands, so the correction gets none and
+  # `CostInvoice.effective_due_date` keeps the earlier one. An invoice of its own is due on issue.
+  defp put_due_date(%{due_date: nil, original_invoice_ksef_number: nil} = attrs),
+    do: %{attrs | due_date: attrs.issue_date}
+
+  defp put_due_date(attrs), do: attrs
 
   # The amount due is P_15 plus charges (such as a bottle deposit) and minus deductions (Rozliczenie).
   defp put_amount(%{currency: currency, total_amount: total_amount} = attrs) do
