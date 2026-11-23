@@ -2,7 +2,7 @@
 title: "Darmowa aplikacja KSeF i program do faktur za 0 zł: 14 ofert"
 description: "Za 0 zł wystawisz e-faktury w Aplikacji Podatnika KSeF i e-mikrofirmie. Porównanie 14 darmowych programów: limity faktur, wysyłka do KSeF. Stan 11.11.2026."
 published: 2026-10-30
-updated: 2026-11-11
+updated: 2026-11-23
 category: wybor-programu
 ---
 
@@ -44,6 +44,22 @@ W planie Micro Fakturowni, w IFIRMIE i w PolskiejFakturze limit wynosi trzy fakt
 ## Programy bez limitu faktur
 
 Program na własny komputer bez limitu faktur to ProFak, udostępniany z kodem na licencji autora, albo KsefInvoice, darmowy, choć zamknięty. W chmurze bez limitu faktur działa plan Darmowy naszego Firmowida, [darmowego programu do faktur KSeF](/ksef), w którym są też dwa konta użytkowników, jedno konto bankowe z automatycznym dopasowaniem przelewów do faktur, ewidencja czasu w trzech projektach i 10 kredytów OCR miesięcznie, a kod programu udostępniamy na licencji AGPL-3.0. Księgowości ani magazynu Firmowid nie prowadzi, dlatego przy KPiR, ryczałcie i ZUS w jednym miejscu lepiej sprawdzą się IFIRMA, inFakt albo wFirma.
+
+## Plan darmowy czy okres próbny
+
+Plan darmowy i okres próbny opisują dwie różne oferty. W pierwszym przypadku konto nie ma daty końcowej, a w drugim po wskazanym dniu tracisz część funkcji albo zaczynasz płacić.
+
+![Plan darmowy nie ma daty końcowej, a okres próbny po wskazanym dniu kończy się płatnością albo utratą części funkcji.](/images/guides/darmowy-plan-czy-okres-probny.webp)
+*Sprawdź datę końcową, zanim założysz konto.*
+
+| Zapis w ofercie | Co sprawdzić |
+|---|---|
+| 0 zł | czy cena obowiązuje bezterminowo |
+| okres próbny | kiedy się kończy i co stanie się z kontem |
+| bez limitu faktur | czy dotyczy także wysyłania i pobierania z KSeF |
+| użytkownicy | ile osób może pracować na koncie |
+| bank i projekty | ile kont bankowych i projektów obejmuje plan |
+| OCR | ile dokumentów program odczyta w miesiącu |
 
 Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwo udostępnia na swojej stronie, a pytanie, [czy program do KSeF trzeba w ogóle kupować](/poradnik/czy-trzeba-kupowac-program-do-ksef), omawiamy w osobnym poradniku.
 

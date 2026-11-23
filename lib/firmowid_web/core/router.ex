@@ -396,6 +396,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/funkcje/urlopy", LegacyIndex, :leave
     get "/funkcje/asystent", LegacyIndex, :assistant
     get "/funkcje/projekty", LegacyIndex, :projects
+    get "/poradnik/program-do-faktur-bez-abonamentu", LegacyIndex, :free_programs
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
     get "/", Preview, :home
     get "/landing", Preview, :landing
