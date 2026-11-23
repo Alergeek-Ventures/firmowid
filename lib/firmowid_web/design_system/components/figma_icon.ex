@@ -148,6 +148,21 @@ defmodule FirmowidWeb.DesignSystem.Components.FigmaIcon do
       ~S(<path d="M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z"/><path d="M9 3V21"/>)
   }
 
+  # Parsed once at compile time into each path's attributes, so the markup is rendered as
+  # elements rather than raw HTML.
+  @paths Map.new(@icons, fn {name, markup} ->
+           paths =
+             ~r/<path ([^>]*?)\/>/
+             |> Regex.scan(markup, capture: :all_but_first)
+             |> Enum.map(fn [attributes] ->
+               ~r/([\w-]+)="([^"]*)"/
+               |> Regex.scan(attributes, capture: :all_but_first)
+               |> Enum.map(fn [key, value] -> {key, value} end)
+             end)
+
+           {name, paths}
+         end)
+
   @names @icons |> Map.keys() |> Enum.sort()
 
   @doc "Tells whether the Figma set has an icon of this name, for places that fall back to Lucide."
@@ -164,7 +179,7 @@ defmodule FirmowidWeb.DesignSystem.Components.FigmaIcon do
   attr :rest, :global
 
   def figma_icon(assigns) do
-    assigns = assign(assigns, :paths, Phoenix.HTML.raw(Map.fetch!(@icons, assigns.name)))
+    assigns = assign(assigns, :paths, Map.fetch!(@paths, assigns.name))
 
     ~H"""
     <svg
@@ -179,7 +194,7 @@ defmodule FirmowidWeb.DesignSystem.Components.FigmaIcon do
       class={["shrink-0", @class]}
       {@rest}
     >
-      {@paths}
+      <path :for={attributes <- @paths} {attributes} />
     </svg>
     """
   end
