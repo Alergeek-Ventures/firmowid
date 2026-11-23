@@ -334,6 +334,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                 </p>
               </div>
 
+              <div :if={@counterparty.krs} class="space-y-1">
+                <p class="text-sm/snug text-grey-700">{gettext("KRS number")}</p>
+                <p class="text-base/snug text-black">{@counterparty.krs}</p>
+              </div>
+
+              <div :if={@counterparty.regon} class="space-y-1">
+                <p class="text-sm/snug text-grey-700">REGON</p>
+                <p class="text-base/snug text-black">{@counterparty.regon}</p>
+              </div>
+
               <div class="space-y-2">
                 <p class="text-sm/snug text-grey-700">{gettext("Contact")}</p>
                 <div class="space-y-2 text-base/snug text-black">
@@ -533,7 +543,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp krs_answer(%{white_list: :not_registered}), do: pgettext("KRS", "No number in the VAT white list")
 
-  defp krs_answer(%{white_list: :absent}), do: pgettext("KRS", "Cannot be searched by NIP")
+  defp krs_answer(%{white_list: :absent}), do: pgettext("KRS", "Add the KRS number to check")
 
   defp ceidg_answer(:listed), do: pgettext("CEIDG", "Business not deregistered")
   defp ceidg_answer(:deregistered), do: pgettext("CEIDG", "Business deregistered")

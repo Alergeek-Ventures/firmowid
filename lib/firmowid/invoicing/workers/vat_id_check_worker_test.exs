@@ -12,16 +12,28 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
   alias FirmowidWeb.Inbox.Utilities.Queue
 
   # Synthetic numbers; ViesApiStub and VatStatusApiStub decide the registers' answers.
-  defp counterparty!(org_id, country, tax_id) do
-    Ash.Seed.seed!(Counterparty, %{
-      organization_id: org_id,
-      type: :company,
-      full_name: "Test #{country} #{tax_id}",
-      country: country,
-      tax_id: tax_id,
-      normalized_tax_id: tax_id
-    })
+  defp counterparty!(org_id, country, tax_id, attrs \\ %{}) do
+    Ash.Seed.seed!(
+      Counterparty,
+      Map.merge(
+        %{
+          organization_id: org_id,
+          type: :company,
+          full_name: "Test #{country} #{tax_id}",
+          country: country,
+          tax_id: tax_id,
+          normalized_tax_id: tax_id
+        },
+        attrs
+      )
+    )
   end
+
+  defp krs_extract(conn, identifiers),
+    do:
+      Req.Test.json(conn, %{
+        "odpis" => %{"dane" => %{"dzial1" => %{"danePodmiotu" => %{"identyfikatory" => identifiers}}}}
+      })
 
   test "stores each tax ID's status and lists the rejected ones in the inbox" do
     admin = admin_fixture()
@@ -71,10 +83,13 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
     org_id = admin.member.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
 
-    # VatStatusApiStub: 1111111111 is outside the VAT register, the others were removed from it.
+    # VatStatusApiStub: 1111111111, 4444444444 and 5555555555 are outside the VAT register,
+    # the others were removed from it; the last two come with the KRS number the user typed.
     outside_vat = counterparty!(org_id, "PL", "1111111111")
     struck_off = counterparty!(org_id, "PL", "2222222222")
     in_krs = counterparty!(org_id, "PL", "3333333333")
+    typed_krs = counterparty!(org_id, "PL", "4444444444", %{krs: "0000000004"})
+    mistyped_krs = counterparty!(org_id, "PL", "5555555555", %{krs: "0000000002"})
 
     Req.Test.stub(:nip_api, fn conn ->
       nip = List.last(conn.path_info)
@@ -84,20 +99,23 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
       })
     end)
 
-    # 0000000002 is struck off both registers; 0000000003 is a foundation struck off the
-    # register of entrepreneurs (P) that stays in that of associations and foundations (S).
+    # 0000000002 (2222222222) is struck off both registers, so only its full extract has
+    # the NIP; 0000000003 and 0000000004 are foundations struck off the register of
+    # entrepreneurs (P) that stay in that of associations and foundations (S).
     Req.Test.stub(:krs_api, fn conn ->
-      case {List.last(conn.path_info), conn.query_string =~ "rejestr=S"} do
-        {"0000000003", true} ->
-          Req.Test.json(conn, %{
-            "odpis" => %{
-              "dane" => %{
-                "dzial1" => %{"danePodmiotu" => %{"identyfikatory" => %{"nip" => "3333333333"}}}
-              }
-            }
-          })
+      [_api, _krs, extract, number] = conn.path_info
 
-        _struck_off ->
+      case {extract, number, conn.query_string =~ "rejestr=S"} do
+        {"OdpisAktualny", "0000000003", true} ->
+          krs_extract(conn, %{"nip" => "3333333333"})
+
+        {"OdpisAktualny", "0000000004", true} ->
+          krs_extract(conn, %{"nip" => "4444444444"})
+
+        {"OdpisPelny", "0000000002", false} ->
+          krs_extract(conn, [%{"identyfikatory" => %{"nip" => "2222222222"}}])
+
+        _no_current_entry ->
           Plug.Conn.send_resp(conn, 204, "")
       end
     end)
@@ -126,6 +144,21 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
              nip_registers: %{krs_number: "0000000003", krs: :entered, ceidg: nil}
            } =
              Invoicing.get_counterparty!(in_krs.id, scope: scope)
+
+    # A KRS number the user typed confirms the entity the white list does not know.
+    assert %{
+             vat_id_status: :no_vat,
+             nip_registers: %{
+               white_list: :absent,
+               krs_number: "0000000004",
+               krs: :entered,
+               ceidg: nil
+             }
+           } = Invoicing.get_counterparty!(typed_krs.id, scope: scope)
+
+    # A mistyped number of another, struck-off company does not mark this one struck off.
+    assert %{vat_id_status: :unconfirmed, nip_registers: %{krs: :other_nip, ceidg: :absent}} =
+             Invoicing.get_counterparty!(mistyped_krs.id, scope: scope)
 
     organization = Core.get_organization!(org_id, scope: scope)
     inbox = Queue.attention_items(scope, organization)

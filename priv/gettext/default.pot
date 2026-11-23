@@ -1138,6 +1138,12 @@ msgstr ""
 msgid "Add team members."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "Add the KRS number to check"
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Add the certificate and private key"
@@ -2417,12 +2423,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Cancelling..."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty.ex
-#, elixir-autogen, elixir-format
-msgctxt "KRS"
-msgid "Cannot be searched by NIP"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -7312,6 +7312,12 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "June"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#: lib/firmowid_web/management/views/counterparty_form.html.heex
+#, elixir-autogen, elixir-format
+msgid "KRS number"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -15682,6 +15688,16 @@ msgstr ""
 #: lib/firmowid/invoicing/validations/validate_items_not_empty.ex
 #, elixir-autogen, elixir-format
 msgid "must contain at least one item"
+msgstr ""
+
+#: lib/firmowid/invoicing/counterparty/register_numbers.ex
+#, elixir-autogen, elixir-format
+msgid "must have 10 digits"
+msgstr ""
+
+#: lib/firmowid/invoicing/counterparty/register_numbers.ex
+#, elixir-autogen, elixir-format
+msgid "must have 9 or 14 digits"
 msgstr ""
 
 #: lib/firmowid_ui/components/inputs.ex

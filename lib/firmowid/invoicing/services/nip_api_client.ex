@@ -1,6 +1,7 @@
 defmodule Firmowid.Invoicing.Services.NipApiClient do
   @moduledoc """
-  Looks up a company's name and working address in the Polish VAT white list by NIP.
+  Looks up a company's name, working address, KRS and REGON numbers in the Polish VAT
+  white list by NIP.
   """
 
   alias Firmowid.Core.Nip
@@ -9,7 +10,9 @@ defmodule Firmowid.Invoicing.Services.NipApiClient do
   @type organization :: %{
           name: String.t(),
           nip: String.t(),
-          address: String.t()
+          address: String.t(),
+          krs: String.t() | nil,
+          regon: String.t() | nil
         }
 
   @doc """
@@ -36,7 +39,14 @@ defmodule Firmowid.Invoicing.Services.NipApiClient do
         {:error, :not_found}
 
       {:ok, %{"result" => %{"subject" => %{} = subject}}} ->
-        {:ok, %{name: subject["name"], nip: subject["nip"], address: subject["workingAddress"]}}
+        {:ok,
+         %{
+           name: subject["name"],
+           nip: subject["nip"],
+           address: subject["workingAddress"],
+           krs: subject["krs"],
+           regon: subject["regon"]
+         }}
 
       {:ok, _body} ->
         {:error, "Invalid response format"}
