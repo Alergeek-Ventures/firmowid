@@ -13,6 +13,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
   alias Firmowid.Scope
 
   @bank_name "ACME UL DLUGA 1 KRAKOW"
+  @account "11 1111 2222 3333 4444 5555 6666"
 
   test "joins a transfer without NIP to the counterparty whose paired transfer has its name" do
     review =
@@ -48,14 +49,49 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
              Enum.sort_by(review.groups, & &1.suggestion)
   end
 
-  test "joins no counterparty with a bank name another NIP claims" do
+  test "joins an entry without NIP paid to an account only one NIP's invoices show, but not a salary" do
+    account = "11111122223333444455556666"
+
+    rule = %{
+      id: "rule",
+      side: :expenses,
+      counterparty_name: "Acme Sp. z o.o.",
+      category: :services,
+      updated_at: ~U[2026-10-01 00:00:00Z]
+    }
+
+    review =
+      CategoryReview.build(
+        [
+          entry("Acme Sp. z o.o.", nip: "1234567890", accounts: [account]),
+          entry("PRZELEW INNA NAZWA", accounts: [account]),
+          entry("Jan Kowalski",
+            accounts: [account],
+            salary_user_id: Ecto.UUID.generate(),
+            certain: :payroll
+          )
+        ],
+        [rule],
+        :gastronomy
+      )
+
+    assert [
+             %{key: "acme", count: 2, category: :services},
+             %{key: nil, count: 1, suggestion: :payroll}
+           ] =
+             Enum.sort_by(review.groups, &(&1.key == nil))
+  end
+
+  test "joins no counterparty with a bank name or account another NIP claims" do
     review =
       CategoryReview.build(
         [
           entry("Acme", nip: "1234567890", transfer_names: ["PAYMENT OPERATOR"]),
           entry("Beta", nip: "9876543210", transfer_names: ["PAYMENT OPERATOR", "Gamma"]),
-          entry("Gamma", nip: "5555555555"),
-          entry("PAYMENT OPERATOR")
+          entry("Gamma", nip: "5555555555", accounts: ["SHARED"]),
+          entry("Delta", nip: "4444444444", accounts: ["SHARED"]),
+          entry("PAYMENT OPERATOR"),
+          entry("SHARED PAYEE", accounts: ["SHARED"])
         ],
         [],
         :gastronomy
@@ -64,8 +100,10 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
     assert review.groups |> Enum.map(& &1.key) |> Enum.sort() == [
              "acme",
              "beta",
+             "delta",
              "gamma",
-             "payment operator"
+             "payment operator",
+             "shared payee"
            ]
   end
 
@@ -85,17 +123,17 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
     end
   end
 
-  test "joins by transfers paired in the organization only" do
+  test "joins by transfers and accounts in the organization only" do
     user = admin_fixture()
     other_user = admin_fixture()
 
-    paid_invoice(user, @bank_name)
-    skipped_transfer(user)
-    paid_invoice(other_user, nil)
-    skipped_transfer(other_user)
+    paid_invoice(user, @bank_name, @account)
+    skipped_transfers(user)
+    paid_invoice(other_user, nil, nil)
+    skipped_transfers(other_user)
 
-    assert [%{count: 2}] = expense_groups(user)
-    assert [%{count: 1}, %{count: 1}] = expense_groups(other_user)
+    assert [%{count: 3}] = expense_groups(user)
+    assert [%{count: 1}, %{count: 1}, %{count: 1}] = expense_groups(other_user)
   end
 
   defp entry(name, attrs \\ []) do
@@ -108,6 +146,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
         lines: [],
         nip: nil,
         transfer_names: [],
+        accounts: [],
         salary_user_id: nil,
         certain: nil,
         classified: nil,
@@ -127,7 +166,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
     |> Enum.filter(&(&1.side == :expenses))
   end
 
-  defp paid_invoice(user, bank_name) do
+  defp paid_invoice(user, bank_name, account) do
     tenant = user.member.organization_id
 
     invoice =
@@ -137,6 +176,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
           seller: "Acme Sp. z o.o.",
           seller_display_name: "Acme Sp. z o.o.",
           seller_nip: "1234567890",
+          account_number: account,
           sale_date: ~D[2026-10-01],
           issue_date: ~D[2026-10-01],
           due_date: ~D[2026-10-15],
@@ -155,7 +195,16 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
     })
   end
 
-  defp skipped_transfer(user), do: transfer(user, %{creditor_name: @bank_name, skip_invoicing: true})
+  # One with the paired transfer's name, one with another name to the invoice's account as an IBAN.
+  defp skipped_transfers(user) do
+    transfer(user, %{creditor_name: @bank_name, skip_invoicing: true})
+
+    transfer(user, %{
+      creditor_name: "PRZELEW INNA NAZWA",
+      creditor_account: "PL" <> String.replace(@account, " ", ""),
+      skip_invoicing: true
+    })
+  end
 
   defp transfer(user, attrs) do
     Ash.Seed.seed!(
