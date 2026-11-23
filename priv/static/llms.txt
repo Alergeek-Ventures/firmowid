@@ -42,6 +42,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 ## Poradnik
 
 - [Alternatywa dla inFaktu: programy z KSeF bez biura rachunkowego](https://firmowid.pl/poradnik/alternatywa-dla-infaktu): Gdy potrzebujesz tylko faktur i KSeF, bez pakietu księgowego: bezpłatna Aplikacja Podatnika KSeF, FakturaXL, Faktura.pl, Fakturownia i plan Darmowy Firmowida.
+- [Alternatywa dla wFirmy: faktury i KSeF bez księgowości](https://firmowid.pl/poradnik/alternatywa-dla-wfirmy): Cennik wFirmy z 23.11.2026, programy z KSeF bez pakietu księgowego, czym różni się Firmowid i kiedy zostać przy wFirmie.
 - [KSeF self-hosted: czy własny serwer jest bezpieczniejszy?](https://firmowid.pl/poradnik/ksef-self-hosted): Własny serwer nie jest automatycznie bezpieczniejszy od chmury; firma przejmuje aktualizacje, kopie, kontrolę dostępu i reakcję na awarie.
 - [Program do faktur dla firmy usługowej 2–20 osób](https://firmowid.pl/poradnik/program-do-faktur-dla-firmy-uslugowej): Program dla firmy usługowej warto sprawdzić na jednej fakturze KSeF, czasie dwóch osób w projekcie i przelewie z banku.
 - [Program do faktur dla JDG: jak wybrać po wejściu KSeF](https://firmowid.pl/poradnik/program-do-faktur-dla-jdg): Program do faktur dla JDG warto dobrać do powtarzalnych czynności poza KSeF: księgowości, sprawdzania wpłat i ewidencji czasu projektów.
