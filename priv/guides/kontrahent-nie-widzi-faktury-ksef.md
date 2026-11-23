@@ -19,23 +19,17 @@ Ministerstwo Finansów podaje w odpowiedziach na pytania podatników, że KSeF n
 
 ## Co sprawdzić po stronie klienta
 
-Zanim wystawca zacznie cokolwiek korygować, warto poprosić klienta o trzy sprawdzenia, bo często faktura jest w systemie, tylko nie tam, gdzie on patrzy.
+Spółka cywilna ma własny NIP, a każdy wspólnik swój. Kto wchodzi do Aplikacji Podatnika KSeF jako osoba fizyczna, ląduje w kontekście swojej jednoosobowej firmy i faktury wystawionej na spółkę tam nie zobaczy, dopóki nie przejdzie do kontekstu spółki. Pracownik zakupów czy biuro księgowe zalogują się profilem zaufanym bez problemu, a lista faktur i tak będzie pusta, jeśli nikt w firmie nie nadał im w KSeF uprawnienia do przeglądania faktur.
 
-Pierwsze to kontekst logowania. Wspólnik spółki cywilnej zalogowany do Aplikacji Podatnika KSeF swoim NIP widzi faktury własnej działalności. Faktura wystawiona na NIP spółki leży w kontekście spółki, na który trzeba się przełączyć albo do którego trzeba mieć uprawnienie.
-
-Drugie to uprawnienia. Pracownik działu zakupów albo biuro księgowe zobaczą faktury kosztowe firmy dopiero po tym, jak właściciel nada im w KSeF uprawnienie do przeglądania faktur. Samo zalogowanie się podpisem czy profilem zaufanym takiego dostępu nie daje.
-
-Trzecie to wyszukiwarka. Faktury zakupowe i sprzedażowe są w aplikacji MF osobnymi listami, a zakres dat można liczyć od dnia wystawienia albo od dnia przyjęcia faktury przez KSeF. Dokument wystawiony ostatniego dnia miesiąca i wysłany dzień później w trybie offline wypada poza zakres ustawiony na poprzedni miesiąc według daty przyjęcia.
-
-Gdy klient nadal nic nie widzi, najszybszym dowodem jest kod QR z wizualizacji faktury. Po zeskanowaniu telefonem otwiera stronę Ministerstwa Finansów, która pokazuje, że dokument jest w KSeF, razem z jego danymi, więc rozmowa o tym, czy faktura w ogóle wyszła, kończy się po minucie, a zostaje tylko pytanie, na jaki NIP trafiła.
+W wyszukiwarce MF zakupy i sprzedaż to dwie osobne listy, a datę można ustawić jako datę wystawienia albo datę przyjęcia do KSeF. Fakturę z 30 listopada, którą sprzedawca wysłał w trybie offline24 1 grudnia, klient filtrujący listopad po dacie przyjęcia po prostu przeoczy. Kod QR z PDF-a rozstrzyga sprawę szybciej niż wymiana maili: telefon otwiera stronę ministerstwa z fakturą z KSeF, razem z NIP nabywcy.
 
 ## Faktura dla gminy i jej jednostek
 
-Szkoła, przedszkole czy ośrodek pomocy społecznej nie są nabywcą na fakturze. Nabywcą jest gmina ze swoim NIP, a jednostkę wpisuje się w strukturze FA(3) jako podmiot trzeci w roli odbiorcy. Gdy sprzedawca pominie to pole, faktura trafia do gminy, a księgowość jednostki jej nie znajdzie, dopóki gmina jej nie przekaże.
+Od 2017 r. VAT w samorządach rozlicza gmina, więc szkoła czy przedszkole nie są nabywcą, tylko odbiorcą. Na fakturze FA(3) w polu nabywcy jest gmina, a jednostka idzie do sekcji Podmiot3 z rolą jednostki samorządu terytorialnego jako odbiorcy. Bez tego wpisu faktura trafia wyłącznie do gminy i do szkoły dociera dopiero wtedy, gdy ktoś w urzędzie ją przekaże.
 
 ## Kiedy faktury w KSeF nie ma i nie musi być
 
-Do 31 grudnia 2026 r. firma, której sprzedaż na fakturach nie przekracza 10 000 zł brutto w miesiącu, może je wystawiać poza KSeF ([jak liczyć ten limit](/poradnik/limit-10000-ksef)). Poza systemem mogą też powstawać faktury drukowane z kasy fiskalnej ([paragon z NIP i faktura z kasy](/poradnik/kasa-fiskalna-paragon-z-nip-po-2026)). Klient dostaje wtedy PDF albo wydruk, w KSeF nic nie znajdzie, a dokument i tak jest ważną fakturą. Oba wyjątki kończą się 1 stycznia 2027 r.
+Do 31 grudnia 2026 r. faktury mogą powstawać poza KSeF w dwóch sytuacjach: gdy sprzedaż na fakturach nie przekracza 10 000 zł brutto miesięcznie ([jak liczyć ten limit](/poradnik/limit-10000-ksef)) i gdy fakturę drukuje kasa fiskalna ([paragon z NIP i faktura z kasy](/poradnik/kasa-fiskalna-paragon-z-nip-po-2026)). Taka faktura jest ważna, choć klient zna ją tylko z PDF-a albo wydruku. Od 1 stycznia 2027 r. oba wyjątki przestają działać.
 
 ## Numer KSeF
 
