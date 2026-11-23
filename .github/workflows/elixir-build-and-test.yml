@@ -142,13 +142,24 @@ jobs:
               raise SystemExit("Trusted Betterleaks configuration is not valid TOML")
           PY
 
+          # Betterleaks also reads ignore files from the scanned directory: use the trusted
+          # revision's copies, and drop any the trusted revision does not have.
+          for ignore in .betterleaksignore .gitleaksignore; do
+            rm -f "$ignore"
+            if gh api --method GET "repos/$CONFIG_REPOSITORY/contents/$ignore" \
+              --field ref="$trusted_config_sha" --jq '.content' > "$RUNNER_TEMP/ignore.b64" 2> /dev/null; then
+              base64 --decode "$RUNNER_TEMP/ignore.b64" > "$ignore"
+            fi
+          done
+
           # Docker actions mount the runner temp directory at this fixed path.
           echo "config-path=/github/runner_temp/$(basename "$config_path")" >> "$GITHUB_OUTPUT"
 
       - name: Scan repository with Betterleaks
         uses: docker://ghcr.io/betterleaks/betterleaks@sha256:f345c1ac502abc51ec334c3d815ad18a79fb1509555fc4496b2cb88e760681b3 # v1.10.1
         with:
-          args: git . --config ${{ steps.scanner-config.outputs.config-path }} --validation=false --redact --no-banner --no-color
+          # --ignore-gitleaks-allow: inline allow comments would let a PR silence its own finding.
+          args: git . --config ${{ steps.scanner-config.outputs.config-path }} --ignore-gitleaks-allow --validation=false --redact --no-banner --no-color
 
   extract-versions:
     name: Extract versions and service images
