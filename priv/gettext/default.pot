@@ -9321,6 +9321,12 @@ msgctxt "counterparty invoice filter"
 msgid "Paid"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/invoice_details.ex
+#, elixir-autogen, elixir-format
+msgctxt "invoice amount"
+msgid "Paid"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Paid features"
@@ -13365,8 +13371,14 @@ msgid "Total paid"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
+#: lib/firmowid_web/invoicing/components/invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Total to pay"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/invoice_details.ex
+#, elixir-autogen, elixir-format
+msgid "Total to refund"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
