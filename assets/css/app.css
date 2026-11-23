@@ -1,7 +1,8 @@
 @import "tailwindcss";
+/* Before shared.css, so its .air-datepicker theme overrides the library defaults */
+@import "air-datepicker/air-datepicker.css";
 @import "./shared.css";
 @import "tippy.js/dist/tippy.css";
-@import "air-datepicker/air-datepicker.css";
 
 /* ── Source paths for template scanning ─────────────────────────────── */
 @source "../../lib/firmowid_web.ex";
