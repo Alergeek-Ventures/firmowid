@@ -279,7 +279,8 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
             %{
               slug: slug,
               section: section,
-              path: "#{root}/#{slug}",
+              # A page may set its own address, such as `/open-source`, outside its section.
+              path: Map.get(meta, "path", "#{root}/#{slug}"),
               breadcrumbs:
                 [%{name: root_name, path: root}] ++
                   if(category,
