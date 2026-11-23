@@ -34,8 +34,8 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     assign(socket,
       guide_categories: Guides.by_category(:help),
       index_page: index_page,
-      page_title: index_page.heading,
-      meta_description: index_page.intro
+      page_title: index_page.title,
+      meta_description: index_page.description
     )
   end
 

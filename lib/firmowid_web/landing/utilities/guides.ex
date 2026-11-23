@@ -128,7 +128,9 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
 
   @help_index_page %{
     heading: Map.fetch!(help_index, "heading"),
-    intro: Map.fetch!(help_index, "intro")
+    intro: Map.fetch!(help_index, "intro"),
+    title: Map.fetch!(help_index, "title"),
+    description: Map.fetch!(help_index, "description")
   }
 
   @help_categories help_index |> Map.fetch!("categories") |> Enum.map(to_category)
@@ -330,8 +332,13 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
   @spec feature_page() :: %{atom() => String.t()}
   def feature_page, do: @feature_page
 
-  @doc "Returns the heading and introduction of the help index."
-  @spec help_index_page() :: %{heading: String.t(), intro: String.t()}
+  @doc "Returns the heading, introduction, search title and description of the help index."
+  @spec help_index_page() :: %{
+          heading: String.t(),
+          intro: String.t(),
+          title: String.t(),
+          description: String.t()
+        }
   def help_index_page, do: @help_index_page
 
   @doc """

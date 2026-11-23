@@ -1,5 +1,8 @@
 # Heading, introduction and categories of /pomoc. Help articles are Polish only, so this text is not translated.
 heading: Pomoc
+# Title and description for search results; the page itself shows the heading and intro.
+title: "Pomoc Firmowida: instrukcje KSeF, banku i czasu pracy"
+description: "Instrukcje krok po kroku ze zrzutami ekranu: jak połączyć Firmowid z KSeF i bankiem, jak działa dopasowanie przelewów i jak mierzyć czas pracy."
 intro: Instrukcje krok po kroku do Firmowida, ze zrzutami ekranu. Jak połączyć KSeF i bank, jak działa dopasowanie przelewów, jak mierzyć czas pracy i jak podłączyć Claude albo ChatGPT.
 categories:
   - slug: faktury-i-ksef

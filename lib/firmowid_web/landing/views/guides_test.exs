@@ -37,6 +37,15 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     for next <- read_next, do: assert(html =~ ~s(href="#{next.path}"))
   end
 
+  test "the help index has its own search title and description", %{conn: conn} do
+    html = conn |> get(~p"/pomoc") |> html_response(200)
+    help = Guides.help_index_page()
+
+    assert html =~ ">#{help.title}</title>"
+    assert html =~ ~s(<meta name="description" content="#{help.description}")
+    assert html =~ "<h1>#{help.heading}</h1>"
+  end
+
   test "a help article has no read-next list", %{conn: conn} do
     html = conn |> get(~p"/pomoc/polaczenie-z-ksef") |> html_response(200)
 
