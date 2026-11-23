@@ -14,7 +14,6 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
     "/cennik",
     "/funkcje",
     "/faq",
-    "/open-source",
     "/poradnik",
     "/pomoc",
     "/polityka-prywatnosci",
