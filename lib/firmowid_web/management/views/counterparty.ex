@@ -130,7 +130,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     counterparty = %{
       socket.assigns.counterparty
       | vat_id_status: checked.vat_id_status,
-        vat_id_checked_at: checked.vat_id_checked_at
+        vat_id_checked_at: checked.vat_id_checked_at,
+        nip_registers: checked.nip_registers
     }
 
     {:noreply,
@@ -300,6 +301,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                   class="mbs-2 flex flex-col items-start gap-1"
                 >
                   <.badge tone={@vat_id.tone}>{@vat_id.badge}</.badge>
+                  <dl
+                    :if={@vat_id.registers != []}
+                    id="counterparty-nip-registers"
+                    class="text-xs/snug text-grey-600"
+                  >
+                    <div :for={{register, answer} <- @vat_id.registers}>
+                      <dt class="inline">{register}:</dt>
+                      <dd class="inline">{answer}</dd>
+                    </div>
+                  </dl>
                   <p :if={@vat_id.meta} class="text-xs/snug text-grey-600">{@vat_id.meta}</p>
                 </div>
               </div>
@@ -429,30 +440,37 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp vat_id_status(_counterparty), do: nil
 
-  defp nip_status(%{vat_id_status: :active, vat_id_checked_at: checked_at}),
-    do: registry_status(:active, "success", pgettext("NIP status", "Active VAT payer"), checked_at)
+  defp nip_status(%{vat_id_status: :active} = counterparty),
+    do: registry_status(counterparty, "success", pgettext("NIP status", "Active VAT payer"))
 
-  defp nip_status(%{vat_id_status: :exempt, vat_id_checked_at: checked_at}),
-    do: registry_status(:exempt, "success", pgettext("NIP status", "VAT-exempt"), checked_at)
+  defp nip_status(%{vat_id_status: :exempt} = counterparty),
+    do: registry_status(counterparty, "success", pgettext("NIP status", "VAT-exempt"))
 
-  defp nip_status(%{vat_id_status: :no_vat, vat_id_checked_at: checked_at}),
-    do: registry_status(:no_vat, "neutral", pgettext("NIP status", "Not a VAT payer"), checked_at)
+  defp nip_status(%{vat_id_status: :no_vat} = counterparty),
+    do: registry_status(counterparty, "neutral", pgettext("NIP status", "Not a VAT payer"))
 
-  defp nip_status(%{vat_id_status: :closed, vat_id_checked_at: checked_at}),
+  defp nip_status(%{vat_id_status: :closed, nip_registers: %{krs: :struck_off}} = counterparty),
     do: %{
-      registry_status(:closed, "danger", pgettext("NIP status", "Business closed"), checked_at)
+      registry_status(counterparty, "danger", pgettext("NIP status", "Struck off KRS"))
+      | problem:
+          gettext(
+            "KRS shows this company as struck off. Before you issue the next invoice, confirm the details with the counterparty."
+          )
+    }
+
+  defp nip_status(%{vat_id_status: :closed} = counterparty),
+    do: %{
+      registry_status(counterparty, "danger", pgettext("NIP status", "Business closed"))
       | problem:
           gettext(
             "CEIDG shows this business as deregistered. Before you issue the next invoice, confirm the details with the counterparty."
           )
     }
 
-  defp nip_status(%{vat_id_status: :unknown, vat_id_checked_at: checked_at}),
-    do: %{
-      registry_status(:unknown, "danger", pgettext("NIP status", "Not in registers"), checked_at)
-      | problem: gettext("Neither the VAT white list nor CEIDG knows this NIP. Check the number with the counterparty."),
-        fix?: true
-    }
+  # No register that can be searched by NIP lists it, which a KRS company outside VAT
+  # never is either, so it is no sign the counterparty does not exist.
+  defp nip_status(%{vat_id_status: :unconfirmed} = counterparty),
+    do: registry_status(counterparty, "neutral", pgettext("NIP status", "Not confirmed in registers"))
 
   # Not checked yet: the check queued on save is running, or a register did not
   # answer and the next daily run tries again.
@@ -461,19 +479,72 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       result: :pending,
       tone: "neutral",
       badge: pgettext("NIP status", "Checking in registers"),
+      registers: [],
       meta: nil,
       problem: nil,
       fix?: false
     }
 
-  defp registry_status(result, tone, badge, checked_at),
-    do: %{result: result, tone: tone, badge: badge, meta: checked_on(checked_at), problem: nil, fix?: false}
+  defp registry_status(counterparty, tone, badge),
+    do: %{
+      result: counterparty.vat_id_status,
+      tone: tone,
+      badge: badge,
+      registers: registers(counterparty.nip_registers),
+      meta: checked_on(counterparty.vat_id_checked_at),
+      problem: nil,
+      fix?: false
+    }
+
+  # Each register's own answer, so the badge's conclusion can be traced to its source.
+  # KRS and CEIDG are listed when the white list does not confirm a VAT payer.
+  defp registers(nil), do: []
+
+  defp registers(registers) do
+    Enum.filter(
+      [
+        {gettext("VAT white list"), white_list_answer(registers.white_list)},
+        registers.white_list in [:not_registered, :absent] && {"KRS", krs_answer(registers)},
+        registers.ceidg && {"CEIDG", ceidg_answer(registers.ceidg)}
+      ],
+      & &1
+    )
+  end
+
+  defp white_list_answer(:active), do: pgettext("NIP status", "Active VAT payer")
+  defp white_list_answer(:exempt), do: pgettext("NIP status", "VAT-exempt")
+
+  defp white_list_answer(:not_registered), do: pgettext("VAT white list", "Listed as not registered for VAT")
+
+  defp white_list_answer(:absent), do: pgettext("register", "Not listed")
+  defp white_list_answer(:invalid), do: pgettext("VAT white list", "Rejects the NIP as invalid")
+
+  defp krs_answer(%{krs: :entered, krs_number: number}),
+    do: pgettext("KRS", "Entered under number %{number}", number: number)
+
+  defp krs_answer(%{krs: :struck_off, krs_number: number}),
+    do: pgettext("KRS", "Number %{number} struck off", number: number)
+
+  defp krs_answer(%{krs: :not_found, krs_number: number}),
+    do: pgettext("KRS", "No entry under number %{number}", number: number)
+
+  defp krs_answer(%{krs: :other_nip, krs_number: number}),
+    do: pgettext("KRS", "Number %{number} belongs to another NIP", number: number)
+
+  defp krs_answer(%{white_list: :not_registered}), do: pgettext("KRS", "No number in the VAT white list")
+
+  defp krs_answer(%{white_list: :absent}), do: pgettext("KRS", "Cannot be searched by NIP")
+
+  defp ceidg_answer(:listed), do: pgettext("CEIDG", "Business not deregistered")
+  defp ceidg_answer(:deregistered), do: pgettext("CEIDG", "Business deregistered")
+  defp ceidg_answer(:absent), do: pgettext("register", "Not listed")
 
   defp vies_status(%{vat_id_status: :active, vat_id_checked_at: checked_at}),
     do: %{
       result: :active,
       tone: "success",
       badge: pgettext("EU VAT status", "Active in VIES"),
+      registers: [],
       meta: checked_on(checked_at),
       problem: nil,
       fix?: false
@@ -484,6 +555,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       result: :inactive,
       tone: "danger",
       badge: pgettext("EU VAT status", "Inactive in VIES"),
+      registers: [],
       meta: checked_on(checked_at),
       problem: gettext("Before you issue the next invoice, ask the counterparty for a current EU VAT number."),
       fix?: false
@@ -496,6 +568,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       result: :pending,
       tone: "neutral",
       badge: pgettext("EU VAT status", "Checking in VIES"),
+      registers: [],
       meta: nil,
       problem: nil,
       fix?: false
@@ -510,6 +583,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           do: pgettext("EU VAT status", "Wrong number"),
           else: pgettext("EU VAT status", "Wrong format")
         ),
+      registers: [],
       meta: nil,
       problem: format_problem(rule, suggestions, country),
       fix?: true

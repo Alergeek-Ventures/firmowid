@@ -19,7 +19,7 @@ defmodule Firmowid.Invoicing.Counterparty do
     domain: Firmowid.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub]
+    fragments: [Firmowid.Invoicing.Counterparty.VatIdCheck]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -33,14 +33,13 @@ defmodule Firmowid.Invoicing.Counterparty do
   alias Firmowid.Invoicing.Changes.NormalizeBlankCounterpartyFields
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
+  alias Firmowid.Invoicing.Counterparty.VatIdCheck
   alias Firmowid.Invoicing.Validations.ValidateEuVatNumber
   alias Firmowid.Invoicing.Validations.ValidateNameFields
   alias Firmowid.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Resource
 
   require Resource
-
-  @vat_id_statuses [:active, :inactive, :invalid, :exempt, :no_vat, :closed, :unknown]
 
   postgres do
     table "counterparties"
@@ -84,7 +83,7 @@ defmodule Firmowid.Invoicing.Counterparty do
       end
 
       argument :vat_id_statuses, {:array, :atom},
-        constraints: [items: [one_of: @vat_id_statuses]],
+        constraints: [items: [one_of: VatIdCheck.statuses()]],
         description: "Only counterparties whose last tax ID check gave one of these results."
 
       argument :vat_id_due_before, :utc_datetime_usec,
@@ -230,6 +229,10 @@ defmodule Firmowid.Invoicing.Counterparty do
         where any([changing(:tax_id), changing(:country)])
       end
 
+      change set_attribute(:nip_registers, nil) do
+        where any([changing(:tax_id), changing(:country)])
+      end
+
       change EnqueueVatIdCheck do
         where any([changing(:tax_id), changing(:country)])
       end
@@ -242,11 +245,6 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       validate {ValidateNameFields,
                 type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
-    end
-
-    update :record_vat_id_check do
-      description "Record the result of the periodic EU VAT number or NIP check."
-      accept [:vat_id_status, :vat_id_checked_at]
     end
 
     update :record_website do
@@ -308,13 +306,6 @@ defmodule Firmowid.Invoicing.Counterparty do
     end
   end
 
-  pub_sub do
-    module FirmowidWeb.Core.Endpoint
-    prefix "counterparty"
-
-    publish :record_vat_id_check, ["vat_id_checked", :id]
-  end
-
   multitenancy do
     strategy :attribute
     attribute :organization_id
@@ -344,13 +335,6 @@ defmodule Firmowid.Invoicing.Counterparty do
     attribute :email, :string, public?: true
     attribute :phone, :string, public?: true
     attribute :description, :string, public?: true
-
-    attribute :vat_id_status, :atom,
-      public?: true,
-      constraints: [one_of: @vat_id_statuses],
-      description: "Last check of the EU VAT number (`EuVatReview`) or NIP (`NipRegistration`)."
-
-    attribute :vat_id_checked_at, :utc_datetime_usec, public?: true
 
     attribute :website_domain, :string,
       public?: true,

@@ -66,6 +66,76 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
              Invoicing.get_counterparty!(inactive.id, scope: scope)
   end
 
+  test "keeps each register's answer and raises only what a register states" do
+    admin = admin_fixture()
+    org_id = admin.member.organization_id
+    scope = %Scope{actor: admin, tenant: org_id}
+
+    # VatStatusApiStub: 1111111111 is outside the VAT register, the others were removed from it.
+    outside_vat = counterparty!(org_id, "PL", "1111111111")
+    struck_off = counterparty!(org_id, "PL", "2222222222")
+    in_krs = counterparty!(org_id, "PL", "3333333333")
+
+    Req.Test.stub(:nip_api, fn conn ->
+      nip = List.last(conn.path_info)
+
+      Req.Test.json(conn, %{
+        "result" => %{"subject" => %{"nip" => nip, "krs" => "000000000" <> String.first(nip)}}
+      })
+    end)
+
+    Req.Test.stub(:krs_api, fn conn ->
+      case List.last(conn.path_info) do
+        "0000000002" ->
+          Plug.Conn.send_resp(conn, 204, "")
+
+        "0000000003" ->
+          Req.Test.json(conn, %{
+            "odpis" => %{
+              "dane" => %{
+                "dzial1" => %{"danePodmiotu" => %{"identyfikatory" => %{"nip" => "3333333333"}}}
+              }
+            }
+          })
+      end
+    end)
+
+    assert :ok = perform_job(VatIdCheckWorker, %{organization_id: org_id})
+
+    # Neither register searchable by NIP lists it, as for any KRS company outside VAT.
+    assert %{
+             vat_id_status: :unconfirmed,
+             nip_registers: %{white_list: :absent, krs: nil, ceidg: :absent}
+           } =
+             Invoicing.get_counterparty!(outside_vat.id, scope: scope)
+
+    assert %{
+             vat_id_status: :closed,
+             nip_registers: %{
+               white_list: :not_registered,
+               krs_number: "0000000002",
+               krs: :struck_off,
+               ceidg: nil
+             }
+           } = Invoicing.get_counterparty!(struck_off.id, scope: scope)
+
+    assert %{
+             vat_id_status: :no_vat,
+             nip_registers: %{krs_number: "0000000003", krs: :entered, ceidg: nil}
+           } =
+             Invoicing.get_counterparty!(in_krs.id, scope: scope)
+
+    organization = Core.get_organization!(org_id, scope: scope)
+    inbox = Queue.attention_items(scope, organization)
+    inbox_ids = Enum.map(inbox, & &1.id)
+
+    # The inbox names KRS, not CEIDG, as the register that struck the company off.
+    assert Enum.find(inbox, &(&1.id == "vat-id-#{struck_off.id}-closed")).context =~ "KRS"
+
+    refute Enum.any?(inbox_ids, &String.starts_with?(&1, "vat-id-#{outside_vat.id}-"))
+    refute Enum.any?(inbox_ids, &String.starts_with?(&1, "vat-id-#{in_krs.id}-"))
+  end
+
   test "the daily run queues a check for every organization" do
     admin = admin_fixture()
 

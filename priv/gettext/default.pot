@@ -2178,6 +2178,18 @@ msgctxt "NIP status"
 msgid "Business closed"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "CEIDG"
+msgid "Business deregistered"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "CEIDG"
+msgid "Business not deregistered"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/delegations_list.ex
 #, elixir-autogen, elixir-format
 msgctxt "business trips table"
@@ -2399,6 +2411,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Cancelling..."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "Cannot be searched by NIP"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -5269,6 +5287,12 @@ msgstr ""
 msgid "Enter your full name."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "Entered under number %{number}"
+msgstr ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
@@ -7190,6 +7214,26 @@ msgctxt "month name in a date"
 msgid "June"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "KRS showed the company with NIP %{number} as struck off on %{date}."
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/register_check.ex
+#, elixir-autogen, elixir-format
+msgid "KRS shows the company with this NIP as struck off. Check that the NIP is right."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "KRS shows this company as struck off. Before you issue the next invoice, confirm the details with the counterparty."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#, elixir-autogen, elixir-format
+msgid "KRS shows this company as struck off. Confirm the details with the buyer before you issue the invoice."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "KSEF · CONNECTED"
@@ -7533,6 +7577,12 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Linked account"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "VAT white list"
+msgid "Listed as not registered for VAT"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -7983,19 +8033,9 @@ msgstr ""
 msgid "Needs your choice"
 msgstr ""
 
-#: lib/firmowid_web/settings/utilities/register_check.ex
-#, elixir-autogen, elixir-format
-msgid "Neither the VAT white list nor CEIDG knows this NIP. Check that it is right."
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty.ex
-#, elixir-autogen, elixir-format
-msgid "Neither the VAT white list nor CEIDG knows this NIP. Check the number with the counterparty."
-msgstr ""
-
 #: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
 #, elixir-autogen, elixir-format
-msgid "Neither the VAT white list nor CEIDG knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
+msgid "Neither the VAT white list nor CEIDG lists this NIP. That is normal for a KRS company outside VAT, since KRS cannot be searched by NIP. KSeF delivers the invoice to whoever holds the NIP, so make sure the number is right."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -8266,6 +8306,12 @@ msgstr ""
 msgid "No entries"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "No entry under number %{number}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "No expenses have been added in this category."
@@ -8404,6 +8450,12 @@ msgstr ""
 msgid "No new counterparty is waiting for a decision"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "No number in the VAT white list"
+msgstr ""
+
 #: lib/firmowid_web/admin/views/organizations.ex
 #, elixir-autogen, elixir-format
 msgid "No organizations found for the selected filters."
@@ -8465,11 +8517,6 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "No reduction"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/queue.ex
-#, elixir-autogen, elixir-format
-msgid "No register knows NIP %{number}."
 msgstr ""
 
 #: lib/firmowid_web/management/components/leaves_tab.ex
@@ -8574,16 +8621,16 @@ msgstr ""
 msgid "Not collected"
 msgstr ""
 
-#: lib/firmowid_ui/components/ksef_connection.ex
-#, elixir-autogen, elixir-format
-msgid "Not connected to KSeF"
-msgstr ""
-
 #: lib/firmowid_web/management/views/counterparty.ex
 #: lib/firmowid_web/settings/utilities/register_check.ex
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
-msgid "Not in registers"
+msgid "Not confirmed in registers"
+msgstr ""
+
+#: lib/firmowid_ui/components/ksef_connection.ex
+#, elixir-autogen, elixir-format
+msgid "Not connected to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
@@ -8599,6 +8646,12 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Not included: unpaid invoices %{amount}"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "register"
+msgid "Not listed"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -8690,6 +8743,18 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "sales invoice creator"
 msgid "Number"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "Number %{number} belongs to another NIP"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "KRS"
+msgid "Number %{number} struck off"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/controllers/csv.ex
@@ -10052,6 +10117,12 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Rejecting…"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "VAT white list"
+msgid "Rejects the NIP as invalid"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
@@ -11516,6 +11587,12 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Street, building and/or flat number, postal code, city"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "NIP status"
+msgid "Struck off KRS"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -13865,6 +13942,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "VAT total"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "VAT white list"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex

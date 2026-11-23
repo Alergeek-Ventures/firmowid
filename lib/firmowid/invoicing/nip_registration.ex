@@ -1,55 +1,124 @@
 defmodule Firmowid.Invoicing.NipRegistration do
   @moduledoc """
-  Checks a Polish counterparty's NIP in the public registers.
+  Checks a Polish NIP in the public registers and keeps each register's answer
+  (`Firmowid.Core.NipRegisters`).
 
-  The VAT white list (WL2) answers for VAT payers. A NIP outside the VAT register
-  is looked up in CEIDG, which lists sole proprietorships with their status, so it
-  tells one that only does not pay VAT from one that was deregistered. A NIP
-  neither register knows is most likely a typo; KRS cannot be searched by NIP.
+  The VAT white list (WL2) answers for VAT payers. A NIP it knows only from an
+  earlier VAT registration is looked up in KRS through the KRS number the white
+  list's search gives, then in CEIDG; a NIP outside the VAT register goes straight
+  to CEIDG, which lists sole proprietorships. KRS cannot be searched by NIP, so a
+  company or foundation that never registered for VAT is in no register we can
+  ask: such a NIP is `:unconfirmed`, never treated as nonexistent.
   """
 
   alias Firmowid.Core.Nip
+  alias Firmowid.Core.NipRegisters
   alias Firmowid.Core.Services.CeidgApiClient
+  alias Firmowid.Core.Services.KrsApiClient
   alias Firmowid.Core.Services.VatApiClient
 
-  @type status :: :active | :exempt | :no_vat | :closed | :unknown | :unavailable
+  @type status :: :active | :exempt | :no_vat | :closed | :unconfirmed
 
   @doc """
-  Returns the NIP's status: an `:active` or `:exempt` VAT payer, a business
-  outside VAT (`:no_vat`), a deregistered sole proprietorship (`:closed`), a NIP
-  no register knows (`:unknown`), or `:unavailable` when a register does not
-  answer or CEIDG is not configured.
+  Returns the NIP's status with each register's answer: an `:active` or `:exempt`
+  VAT payer, a business outside VAT (`:no_vat`), one struck off KRS or with only
+  deregistered businesses in CEIDG (`:closed`), or a NIP no register we can ask
+  confirms (`:unconfirmed`). `:unavailable` when a register does not answer or
+  CEIDG is not configured.
   """
-  @spec check(String.t()) :: status()
+  @spec check(String.t()) :: {status(), NipRegisters.t()} | :unavailable
   def check(tax_id) do
     # A counterparty keeps its NIP as typed, e.g. "123-456-32-18".
     nip = Nip.normalize_digits(tax_id)
 
-    case VatApiClient.fetch_status(nip) do
-      {:ok, "C"} -> :active
-      {:ok, "Z"} -> :exempt
-      {:ok, code} when code in ["N", "B"] -> ceidg_status(nip, code)
-      # A NIP with a wrong check digit, which no register can know.
-      {:ok, "I"} -> :unknown
-      {:ok, "X"} -> :unavailable
+    with {:ok, white_list} <- white_list(nip),
+         {:ok, registers} <- look_further(nip, %NipRegisters{white_list: white_list}) do
+      {status(registers), registers}
+    else
       {:error, _reason} -> :unavailable
     end
   end
 
-  defp ceidg_status(nip, white_list_code) do
-    case CeidgApiClient.fetch_businesses(nip) do
-      # "N" is a NIP the white list knows, deregistered from VAT or refused, so it exists.
-      {:ok, []} when white_list_code == "N" ->
-        :no_vat
-
-      {:ok, []} ->
-        :unknown
-
-      {:ok, businesses} ->
-        if Enum.all?(businesses, &(&1["status"] == "WYKRESLONY")), do: :closed, else: :no_vat
-
-      {:error, _reason} ->
-        :unavailable
+  defp white_list(nip) do
+    case VatApiClient.fetch_status(nip) do
+      {:ok, "C"} -> {:ok, :active}
+      {:ok, "Z"} -> {:ok, :exempt}
+      {:ok, "N"} -> {:ok, :not_registered}
+      {:ok, "B"} -> {:ok, :absent}
+      {:ok, "I"} -> {:ok, :invalid}
+      # "X": the service is inactive.
+      {:ok, code} -> {:error, {:white_list_status, code}}
+      {:error, _reason} = error -> error
     end
   end
+
+  defp look_further(nip, %{white_list: :not_registered} = registers) do
+    with {:ok, registers} <- krs(nip, registers) do
+      # A KRS entity is no sole proprietorship, so CEIDG has nothing to add.
+      if registers.krs in [:entered, :struck_off],
+        do: {:ok, registers},
+        else: ceidg(nip, registers)
+    end
+  end
+
+  defp look_further(nip, %{white_list: :absent} = registers), do: ceidg(nip, registers)
+
+  # A VAT payer is confirmed by the white list itself; an invalid NIP has nothing to look up.
+  defp look_further(_nip, registers), do: {:ok, registers}
+
+  # The white list's search keeps subjects removed from the VAT register, with their KRS
+  # number; its daily limit is low, so it is asked only for such NIPs.
+  defp krs(nip, registers) do
+    case VatApiClient.fetch_by_nip(nip, retry: false) do
+      {:ok, %{"result" => %{"subject" => %{"krs" => number}}}} when number not in [nil, ""] ->
+        with {:ok, extract} <- KrsApiClient.fetch_current(number) do
+          {:ok, %{registers | krs_number: number, krs: krs_result(extract, nip)}}
+        end
+
+      {:ok, %{"result" => _no_krs_number}} ->
+        {:ok, registers}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  # An empty extract carries no NIP; the white list tied the number to this NIP.
+  defp krs_result(:struck_off, _nip), do: :struck_off
+  defp krs_result(:not_found, _nip), do: :not_found
+
+  defp krs_result(data, nip) do
+    if get_in(data, ["dzial1", "danePodmiotu", "identyfikatory", "nip"]) == nip,
+      do: :entered,
+      else: :other_nip
+  end
+
+  defp ceidg(nip, registers) do
+    case CeidgApiClient.fetch_businesses(nip) do
+      {:ok, []} ->
+        {:ok, %{registers | ceidg: :absent}}
+
+      # A NIP may hold several businesses over the years; one not deregistered keeps it in business.
+      {:ok, businesses} ->
+        state =
+          if Enum.all?(businesses, &(&1["status"] == "WYKRESLONY")),
+            do: :deregistered,
+            else: :listed
+
+        {:ok, %{registers | ceidg: state}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp status(%{white_list: :active}), do: :active
+  defp status(%{white_list: :exempt}), do: :exempt
+  defp status(%{krs: :entered}), do: :no_vat
+  defp status(%{ceidg: :listed}), do: :no_vat
+  defp status(%{krs: :struck_off}), do: :closed
+  defp status(%{ceidg: :deregistered}), do: :closed
+  # The white list knows the NIP from an earlier VAT registration, so it exists.
+  defp status(%{white_list: :not_registered}), do: :no_vat
+  defp status(_registers), do: :unconfirmed
 end

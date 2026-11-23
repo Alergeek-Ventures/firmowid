@@ -5,9 +5,9 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   (`EnqueueVatIdCheck`, `EnqueueNipCheck`) and again every week.
 
   An EU VAT number is checked against its country's rules (`EuVatNumber`), then
-  in VIES; a NIP in the VAT white list and CEIDG (`NipRegistration`). The result
-  is stored on the counterparty or the organization, and the inbox lists the
-  problems.
+  in VIES; a NIP in the VAT white list, KRS and CEIDG (`NipRegistration`). The
+  result, with each register's answer for a NIP, is stored on the counterparty or
+  the organization, and the inbox lists the problems.
 
   The daily cron run (no `organization_id`) queues one job per organization,
   which re-checks every counterparty and the organization's NIP never checked
@@ -64,14 +64,18 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
     do: %Scope{actor: %SystemActor{org_id: organization_id, role: :vat_id_checker}, tenant: organization_id}
 
   defp check(counterparty, scope) do
-    case status(counterparty) do
+    case result(counterparty) do
       :unavailable ->
         :ok
 
-      status ->
+      {status, registers} ->
         Invoicing.record_counterparty_vat_id_check!(
           counterparty,
-          %{vat_id_status: status, vat_id_checked_at: DateTime.utc_now()},
+          %{
+            vat_id_status: status,
+            nip_registers: registers,
+            vat_id_checked_at: DateTime.utc_now()
+          },
           scope: scope
         )
     end
@@ -82,10 +86,10 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
       :unavailable ->
         :ok
 
-      status ->
+      {status, registers} ->
         organization
         |> Core.record_organization_nip_check(
-          %{nip_status: status, nip_checked_at: DateTime.utc_now()},
+          %{nip_status: status, nip_registers: registers, nip_checked_at: DateTime.utc_now()},
           scope: scope
         )
         |> case do
@@ -97,12 +101,15 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
     end
   end
 
-  defp status(%{country: "PL", tax_id: nip}), do: NipRegistration.check(nip)
+  defp result(%{country: "PL", tax_id: nip}), do: NipRegistration.check(nip)
 
-  defp status(counterparty) do
+  defp result(counterparty) do
     case EuVatNumber.check(counterparty.country, counterparty.tax_id) do
-      {:ok, number} -> EuVatReview.check_registration(counterparty.country, number)
-      {:error, _rule, _suggestions} -> :invalid
+      {:ok, number} -> eu_result(EuVatReview.check_registration(counterparty.country, number))
+      {:error, _rule, _suggestions} -> {:invalid, nil}
     end
   end
+
+  defp eu_result(:unavailable), do: :unavailable
+  defp eu_result(status), do: {status, nil}
 end

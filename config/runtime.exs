@@ -26,7 +26,7 @@ if System.get_env("PHX_SERVER") do
   config :firmowid, Endpoint, server: true
 end
 
-# CEIDG register of sole proprietorships; tests never call it.
+# CEIDG register of sole proprietorships; tests use a stub (config/test.exs).
 if config_env() != :test do
   config :firmowid, :ceidg_api_token, System.get_env("CEIDG_API_TOKEN")
 end

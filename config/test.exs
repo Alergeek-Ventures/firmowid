@@ -58,6 +58,10 @@ config :firmowid, :bank_data_api_client,
     retry_delay: 0
   ]
 
+config :firmowid, :ceidg_api_request_options, plug: Firmowid.Test.Support.CeidgApiStub
+config :firmowid, :ceidg_api_token, "test-ceidg-api-token"
+config :firmowid, :ceidg_pause_ms, 0
+
 # Gotenberg is not running during tests, so it is excluded from /health.
 config :firmowid, :health_checks, [:database, :oban]
 config :firmowid, :krs_api_request_options, plug: {Req.Test, :krs_api}

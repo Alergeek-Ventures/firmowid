@@ -1,12 +1,14 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck do
   @moduledoc """
-  Review panel warning about a Polish buyer's NIP that no register knows or that
-  belongs to a closed business. KSeF delivers the invoice to whoever holds the
-  NIP, so a typo sends it to the wrong company. Shows nothing otherwise.
+  Review panel about a Polish buyer's NIP that belongs to a closed business, or that
+  no register we can search by NIP confirms. KSeF delivers the invoice to whoever
+  holds the NIP, so a typo sends it to the wrong company. Shows nothing otherwise.
 
   Asks the registers (`NipRegistration`) once per buyer NIP, in the background,
-  so a slow or unavailable register never holds up the review. Only warns: the
-  registers lag behind, and the invoice can still be issued.
+  so a slow or unavailable register never holds up the review. Only warns about a
+  register's explicit answer (struck off or deregistered); an unconfirmed NIP gets
+  a neutral note, since a KRS company outside VAT is in no register searchable by
+  NIP. The invoice can always be issued.
   """
   use FirmowidWeb, :live_component
 
@@ -40,7 +42,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck do
   end
 
   @impl true
-  def handle_async(:registration, {:ok, status}, socket), do: {:noreply, assign(socket, :registration, status)}
+  def handle_async(:registration, {:ok, :unavailable}, socket), do: {:noreply, assign(socket, :registration, nil)}
+
+  def handle_async(:registration, {:ok, result}, socket), do: {:noreply, assign(socket, :registration, result)}
 
   def handle_async(:registration, {:exit, _reason}, socket), do: {:noreply, assign(socket, :registration, nil)}
 
@@ -48,15 +52,27 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck do
   def render(assigns) do
     ~H"""
     <section id={@id} aria-labelledby={"#{@id}-title"}>
-      <div :if={@registration in [:closed, :unknown]} class="space-y-2">
+      <div
+        :if={match?({status, _registers} when status in [:closed, :unconfirmed], @registration)}
+        class="space-y-2"
+      >
         <h3 id={"#{@id}-title"} class="text-sm font-medium text-grey-700">
           {gettext("NIP check")}
         </h3>
         <p
-          id={"#{@id}-#{@registration}"}
+          :if={match?({:closed, _registers}, @registration)}
+          id={"#{@id}-closed"}
           class="flex items-start gap-2 rounded-lg bg-rust-200 p-3 text-sm text-rust-700"
         >
           <Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0" />
+          <span>{text(@registration)}</span>
+        </p>
+        <p
+          :if={match?({:unconfirmed, _registers}, @registration)}
+          id={"#{@id}-unconfirmed"}
+          class="flex items-start gap-2 rounded-lg bg-grey-50 p-3 text-sm text-grey-700"
+        >
+          <Lucideicons.info class="mbs-0.5 size-4 shrink-0" />
           <span>{text(@registration)}</span>
         </p>
       </div>
@@ -74,15 +90,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.NipCheck do
 
   defp buyer_nip(_invoice), do: nil
 
-  defp text(:closed),
+  defp text({:closed, %{krs: :struck_off}}),
+    do: gettext("KRS shows this company as struck off. Confirm the details with the buyer before you issue the invoice.")
+
+  defp text({:closed, _registers}),
     do:
       gettext(
         "CEIDG shows this business as deregistered. Confirm the details with the buyer before you issue the invoice."
       )
 
-  defp text(:unknown),
+  defp text({:unconfirmed, _registers}),
     do:
       gettext(
-        "Neither the VAT white list nor CEIDG knows this NIP. KSeF delivers the invoice to whoever holds the NIP, so check the number before you issue it."
+        "Neither the VAT white list nor CEIDG lists this NIP. That is normal for a KRS company outside VAT, since KRS cannot be searched by NIP. KSeF delivers the invoice to whoever holds the NIP, so make sure the number is right."
       )
 end
