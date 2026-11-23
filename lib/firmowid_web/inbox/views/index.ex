@@ -553,13 +553,17 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           </.link>
         </div>
       </header>
-      <%!-- With nothing waiting, the empty state stretches to end where the side panel ends. --%>
+      <%!-- With nothing waiting, the empty state stretches to end where the side panel ends.
+           Beside the office panel it ends where the panel ends folded, so unfolding the people
+           does not stretch it; the columns show once the panel has folded them (`.PresenceFit`). --%>
       <div
         id="inbox-columns"
         phx-hook=".SessionPlacement"
         class={[
           "group/columns grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_20rem] @3xl:gap-x-12",
-          if(@items == [], do: "items-stretch", else: "items-start")
+          if(@items == [] and not office_fold?(assigns), do: "items-stretch", else: "items-start"),
+          office_fold?(assigns) &&
+            "opacity-0 transition-opacity duration-200 data-presence-fitted:opacity-100 motion-reduce:transition-none"
         ]}
       >
         <%!-- The member's session closes their queue; with nothing waiting it starts level with the side panel. --%>
@@ -568,7 +572,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           class={[
             "flex min-w-0 flex-col",
             if(@layer == :me, do: "gap-4", else: "gap-7"),
-            @items == [] && @session? && "@3xl:mt-7.75"
+            @items == [] && @session? && "@3xl:mt-7.75",
+            office_fold?(assigns) && "@3xl:min-h-(--presence-folded-height)"
           ]}
         >
           <.all_done :if={@items == [] and not @session?} class="flex-1 justify-center" />
@@ -777,6 +782,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     </div>
     """
   end
+
+  # With nothing waiting, the empty state follows the office panel, which folds
+  # its people on the client (see `.PresenceFit`).
+  defp office_fold?(assigns), do: assigns.items == [] and assigns.layer == :company and assigns.presence != []
 
   defp matching(items, ""), do: items
 
