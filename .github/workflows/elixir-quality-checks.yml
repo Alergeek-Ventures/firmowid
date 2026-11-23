@@ -141,11 +141,11 @@ jobs:
             misses=0
             for i in 1 2 3 4; do
               rm -f _build/test/.gettext-extraction-check
-              mix run --no-compile --no-deps-check --no-start -e "Mix.Tasks.Diag.Gettext.run([~s(pair$i-before-run1)])"
+              mix do loadpaths --no-compile --no-deps-check + diag.gettext "pair$i-before-run1"
               mix translations.extract.check > "$RUNNER_TEMP/run1.log" 2>&1
               grep -cE "Compiling [0-9]+ files" "$RUNNER_TEMP/run1.log" | sed "s/^/pair$i run1 compile lines: /"
               last1=$(ls -1 "$GETTEXT_DIAG_DIR"/ctx-* | sort | tail -1)
-              mix run --no-compile --no-deps-check --no-start -e "Mix.Tasks.Diag.Gettext.run([~s(pair$i-before-run2)])"
+              mix do loadpaths --no-compile --no-deps-check + diag.gettext "pair$i-before-run2"
               mix translations.extract.check > "$RUNNER_TEMP/run2.log" 2>&1
               grep -E "Compiling [0-9]+ files|cached success" "$RUNNER_TEMP/run2.log" | sed "s/^/pair$i run2: /"
               first2=$(ls -1 "$GETTEXT_DIAG_DIR"/ctx-* | sort | grep -A1 -Fx "$last1" | tail -1)
