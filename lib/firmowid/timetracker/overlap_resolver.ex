@@ -35,13 +35,37 @@ defmodule Firmowid.Timetracker.OverlapResolver do
   @spec execute([trim_action()], map(), Scope.t()) ::
           {:ok, map()} | {:error, term()}
   def execute(trim_actions, new_session_attrs, scope) do
+    member_id = new_session_attrs[:member_id] || scope.actor.member.id
+    run(trim_actions, member_id, fn -> create_session!(new_session_attrs, scope) end, scope)
+  end
+
+  @doc """
+  Atomically executes the trim plan and updates an existing session (the running one, whose
+  times were edited) with `attrs`.
+  """
+  @spec execute_update([trim_action()], Session.t(), map(), Scope.t()) ::
+          {:ok, map()} | {:error, term()}
+  def execute_update(trim_actions, session, attrs, scope) do
+    run(
+      trim_actions,
+      session.member_id,
+      fn ->
+        case Session.update(session, attrs, scope: scope) do
+          {:ok, updated} -> updated
+          {:error, error} -> Ash.DataLayer.rollback(Session, error)
+        end
+      end,
+      scope
+    )
+  end
+
+  defp run(trim_actions, member_id, finish, scope) do
     # Ash doesn't provide a built-in primitive for atomically executing
     # heterogeneous actions (mixed updates + deletes + creates). Each individual
     # Ash call below runs inside this shared transaction via savepoints.
     Ash.DataLayer.transaction(
       Session,
       fn ->
-        member_id = new_session_attrs[:member_id] || scope.actor.member.id
         SynchronizeSubmittedMonth.lock_member!(member_id, scope: scope)
 
         Enum.each(trim_actions, fn action ->
@@ -63,7 +87,7 @@ defmodule Firmowid.Timetracker.OverlapResolver do
           execute_action!(put_elem(action, 1, current), scope)
         end)
 
-        create_session!(new_session_attrs, scope)
+        finish.()
       end
     )
   end
