@@ -33,9 +33,11 @@ defmodule Firmowid.Invoicing.Services.GotenbergClient do
 
     req =
       Req.new(
-        base_url: Keyword.fetch!(config, :base_url),
-        receive_timeout: Keyword.get(config, :receive_timeout, 120_000),
-        retry: false
+        [
+          base_url: Keyword.fetch!(config, :base_url),
+          receive_timeout: Keyword.get(config, :receive_timeout, 120_000),
+          retry: false
+        ] ++ Keyword.take(config, [:plug])
       )
 
     case Req.post(req,

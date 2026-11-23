@@ -11,7 +11,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
   alias Firmowid.Scope
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
-  @tag timeout: 180_000
+  # Gotenberg is not available in CI, so rendering is stubbed with a fixed PDF body.
+  setup do
+    config = Application.fetch_env!(:firmowid, :gotenberg)
+    Application.put_env(:firmowid, :gotenberg, Keyword.put(config, :plug, {Req.Test, :gotenberg}))
+    on_exit(fn -> Application.put_env(:firmowid, :gotenberg, config) end)
+    Req.Test.stub(:gotenberg, &Plug.Conn.send_resp(&1, 200, "%PDF-1.4 stub"))
+  end
+
   test "opens one KSeF PDF inline and downloads its whole correction tree from any member", %{
     conn: conn
   } do
