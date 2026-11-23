@@ -116,6 +116,11 @@ defmodule FirmowidWeb.Core.Router do
     get "/health", Infrastructure.Controllers.Health, :check
   end
 
+  # Stripe signs its events instead of sending a session or a CSRF token.
+  scope "/", FirmowidWeb do
+    post "/webhooks/stripe", Billing.Controllers.StripeWebhook, :create
+  end
+
   pipeline :agent_discovery_links do
     plug :put_agent_discovery_links
   end
@@ -268,6 +273,7 @@ defmodule FirmowidWeb.Core.Router do
     ]
 
     post "/organizacja/przelacz", Organization.Controllers.Switch, :switch
+    get "/abonament/powrot", Billing.Controllers.CheckoutReturn, :show
     get "/obrazy/:id/:width", Infrastructure.Controllers.Picture, :show
     get "/logotypy/:domain", Infrastructure.Controllers.CompanyLogo, :show
     get "/kosztowe/:id/pobierz", CostInvoicePdf, :pdf

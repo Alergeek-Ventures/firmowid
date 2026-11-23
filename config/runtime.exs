@@ -76,6 +76,28 @@ config :firmowid, :ksef,
   base_url: default_ksef_base_url,
   qr_code_base_url: default_ksef_qr_code_base_url
 
+# Stripe card payments. Production must have its keys; development and tests boot without them
+# (only a call to Stripe or an event fails then).
+case {config_env(), System.get_env("STRIPE_SECRET_KEY"), System.get_env("STRIPE_WEBHOOK_SECRET")} do
+  {:prod, nil, _webhook_secret} ->
+    raise "STRIPE_SECRET_KEY environment variable is not set"
+
+  {:prod, _secret_key, nil} ->
+    raise "STRIPE_WEBHOOK_SECRET environment variable is not set"
+
+  {_env, secret_key, webhook_secret} ->
+    if secret_key, do: config(:stripity_stripe, api_key: secret_key)
+    if webhook_secret, do: config(:firmowid, :stripe, webhook_secret: webhook_secret)
+end
+
+# The organization that sells Firmowid: it issues the advance invoices of Stripe payments.
+# Development and tests default to the seeded organization (config/dev.exs, config/test.exs).
+case {config_env(), System.get_env("BILLING_SELLER_ORGANIZATION_ID")} do
+  {:prod, nil} -> raise "BILLING_SELLER_ORGANIZATION_ID environment variable is not set"
+  {_env, nil} -> :ok
+  {_env, seller_id} -> config :firmowid, :billing, seller_organization_id: seller_id
+end
+
 config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
   go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),

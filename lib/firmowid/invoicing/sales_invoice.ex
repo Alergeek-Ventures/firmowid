@@ -1032,11 +1032,15 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         authorize_if signal_in(Signals, :sales_invoice_confirmed_in_ksef)
       end
 
-      # The KSeF import and submission, the e-mails and the overdue reminder scan.
+      # The KSeF import and submission, the e-mails, the overdue reminder scan and the seller's
+      # advance invoices for card payments.
       policy {SystemActorRole, roles: [:sales_invoice_processor]} do
         authorize_if action_type(:read)
 
         authorize_if action([
+                       :issue,
+                       :get_next_number,
+                       :denormalize_item_names,
                        :import_from_ksef,
                        :start_ksef_submission,
                        :record_ksef_submission,

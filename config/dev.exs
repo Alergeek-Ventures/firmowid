@@ -38,6 +38,10 @@ config :firmowid, Firmowid.Repo,
   show_sensitive_data_on_connection_error: true,
   log: false
 
+# The seeded organization with a KSeF test connection (fixed id in priv/repo/seeds/bytecraft.exs)
+# sells Firmowid in development; BILLING_SELLER_ORGANIZATION_ID overrides it.
+config :firmowid, :billing, seller_organization_id: "00000000-0000-0000-0000-000000000001"
+
 # Keep the Reducto request flow identical to production without requiring
 # credentials or making external calls during local development.
 config :firmowid, :reducto_api_client,

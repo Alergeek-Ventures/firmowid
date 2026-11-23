@@ -5,6 +5,10 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
+
+  alias Firmowid.Billing.PlanCatalog
+  alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Settings.Components.Helpers
 
   @doc """
@@ -12,6 +16,9 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   """
   @spec subscription_tab(map()) :: Phoenix.LiveView.Rendered.t()
   attr :worksheet, :any, required: true
+
+  attr :subscription, :any, default: nil, doc: "the subscription as Stripe reports it, if any"
+  attr :plan_granted?, :boolean, default: false
 
   def subscription_tab(assigns) do
     ~H"""
@@ -39,10 +46,20 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               </div>
             </Helpers.settings_display_field>
 
-            <Helpers.settings_display_field label={gettext("Monthly fee (net)")}>
+            <%!-- A paid subscription shows the price Stripe charges, which may be yearly. --%>
+            <Helpers.settings_display_field :if={@subscription} label={gettext("Fee (net)")}>
+              {Worksheet.net_price_text(net_price(@subscription), @subscription.billing_period)}
+            </Helpers.settings_display_field>
+
+            <Helpers.settings_display_field :if={!@subscription} label={gettext("Monthly fee (net)")}>
               {@worksheet.monthly_price_text}
             </Helpers.settings_display_field>
           </div>
+
+          <.funding
+            subscription={@subscription}
+            plan_granted?={@plan_granted?}
+          />
 
           <div class="space-y-3 rounded-lg bg-grey-50 p-4">
             <h3 class="text-sm/none font-medium text-grey-900">
@@ -135,6 +152,94 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
     <% end %>
     """
   end
+
+  # Who pays for the plan; the first clause that matches wins: a subscription, a plan granted by
+  # hand. A free plan shows nothing.
+  attr :subscription, :any, required: true
+  attr :plan_granted?, :boolean, required: true
+
+  defp funding(%{subscription: %{}} = assigns) do
+    ~H"""
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class={["text-sm/snug", payment_line_styles(@subscription)]}>
+        {payment_line(@subscription)}
+      </p>
+      <.button
+        id="subscription-manage-payments"
+        type="button"
+        variant="outline"
+        size="small"
+        phx-click="manage-payments"
+        phx-disable-with={gettext("Opening the payment page...")}
+      >
+        {gettext("Manage subscription")}
+      </.button>
+    </div>
+    """
+  end
+
+  defp funding(%{plan_granted?: true} = assigns) do
+    ~H"""
+    <p class="text-sm/snug text-grey-700">
+      {gettext("This plan is granted to your organization. Nothing is charged for it.")}
+    </p>
+    """
+  end
+
+  defp funding(assigns), do: ~H""
+
+  # What the subscription does next, as Stripe last reported it. Stripe charges the price of the
+  # plan; prorations show in its portal.
+  defp payment_line(%{trialing?: true, cancel_at_period_end: true} = subscription) do
+    gettext("Trial of the %{plan} plan until %{date}. Nothing is charged.",
+      plan: Worksheet.plan_label(subscription.plan),
+      # Stripe ends the trial at the start of the day after its last one.
+      date: format_date(Date.add(subscription.current_period_end, -1))
+    )
+  end
+
+  defp payment_line(%{payment_overdue?: true}) do
+    gettext(
+      "The last payment did not go through. Stripe will try again, and if that fails, the company returns to the Free plan. Change the card in “Manage subscription”."
+    )
+  end
+
+  defp payment_line(%{cancel_at_period_end: true} = subscription) do
+    gettext(
+      "The plan stays on until %{date}, then the company returns to the Free plan. You can undo the cancellation in “Manage subscription”.",
+      date: format_date(subscription.current_period_end)
+    )
+  end
+
+  defp payment_line(%{trialing?: true} = subscription) do
+    gettext("Trial until %{date}. First payment: %{amount} gross · %{period}",
+      date: format_date(subscription.current_period_end),
+      amount: gross_price(subscription),
+      period: Worksheet.period_label(subscription.billing_period)
+    )
+  end
+
+  defp payment_line(subscription) do
+    Enum.join(
+      [
+        gettext("Next payment on %{date}: %{amount} gross",
+          date: format_date(subscription.current_period_end),
+          amount: gross_price(subscription)
+        ),
+        Worksheet.period_label(subscription.billing_period)
+      ],
+      " · "
+    )
+  end
+
+  defp payment_line_styles(%{payment_overdue?: true}), do: "text-rust-700"
+  defp payment_line_styles(_subscription), do: "text-grey-700"
+
+  defp gross_price(subscription), do: Worksheet.format_money(subscription.amount)
+
+  defp net_price(subscription), do: subscription.amount |> PlanCatalog.without_vat() |> Decimal.round(2)
+
+  defp format_date(date), do: Firmowid.Cldr.Date.to_string!(date, format: :long)
 
   defp plan_badge_label(:no_plan), do: gettext("no plan")
   defp plan_badge_label(_plan), do: gettext("active")

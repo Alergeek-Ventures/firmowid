@@ -694,9 +694,8 @@ defmodule Firmowid.Core.User do
     # active members has a billing plan. The owner of one is told to renew the
     # subscription; members are not.
     #
-    # Until subscription lifecycle moves into application data (it is managed outside
-    # the app before Stripe), `:no_plan` deliberately serves both as the zero-plan
-    # catalog entry and as the signal that organization access is blocked.
+    # `:no_plan` deliberately serves both as the zero-plan catalog entry and as the
+    # signal that organization access is blocked.
     calculate :access_block,
               :atom,
               expr(

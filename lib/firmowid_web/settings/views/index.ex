@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Ash.Error.Forbidden.Policy
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
+  alias Firmowid.Billing
   alias Firmowid.Billing.Month
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
@@ -34,6 +35,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidUI.Ksef.Connection
   alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext
+  alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
   alias FirmowidWeb.Inbox.Components.SidebarNav
@@ -132,6 +134,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_credentials, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
+     |> assign(:active_subscription, nil)
+     |> assign(:plan_granted?, false)
      |> assign(:member_form, form_member_form(current_user.member, scope))
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -389,6 +393,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         {:noreply, socket}
     end
+  end
+
+  # Card, plan and cancellation are managed in Stripe's customer portal.
+  def handle_event("manage-payments", _params, socket) do
+    url =
+      Billing.open_subscription_portal!(
+        %{return_url: BillingNavigation.portal_return_url()},
+        scope: socket.assigns.ash_scope
+      )
+
+    {:noreply, redirect(socket, external: url)}
   end
 
   def handle_event("upload", _, socket) do
@@ -1096,7 +1111,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
             taxes?={flag_enabled?(:taxes, assigns)}
           />
         <% :subscription -> %>
-          <.subscription_tab worksheet={@subscription_worksheet} />
+          <.subscription_tab
+            worksheet={@subscription_worksheet}
+            subscription={@active_subscription}
+            plan_granted?={@plan_granted?}
+          />
         <% :account -> %>
           <.account_tab
             current_user={@current_user}
@@ -1250,14 +1269,24 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
     current_user = socket.assigns.current_user
 
-    worksheet =
-      if current_org.owner_id == current_user.id do
+    if current_org.owner_id == current_user.id do
+      scope = socket.assigns.ash_scope
+
+      worksheet =
         current_org
         |> MonthContext.load(month, current_user, current_month: month)
         |> Map.fetch!(:worksheet)
-      end
 
-    assign(socket, :subscription_worksheet, worksheet)
+      %{plan_granted?: plan_granted?} = Ash.load!(current_org, :plan_granted?, scope: scope)
+
+      socket
+      |> assign(:subscription_worksheet, worksheet)
+      # Read from Stripe when the owner opens the tab, so it shows what Stripe reports now.
+      |> assign(:active_subscription, Billing.get_subscription_details!(scope: scope))
+      |> assign(:plan_granted?, plan_granted?)
+    else
+      assign(socket, :subscription_worksheet, nil)
+    end
   end
 
   defp save_member_form(socket, member_params, section_assign) do

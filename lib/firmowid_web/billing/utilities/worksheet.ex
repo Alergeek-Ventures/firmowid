@@ -3,6 +3,10 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   Shapes billing facts into a worksheet-oriented structure for billing views:
   the plan, what the organization uses of each limited thing, and the cheapest
   plan that covers that usage.
+
+  Also holds the labels and price texts the billing screens share, such as
+  `plan_label/1`, `limited_label/1`, `period_label/1`, `net_price_text/2` and
+  `format_money/1`.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -36,13 +40,13 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     %{
       selected_plan: plan,
       selected_plan_label: plan_label(plan),
-      monthly_price_text: money_to_string(rules.monthly_price_pln),
+      monthly_price_text: format_money(rules.monthly_price_pln),
       usage_rows: usage_rows,
       # `:no_plan` marks a blocked organization, not an offer whose limits it can exceed.
       over_limit?: plan != :no_plan and Enum.any?(usage_rows, &(&1.over_limit > 0)),
       fitting_plan: fitting_plan,
       fitting_plan_label: plan_label(fitting_plan),
-      fitting_plan_price_text: money_to_string(PlanCatalog.plan!(fitting_plan).monthly_price_pln)
+      fitting_plan_price_text: format_money(PlanCatalog.plan!(fitting_plan).monthly_price_pln)
     }
   end
 
@@ -54,6 +58,27 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   def plan_label(:free), do: gettext("Free")
   def plan_label(:przedsiebiorca), do: gettext("Entrepreneur")
   def plan_label(:firma), do: gettext("Company")
+
+  @doc """
+  Returns the human label for a billing period.
+  """
+  @spec period_label(PlanCatalog.billing_period()) :: String.t()
+  def period_label(:monthly), do: pgettext("billing period", "Monthly")
+  def period_label(:yearly), do: pgettext("billing period", "Yearly")
+
+  @doc """
+  Returns a net price for a billing period, as the screens state it.
+  """
+  @spec net_price_text(Decimal.t(), PlanCatalog.billing_period()) :: String.t()
+  def net_price_text(net, :monthly), do: gettext("%{price} + VAT / month", price: format_money(net))
+
+  def net_price_text(net, :yearly), do: gettext("%{price} + VAT / year", price: format_money(net))
+
+  @doc """
+  Formats a PLN amount, without grosze when it has none.
+  """
+  @spec format_money(Decimal.t()) :: String.t()
+  def format_money(amount), do: :PLN |> Money.new(amount) |> Money.to_string!(no_fraction_if_integer: true)
 
   defp usage_row(limited, count, limit) do
     over_limit = over_limit(count, limit)
@@ -102,10 +127,4 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   defp bar_width(0, 0), do: 0
   defp bar_width(_count, 0), do: 100
   defp bar_width(count, limit), do: min(trunc(count / limit * 100), 100)
-
-  defp money_to_string(amount) do
-    :PLN
-    |> Money.new(amount)
-    |> Money.to_string!(no_fraction_if_integer: true)
-  end
 end

@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Core.Organization do
   @moduledoc """
   Ash resource for the `organizations` table.
@@ -21,10 +22,12 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core
+  alias Firmowid.Core.Changes.CancelStripeSubscription
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Core.Changes.DefaultDisplayName
   alias Firmowid.Core.Changes.EnqueueNipCheck
+  alias Firmowid.Core.Changes.FollowStripeSubscription
   alias Firmowid.Core.Changes.GenerateAvatarVariants
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
@@ -165,14 +168,30 @@ defmodule Firmowid.Core.Organization do
     end
 
     update :update_billing_plan do
-      description "Update the billing plan assigned to an organization."
+      description "Set the organization's plan by hand; a Stripe subscription it had is cancelled."
       accept [:billing_plan]
       require_atomic? false
 
-      # A higher plan brings back what the lower one switched off.
-      change after_action(fn changeset, organization, _context ->
-               PlanLimits.plan_changed(organization, changeset.data.billing_plan)
-             end)
+      # The caller's record may be older than a purchase: cancel what the organization has now.
+      change get_and_lock_for_update()
+      change CancelStripeSubscription
+      pipe_through [:plan_change]
+    end
+
+    update :link_stripe_customer do
+      description "Remember the organization's customer at Stripe."
+      accept [:stripe_customer_id]
+    end
+
+    update :follow_stripe_subscription do
+      description "Make the plan follow a Stripe subscription as Stripe reports it now."
+      accept []
+      require_atomic? false
+
+      argument :stripe_subscription, :map, allow_nil?: false
+
+      change FollowStripeSubscription
+      pipe_through [:plan_change]
     end
 
     update :update_plan_limit_decision do
@@ -195,6 +214,10 @@ defmodule Firmowid.Core.Organization do
     destroy :destroy do
       description "Delete an organization and its dependent data."
       require_atomic? false
+
+      # The caller's record may be older than a purchase: cancel what the organization has now.
+      change get_and_lock_for_update()
+      change CancelStripeSubscription
     end
   end
 
@@ -225,10 +248,23 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(id == ^actor(:org_id))
     end
 
-    # Actors built for one organization read only that organization; the classifier reads the
-    # industry whose categories it chooses from.
     bypass [
-      {SystemActorRole, roles: [:analysis_classifier, :billing_snapshotter, :ksef_session]},
+      {SystemActorRole, roles: [:billing]},
+      action([:read, :link_stripe_customer, :follow_stripe_subscription])
+    ] do
+      authorize_if expr(id == ^actor(:org_id))
+    end
+
+    # Actors built for one organization read only that organization; the classifier reads the
+    # industry whose categories it chooses from, the invoice processor the seller of its invoices.
+    bypass [
+      {SystemActorRole,
+       roles: [
+         :analysis_classifier,
+         :billing_snapshotter,
+         :ksef_session,
+         :sales_invoice_processor
+       ]},
       action_type(:read)
     ] do
       authorize_if expr(id == ^actor(:org_id))
@@ -332,6 +368,15 @@ defmodule Firmowid.Core.Organization do
       default: :free,
       constraints: [one_of: PlanCatalog.plans()]
 
+    attribute :stripe_customer_id, :string,
+      public?: true,
+      description: "The organization's customer at Stripe, created with its first checkout or by a superuser."
+
+    attribute :stripe_subscription_id, :string,
+      public?: true,
+      description:
+        "The Stripe subscription that gives the organization its plan; none while the plan is free or set by hand."
+
     attribute :plan_limit_decision_on, :date,
       public?: true,
       description:
@@ -390,11 +435,24 @@ defmodule Firmowid.Core.Organization do
       change set_attribute(:nip_registers, nil), where: [changing(:nip)]
       change EnqueueNipCheck, where: [changing(:nip)]
     end
+
+    # Every change of the plan brings back what a lower plan switched off.
+    pipeline :plan_change do
+      # Qualified: the section also imports the preparation `after_action/1`.
+      change Ash.Resource.Change.Builtins.after_action(fn changeset, organization, _context ->
+               PlanLimits.plan_changed(organization, changeset.data.billing_plan)
+             end)
+    end
   end
 
   calculations do
     calculate :vat_eu, :string, expr("PL" <> nip)
 
     calculate :on_trial?, :boolean, expr(inserted_at >= ago(@trial_days, :day))
+
+    # A paid plan nobody pays for: set by hand, not bought.
+    calculate :plan_granted?,
+              :boolean,
+              expr(billing_plan in ^PlanCatalog.paid_plans() and is_nil(stripe_subscription_id))
   end
 end

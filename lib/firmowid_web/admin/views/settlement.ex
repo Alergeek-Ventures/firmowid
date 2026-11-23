@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
 
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Billing
   alias Firmowid.Billing.Month
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core
@@ -130,6 +131,17 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
     )
 
     {:noreply, socket}
+  end
+
+  # Trials, extensions and cancellations are made on the customer's page in the Stripe Dashboard.
+  def handle_event("open-stripe", _params, socket) do
+    url =
+      Billing.open_subscription_dashboard!(
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.selected_org.id
+      )
+
+    {:noreply, redirect(socket, external: url)}
   end
 
   def handle_event("save-current-plan", %{"plan" => %{"billing_plan" => billing_plan}}, socket) do

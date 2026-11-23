@@ -10,6 +10,7 @@ defmodule Firmowid.Billing.PlanCatalog do
   @type plan :: :no_plan | :free | :przedsiebiorca | :firma
   @type offered_plan :: :free | :przedsiebiorca | :firma
   @type money_amount :: Decimal.t()
+  @type billing_period :: :monthly | :yearly
   @type limited :: :users | :bank_institutions | :active_projects
   @type limit :: non_neg_integer() | :unlimited
 
@@ -37,11 +38,26 @@ defmodule Firmowid.Billing.PlanCatalog do
 
   @limited [:users, :bank_institutions, :active_projects]
 
+  @vat_percent 23
+
   @doc """
   Returns all supported billing plans in stable order.
   """
   @spec plans() :: [plan()]
   def plans, do: @plans
+
+  @doc """
+  Returns the plans that cost money, cheapest first: the ones a subscription or a
+  trial can carry.
+  """
+  @spec paid_plans() :: [offered_plan()]
+  def paid_plans, do: Enum.reject(@offered_plans, &Decimal.eq?(plan!(&1).monthly_price_pln, 0))
+
+  @doc """
+  Returns the billing periods a plan can be paid for.
+  """
+  @spec billing_periods() :: [billing_period()]
+  def billing_periods, do: [:monthly, :yearly]
 
   @doc """
   Returns structured billing rules for a single plan.
@@ -82,6 +98,33 @@ defmodule Firmowid.Billing.PlanCatalog do
       limits: %{users: :unlimited, bank_institutions: :unlimited, active_projects: :unlimited}
     }
   end
+
+  @doc """
+  Returns what a plan costs for a billing period with 23% VAT added, rounded to
+  the grosz. Catalog prices are net.
+  """
+  @spec gross_price_pln(plan(), billing_period()) :: money_amount()
+  def gross_price_pln(plan, billing_period), do: plan |> net_price_pln(billing_period) |> with_vat()
+
+  @doc """
+  Returns the net price of a plan for a billing period.
+  """
+  @spec net_price_pln(plan(), billing_period()) :: money_amount()
+  def net_price_pln(plan, :monthly), do: plan!(plan).monthly_price_pln
+  def net_price_pln(plan, :yearly), do: plan!(plan).yearly_price_pln
+
+  @doc "Returns the VAT rate in percent that applies to every plan."
+  @spec vat_percent() :: pos_integer()
+  def vat_percent, do: @vat_percent
+
+  @doc "Returns the net of a gross amount, not rounded."
+  @spec without_vat(money_amount()) :: money_amount()
+  def without_vat(gross), do: Decimal.div(gross, vat_factor())
+
+  # Catalog prices are net; VAT is added and rounded to the grosz.
+  defp with_vat(net), do: net |> Decimal.mult(vat_factor()) |> Decimal.round(2)
+
+  defp vat_factor, do: Decimal.div(Decimal.new(100 + @vat_percent), 100)
 
   @doc """
   Returns all plan rules keyed by plan identifier.

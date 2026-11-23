@@ -128,6 +128,24 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               "A plan change applies to the current and future months. The historical snapshot below stays unchanged."
             )}
           </p>
+
+          <p class="text-sm/snug text-grey-700">
+            {gettext(
+              "Trials, extensions and cancellations are made in Stripe; the plan follows the company's subscription there. A plan saved here cancels that subscription."
+            )}
+          </p>
+
+          <%!-- The company that sells Firmowid has no customer at Stripe. --%>
+          <FirmowidUI.Components.Button.button
+            :if={@selected_org.id != Firmowid.Billing.seller_organization_id()}
+            id="open-stripe"
+            type="button"
+            variant="outline"
+            size="small"
+            phx-click="open-stripe"
+          >
+            {gettext("Open in Stripe")}
+          </FirmowidUI.Components.Button.button>
         </div>
       </div>
     </section>
