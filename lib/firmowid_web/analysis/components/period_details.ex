@@ -15,6 +15,8 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   use FirmowidWeb, :html
 
   import FirmowidWeb.Analysis.Utilities.Amounts, only: [whole_money: 1]
+  import FirmowidWeb.DesignSystem.Components.FigmaIcon, only: [figma_icon: 1]
+  import FirmowidWeb.DesignSystem.Components.Menu, only: [dropdown_panel_styles: 0]
 
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Cldr.Number
@@ -116,31 +118,36 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     <section
       id="analysis-period"
       aria-labelledby="analysis-period-title"
-      class="@container flex flex-col gap-10"
+      class="@container flex flex-col gap-6"
     >
-      <header class={[
-        "-mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1",
-        !@title_shown && "invisible"
-      ]}>
-        <h2 id="analysis-period-title" class="text-sm font-medium text-grey-700">{@title}</h2>
-        <FirmowidUI.Components.Link.link
-          :if={@whole_period}
-          kind="unstyled"
-          id="analysis-whole-period"
-          patch={@whole_period}
-          class="text-sm text-grey-700 underline active:text-grey-900"
-        >
-          {gettext("Show the whole period")}
-        </FirmowidUI.Components.Link.link>
-      </header>
-      <p :if={@months == []} id="analysis-period-open" class="text-sm text-grey-700">
-        {gettext("No month of this period is closed yet.")}
-      </p>
-      <.story :if={@story} story={@story} comparisons={@comparisons} />
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <header class={[
+            "flex flex-wrap items-baseline gap-x-4 gap-y-1",
+            !@title_shown && "invisible"
+          ]}>
+            <h2 id="analysis-period-title" class="text-sm/[1.35] text-grey-500">{@title}</h2>
+            <FirmowidUI.Components.Link.link
+              :if={@whole_period}
+              kind="unstyled"
+              id="analysis-whole-period"
+              patch={@whole_period}
+              class="text-sm/[1.35] text-grey-700 underline active:text-grey-900"
+            >
+              {gettext("Show the whole period")}
+            </FirmowidUI.Components.Link.link>
+          </header>
+          <.sentence :if={@story} story={@story} />
+        </div>
+        <p :if={@months == []} id="analysis-period-open" class="text-sm text-grey-700">
+          {gettext("No month of this period is closed yet.")}
+        </p>
+        <.story :if={@story} story={@story} comparisons={@comparisons} />
+      </div>
       <AskAssistant.tiles id="analysis-period-questions" context={@assistant} questions={@questions} />
       <div
         :if={@months != []}
-        class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2"
+        class="grid grid-cols-[minmax(0,1fr)] gap-8 pt-4 @5xl:grid-cols-2"
       >
         <.column
           id="analysis-period-expenses"
@@ -162,18 +169,17 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   end
 
   attr :story, :map, required: true
-  attr :comparisons, :list, required: true
 
-  # One sentence and one strip: where every 100 zł of income went and what stayed. The amount
-  # takes the colour of what stayed in the strip, or of a loss.
-  defp story(assigns) do
+  # Where every 100 zł of income went, in one sentence. The amount takes the colour of what
+  # stayed in the strip, or of a loss.
+  defp sentence(assigns) do
     {sentence, amount, tone} =
       if assigns.story.kept,
         do:
           {gettext("Of every %{hundred} of income, %{amount} stayed.",
              hundred: whole_money(100),
              amount: "__AMOUNT__"
-           ), assigns.story.kept, "bg-teal-600 text-white"},
+           ), assigns.story.kept, "bg-teal-600 text-teal-50"},
         else:
           {gettext("For every %{hundred} of income, %{amount} went out.",
              hundred: whole_money(100),
@@ -184,54 +190,73 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     assigns = assign(assigns, before: before, amount: whole_money(amount), rest: rest, tone: tone)
 
     ~H"""
-    <div id="analysis-period-story" class="flex flex-col gap-6">
-      <p class="max-w-[22ch] text-2xl/tight font-semibold text-balance text-grey-900 @xl:text-3xl/tight">
-        {@before}<span class={["rounded-md box-decoration-clone px-1.5 whitespace-nowrap", @tone]}>{@amount}</span>{@rest}
-      </p>
-      <div class="flex flex-col gap-3">
-        <.strip segments={@story.segments} class="h-12 rounded-lg @2xl:h-14" />
-        <ul class="flex flex-col @2xl:flex-row @2xl:gap-0.5">
-          <li
-            :for={segment <- @story.segments}
-            style={"flex: #{segment.share} 1 0"}
-            class="grid min-w-0 grid-cols-[0.75rem_minmax(0,1fr)_auto] items-baseline gap-x-2 border-be border-grey-200 py-2 last:border-be-0 @2xl:flex @2xl:min-w-16 @2xl:flex-col @2xl:gap-0.5 @2xl:border-be-0 @2xl:py-0"
-          >
+    <p class="text-xl/[1.3] font-medium text-balance text-grey-900 @xl:text-2xl/[1.3]">
+      {@before}<span class={["rounded-sm box-decoration-clone px-2 whitespace-nowrap", @tone]}>{@amount}</span>{@rest}
+    </p>
+    """
+  end
+
+  attr :story, :map, required: true
+  attr :comparisons, :list, required: true
+
+  # One strip of where every 100 zł of income went and what stayed, with the other periods below.
+  # Hovering a legend entry dims every other part, in the strip and in the other periods'.
+  defp story(assigns) do
+    slots =
+      assigns.story.segments
+      |> Enum.with_index()
+      |> Map.new(fn {segment, i} -> {segment.key, i} end)
+
+    assigns = assign(assigns, :slots, slots)
+
+    ~H"""
+    <div id="analysis-period-story" class="group/story contents">
+      <.strip segments={@story.segments} slots={@slots} class="h-12 rounded-sm" />
+      <ul class="flex flex-wrap gap-x-6 gap-y-2 text-sm/[1.35]">
+        <li
+          :for={segment <- @story.segments}
+          data-legend={@slots[segment.key]}
+          class={[
+            "flex min-w-0 items-center gap-1.5 transition-opacity duration-150",
+            dim_styles(@slots[segment.key])
+          ]}
+        >
+          <span class="flex items-center gap-2">
             <span
-              class={["size-2.5 self-center rounded-xs @2xl:hidden", tone_styles(segment.tone)]}
+              class={["size-2 shrink-0 rounded-xs", tone_styles(segment.tone)]}
               aria-hidden="true"
             />
             <span class={[
-              "order-last text-xl font-semibold whitespace-nowrap tabular-nums @2xl:order-first",
-              segment.key == :kept && "text-teal-700"
+              "font-medium whitespace-nowrap tabular-nums",
+              if(segment.key == :kept, do: "text-teal-700", else: "text-grey-900")
             ]}>
               {whole_money(segment.per_100)}
             </span>
-            <span class="min-w-0 text-sm text-grey-700 @2xl:truncate">{segment.label}</span>
-          </li>
-        </ul>
-      </div>
-      <div
-        :if={@comparisons != []}
-        class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 text-xs text-grey-700"
-      >
-        <%= for comparison <- @comparisons do %>
-          <span class="font-medium" title={comparison.months}>{comparison.label}</span>
-          <.strip segments={comparison.segments} class="h-2 rounded-xs" />
-          <span class="font-medium tabular-nums">
-            <span :if={comparison.kept} class="text-teal-700">
-              {gettext("%{amount} stayed", amount: whole_money(comparison.kept))}
-            </span>
-            <span :if={!comparison.kept and comparison.spent > 100} class="text-brick-700">
-              {gettext("loss %{amount}", amount: whole_money(comparison.spent - 100))}
-            </span>
           </span>
-        <% end %>
+          <span class="min-w-0 truncate text-grey-600">{segment.label}</span>
+        </li>
+      </ul>
+      <div
+        :for={comparison <- @comparisons}
+        class="flex items-center gap-4 text-sm/[1.35] text-grey-500"
+      >
+        <span class="shrink-0" title={comparison.months}>{comparison.label}</span>
+        <.strip segments={comparison.segments} slots={@slots} class="h-2 min-w-0 flex-1 rounded-xs" />
+        <span class="shrink-0 tabular-nums">
+          <span :if={comparison.kept}>
+            {gettext("%{amount} stayed", amount: whole_money(comparison.kept))}
+          </span>
+          <span :if={!comparison.kept and comparison.spent > 100} class="text-brick-700">
+            {gettext("loss %{amount}", amount: whole_money(comparison.spent - 100))}
+          </span>
+        </span>
       </div>
     </div>
     """
   end
 
   attr :segments, :list, required: true
+  attr :slots, :map, required: true, doc: "each part's place in the legend, by key"
   attr :class, :string, required: true
 
   defp strip(assigns) do
@@ -240,12 +265,30 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
       <span
         :for={segment <- @segments}
         :if={segment.share > 0}
-        class={["min-w-1", tone_styles(segment.tone)]}
+        class={[
+          "min-w-1 transition-opacity duration-150",
+          tone_styles(segment.tone),
+          dim_styles(@slots[segment.key])
+        ]}
         style={"flex: #{segment.share} 1 0"}
       />
     </div>
     """
   end
+
+  # Dims a part while another legend entry is hovered. The strip has at most five parts (the
+  # three largest costs, the rest and what stayed); a part missing from the legend always dims.
+  defp dim_styles(0), do: "group-has-[[data-legend]:not([data-legend='0']):hover]/story:opacity-25"
+
+  defp dim_styles(1), do: "group-has-[[data-legend]:not([data-legend='1']):hover]/story:opacity-25"
+
+  defp dim_styles(2), do: "group-has-[[data-legend]:not([data-legend='2']):hover]/story:opacity-25"
+
+  defp dim_styles(3), do: "group-has-[[data-legend]:not([data-legend='3']):hover]/story:opacity-25"
+
+  defp dim_styles(4), do: "group-has-[[data-legend]:not([data-legend='4']):hover]/story:opacity-25"
+
+  defp dim_styles(nil), do: "group-has-[[data-legend]:hover]/story:opacity-25"
 
   attr :id, :string, required: true
   attr :title, :string, required: true, doc: "the months the summary covers"
@@ -264,15 +307,10 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
 
   defp column(assigns) do
     ~H"""
-    <section id={@id} aria-labelledby={"#{@id}-title"} class="flex min-w-0 flex-col gap-8">
-      <header class="flex flex-col gap-1">
-        <div class="flex items-baseline justify-between gap-3">
-          <h3 id={"#{@id}-title"} class="text-lg font-semibold text-grey-900">{@title}</h3>
-          <span class="text-lg font-semibold text-grey-900 tabular-nums">{whole_money(@column.total)}</span>
-        </div>
-        <p :if={Decimal.positive?(@column.unpaid)} class="text-sm text-grey-700">
-          {gettext("Not included: unpaid invoices %{amount}", amount: whole_money(@column.unpaid))}
-        </p>
+    <section id={@id} aria-labelledby={"#{@id}-title"} class="flex min-w-0 flex-col gap-3">
+      <header class="flex items-center justify-between gap-3 text-lg/[1.3] font-medium text-grey-900">
+        <h3 id={"#{@id}-title"}>{@title}</h3>
+        <span class="tabular-nums">{whole_money(@column.total)}</span>
       </header>
       <.level
         id={"#{@id}-categories"}
@@ -282,6 +320,9 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         industry={@industry}
         can_edit={@can_edit}
       />
+      <p :if={Decimal.positive?(@column.unpaid)} class="text-sm/[1.35] text-grey-500">
+        {gettext("Not included: unpaid invoices %{amount}", amount: whole_money(@column.unpaid))}
+      </p>
     </section>
     """
   end
@@ -310,25 +351,26 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
       assign(assigns,
         shown: shown,
         rest: rest,
+        rest_tone: {assigns.column.side, @categories_at_once},
         here: "#{assigns.id}-here-#{zoom}",
         next: "#{assigns.id}-next-#{zoom}"
       )
 
     ~H"""
-    <div id={@id} class="flex flex-col gap-8" hidden={@nested}>
+    <div id={@id} class="flex flex-col gap-2" hidden={@nested}>
       <div id={@here} class="contents">
         <FirmowidUI.Components.Button.button
           :if={@nested}
           type="button"
           variant="unstyled"
-          class="group -mb-4 flex cursor-pointer items-center gap-1 self-start text-sm text-grey-700 min-block-6"
+          class="group flex cursor-pointer items-center gap-1 self-start text-sm text-grey-700 min-block-6"
           phx-click={
             JS.toggle_attribute({"hidden", ""}, to: "##{@parent}")
             |> JS.toggle_attribute({"hidden", ""}, to: "##{@id}")
             |> JS.focus(to: "##{@parent}-rest button")
           }
         >
-          <Lucideicons.chevron_left class="size-3.5" aria-hidden="true" />
+          <.figma_icon name="chevron_left" class="size-4 text-grey-500" />
           <span class="underline-offset-[.2em] pointer-fine:group-hover:underline">{gettext("Back")}</span>
         </FirmowidUI.Components.Button.button>
         <.category
@@ -339,12 +381,16 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
           industry={@industry}
           can_edit={@can_edit}
         />
-        <div :if={@rest != []} id={"#{@here}-rest"} class="flex flex-col gap-1">
-          <h4 class="text-sm">
+        <div
+          :if={@rest != []}
+          id={"#{@here}-rest"}
+          class="rounded-sm bg-white"
+        >
+          <h4>
             <FirmowidUI.Components.Button.button
               type="button"
               variant="unstyled"
-              class="group flex w-full cursor-pointer items-baseline gap-1 text-start min-block-6"
+              class="group flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-start"
               aria-controls={@next}
               phx-click={
                 JS.toggle_attribute({"hidden", ""}, to: "##{@here}")
@@ -352,28 +398,35 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
                 |> JS.focus_first(to: "##{@next}")
               }
             >
-              <span class="font-semibold text-grey-900 underline-offset-[.2em] pointer-fine:group-hover:underline">
-                {ngettext(
-                  "The rest · %{count} category",
-                  "The rest · %{count} categories",
-                  length(@rest)
-                )}
-                <Lucideicons.chevron_right
-                  class="ms-0.5 inline size-3.5 align-[-0.15em] text-grey-700"
-                  aria-hidden="true"
-                />
+              <span
+                class={["size-2 shrink-0 rounded-xs", tone_styles(@rest_tone)]}
+                aria-hidden="true"
+              />
+              <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-sm/[1.3] font-medium text-grey-900">
+                  <span class={["min-w-0 truncate", underline_styles(@column.side)]}>
+                    {ngettext(
+                      "The rest · %{count} category",
+                      "The rest · %{count} categories",
+                      length(@rest)
+                    )}
+                  </span>
+                  <.figma_icon name="chevron_right" class="size-4 text-grey-500" />
+                </span>
+                <span class="truncate text-sm/[1.35] text-grey-500 tabular-nums">
+                  {[
+                    per_100_caption(sum_per_100(@rest)),
+                    Enum.map_join(@rest, ", ", &label(&1.key, @can_edit))
+                  ]
+                  |> Enum.reject(&is_nil/1)
+                  |> Enum.join(" · ")}
+                </span>
               </span>
-              <span class="ms-auto shrink-0 ps-2 font-semibold text-grey-900 tabular-nums">
+              <span class="min-w-20 shrink-0 text-end text-sm/[1.3] font-medium text-grey-900 tabular-nums">
                 {whole_money(sum(@rest, & &1.amount))}
               </span>
             </FirmowidUI.Components.Button.button>
           </h4>
-          <p class="text-sm text-grey-700 tabular-nums">
-            {per_100_caption(sum_per_100(@rest))}
-          </p>
-          <p class="truncate text-sm text-grey-600">
-            {Enum.map_join(@rest, ", ", &label(&1.key, @can_edit))}
-          </p>
         </div>
       </div>
       <.level
@@ -405,54 +458,78 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     assigns = assign(assigns, more: more, more_id: more_id)
 
     ~H"""
-    <div id={@id} class="flex flex-col gap-1">
-      <h4 class="flex items-center gap-3 text-sm">
-        <span
-          class={["size-2.5 shrink-0 rounded-xs", tone_styles(@category.tone)]}
-          aria-hidden="true"
-        />
+    <div
+      id={@id}
+      class="flex flex-col rounded-sm bg-white"
+    >
+      <h4>
         <FirmowidUI.Components.Button.button
           type="button"
           variant="unstyled"
           id={"#{@more_id}-toggle"}
           disabled={@more == []}
-          class="group flex w-full cursor-pointer items-center gap-1 text-start min-block-6 disabled:cursor-default"
+          class="group flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-start disabled:cursor-default"
           aria-expanded={@more != [] && "false"}
           aria-controls={@more != [] && @more_id}
           phx-click={
-            JS.toggle_attribute({"hidden", ""}, to: "##{@more_id}")
+            JS.toggle_attribute({"data-open", ""}, to: "##{@more_id}")
             |> JS.toggle_attribute({"aria-expanded", "true", "false"})
           }
         >
-          <span class="min-w-0 font-semibold text-grey-900 underline-offset-[.2em] pointer-fine:group-enabled:group-hover:underline">
-            {label(@category.key, @can_edit)}
-            <Lucideicons.chevron_down
-              :if={@more != []}
-              class="ms-0.5 inline size-3.5 align-[-0.15em] text-grey-700 group-aria-expanded:rotate-180 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out"
-              aria-hidden="true"
-            />
+          <span
+            class={["size-2 shrink-0 rounded-xs", tone_styles(@category.tone)]}
+            aria-hidden="true"
+          />
+          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span class="flex items-center gap-1 text-sm/[1.3] font-medium text-grey-900">
+              <span class={[
+                "min-w-0 truncate",
+                underline_styles(@column.side)
+              ]}>
+                {label(@category.key, @can_edit)}
+              </span>
+              <.figma_icon
+                :if={@more != []}
+                name="chevron_down"
+                class="size-4 text-grey-500 group-aria-expanded:rotate-180 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out"
+              />
+            </span>
+            <span class="text-sm/[1.35] text-grey-500 tabular-nums">
+              {per_100_caption(@category.per_100)}
+              <span :if={@category.average}>· {usual_caption(
+                @category.amount,
+                @category.average,
+                @column.total
+              )}</span>
+            </span>
           </span>
           <.sparkline
             :if={length(@category.monthly) >= 3}
             values={@category.monthly}
             side={@column.side}
           />
-          <span class="shrink-0 ps-2 font-semibold text-grey-900 tabular-nums">
+          <span class="min-w-20 shrink-0 text-end text-sm/[1.3] font-medium text-grey-900 tabular-nums">
             {whole_money(@category.amount)}
           </span>
         </FirmowidUI.Components.Button.button>
       </h4>
-      <p class="ps-5.5 text-sm text-grey-700 tabular-nums">
-        {per_100_caption(@category.per_100)}
-        <span :if={@category.average}>· {usual_caption(
-          @category.amount,
-          @category.average,
-          @column.total
-        )}</span>
-      </p>
-      <ul :if={@more != []} id={@more_id} class="-mx-2 flex flex-col ps-5.5" hidden>
-        <.counterparty :for={group <- @more} group={group} industry={@industry} can_edit={@can_edit} />
-      </ul>
+      <%!-- Collapsed rows keep their place at zero height, so opening and closing both slide;
+      visibility hides them from assistive technology once the slide ends. --%>
+      <div
+        :if={@more != []}
+        id={@more_id}
+        class="invisible grid grid-rows-[0fr] opacity-0 data-open:visible data-open:grid-rows-[1fr] data-open:opacity-100 motion-safe:transition-[grid-template-rows,opacity,visibility] motion-safe:duration-250 motion-safe:ease-out"
+      >
+        <ul class="flex min-h-0 flex-col overflow-hidden ps-8 pe-2">
+          <.counterparty
+            :for={group <- @more}
+            group={group}
+            industry={@industry}
+            can_edit={@can_edit}
+          />
+          <li class="h-2 shrink-0" aria-hidden="true" />
+        </ul>
+      </div>
     </div>
     """
   end
@@ -479,7 +556,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     <svg
       viewBox="0 0 96 32"
       preserveAspectRatio="none"
-      class="ms-auto hidden h-7 w-20 shrink-0 overflow-visible @md:block"
+      class="hidden h-7 w-20 shrink-0 overflow-visible @md:block"
       aria-hidden="true"
     >
       <polygon points={"0,32 #{@points} 96,32"} class={sparkline_fill_styles(@side)} />
@@ -494,6 +571,14 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     </svg>
     """
   end
+
+  # A hovered category name is underlined in its ledger side's dark colour, drawn from the left.
+  defp underline_styles(:expenses), do: [underline_base_styles(), "from-rust-700 to-rust-700"]
+  defp underline_styles(:income), do: [underline_base_styles(), "from-teal-700 to-teal-700"]
+
+  defp underline_base_styles,
+    do:
+      "bg-linear-to-r bg-size-[0%_2px] bg-[position:left_bottom_2px] bg-no-repeat pb-1 motion-safe:transition-[background-size] motion-safe:duration-300 motion-safe:ease-out pointer-fine:group-enabled:group-hover:bg-size-[100%_2px]"
 
   defp sparkline_fill_styles(:expenses), do: "fill-rust-100"
   defp sparkline_fill_styles(:income), do: "fill-teal-100"
@@ -511,20 +596,20 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   # Salaries paid through payroll are certain, so their row only names how many people.
   defp counterparty(%{group: %{people: people}} = assigns) when people != nil do
     ~H"""
-    <li class="flex items-center gap-2 px-2 text-sm min-block-9">
-      <span class="min-w-0 truncate text-grey-900">
+    <li class="flex h-8 items-center gap-4 px-2 text-sm/[1.35] text-grey-700">
+      <span class="min-w-0 flex-1 truncate">
         {ngettext("Payroll · %{count} person", "Payroll · %{count} people", @group.people)}
       </span>
-      <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
+      <span class="shrink-0 tabular-nums">{whole_money(@group.amount)}</span>
     </li>
     """
   end
 
   defp counterparty(%{can_edit: false} = assigns) do
     ~H"""
-    <li class="flex items-center gap-2 px-2 text-sm min-block-9">
-      <span class="min-w-0 truncate text-grey-700">{@group.name}</span>
-      <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
+    <li class="flex h-8 items-center gap-4 px-2 text-sm/[1.35] text-grey-700">
+      <span class="min-w-0 flex-1 truncate">{@group.name}</span>
+      <span class="shrink-0 tabular-nums">{whole_money(@group.amount)}</span>
     </li>
     """
   end
@@ -547,29 +632,37 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         type="button"
         variant="unstyled"
         aria-haspopup="menu"
+        aria-expanded="false"
         phx-click={JS.push_focus(to: "##{@id}-trigger") |> show_popover("#{@id}-menu")}
-        class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 text-start text-sm min-block-9 active:bg-grey-200 pointer-fine:hover:bg-white"
+        class="flex h-8 w-full cursor-pointer items-center gap-4 rounded-sm px-2 text-start text-sm/[1.35] text-grey-700 active:bg-grey-200 aria-expanded:bg-grey-100 pointer-fine:hover:bg-grey-100"
       >
-        <span class={name_styles(@group.status)}>{@group.name}</span>
-        <Lucideicons.check
-          :if={@group.status == :confirmed}
-          class="size-4 shrink-0 text-moss-700"
-          aria-label={gettext("Confirmed")}
-        />
-        <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
+        <span class="flex min-w-0 flex-1 items-center gap-1.5">
+          <span class={name_styles(@group.status)}>{@group.name}</span>
+          <Lucideicons.check
+            :if={@group.status == :confirmed}
+            class="size-4 shrink-0 text-moss-700"
+            aria-label={gettext("Confirmed")}
+          />
+        </span>
+        <span class="shrink-0 tabular-nums">{whole_money(@group.amount)}</span>
       </FirmowidUI.Components.Button.button>
-      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-end">
-        <div class="flex max-h-(--popover-available-height) flex-col gap-1 overflow-y-auto overscroll-contain rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10 inline-[min(24rem,calc(100vw-2rem))]">
-          <p id={"#{@id}-reason"} class="px-3 pt-2 pb-1 text-sm text-grey-600 pointer-fine:text-xs">
-            {reason(@group)}
+      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-start">
+        <div class={[
+          "flex max-h-(--popover-available-height) flex-col overflow-y-auto overscroll-contain inline-[min(24rem,calc(100vw-2rem))] pointer-fine:w-72",
+          dropdown_panel_styles()
+        ]}>
+          <p class="px-3 pt-2 pb-1 text-caps-sm/[1.3] font-medium text-grey-600 uppercase">
+            {gettext("Category for: %{name}", name: @group.name)}
           </p>
+          <p id={"#{@id}-reason"} class="px-3 pb-2 text-sm/[1.35] text-grey-500">{reason(@group)}</p>
+          <div class="pt-1 pb-0.75" aria-hidden="true"><div class="h-px bg-grey-200" /></div>
           <div
             id={"#{@id}-options"}
             role="menu"
             aria-label={@group.name}
             aria-describedby={"#{@id}-reason"}
             phx-hook="ListboxKeys"
-            class="flex flex-col gap-1"
+            class="flex flex-col"
           >
             <FirmowidUI.Components.Button.button
               :for={category <- category_options(@industry, @group)}
@@ -589,13 +682,13 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
                 )
                 |> hide_popover("#{@id}-menu")
               }
-              class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 text-start text-base text-grey-900 min-block-11 active:bg-grey-200 pointer-fine:text-sm pointer-fine:min-block-9 pointer-fine:hover:bg-grey-100"
+              class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-sm px-3 text-start text-base text-black hover:bg-grey-200 active:bg-grey-300 pointer-fine:min-h-9 pointer-fine:text-sm/[1.35]"
             >
               {category_label(category)}
-              <Lucideicons.check
+              <.figma_icon
                 :if={category == (@group.category || @group.suggestion)}
-                class="size-4 shrink-0"
-                aria-hidden="true"
+                name="check"
+                class="size-4"
               />
             </FirmowidUI.Components.Button.button>
           </div>
@@ -864,7 +957,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   end
 
   defp name_styles(:confirmed), do: "min-w-0 truncate text-grey-900"
-  defp name_styles(_status), do: "min-w-0 truncate text-grey-700"
+  defp name_styles(_status), do: "min-w-0 truncate"
 
   defp sum(rows, fun), do: Enum.reduce(rows, Decimal.new(0), &Decimal.add(fun.(&1), &2))
 

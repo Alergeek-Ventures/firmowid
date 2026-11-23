@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
   use FirmowidWeb, :html
 
   import FirmowidWeb.Analysis.Utilities.Amounts, only: [whole_money: 1]
+  import FirmowidWeb.DesignSystem.Components.FigmaIcon, only: [figma_icon: 1]
 
   alias Firmowid.Analysis.ProjectProfitability
   alias Firmowid.Cldr.Number
@@ -53,7 +54,7 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
       data-assistant-entry
       phx-click={JS.push("ask_analysis", target: "#firmowid-assistant", value: @context)}
     >
-      <Lucideicons.messages_square aria-hidden="true" />
+      <.figma_icon name="asystent" />
       {gettext("Ask the assistant")}
     </FirmowidUI.Components.Button.button>
     """
@@ -71,7 +72,7 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
       :if={@questions != []}
       id={@id}
       aria-label={gettext("Questions for the assistant")}
-      class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-3"
+      class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4"
     >
       <li :for={question <- @questions} class="flex">
         <FirmowidUI.Components.Button.button
@@ -84,26 +85,27 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
               value: Map.put(@context, :question, question.prompt)
             )
           }
-          class="group flex w-full cursor-pointer flex-col items-stretch justify-between gap-4 rounded-lg border border-grey-200 bg-white p-4 text-start font-normal whitespace-normal select-none active:bg-grey-100 motion-safe:transition-colors motion-safe:duration-150 pointer-fine:hover:border-grey-400 phx-click-loading:opacity-75"
+          class="group flex w-full cursor-pointer flex-col items-stretch gap-3 rounded-sm bg-white p-4 text-start font-normal whitespace-normal select-none active:bg-grey-200 motion-safe:transition-colors motion-safe:duration-150 phx-click-loading:opacity-75"
         >
-          <span :if={question.figure} class="flex flex-col gap-0.5">
-            <span class={["text-2xl/tight font-semibold tabular-nums", tone_styles(question.tone)]}>
+          <span :if={question.figure} class="flex flex-col gap-1">
+            <span class={["text-xl/[1.3] font-medium tabular-nums", tone_styles(question.tone)]}>
               {question.figure}
             </span>
-            <span class="text-sm text-grey-700">{question.caption}</span>
+            <span class="text-sm/[1.35] text-grey-600">{question.caption}</span>
           </span>
-          <span class="flex items-start gap-2 text-sm font-medium text-grey-900">
-            <Lucideicons.messages_square
-              class="mt-0.5 size-4 shrink-0 text-grey-600 pointer-fine:group-hover:text-grey-900"
-              aria-hidden="true"
+          <span
+            :if={question.figure}
+            class="mt-auto h-px shrink-0 bg-grey-100"
+            aria-hidden="true"
+          />
+          <span class="flex items-start gap-2 text-sm/[1.3] font-medium text-grey-900">
+            <.figma_icon
+              name="asystent"
+              class="size-4 text-grey-700 motion-safe:transition-colors motion-safe:duration-200 pointer-fine:group-hover:text-grey-900 [&>path]:fill-transparent motion-safe:[&>path]:transition-[fill] motion-safe:[&>path]:duration-200 motion-safe:[&>path]:ease-out pointer-fine:group-hover:[&>path:first-child]:fill-current"
             />
-            <span class="min-w-0 flex-1 underline-offset-[.2em] pointer-fine:group-hover:underline">
+            <span class="min-w-0 flex-1">
               {question.question}
             </span>
-            <Lucideicons.arrow_right
-              class="mt-0.5 size-4 shrink-0 text-grey-500 pointer-fine:group-hover:text-grey-900"
-              aria-hidden="true"
-            />
           </span>
         </FirmowidUI.Components.Button.button>
       </li>

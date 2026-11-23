@@ -530,29 +530,80 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end)
   end
 
+  attr :label, :string, required: true
+
+  slot :option, required: true do
+    attr :id, :string, required: true
+    attr :patch, :string, required: true
+    attr :active, :boolean, required: true
+  end
+
+  # Figma's segmented control: the views of the analysis, one of them active.
+  defp view_switch(assigns) do
+    ~H"""
+    <nav
+      aria-label={@label}
+      class="flex h-9 items-center gap-0.5 overflow-hidden rounded-sm border border-grey-200"
+    >
+      <FirmowidUI.Components.Link.link
+        :for={option <- @option}
+        kind="unstyled"
+        id={option.id}
+        patch={option.patch}
+        aria-current={option.active && "page"}
+        class={[
+          "flex h-full items-center px-3 text-sm/none font-medium whitespace-nowrap transition-colors",
+          if(option.active,
+            do: "bg-grey-200 text-grey-900",
+            else: "text-grey-700 hover:text-grey-900"
+          )
+        ]}
+      >
+        {render_slot(option)}
+      </FirmowidUI.Components.Link.link>
+    </nav>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="analysis-dashboard" class="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
-      <h1 class="sr-only">{pgettext("main navigation", "Analysis")}</h1>
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <.filter_tabs label={gettext("Analysis views")}>
-          <:tab
-            id="analysis-overview"
-            patch={Navigation.view_path(view_for(@params, :dashboard), [])}
-            active={@params.view == :dashboard}
-          >
-            {pgettext("analysis view", "Summary")}
-          </:tab>
-          <:tab
-            id="analysis-trends-tab"
-            patch={Navigation.view_path(view_for(@params, :trends), @tag_filters)}
-            active={@params.view == :trends}
-          >
-            {pgettext("analysis view", "Trends")}
-          </:tab>
-        </.filter_tabs>
-        <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-col gap-6">
+        <header class="flex flex-wrap items-end justify-between gap-4">
+          <h1 class="text-3xl/[1.3] font-bold text-grey-900">
+            {pgettext("main navigation", "Analysis")}
+          </h1>
+          <AskAssistant.button
+            id="analysis-ask-assistant"
+            context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
+          />
+        </header>
+        <div class="flex flex-wrap items-center gap-4">
+          <.month_range_picker
+            id="analysis-period-picker"
+            selected={range(@params.period)}
+            label={Periods.label(@params.period)}
+            clear_label={gettext("This year")}
+            aria-label={gettext("Period")}
+            data-position="bottom left"
+          />
+          <.view_switch label={gettext("Analysis views")}>
+            <:option
+              id="analysis-overview"
+              patch={Navigation.view_path(view_for(@params, :dashboard), [])}
+              active={@params.view == :dashboard}
+            >
+              {pgettext("analysis view", "Summary")}
+            </:option>
+            <:option
+              id="analysis-trends-tab"
+              patch={Navigation.view_path(view_for(@params, :trends), @tag_filters)}
+              active={@params.view == :trends}
+            >
+              {pgettext("analysis view", "Trends")}
+            </:option>
+          </.view_switch>
           <ProjectSwitcher.switcher
             :if={@params.view == :trends}
             id="analysis-project-switcher"
@@ -562,14 +613,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                 else: slice_name(@tag_filters, @tag_definitions)
             }
             options={project_options(@params, @tag_filters, @tag_definitions)}
-          />
-          <.month_range_picker
-            id="analysis-period-picker"
-            selected={range(@params.period)}
-            label={Periods.label(@params.period)}
-            clear_label={gettext("This year")}
-            aria-label={gettext("Period")}
-            data-position="bottom right"
           />
           <FirmowidUI.Components.Button.button
             :if={@params.view == :dashboard and review_groups(assigns) != []}
@@ -582,10 +625,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             <Lucideicons.list_checks aria-hidden="true" />
             {gettext("Check categories")}
           </FirmowidUI.Components.Button.button>
-          <AskAssistant.button
-            id="analysis-ask-assistant"
-            context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
-          />
         </div>
       </div>
       <PeriodDetails.details
