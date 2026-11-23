@@ -4717,7 +4717,9 @@ msgid "Download documents"
 msgstr ""
 
 #: lib/firmowid_web/development/views/modals.ex
+#: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
 #: lib/firmowid_web/invoicing/components/download_modal.ex
+#: lib/firmowid_web/invoicing/components/invoice_download_modal.ex
 #, elixir-autogen, elixir-format
 msgid "Download invoices"
 msgstr ""
@@ -8994,6 +8996,7 @@ msgid "Open invoice %{number}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
+#: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "Open invoice preview in a new tab"
 msgstr ""

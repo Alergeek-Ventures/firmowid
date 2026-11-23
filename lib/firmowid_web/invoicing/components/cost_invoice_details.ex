@@ -100,7 +100,13 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   }
                   trigger_variant="tertiary"
                   trigger_size="small"
-                  button_label={gettext("Download PDF for printing")}
+                  archive?={not is_nil(@invoice.ksef_number)}
+                  button_label={
+                    if(@invoice.ksef_number,
+                      do: gettext("Download invoices"),
+                      else: gettext("Download PDF for printing")
+                    )
+                  }
                 />
 
                 <.link

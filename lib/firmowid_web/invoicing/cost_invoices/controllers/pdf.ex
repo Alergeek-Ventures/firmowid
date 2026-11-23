@@ -18,11 +18,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
     ]
 
     with {:ok, invoice} <- CostInvoice.by_id(id, scope: conn.assigns.ash_scope),
-         {:ok, invoices} <- CostInvoice.pdf_family(invoice, scope: conn.assigns.ash_scope),
+         {:ok, [root | _] = invoices} <-
+           CostInvoice.pdf_family(invoice, scope: conn.assigns.ash_scope),
          {:ok, entries} <- archive_entries(invoices, opts),
          {:ok, {_name, binary}} <- :zip.create(~c"faktury.zip", entries, [:memory]) do
       send_download(conn, {:binary, binary},
-        filename: "faktury-#{invoice.id}.zip",
+        filename: archive_basename(root) <> ".zip",
         content_type: "application/zip"
       )
     else
@@ -39,8 +40,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
     |> Enum.reduce_while({:ok, []}, fn invoice, {:ok, entries} ->
       case CostInvoicePdf.generate(invoice, opts) do
         {:ok, binary} ->
-          # UUID names are unique and cannot contain archive traversal characters.
-          entry = {String.to_charlist("#{invoice.id}.pdf"), binary}
+          entry = {String.to_charlist(archive_basename(invoice) <> ".pdf"), binary}
           {:cont, {:ok, [entry | entries]}}
 
         {:error, reason} ->
@@ -51,6 +51,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
       {:ok, entries} -> {:ok, Enum.reverse(entries)}
       error -> error
     end
+  end
+
+  defp archive_basename(invoice) do
+    # The UUID prevents collisions; the allowlist keeps entry names flat on every platform.
+    "#{invoice.issue_date}_#{invoice.invoice_identifier}_#{invoice.id}"
+    |> MonthDownloadEntries.clean_filename()
+    |> String.replace(~r/[^a-z0-9_-]/, "_")
   end
 
   # sobelow_skip ["XSS.SendResp"]

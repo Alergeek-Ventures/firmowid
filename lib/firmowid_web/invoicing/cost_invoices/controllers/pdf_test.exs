@@ -52,11 +52,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
       assert get_resp_header(archive, "content-type") == ["application/zip"]
       assert {:ok, entries} = :zip.extract(response(archive, 200), [:memory])
 
-      assert MapSet.new(entries, fn {name, _} -> to_string(name) end) ==
-               MapSet.new([original, first, second, sibling], &"#{&1.id}.pdf")
+      assert length(entries) == 4
 
       for document <- [original, first, second, sibling] do
-        assert {String.to_charlist("#{document.id}.pdf"), "%PDF-1.4 #{document.invoice_identifier}"} in entries
+        expected_name = "#{document.issue_date}_#{document.invoice_identifier}_#{document.id}.pdf"
+
+        assert {String.to_charlist(expected_name), "%PDF-1.4 #{document.invoice_identifier}"} in entries
       end
     end
 
@@ -71,6 +72,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
              view,
              "button[data-download-url^='#{Navigation.cost_invoice_archive_path(original)}']"
            )
+
+    assert has_element?(view, "button", "Pobierz faktury (ZIP)")
 
     {:ok, list, _} = live(conn, ~p"/fakturowanie?filtr=faktury&podfiltr=zakupowe")
     render_async(list, 2_000)
@@ -92,7 +95,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
     assert {:ok, [{name, <<"%PDF-", _::binary>>}]} =
              :zip.extract(response(archive, 200), [:memory])
 
-    assert to_string(name) == "#{invoice.id}.pdf"
+    assert to_string(name) ==
+             "#{invoice.issue_date}_#{invoice.invoice_identifier}_#{invoice.id}.pdf"
+
     pdf = get(conn, Navigation.cost_invoice_pdf_path(invoice))
     assert response(pdf, 200) =~ "%PDF-"
     assert ["attachment;" <> _] = get_resp_header(pdf, "content-disposition")
@@ -130,6 +135,28 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
       assert response(result, 500) == "PDF generation failed"
       refute get_resp_header(result, "content-type") == ["application/zip"]
     end)
+  end
+
+  test "archive filenames are flat and unique even for duplicate unsafe invoice numbers", %{
+    conn: conn
+  } do
+    user = admin_fixture()
+    original = invoice(user, invoice_identifier: "../same\\name")
+
+    correction =
+      invoice(user,
+        invoice_identifier: original.invoice_identifier,
+        original_invoice_ksef_number: original.ksef_number
+      )
+
+    archive = conn |> log_in_user(user) |> get(Navigation.cost_invoice_archive_path(correction))
+    assert {:ok, entries} = :zip.extract(response(archive, 200), [:memory])
+    assert length(entries) == 2
+    names = Enum.map(entries, fn {name, _} -> to_string(name) end)
+    assert length(Enum.uniq(names)) == 2
+    assert Enum.all?(names, &(not String.contains?(&1, ["/", "\\", ".."])))
+    assert [disposition] = get_resp_header(archive, "content-disposition")
+    assert disposition =~ original.id
   end
 
   test "denies an employee access to invoices in their own company", %{conn: conn} do
