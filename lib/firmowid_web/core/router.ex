@@ -397,6 +397,8 @@ defmodule FirmowidWeb.Core.Router do
     get "/funkcje/asystent", LegacyIndex, :assistant
     get "/funkcje/projekty", LegacyIndex, :projects
     get "/poradnik/program-do-faktur-bez-abonamentu", LegacyIndex, :free_programs
+    get "/poradnik/czy-trzeba-kupowac-program-do-ksef", LegacyIndex, :ministry_tools
+    get "/poradnik/aplikacja-mobilna-ksef", LegacyIndex, :ministry_tools
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
     get "/", Preview, :home
     get "/landing", Preview, :landing

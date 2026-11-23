@@ -61,7 +61,7 @@ Plan darmowy i okres próbny opisują dwie różne oferty. W pierwszym przypadku
 | bank i projekty | ile kont bankowych i projektów obejmuje plan |
 | OCR | ile dokumentów program odczyta w miesiącu |
 
-Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwo udostępnia na swojej stronie, a pytanie, [czy program do KSeF trzeba w ogóle kupować](/poradnik/czy-trzeba-kupowac-program-do-ksef), omawiamy w osobnym poradniku.
+Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwo udostępnia na swojej stronie, a pytanie, [czy program do KSeF trzeba w ogóle kupować](/poradnik/ksef-w-banku-aplikacja-mf-czy-program), omawiamy w osobnym poradniku.
 
 ## Źródła
 

@@ -49,7 +49,7 @@ Nie. Obowiązek obejmuje faktury wystawiane innym firmom, a nie obejmuje faktur 
 
 ### Czy do KSeF trzeba kupić program do faktur?
 
-Nie trzeba, co MF potwierdza wprost w odpowiedziach dla firm poniżej limitu. Czym narzędzia ministerstwa różnią się od płatnych i darmowych programów, zestawiliśmy w tekście [Czy trzeba kupować program do KSeF?](/poradnik/czy-trzeba-kupowac-program-do-ksef)
+Nie trzeba, co MF potwierdza wprost w odpowiedziach dla firm poniżej limitu. Czym narzędzia ministerstwa różnią się od płatnych i darmowych programów, zestawiliśmy w tekście [Czy trzeba kupować program do KSeF?](/poradnik/ksef-w-banku-aplikacja-mf-czy-program)
 
 ### Czy w 2026 r. można wystawiać faktury w KSeF mimo limitu?
 
