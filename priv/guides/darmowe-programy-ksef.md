@@ -22,7 +22,7 @@ Dane w tabeli pochodzą z cenników i stron producentów; działania KSeF w tych
 | **IFIRMA** | od 0 zł | 3 faktury / mies. | wysyłka i odbiór | powyżej 3 faktur plan Faktura+; księgowość płatna |
 | **PolskaFaktura FREE** | 0 zł, bez karty | 3 dokumenty sprzedaży / mies., korekty wliczają się do limitu | pełna obsługa; koszty pobierane raz dziennie | API: brak informacji |
 | **FakturaXL** | 0 zł bez limitu czasu | 10 dokumentów sprzedaży i kosztów łącznie / mies. | wysyłka ręczna, zbiorcza i automatyczna; pobieranie | bank, czas pracy: brak informacji |
-| **Comarch Betterfly eFaktury** | 0 zł | 10 dokumentów łącznie | wystawianie, wysyłka, tryb offline | bez limitu w planie Plus za 4,99 zł netto/mies. (rocznie) |
+| **Comarch Betterfly eFaktury** | 0 zł | 10 dokumentów łącznie | wystawianie, wysyłka, tryb offline | bez limitu w planie Plus za 4,99 zł netto/mies. |
 | **Biuromat Free** | 0 zł, bez karty | 10 faktur / mies. | wysyłka i odbiór | 2 konta; bank, czas pracy: brak informacji |
 | **ELISOFT Faktury 2026** | program na Windows | 10 dokumentów / mies. | wystawianie; odbiór: brak informacji | bank: brak informacji |
 | **ProFak** | program na komputer, bezpłatna licencja | bez limitu faktur i stanowisk | wysyłka i odbiór przez API albo XML | brak magazynu; kod publiczny, licencja własna opisana w README, nie open source |
@@ -45,27 +45,41 @@ W planie Micro Fakturowni, w IFIRMIE i w PolskiejFakturze limit wynosi trzy fakt
 
 Program na własny komputer bez limitu faktur to ProFak, udostępniany z kodem na licencji autora, albo KsefInvoice, darmowy, choć zamknięty. W chmurze bez limitu faktur działa plan Darmowy naszego Firmowida, [darmowego programu do faktur KSeF](/ksef), w którym są też dwa konta użytkowników, jedno konto bankowe z automatycznym dopasowaniem przelewów do faktur, ewidencja czasu w trzech projektach i 10 kredytów OCR miesięcznie, a kod programu udostępniamy na licencji AGPL-3.0. Księgowości ani magazynu Firmowid nie prowadzi, dlatego przy KPiR, ryczałcie i ZUS w jednym miejscu lepiej sprawdzą się IFIRMA, inFakt albo wFirma.
 
+## Co wlicza się do limitu
+
+Trzy faktury to trzy faktury? Niekoniecznie. W PolskiejFakturze korekta zjada jedno miejsce w limicie, w Fakturozie już nie. Faktury kosztowe z KSeF Fakturownia, PolskaFaktura i Fakturoza biorą bez limitu. Comarch Betterfly i FakturaXL mają jedną pulę 10 dokumentów na wszystko. Czy koszty też do niej wpadają, strona Comarchu dziś wprost nie mówi.
+
+Grafik z czterema fakturami w listopadzie, z których jedną musiał poprawić, z trzema darmowymi fakturami nie wyjdzie. W puli 10 dokumentów zmieści się bez problemu, o ile w tym samym miesiącu nie przyjdzie mu sześć faktur kosztowych.
+
+## Ile kosztuje wyjście z limitu
+
+Ceny z 23 listopada 2026 r., najtańszy plan bez limitu faktur:
+
+| Program | Plan | Cena netto miesięcznie |
+|---|---|---|
+| Comarch Betterfly | Plus | 4,99 zł, także przy płatności co miesiąc |
+| PolskaFaktura | PRO | 11 zł (strona nie podaje, czy netto) |
+| Fakturownia | Start | 12,49 zł przy płatności za rok |
+| IFIRMA | Faktura+ | 12,50 zł przy płatności za rok |
+| Faktura.pl | BASIC | 18,99 zł przy umowie na 36 miesięcy |
+| Fakturoza | Firma | 39,99 zł, przy płatności rocznej 31,99 zł |
+
+Biuromat ma jeszcze plan Premium za 5 zł miesięcznie, tyle że z limitem 100 faktur, a plan bez limitu wycenia indywidualnie.
+
 ## Plan darmowy czy okres próbny
 
-Plan darmowy i okres próbny opisują dwie różne oferty. W pierwszym przypadku konto nie ma daty końcowej, a w drugim po wskazanym dniu tracisz część funkcji albo zaczynasz płacić.
+Darmowy plan i okres próbny to dwie różne rzeczy, choć w cennikach wyglądają podobnie. Plan za 0 zł nie ma daty końcowej. Okres próbny ma i po nim albo płacisz, albo tracisz część funkcji.
 
 ![Plan darmowy nie ma daty końcowej, a okres próbny po wskazanym dniu kończy się płatnością albo utratą części funkcji.](/images/guides/darmowy-plan-czy-okres-probny.webp)
 *Sprawdź datę końcową, zanim założysz konto.*
 
-| Zapis w ofercie | Co sprawdzić |
-|---|---|
-| 0 zł | czy cena obowiązuje bezterminowo |
-| okres próbny | kiedy się kończy i co stanie się z kontem |
-| bez limitu faktur | czy dotyczy także wysyłania i pobierania z KSeF |
-| użytkownicy | ile osób może pracować na koncie |
-| bank i projekty | ile kont bankowych i projektów obejmuje plan |
-| OCR | ile dokumentów program odczyta w miesiącu |
+Przed założeniem konta sprawdź w cenniku pięć rzeczy: czy 0 zł jest bezterminowe, czy „bez limitu” obejmuje też wysyłkę i pobieranie z KSeF, ilu użytkowników i ile kont bankowych wchodzi w plan i ile dokumentów miesięcznie odczyta OCR.
 
 Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/) ministerstwo udostępnia na swojej stronie, a pytanie, [czy program do KSeF trzeba w ogóle kupować](/poradnik/ksef-w-banku-aplikacja-mf-czy-program), omawiamy w osobnym poradniku.
 
 ## Źródła
 
-Strony i cenniki sprawdzone 21–26.10.2026, ponownie 11.11.2026 (poza FakturaXL, której cennik nie był dostępny).
+Strony i cenniki sprawdzone 21–26.10.2026, ponownie 11.11.2026 (poza FakturaXL, której cennik nie był dostępny); limity i ceny planów płatnych ponownie 23.11.2026 (bez FakturaXL i inFaktu, których strony nie dały się odczytać).
 
 - Firmowid: https://firmowid.pl/cennik ; https://firmowid.pl/funkcje ; dostęp 22.10.2026
 - Aplikacja Podatnika KSeF 2.0: https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/ ; dostęp 24.10.2026
