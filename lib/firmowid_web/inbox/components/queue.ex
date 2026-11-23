@@ -708,6 +708,11 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               this.observer.observe(queue)
             }
             this.fit()
+            // The inbox holds its columns back until the people are folded:
+            // with nothing waiting, the empty state stretches along this panel
+            // and would jump once the fold changed its height.
+            const columns = this.columns()
+            if (columns) this.js().setAttribute(columns, "data-presence-fitted", "")
           },
           updated() { this.fit() },
           destroyed() {
@@ -716,6 +721,17 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           },
           queue() {
             return this.el.dataset.fitTo && document.getElementById(this.el.dataset.fitTo)
+          },
+          columns() {
+            return this.el.closest("#inbox-columns")
+          },
+          // The side column's height with the people folded: the inbox's empty
+          // state ends there, so unfolding the people does not stretch it.
+          rememberFoldedHeight() {
+            const columns = this.columns()
+            if (!columns) return
+            const style = `--presence-folded-height: ${this.el.closest("aside").getBoundingClientRect().height}px`
+            if (columns.getAttribute("style") !== style) this.js().setAttribute(columns, "style", style)
           },
           fit() {
             const rows = [...this.el.querySelectorAll("[data-person]")]
@@ -739,6 +755,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 this.show(rows, fold, --visible)
               }
             }
+            this.rememberFoldedHeight()
             // With nobody left to fold there is nothing to collapse either.
             this.expanded = expanded && !fold.hidden
             if (this.expanded) {
