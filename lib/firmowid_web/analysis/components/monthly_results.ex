@@ -38,10 +38,14 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
         <thead>
           <tr class="text-grey-500 [&>th]:py-1 [&>th]:font-normal">
             <th scope="col" class="ps-4 text-start">{gettext("Month")}</th>
-            <th scope="col" class={[amount_cell(), "hidden @lg:table-cell"]}>{gettext("Income")}</th>
-            <th scope="col" class={[amount_cell(), "hidden @lg:table-cell"]}>{gettext("Costs")}</th>
-            <th scope="col" class={amount_cell()}>{gettext("Result")}</th>
-            <th scope="col" class={[share_cell(), "text-start"]}>
+            <th scope="col" class={["hidden @lg:table-cell", amount_cell_styles()]}>
+              {gettext("Income")}
+            </th>
+            <th scope="col" class={["hidden @lg:table-cell", amount_cell_styles()]}>
+              {gettext("Costs")}
+            </th>
+            <th scope="col" class={amount_cell_styles()}>{gettext("Result")}</th>
+            <th scope="col" class={["text-start", share_cell_styles()]}>
               {gettext("Of every 100 zł of income")}
             </th>
           </tr>
@@ -69,21 +73,21 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
               </span>
             </th>
             <%= if month.closed? do %>
-              <td class={[amount_cell(), "hidden @lg:table-cell"]}>
+              <td class={["hidden @lg:table-cell", amount_cell_styles()]}>
                 {whole_money(month.totals.total_income)}
               </td>
-              <td class={[amount_cell(), "hidden @lg:table-cell"]}>
+              <td class={["hidden @lg:table-cell", amount_cell_styles()]}>
                 {whole_money(Decimal.abs(month.totals.total_expenses))}
               </td>
-              <td class={[amount_cell(), "font-medium", result_styles(month.totals.net_profit)]}>
+              <td class={["font-medium", amount_cell_styles(), result_styles(month.totals.net_profit)]}>
                 {whole_money(month.totals.net_profit)}
               </td>
-              <td class={share_cell()}><.kept totals={month.totals} /></td>
+              <td class={share_cell_styles()}><.kept totals={month.totals} /></td>
             <% else %>
-              <td class={[amount_cell(), "hidden @lg:table-cell"]}>{no_money()}</td>
-              <td class={[amount_cell(), "hidden @lg:table-cell"]}>{no_money()}</td>
-              <td class={amount_cell()}>{no_money()}</td>
-              <td class={share_cell()}>
+              <td class={["hidden @lg:table-cell", amount_cell_styles()]}>{no_money()}</td>
+              <td class={["hidden @lg:table-cell", amount_cell_styles()]}>{no_money()}</td>
+              <td class={amount_cell_styles()}>{no_money()}</td>
+              <td class={share_cell_styles()}>
                 <.share_bar label={String.downcase(pgettext("month", "Not closed"))} />
               </td>
             <% end %>
@@ -92,16 +96,16 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
         <tfoot>
           <tr class="font-semibold text-grey-900 *:h-12">
             <th scope="row" class="ps-4 text-start">{gettext("Total")}</th>
-            <td class={[amount_cell(), "hidden @lg:table-cell"]}>
+            <td class={["hidden @lg:table-cell", amount_cell_styles()]}>
               {whole_money(@totals.total_income)}
             </td>
-            <td class={[amount_cell(), "hidden @lg:table-cell"]}>
+            <td class={["hidden @lg:table-cell", amount_cell_styles()]}>
               {whole_money(Decimal.abs(@totals.total_expenses))}
             </td>
-            <td class={[amount_cell(), result_styles(@totals.net_profit)]}>
+            <td class={[amount_cell_styles(), result_styles(@totals.net_profit)]}>
               {whole_money(@totals.net_profit)}
             </td>
-            <td class={share_cell()}><.kept totals={@totals} total /></td>
+            <td class={share_cell_styles()}><.kept totals={@totals} total /></td>
           </tr>
         </tfoot>
       </table>
@@ -110,8 +114,8 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
   end
 
   # Columns 24px apart; the amounts are 112px wide and the share 336px, as in Figma.
-  defp amount_cell, do: "w-34 ps-6 text-end"
-  defp share_cell, do: "w-2/5 ps-6 pe-4 @3xl:w-94"
+  defp amount_cell_styles, do: "w-34 ps-6 text-end"
+  defp share_cell_styles, do: "w-2/5 ps-6 pe-4 @3xl:w-94"
 
   attr :totals, :map, required: true
   attr :total, :boolean, default: false
