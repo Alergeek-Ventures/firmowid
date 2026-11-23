@@ -117,7 +117,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         id="app-sidebar-layers"
         phx-hook=".LayerSwitch"
         data-layer={@layer}
-        class="relative mb-3.5 grid h-8 grid-cols-2 gap-1 overflow-clip in-data-sidebar-moving:opacity-0 motion-safe:transition-[height,margin,opacity] motion-safe:duration-250 motion-safe:ease-out-quint motion-safe:in-data-sidebar-moving:transition-[height,margin] md:in-data-[sidebar=collapsed]:mb-2.5 md:in-data-[sidebar=collapsed]:h-15.5 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-0.5 md:in-data-[sidebar=collapsed]:overflow-visible md:in-data-[sidebar=collapsed]:rounded-lg md:in-data-[sidebar=collapsed]:bg-grey-900 md:in-data-[sidebar=collapsed]:p-0.5"
+        class="relative mb-3.5 grid h-8 grid-cols-2 overflow-clip in-data-sidebar-moving:opacity-0 motion-safe:transition-[height,margin,opacity] motion-safe:duration-250 motion-safe:ease-out-quint motion-safe:in-data-sidebar-moving:transition-[height,margin] md:in-data-[sidebar=collapsed]:mb-2.5 md:in-data-[sidebar=collapsed]:h-15.5 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-0.5 md:in-data-[sidebar=collapsed]:overflow-visible md:in-data-[sidebar=collapsed]:rounded-lg md:in-data-[sidebar=collapsed]:bg-grey-900 md:in-data-[sidebar=collapsed]:p-0.5"
         role="group"
         aria-label={pgettext("sidebar", "Layer")}
       >
@@ -125,13 +125,13 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           data-layer-pill
           aria-hidden="true"
           class={[
-            "absolute inset-y-0 left-0 w-[calc(50%-2px)] rounded-sm bg-white motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:inset-auto md:in-data-[sidebar=collapsed]:top-0.5 md:in-data-[sidebar=collapsed]:left-0.5 md:in-data-[sidebar=collapsed]:size-7 md:in-data-[sidebar=collapsed]:rounded-md",
+            "absolute inset-y-0 left-0 w-1/2 rounded-sm bg-white motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:inset-auto md:in-data-[sidebar=collapsed]:top-0.5 md:in-data-[sidebar=collapsed]:left-0.5 md:in-data-[sidebar=collapsed]:size-7 md:in-data-[sidebar=collapsed]:rounded-md",
             @layer == :me &&
-              "translate-x-[calc(100%+4px)] md:in-data-[sidebar=collapsed]:translate-x-0 md:in-data-[sidebar=collapsed]:translate-y-7.5"
+              "translate-x-full md:in-data-[sidebar=collapsed]:translate-x-0 md:in-data-[sidebar=collapsed]:translate-y-7.5"
           ]}
         ></span>
         <.link
-          :for={{layer, icon} <- [company: "building-2", me: "user"]}
+          :for={{layer, icon} <- [company: "company", me: "user"]}
           id={"app-sidebar-layer-#{layer}"}
           kind="unstyled"
           navigate={if @current_id != :inbox, do: Navigation.inbox_path(layer)}
@@ -148,10 +148,9 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
             if(@layer == layer, do: "text-white", else: "text-grey-400 hover:text-white")
           ]}
         >
-          <Lucideicons.render!
+          <.figma_icon
             name={icon}
-            class="hidden size-4.5 shrink-0 mix-blend-difference md:in-data-[sidebar=collapsed]:block"
-            aria-hidden="true"
+            class="hidden size-4.5 mix-blend-difference md:in-data-[sidebar=collapsed]:block"
           />
           <span
             data-label
@@ -207,7 +206,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
             const collapsed =
               document.documentElement.dataset.sidebar === "collapsed" &&
               window.matchMedia("(min-width: 48rem)").matches
-            const from = collapsed ? "0 30px" : "calc(100% + 4px) 0"
+            const from = collapsed ? "0 30px" : "100% 0"
             pill.style.translate = previous === "me" ? from : "0 0"
             pill.offsetWidth
             pill.style.transition = ""
@@ -227,7 +226,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         data-tippy-delay="[300, 0]"
         data-tippy-truncate-selector="[data-label]"
       >
-        <Lucideicons.render! name={@inbox.icon} class="size-4.5 shrink-0" aria-hidden="true" />
+        <.figma_icon name={@inbox.icon} class="size-4.5" />
         <span data-label class={label_styles()}>{@inbox.label}</span>
         <%!-- Company items needing someone, shown in the company layer only. Collapsed, it rides the icon's corner. --%>
         <.count
@@ -253,7 +252,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         data-tippy-delay="[300, 0]"
         data-tippy-truncate-selector="[data-label]"
       >
-        <Lucideicons.render! name={@timetracker.icon} class="size-4.5 shrink-0" aria-hidden="true" />
+        <.figma_icon name={@timetracker.icon} class="size-4.5" />
         <span data-label class={label_styles()}>{@timetracker.label}</span>
         <span
           :if={@running?}

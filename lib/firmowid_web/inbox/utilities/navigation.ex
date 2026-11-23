@@ -83,7 +83,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :inbox,
         layer: :main,
         label: pgettext("sidebar", "Inbox"),
-        icon: "inbox",
+        icon: "skrzynka",
         path: ~p"/skrzynka",
         roles: UserRole.roles()
       },
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :timetracker,
         layer: :main,
         label: pgettext("main navigation", "Time tracking"),
-        icon: "timer",
+        icon: "czasosledz",
         path: ~p"/czasosledz",
         roles: UserRole.roles()
       },
@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :invoices,
         layer: :company,
         label: gettext("Invoices"),
-        icon: "file-text",
+        icon: "faktury",
         path: InvoicingNavigation.invoices_list_path(),
         roles: @managers
       },
@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :transactions,
         layer: :company,
         label: gettext("Transactions"),
-        icon: "arrow-left-right",
+        icon: "transakcje",
         path: InvoicingNavigation.transactions_list_path(),
         roles: @managers
       },
@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :assistant,
         layer: :company,
         label: pgettext("sidebar", "Assistant"),
-        icon: "messages-square",
+        icon: "asystent",
         path: AssistantNavigation.page_path(),
         roles: @managers
       },
@@ -123,7 +123,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :team,
         layer: :company,
         label: pgettext("sidebar", "Team"),
-        icon: "users",
+        icon: "zespol",
         path: ~p"/zarzadzanie/pracownicy",
         roles: [:admin]
       },
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :counterparties,
         layer: :company,
         label: pgettext("management navigation", "Counterparties"),
-        icon: "building-2",
+        icon: "company",
         path: ~p"/zarzadzanie/kontrahenci",
         roles: [:admin]
       },
@@ -139,7 +139,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :projects,
         layer: :company,
         label: pgettext("management navigation", "Projects"),
-        icon: "folder-kanban",
+        icon: "projekty",
         path: ~p"/zarzadzanie/projekty",
         roles: [:admin]
       },
@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :analysis,
         layer: :company,
         label: pgettext("main navigation", "Analysis"),
-        icon: "chart-column",
+        icon: "analiza",
         path: ~p"/analiza",
         roles: [:admin],
         beta?: true
@@ -156,7 +156,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :company_settings,
         layer: :company,
         label: SettingsNavigation.page_title(:organization),
-        icon: "briefcase",
+        icon: "dane_firmy",
         path: SettingsNavigation.canonical_path(:organization),
         roles: [:admin]
       },
@@ -172,7 +172,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :bank_accounts,
         layer: :company,
         label: SettingsNavigation.page_title(:bank_accounts),
-        icon: "landmark",
+        icon: "konta_bankowe",
         path: SettingsNavigation.canonical_path(:bank_accounts),
         roles: [:admin]
       },
@@ -180,15 +180,15 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :subscription,
         layer: :company,
         label: SettingsNavigation.page_title(:subscription),
-        icon: "credit-card",
+        icon: "card",
         path: SettingsNavigation.canonical_path(:subscription),
         roles: UserRole.roles()
       },
       %{
         id: :hours_record,
         layer: :me,
-        label: pgettext("hours record page", "Timesheet"),
-        icon: "clipboard-list",
+        label: pgettext("sidebar", "My timesheet"),
+        icon: "ewidencja",
         path: ~p"/czasosledz/ewidencja",
         roles: UserRole.roles()
       },
@@ -196,7 +196,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :profile,
         layer: :me,
         label: SettingsNavigation.page_title(:profile),
-        icon: "id-card",
+        icon: "dane_kadrowe",
         path: SettingsNavigation.canonical_path(:profile),
         roles: UserRole.roles()
       },
@@ -204,7 +204,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :documents,
         layer: :me,
         label: SettingsNavigation.page_title(:documents),
-        icon: "files",
+        icon: "dokumenty",
         path: SettingsNavigation.canonical_path(:documents),
         roles: UserRole.roles()
       },
@@ -212,7 +212,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         id: :delegations,
         layer: :me,
         label: SettingsNavigation.page_title(:delegations),
-        icon: "plane",
+        icon: "delegacje",
         path: SettingsNavigation.canonical_path(:delegations),
         roles: UserRole.roles()
       },
@@ -227,8 +227,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
       %{
         id: :account,
         layer: :me,
-        label: SettingsNavigation.page_title(:account),
-        icon: "settings",
+        label: pgettext("sidebar", "My account"),
+        icon: "konto",
         path: SettingsNavigation.canonical_path(:account),
         roles: UserRole.roles()
       }

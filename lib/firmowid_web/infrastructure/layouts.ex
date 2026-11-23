@@ -81,7 +81,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     </div>
     <.account_menu_separator />
     <div id="organization-switcher" class="flex flex-col gap-0.5">
-      <div class="truncate px-2 pt-1 pb-1.5 text-caps-sm/[14px] font-semibold text-grey-500 uppercase">
+      <div class="truncate px-2 pt-1 pb-1.5 text-caps-sm/[14px] font-semibold tracking-[0.04em] text-grey-500 uppercase">
         {pgettext("avatar menu", "Organizations")}
       </div>
       <div
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       >
         <.org_avatar name={@current_org.display_name} class="bg-white text-black" />
         <span class="min-w-0 flex-1 truncate">{@current_org.display_name}</span>
-        <Lucideicons.check class="size-4 shrink-0" aria-hidden="true" />
+        <.figma_icon name="check" class="size-4" />
       </div>
       <%= for organization <- @organizations, organization.id != @current_org.id do %>
         <%= if Firmowid.Core.usable_organization?(@current_user, organization) do %>
@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
           class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-dashed border-grey-700 text-grey-300"
           aria-hidden="true"
         >
-          <Lucideicons.plus class="size-3.5" />
+          <.figma_icon name="create" class="size-3.5 stroke-[2.57]" />
         </span>
         {pgettext("avatar menu", "Add organization")}
       </.link>
@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         class={["w-full cursor-pointer", account_menu_item_styles()]}
       >
         <span class="min-w-0 flex-1 truncate">{pgettext("avatar menu", "Log out")}</span>
-        <Lucideicons.log_out class="size-4.5 shrink-0" aria-hidden="true" />
+        <.figma_icon name="wyloguj" class="size-4.5" />
       </FirmowidUI.Components.Button.button>
     </.form>
     """

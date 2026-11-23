@@ -5479,6 +5479,12 @@ msgid "Fetch data"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_web/inbox/components/sidebar.ex
+#, elixir-autogen, elixir-format
+msgctxt "sidebar"
+msgid "Feedback"
+msgstr ""
+
 #, elixir-autogen, elixir-format
 msgid "Fetch invoices from KSeF"
 msgstr ""
@@ -7899,6 +7905,12 @@ msgid "NBP does not publish an exchange rate for %{currency}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
+#: lib/firmowid_web/inbox/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgctxt "sidebar"
+msgid "My account"
+msgstr ""
+
 #, elixir-autogen, elixir-format
 msgid "NIP check"
 msgstr ""
@@ -7909,6 +7921,12 @@ msgid "NIP is required"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
+#: lib/firmowid_web/inbox/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgctxt "sidebar"
+msgid "My timesheet"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -11574,11 +11592,6 @@ msgctxt "avatar menu"
 msgid "Superadmin panel"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/sidebar.ex
-#, elixir-autogen, elixir-format
-msgid "Support"
-msgstr ""
-
 #: lib/firmowid_web/support/components/form.ex
 #, elixir-autogen, elixir-format
 msgid "Support request sent"
@@ -13032,7 +13045,6 @@ msgstr ""
 
 #: lib/firmowid_web/hours_record/views/index.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
-#: lib/firmowid_web/inbox/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "hours record page"
 msgid "Timesheet"
