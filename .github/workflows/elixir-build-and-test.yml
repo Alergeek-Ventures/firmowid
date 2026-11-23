@@ -98,11 +98,57 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          persist-credentials: false
+
+      # A PR proposing policy edits is scanned with its base policy until the edit lands.
+      - name: Resolve trusted scanner configuration
+        id: scanner-config
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONFIG_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request) trusted_config_sha=$PULL_REQUEST_BASE_SHA ;;
+            merge_group) trusted_config_sha=$MERGE_GROUP_BASE_SHA ;;
+            *) trusted_config_sha=$CURRENT_SHA ;;
+          esac
+          if [[ ! "$trusted_config_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::No valid trusted Betterleaks configuration SHA" >&2
+            exit 1
+          fi
+
+          config_path=$(mktemp "$RUNNER_TEMP/trusted-betterleaks.XXXXXX.toml")
+          gh api --method GET "repos/$CONFIG_REPOSITORY/contents/.betterleaks.toml" \
+            --field ref="$trusted_config_sha" --jq '.content' |
+            base64 --decode > "$config_path"
+          if [[ ! -s "$config_path" ]]; then
+            echo "::error::Trusted Betterleaks configuration is empty" >&2
+            exit 1
+          fi
+          python3 - "$config_path" <<'PY'
+          import sys
+          import tomllib
+
+          try:
+              with open(sys.argv[1], "rb") as config:
+                  tomllib.load(config)
+          except (OSError, ValueError):
+              raise SystemExit("Trusted Betterleaks configuration is not valid TOML")
+          PY
+
+          # Docker actions mount the runner temp directory at this fixed path.
+          echo "config-path=/github/runner_temp/$(basename "$config_path")" >> "$GITHUB_OUTPUT"
 
       - name: Scan repository with Betterleaks
         uses: docker://ghcr.io/betterleaks/betterleaks@sha256:f345c1ac502abc51ec334c3d815ad18a79fb1509555fc4496b2cb88e760681b3 # v1.10.1
         with:
-          args: git . --config .betterleaks.toml --validation=false --redact --no-banner --no-color
+          args: git . --config ${{ steps.scanner-config.outputs.config-path }} --validation=false --redact --no-banner --no-color
 
   extract-versions:
     name: Extract versions and service images
