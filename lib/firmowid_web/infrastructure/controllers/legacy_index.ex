@@ -71,4 +71,14 @@ defmodule FirmowidWeb.Infrastructure.Controllers.LegacyIndex do
     |> put_status(301)
     |> redirect(to: ~p"/poradnik/ksef-w-banku-aplikacja-mf-czy-program")
   end
+
+  @doc """
+  Permanently redirects the guide on KSeF invoices with ChatGPT and Claude to
+  the AI feature page, which covers the same topic.
+  """
+  def ai_guide(conn, _params) do
+    conn
+    |> put_status(301)
+    |> redirect(to: ~p"/funkcje/claude-chatgpt-mcp")
+  end
 end

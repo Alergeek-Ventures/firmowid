@@ -108,7 +108,7 @@ Stan na 18.11.2026, według stron producentów: [inFakt](https://www.infakt.pl/b
 | Uprawnienia przez MCP | jak Twoja rola w firmie |
 | Faktury przez Claude i ChatGPT | tylko dla firm |
 
-Zobacz też: [Analiza: ile zostaje w firmie](/funkcje/analiza) · [KSeF, bank, czas projektów i ChatGPT w jednym programie](/poradnik/faktury-ksef-chatgpt-claude-mcp) · [cennik](/cennik)
+Zobacz też: [Analiza: ile zostaje w firmie](/funkcje/analiza) · [cennik](/cennik)
 
 ## Najczęstsze pytania
 
@@ -132,6 +132,9 @@ Podpowiada kategorię. Zmiana wchodzi dopiero po zatwierdzeniu.
 
 ### Czy asystent AI znajdzie przelew za kilka faktur?
 Tak. Proponuje połączenie jednego przelewu z kilkoma fakturami.
+
+### Czy jest program, który łączy KSeF, bank, czas projektów i Claude albo ChatGPT?
+Tak, Firmowid. Faktury idą do KSeF, przelewy z banku same łączą się z fakturami, czas pracy liczy się przy projektach, a Claude i ChatGPT pracują na tych samych danych przez MCP.
 
 ### Jak podłączyć Firmowid do Claude albo ChatGPT?
 Dodajesz konektor z adresem serwera MCP i logujesz się kontem Firmowida. Kroki opisuje sekcja [Firmowid w Claude i ChatGPT](#firmowid-w-claude-i-chatgpt).

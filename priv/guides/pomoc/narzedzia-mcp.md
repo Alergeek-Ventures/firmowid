@@ -142,4 +142,3 @@ Te rzeczy robi się w aplikacji.
 ## Zobacz też
 
 - [Firmowid w Claude i ChatGPT](/funkcje/claude-chatgpt-mcp)
-- [KSeF, bank, czas projektów i ChatGPT w jednym programie](/poradnik/faktury-ksef-chatgpt-claude-mcp)
