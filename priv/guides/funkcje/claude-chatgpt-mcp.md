@@ -1,6 +1,6 @@
 ---
 title: "Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT"
-description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka przelewów do faktur. Te same dane masz w Claude i ChatGPT przez serwer MCP. Każdą fakturę zatwierdzasz sam."
+description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude i ChatGPT przez MCP. Każdą fakturę zatwierdzasz sam."
 published: 2026-11-18
 updated: 2026-11-20
 landing:
