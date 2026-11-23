@@ -35,7 +35,7 @@ jobs:
     name: Publish translation snapshot
     if: github.ref == 'refs/heads/main'
     needs: translations
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       contents: write
       # Sigstore signs the snapshot's build provenance with the job's OIDC identity.

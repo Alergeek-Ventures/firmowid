@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   clear-cache:
-    runs-on: ubuntu-latest
+    runs-on: selenge
     permissions:
       actions: write
       packages: read

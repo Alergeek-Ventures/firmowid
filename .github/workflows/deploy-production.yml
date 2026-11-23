@@ -28,7 +28,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: sentry-release
-    runs-on: ubuntu-latest
+    runs-on: selenge
     environment: production
 
     steps:
