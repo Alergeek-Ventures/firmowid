@@ -2,8 +2,8 @@ defmodule Firmowid.Core.Services.CeidgApiClient do
   @moduledoc "CEIDG register of sole proprietorships, shared by invoicing and company registration."
 
   # CEIDG allows 50 requests in 3 minutes and 1000 an hour, and blocks for 3 minutes
-  # when exceeded; a steady 3.7 s between requests keeps under both.
-  @pause_ms 3_700
+  # when exceeded; a steady 3.7 s between requests keeps under both. Tests set it to 0.
+  @pause_ms Application.compile_env(:firmowid, :ceidg_pause_ms, 3_700)
 
   @doc """
   Returns the businesses CEIDG lists for a NIP, deregistered ones included, each
@@ -23,11 +23,18 @@ defmodule Firmowid.Core.Services.CeidgApiClient do
   end
 
   defp request(nip, token) do
-    case Req.get("https://dane.biznes.gov.pl/api/ceidg/v3/firma",
-           params: [nip: nip],
-           auth: {:bearer, token},
-           retry: false
-         ) do
+    options =
+      Keyword.merge(
+        [
+          url: "https://dane.biznes.gov.pl/api/ceidg/v3/firma",
+          params: [nip: nip],
+          auth: {:bearer, token},
+          retry: false
+        ],
+        Application.get_env(:firmowid, :ceidg_api_request_options, [])
+      )
+
+    case Req.get(options) do
       {:ok, %{status: 200, body: %{"firma" => businesses}}} -> {:ok, businesses}
       {:ok, %{status: 204}} -> {:ok, []}
       {:ok, %{status: status}} -> {:error, {:ceidg_http_error, status}}

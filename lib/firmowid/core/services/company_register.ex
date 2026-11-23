@@ -11,6 +11,7 @@ defmodule Firmowid.Core.Services.CompanyRegister do
   alias Firmowid.Core.Nip
   alias Firmowid.Core.RegisteredCompany
   alias Firmowid.Core.Services.CeidgApiClient
+  alias Firmowid.Core.Services.KrsApiClient
   alias Firmowid.Core.Services.VatApiClient
   alias Firmowid.Scope
 
@@ -76,38 +77,23 @@ defmodule Firmowid.Core.Services.CompanyRegister do
         {:ok, base}
 
       krs ->
-        with {:ok, activity} <- krs_activity(krs, "P") do
+        with {:ok, activity} <- krs_activity(krs) do
           {:ok, Map.merge(base, activity)}
         end
     end
   end
 
-  defp krs_activity(krs, registry) do
-    options =
-      Keyword.merge(
-        [
-          url: "https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/#{krs}",
-          params: [rejestr: registry, format: "json"],
-          retry: false
-        ],
-        Application.get_env(:firmowid, :krs_api_request_options, [])
-      )
-
-    case Req.get(options) do
-      {:ok, %{status: 200, body: %{"odpis" => %{"dane" => data}}}} ->
+  defp krs_activity(krs) do
+    case KrsApiClient.fetch_current(krs) do
+      {:ok, data} when is_map(data) ->
         activities =
           get_in(data, ["dzial3", "przedmiotDzialalnosci", "przedmiotPrzewazajacejDzialalnosci"])
 
         {:ok, krs_predominant(activities)}
 
-      {:ok, %{status: 404}} when registry == "P" ->
-        krs_activity(krs, "S")
-
-      {:ok, %{status: 404}} ->
+      # A struck-off entry has no current activity to read.
+      {:ok, _struck_off_or_not_found} ->
         {:ok, %{}}
-
-      {:ok, %{status: status}} ->
-        {:error, {:krs_http_error, status}}
 
       {:error, _reason} = error ->
         error

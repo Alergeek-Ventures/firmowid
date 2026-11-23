@@ -105,6 +105,20 @@ defmodule Firmowid.Core.Services.CompanyRegisterTest do
     assert Core.list_registered_companies!([@nip], scope: scope) == []
   end
 
+  test "a company struck off KRS is cached without an activity" do
+    Req.Test.stub(:nip_api, fn conn ->
+      Req.Test.json(conn, %{
+        "result" => %{"entries" => [%{"subjects" => [%{"nip" => @nip, "krs" => "0000028860"}]}]}
+      })
+    end)
+
+    # KRS answers a struck-off entry's current extract with 204 and no body.
+    Req.Test.stub(:krs_api, &Plug.Conn.send_resp(&1, 204, ""))
+
+    assert {:ok, %{@nip => %{pkd: nil}}} =
+             CompanyRegister.fetch([@nip], Analysis.classifier_scope(Ash.UUID.generate()))
+  end
+
   test "MF errors inside a successful batch response are returned without caching" do
     error = %{"code" => "WL-191", "message" => "limit"}
 

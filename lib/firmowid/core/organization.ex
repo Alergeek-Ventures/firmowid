@@ -384,6 +384,7 @@ defmodule Firmowid.Core.Organization do
       # A changed NIP has not been checked yet; `VatIdCheckWorker` checks it right away.
       change set_attribute(:nip_status, nil), where: [changing(:nip)]
       change set_attribute(:nip_checked_at, nil), where: [changing(:nip)]
+      change set_attribute(:nip_registers, nil), where: [changing(:nip)]
       change EnqueueNipCheck, where: [changing(:nip)]
     end
   end

@@ -887,7 +887,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = %{
       socket.assigns.current_org
       | nip_status: checked.nip_status,
-        nip_checked_at: checked.nip_checked_at
+        nip_checked_at: checked.nip_checked_at,
+        nip_registers: checked.nip_registers
     }
 
     # The inbox sidebar counts a contradiction with the registers.

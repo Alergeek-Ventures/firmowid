@@ -1,6 +1,6 @@
 defmodule Firmowid.Core.Organization.NipCheck do
   @moduledoc """
-  What the VAT white list and CEIDG last said about the organization's own NIP
+  What the public registers last said about the organization's own NIP
   (`NipRegistration`, run by `VatIdCheckWorker`), and how the company details
   contradict it.
   """
@@ -8,12 +8,12 @@ defmodule Firmowid.Core.Organization.NipCheck do
 
   require Ash.Expr
 
-  @type mismatch :: :closed | :unknown | :not_vat_payer_in_register | :vat_payer_in_register
+  @type mismatch :: :closed | :not_vat_payer_in_register | :vat_payer_in_register
 
   actions do
     update :record_nip_check do
-      description "Record what the VAT white list and CEIDG last said about the organization's NIP."
-      accept [:nip_status, :nip_checked_at]
+      description "Record what the public registers last said about the organization's NIP."
+      accept [:nip_status, :nip_checked_at, :nip_registers]
       require_atomic? false
 
       # A NIP saved while the registers answered has a check of its own, so an answer
@@ -34,23 +34,28 @@ defmodule Firmowid.Core.Organization.NipCheck do
   attributes do
     attribute :nip_status, :atom,
       public?: true,
-      constraints: [one_of: [:active, :exempt, :no_vat, :closed, :unknown]],
-      description: "What the VAT white list and CEIDG last said about the NIP; nil until checked."
+      constraints: [one_of: [:active, :exempt, :no_vat, :closed, :unconfirmed]],
+      description: "What the public registers last said about the NIP; nil until checked."
 
     attribute :nip_checked_at, :utc_datetime_usec, public?: true
+
+    attribute :nip_registers, Firmowid.Core.NipRegisters,
+      public?: true,
+      description: "What each register said in the last NIP check; nil until checked."
   end
 
   @doc """
   Tells how the company details contradict the registers' last answer about the
-  NIP: the business is deregistered (`:closed`), no register knows the NIP
-  (`:unknown`), or the company is set as a VAT payer while the white list does
-  not list it as an active one (`:not_vat_payer_in_register`), or the other way
-  round (`:vat_payer_in_register`). Nil when they agree or the NIP is not checked yet.
+  NIP: the business is struck off or deregistered (`:closed`), or the company is
+  set as a VAT payer while the white list does not list it as an active one
+  (`:not_vat_payer_in_register`), or the other way round (`:vat_payer_in_register`).
+  Nil when they agree or the NIP is not checked yet. That no register confirms the
+  NIP (`:unconfirmed`) is no contradiction by itself: KRS cannot be searched by NIP.
   """
   @spec mismatch(Firmowid.Core.Organization.t()) :: mismatch() | nil
-  def mismatch(%{nip_status: status}) when status in [:closed, :unknown], do: status
+  def mismatch(%{nip_status: :closed}), do: :closed
 
-  def mismatch(%{is_vat_payer: true, nip_status: status}) when status in [:exempt, :no_vat],
+  def mismatch(%{is_vat_payer: true, nip_status: status}) when status in [:exempt, :no_vat, :unconfirmed],
     do: :not_vat_payer_in_register
 
   def mismatch(%{is_vat_payer: false, nip_status: :active}), do: :vat_payer_in_register

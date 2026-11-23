@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Settings.Utilities.RegisterCheck do
         gettext("Checked in the registers on %{date}",
           date: Calendar.strftime(checked_at, "%d.%m.%Y")
         ),
-      danger?: nip_status in [:closed, :unknown],
+      danger?: nip_status == :closed,
       problem: problem(organization),
       field: field(NipCheck.mismatch(organization))
     }
@@ -52,28 +52,28 @@ defmodule FirmowidWeb.Settings.Utilities.RegisterCheck do
   @doc "How the company details contradict the registers, nil when they agree or are not checked yet."
   @spec problem(Organization.t()) :: String.t() | nil
   def problem(organization) do
-    case {NipCheck.mismatch(organization), organization.nip_status} do
-      {nil, _status} ->
+    case {NipCheck.mismatch(organization), organization.nip_status, organization.nip_registers} do
+      {nil, _status, _registers} ->
         nil
 
-      {:closed, _status} ->
+      {:closed, _status, %{krs: :struck_off}} ->
+        gettext("KRS shows the company with this NIP as struck off. Check that the NIP is right.")
+
+      {:closed, _status, _registers} ->
         gettext("CEIDG shows the business with this NIP as deregistered. Check that the NIP is right.")
 
-      {:unknown, _status} ->
-        gettext("Neither the VAT white list nor CEIDG knows this NIP. Check that it is right.")
-
-      {:not_vat_payer_in_register, :exempt} ->
+      {:not_vat_payer_in_register, :exempt, _registers} ->
         gettext("The VAT white list shows the company as VAT-exempt, but here it is set as a VAT payer.")
 
-      {:not_vat_payer_in_register, :no_vat} ->
+      {:not_vat_payer_in_register, status, _registers} when status in [:no_vat, :unconfirmed] ->
         gettext("The VAT white list does not show the company as a VAT payer, but here it is set as one.")
 
-      {:vat_payer_in_register, :active} ->
+      {:vat_payer_in_register, :active, _registers} ->
         gettext("The VAT white list shows the company as an active VAT payer, but here it is not set as one.")
     end
   end
 
-  defp field(mismatch) when mismatch in [:closed, :unknown], do: :nip
+  defp field(:closed), do: :nip
 
   defp field(mismatch) when mismatch in [:not_vat_payer_in_register, :vat_payer_in_register], do: :is_vat_payer
 
@@ -83,5 +83,5 @@ defmodule FirmowidWeb.Settings.Utilities.RegisterCheck do
   defp label(:exempt), do: pgettext("NIP status", "VAT-exempt")
   defp label(:no_vat), do: pgettext("NIP status", "Not a VAT payer")
   defp label(:closed), do: pgettext("NIP status", "Business closed")
-  defp label(:unknown), do: pgettext("NIP status", "Not in registers")
+  defp label(:unconfirmed), do: pgettext("NIP status", "Not confirmed in registers")
 end
