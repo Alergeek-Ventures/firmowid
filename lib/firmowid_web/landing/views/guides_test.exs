@@ -89,10 +89,13 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     long = conn |> get(~p"/poradnik/tryb-offline-ksef") |> html_response(200) |> title()
 
     short =
-      build_conn() |> get(~p"/poradnik/korekta-faktury-ksef") |> html_response(200) |> title()
+      build_conn()
+      |> get(~p"/poradnik/masowa-korekta-faktur-ksef")
+      |> html_response(200)
+      |> title()
 
     refute long =~ "· Firmowid"
-    assert short == "Korekta faktury w KSeF · Firmowid"
+    assert short == "Masowa korekta faktur w KSeF · Firmowid"
   end
 
   test "the features page has a Polish search description", %{conn: conn} do
