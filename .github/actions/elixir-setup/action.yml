@@ -46,8 +46,17 @@ runs:
         root=$(erl -noshell -eval 'io:put_chars(code:root_dir()), halt().')
         otp=$(erl -noshell -eval 'io:put_chars(erlang:system_info(otp_release)), halt().')
         store=$(basename "${root%%/lib/erlang}")
-        echo "otp-version=devenv-OTP-$(cat "$root/releases/$otp/OTP_VERSION")-${store:0:8}" >> "$GITHUB_OUTPUT"
-        echo "elixir-version=devenv-v$(elixir -e 'IO.write(System.version())')" >> "$GITHUB_OUTPUT"
+        otp_version=$(cat "$root/releases/$otp/OTP_VERSION")
+        elixir_version=$(elixir -e 'IO.write(System.version())')
+        # Production builds from .tool-versions (version-sync-check ties it to the Containerfile).
+        pinned_otp=$(awk '$1 == "erlang" { print $2 }' .tool-versions)
+        pinned_elixir=$(awk '$1 == "elixir" { sub(/-otp-.*/, "", $2); print $2 }' .tool-versions)
+        if [ "$otp_version" != "$pinned_otp" ] || [ "$elixir_version" != "$pinned_elixir" ]; then
+          echo "::error::devenv provides OTP $otp_version and Elixir $elixir_version; .tool-versions pins $pinned_otp and $pinned_elixir"
+          exit 1
+        fi
+        echo "otp-version=devenv-OTP-$otp_version-${store:0:8}" >> "$GITHUB_OUTPUT"
+        echo "elixir-version=devenv-v$elixir_version" >> "$GITHUB_OUTPUT"
 
     # Quality and Build/Test share compiled artifacts. Different compile-time
     # service ports invalidate the whole application, even on an exact cache hit.
