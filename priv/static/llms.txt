@@ -11,6 +11,33 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Cennik](https://firmowid.pl/cennik): plany Darmowy, Przedsiębiorca i Firma, rozliczenie miesięczne lub roczne
 - [FAQ](https://firmowid.pl/faq): odpowiedzi na pytania o KSeF, integracje bankowe, bezpieczeństwo danych, migrację i plany
 - [Open source](https://firmowid.pl/open-source): kod na licencji AGPL-3.0 i uruchamianie Firmowida na własnym serwerze
+- [Program do faktur KSeF](https://firmowid.pl/ksef): plan Darmowy z wysyłką faktur do KSeF bez limitu, pobieraniem kosztów i porównaniem cen z innymi programami
+- [Poradnik](https://firmowid.pl/poradnik): poradniki o KSeF i fakturowaniu dla JDG i małych firm, ze źródłami i datą aktualizacji
+- [Pomoc](https://firmowid.pl/pomoc): instrukcje krok po kroku do Firmowida, ze zrzutami ekranu
+- [Historia Bonobo](https://firmowid.pl/historie/bonobo): jak księgarnia i kawiarnia z Krakowa prowadzi faktury kosztowe z KSeF, zdjęcia faktur i przelewy w Firmowidzie
+
+## Funkcje
+
+- [Program do faktur kosztowych z KSeF, ze skanu i z PDF](https://firmowid.pl/funkcje/faktury-kosztowe): Firmowid pobiera faktury kosztowe z KSeF automatycznie, a te spoza KSeF odczytuje z PDF i ze zdjęcia. Cena, porównanie z innymi programami i ograniczenia.
+- [Program do faktur z integracją bankową i dopasowaniem przelewów](https://firmowid.pl/funkcje/bank): Firmowid pobiera przelewy z banku i sam przypina je do faktur. Jak to wygląda u nas na co dzień, co obsługuje i czego nie robi.
+- [Skrzynka: wszystko, co czeka na Ciebie, na jednej liście](https://firmowid.pl/funkcje/skrzynka): Skrzynka to pierwszy ekran Firmowida: faktury po terminie, wnioski urlopowe, delegacje i pilne sprawy z KSeF i banku na jednej liście. Jest w każdym planie.
+- [Program do analizy przychodów i kosztów małej firmy](https://firmowid.pl/funkcje/analiza): Analiza w Firmowidzie pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na 12 kategorii i liczy wynik każdego miesiąca. Cena, porównanie i ograniczenia.
+- [Program do ewidencji czasu pracy w projektach](https://firmowid.pl/funkcje/czas-pracy): Czasośledź mierzy czas pracy w projektach. Godziny trafiają do miesięcznej ewidencji, kosztu projektu i raportu wypłat, w tym samym programie co faktury i bank.
+- [Zespół: role, wnioski urlopowe online i dokumenty pracowników](https://firmowid.pl/funkcje/zespol): Firmowid dla małego zespołu: cztery role, wnioski urlopowe z akceptacją w Skrzynce, umowy i dokumenty pracowników. Cena i porównanie z innymi programami.
+- [Rozliczenie delegacji online: polecenie, zaliczka, diety](https://firmowid.pl/funkcje/delegacje): Delegacje w Firmowidzie: wniosek, polecenie wyjazdu, zaliczka, paragony, diety krajowe i zagraniczne, podpis Profilem Zaufanym. Pięć kroków w jednym programie.
+- [Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT](https://firmowid.pl/funkcje/claude-chatgpt-mcp): Asystent AI w Firmowidzie przygotowuje faktury i szuka przelewów do faktur. Te same dane masz w Claude i ChatGPT przez serwer MCP. Każdą fakturę zatwierdzasz sam.
+
+## Pomoc
+
+- [Jak połączyć Firmowid z KSeF: krok po kroku](https://firmowid.pl/pomoc/polaczenie-z-ksef): Połączenie Firmowida z KSeF Profilem Zaufanym, certyfikatem albo tokenem, ze zrzutem ekranu przy każdym kroku. Trwa kilka minut.
+- [Pobieranie faktur z KSeF w Firmowidzie: co, kiedy i z jakiego okresu](https://firmowid.pl/pomoc/pobieranie-faktur-z-ksef): Firmowid sam pobiera z KSeF faktury kosztowe i sprzedażowe: 30 dni wstecz po połączeniu, potem co 2 godziny. Co trafia na listę, a co jest pomijane.
+- [Jak podłączyć konto bankowe do Firmowida: krok po kroku](https://firmowid.pl/pomoc/podlaczenie-konta-bankowego): Podłączenie banku przez Open Banking w kilka kliknięć, ze zrzutem ekranu przy każdym kroku. Do tego odnawianie zgody co 90 dni i konto dodane ręcznie.
+- [Jak działa dopasowanie przelewów do faktur w Firmowidzie](https://firmowid.pl/pomoc/dopasowanie-przelewow): Kiedy Firmowid sam łączy przelew z fakturą, co bierze pod uwagę, skąd biorą się propozycje i jak zatwierdzić, cofnąć albo pominąć dopasowanie.
+- [Jak przekazać faktury biuru księgowemu: paczka dokumentów za miesiąc](https://firmowid.pl/pomoc/paczka-dla-biura-ksiegowego): Jeden plik ZIP z fakturami sprzedażowymi i kosztowymi za wybrany miesiąc. Co zawiera, jak nazywają się pliki i co ustawić przed pobraniem.
+- [Jak mierzyć czas pracy w Firmowidzie: licznik i wpisy ręczne](https://firmowid.pl/pomoc/mierzenie-czasu-pracy): Start i stop licznika, dopisywanie godzin wstecz, praca zdalna, sesja przez północ i co zrobić, gdy wpisy na siebie nachodzą.
+- [Ewidencja godzin w Firmowidzie: jak pobrać PDF, podpisać i wysłać](https://firmowid.pl/pomoc/ewidencja-godzin): Miesięczne zestawienie godzin do umowy zlecenia w czterech krokach, podpis na podpis.gov.pl, blokada miesiąca oraz prośba o korektę.
+- [Analiza: jak czytać Podsumowanie i Trendy](https://firmowid.pl/pomoc/analiza-podsumowanie-i-trendy): Co znaczą liczby w Analizie Firmowida: przychody, koszty, wynik, miesiąc domknięty, pasek 100 zł i nieopłacone faktury poza sumą.
+- [Narzędzia MCP Firmowida: pełna lista](https://firmowid.pl/pomoc/narzedzia-mcp): 42 narzędzia serwera MCP Firmowida: faktury i KSeF, przelewy, wynagrodzenia, czas pracy, urlopy i Analiza. Co czyta, co zapisuje i jaka rola jest potrzebna.
 
 ## Poradnik
 
