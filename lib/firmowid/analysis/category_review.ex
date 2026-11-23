@@ -22,6 +22,7 @@ defmodule Firmowid.Analysis.CategoryReview do
           lines: [String.t()],
           nip: String.t() | nil,
           transfer_names: [String.t()],
+          accounts: [String.t()],
           salary_user_id: Ash.UUID.t() | nil,
           certain: IndustryTemplate.category() | nil,
           classified: IndustryTemplate.category() | nil,
@@ -86,7 +87,8 @@ defmodule Firmowid.Analysis.CategoryReview do
   same NIP are one counterparty: they share the first of their keys, and a
   rule confirmed for any of them. So do the names the bank gives it on
   transfers paired with those invoices, which its other transfers carry
-  without a NIP.
+  without a NIP, and the names of entries without a NIP paid to an account
+  only its invoices show.
   """
   @spec resolve([entry()], [map()]) :: [{entry(), String.t(), resolution()}]
   def resolve(entries, rules) do
@@ -114,20 +116,37 @@ defmodule Firmowid.Analysis.CategoryReview do
 
   # Joins the keys of names written on invoices with the same NIP, transitively, under the
   # alphabetically first of them. Transfers carry no NIP and join by their name's key, which
-  # also joins the NIP when a transfer paired with one of its invoices has that name. A paired
-  # name claimed by another NIP, such as a payment operator's, joins none of them.
+  # also joins the NIP when a transfer paired with one of its invoices has that name, or when
+  # an entry without a NIP pays an account only that NIP's invoices show. A linked name or
+  # account claimed by another NIP, such as a payment operator's, joins none of them.
   defp shared_keys(entries) do
-    names =
-      Enum.flat_map(entries, fn entry ->
-        case nip(entry.nip) do
-          nil ->
-            []
+    {with_nip, without_nip} = Enum.split_with(entries, &nip(&1.nip))
 
-          nip ->
-            [{{entry.side, nip}, key(entry.name), :written}] ++
-              for(name <- entry.transfer_names, do: {{entry.side, nip}, key(name), :paired})
-        end
+    owners =
+      with_nip
+      |> Enum.flat_map(fn entry ->
+        for account <- entry.accounts, do: {{entry.side, account}, nip(entry.nip)}
       end)
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      |> Map.new(fn {side_account, nips} -> {side_account, Enum.uniq(nips)} end)
+
+    invoice_names =
+      Enum.flat_map(with_nip, fn entry ->
+        nip = nip(entry.nip)
+
+        [{{entry.side, nip}, key(entry.name), :written}] ++
+          for(name <- entry.transfer_names, do: {{entry.side, nip}, key(name), :linked})
+      end)
+
+    # A salary keeps its own name, so a supplier's rule never takes it out of the salaries group.
+    account_names =
+      for entry <- without_nip,
+          entry.salary_user_id == nil,
+          account <- entry.accounts,
+          [nip] <- [Map.get(owners, {entry.side, account}, [])],
+          do: {{entry.side, nip}, key(entry.name), :linked}
+
+    names = invoice_names ++ account_names
 
     nips =
       Enum.reduce(names, %{}, fn {{side, nip}, key, _origin}, nips ->

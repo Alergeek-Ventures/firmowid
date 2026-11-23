@@ -353,8 +353,9 @@ defmodule Firmowid.Analysis do
   returned as `:industry`. Each entry carries its `entity`
   (`{entity_type, id}`), `nip` (of the invoice's counterparty, as written there),
   `transfer_names` (the counterparty's names on transfers paired with the
-  invoice) and `lines`: invoice line names, else the cost invoice description or
-  the transfer title. See `CategoryReview.build/3` for the rest.
+  invoice), `accounts` (keys of the counterparty's bank accounts) and `lines`:
+  invoice line names, else the cost invoice description or the transfer title.
+  See `CategoryReview.build/3` for the rest.
   """
   @spec get_category_review(integer() | Date.Range.t(), Scope.t()) :: map()
   def get_category_review(year, scope) when is_integer(year),
@@ -401,6 +402,7 @@ defmodule Firmowid.Analysis do
           name: counterparty_name(entity),
           nip: counterparty_nip(entity),
           transfer_names: transfer_names(entity),
+          accounts: counterparty_accounts(entity),
           amount: amount |> Decimal.abs() |> Decimal.round(2),
           lines: entry_lines(entity),
           salary_user_id: salary_user_id(entity),
@@ -504,6 +506,24 @@ defmodule Firmowid.Analysis do
 
   defp transfer_names(invoice) do
     invoice.transactions |> Enum.map(&transfer_counterparty/1) |> Enum.reject(&is_nil/1)
+  end
+
+  # Keys of the counterparty's bank accounts: a transfer's, or the seller's on a cost invoice and
+  # those on the transfers paired with an invoice. A sales invoice names the organization's own.
+  defp counterparty_accounts(%Transaction{} = transaction), do: account_keys([transfer_account(transaction)])
+
+  defp counterparty_accounts(%CostInvoice{} = invoice),
+    do: account_keys([invoice.effective_account_number | Enum.map(invoice.transactions, &transfer_account/1)])
+
+  defp counterparty_accounts(%SalesInvoice{} = invoice),
+    do: account_keys(Enum.map(invoice.transactions, &transfer_account/1))
+
+  defp transfer_account(%Transaction{amount: amount} = transaction) do
+    if Money.negative?(amount), do: transaction.creditor_account, else: transaction.debtor_account
+  end
+
+  defp account_keys(accounts) do
+    accounts |> Enum.map(&AccountNumber.key/1) |> Enum.reject(&is_nil/1) |> Enum.uniq()
   end
 
   @doc "Returns the NIP of an invoice's counterparty as written there, unvalidated; transactions carry none."
@@ -636,6 +656,7 @@ defmodule Firmowid.Analysis do
           :transactions,
           :effective_seller_display_name,
           :effective_seller_nip,
+          :effective_account_number,
           :effective_sale_date,
           :effective_amount
         ],
