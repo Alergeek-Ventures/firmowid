@@ -35,7 +35,9 @@
       phx-click="toggle_wages_view"
     >
       <:label_slot>
-        <span class="text-sm/[1.35] text-grey-700">{gettext("Payroll view")}</span>
+        <span class="text-sm/[1.35] text-grey-700 group-has-[input:disabled]/switch:text-grey-400">
+          {gettext("Payroll view")}
+        </span>
       </:label_slot>
     </.switch>
   </div>
@@ -52,8 +54,9 @@
             "grid gap-x-6 gap-y-2",
             roles_column?(assigns) &&
               "grid-cols-[1fr_max-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
+            # Figma "Zarchiwizowani": no timesheet, the row takes the whole width.
             @view == :standard && @live_action == :archive &&
-              "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
+              "grid-cols-[1fr_min-content_min-content_min-content]",
             # The rate column is 152px in both states, so editing does not move the columns.
             @view != :standard && @live_action == :index &&
               if(flag_enabled?(:accurate_salary_calculation, assigns),
@@ -94,11 +97,11 @@
             {gettext("Role")}
           </p>
           <p class={["text-end text-nowrap", @view == :standard && "md:min-w-30"]}>
-            {gettext("Hours")}
+            {if @live_action == :archive, do: gettext("Total hours"), else: gettext("Hours")}
           </p>
 
           <%= if @live_action == :archive do %>
-            <p class="text-right text-nowrap">{gettext("Archived on")}</p>
+            <p class="text-right text-nowrap md:min-w-30">{gettext("Archived on")}</p>
           <% end %>
 
           <%= if @view in [:wages, :wage_editor] do %>
@@ -114,7 +117,7 @@
                     class="-my-1 inline-flex cursor-pointer items-center gap-1.5 justify-self-end rounded-sm px-2 py-1 text-grey-700 transition-[color,background-color,opacity] duration-300 ease-out hover:bg-grey-200 hover:text-grey-900 motion-reduce:transition-none starting:opacity-0"
                   >
                     {pgettext("hourly rate", "Rate")}
-                    <Lucideicons.square_pen class="size-4 shrink-0" aria-hidden="true" />
+                    <.figma_icon name="edit" class="size-4" />
                   </.button>
                 <% else %>
                   <p class="text-right text-nowrap transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none starting:translate-x-1 starting:opacity-0">
@@ -136,7 +139,7 @@
                     type="button"
                     aria-label={gettext("Cancel editing rates")}
                   >
-                    <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
+                    <.figma_icon name="return" class="size-4" />
                   </.button>
                   <.button
                     variant="unstyled"
@@ -159,7 +162,9 @@
             </p>
           <% end %>
           <span />
-          <p class="pl-4 text-nowrap max-md:hidden">{gettext("Timesheet")}</p>
+          <p :if={@live_action == :index} class="pl-4 text-nowrap max-md:hidden">
+            {gettext("Timesheet")}
+          </p>
         </div>
 
         <%= if Enum.empty?(@employees) do %>
@@ -175,7 +180,7 @@
             }
             class="col-span-full gap-4! py-16! [&_p]:leading-[normal] [&_p+div]:max-w-none [&_p+div]:leading-[1.35]"
           >
-            <:icon><Lucideicons.users class="text-grey-400" /></:icon>
+            <:icon><.figma_icon name="zespol" class="text-grey-400" /></:icon>
             <%= if @search == "" and @live_action == :archive do %>
               {gettext(
                 "People you archive, for example when you stop working together, end up here."
@@ -210,7 +215,7 @@
               end
             ]}>
               <div class="flex min-w-0 items-center gap-4">
-                <.avatar class="size-8 shrink-0">
+                <.avatar class={["size-8 shrink-0", @live_action == :archive && "opacity-50"]}>
                   <.avatar_image
                     :if={employee.user.member.avatar_blob}
                     blob={employee.user.member.avatar_blob}
@@ -228,7 +233,10 @@
                   navigate={
                     Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
                   }
-                  class="min-w-0 truncate text-grey-900 hover:underline"
+                  class={[
+                    "min-w-0 truncate hover:underline",
+                    if(@live_action == :archive, do: "text-grey-500", else: "text-grey-900")
+                  ]}
                   title={employee.user.member.name || to_string(employee.user.email)}
                 >
                   {employee.user.member.name || employee.user.email}
@@ -267,7 +275,7 @@
                     class="flex w-full cursor-pointer rounded-sm transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-teal-700 active:scale-95"
                   >
                     <.role_badge role={employee.user.member.role} neutral>
-                      <Lucideicons.chevron_down class="size-4 shrink-0" aria-hidden="true" />
+                      <.figma_icon name="chevron_down" class="size-4 text-black" />
                     </.role_badge>
                   </.button>
                 <% end %>
@@ -277,11 +285,18 @@
               <p class={[
                 "flex items-baseline justify-end gap-1 text-nowrap",
                 @view == :standard && "md:min-w-30",
-                if(employee.time_worked == 0, do: "text-grey-500", else: "text-grey-900")
+                if(employee.time_worked == 0 or @live_action == :archive,
+                  do: "text-grey-500",
+                  else: "text-grey-900"
+                )
               ]}>
-                <%!-- Whole hours, rounded up, in both views (Figma "Wiersz pracownika"). --%>
+                <%!-- Whole hours, rounded up, in both views (Figma "Wiersz pracownika"); archived
+                     rows are greyed out, their units a step paler. --%>
                 <span class="flex items-baseline gap-0.5">
-                  {ceil(employee.time_worked / 3600)}<span class="text-sm text-grey-500">{pgettext(
+                  {ceil(employee.time_worked / 3600)}<span class={[
+                    "text-sm",
+                    if(@live_action == :archive, do: "text-grey-400", else: "text-grey-500")
+                  ]}>{pgettext(
                     "hours worked unit",
                     "hrs"
                   )}</span>
@@ -289,7 +304,7 @@
               </p>
 
               <%= if @live_action == :archive do %>
-                <p class="text-right text-black">
+                <p class="text-right text-grey-900">
                   <%= if employee.user.member.archived_at do %>
                     {Calendar.strftime(employee.user.member.archived_at, "%d.%m.%Y")}
                   <% end %>
@@ -350,7 +365,10 @@
                 </p>
               <% end %>
 
-              <div class="flex items-center justify-end gap-3">
+              <div class={[
+                "flex items-center justify-end",
+                if(@live_action == :archive, do: "gap-6", else: "gap-3")
+              ]}>
                 <.button
                   :if={@live_action == :archive}
                   type="button"
@@ -373,12 +391,15 @@
                     )
                   }
                 >
-                  <Lucideicons.chevron_right class="size-4 shrink-0 text-black" />
+                  <.figma_icon name="chevron_right" class="size-4 text-black" />
                 </.link>
               </div>
             </div>
 
-            <div class="flex w-[221px] items-center justify-between gap-3.75 rounded-sm bg-white p-4 max-md:hidden">
+            <div
+              :if={@live_action == :index}
+              class="flex w-[221px] items-center justify-between gap-3.75 rounded-sm bg-white p-4 max-md:hidden"
+            >
               <.hours_record_status
                 hours_record={employee.hours_record}
                 user={employee.user}
@@ -406,7 +427,7 @@
                   aria-label={gettext("Copy bank account number")}
                   class="inline-flex cursor-pointer items-center justify-center text-grey-700 transition-colors hover:text-black disabled:pointer-events-none disabled:text-grey-400"
                 >
-                  <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />
+                  <.figma_icon name="card" class="size-6" />
                 </.button>
               </.tooltip>
             </div>
