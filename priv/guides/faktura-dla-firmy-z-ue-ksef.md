@@ -1,6 +1,6 @@
 ---
-title: "Faktura dla firmy z UE w KSeF: np II i odwrotne obciążenie"
-description: "Usługa dla firmy z innego kraju UE: faktura w KSeF bez polskiego VAT, stawka np II, adnotacja odwrotne obciążenie, VIES i informacja podsumowująca VAT-UE."
+title: "Faktura dla klienta z UE w KSeF: jaka stawka VAT i adnotacja"
+description: "Usługa dla firmy z UE z numerem VAT-UE: w KSeF stawka np II i adnotacja „odwrotne obciążenie”, bez polskiego VAT. Wcześniej rejestracja VAT-UE i VIES."
 published: 2026-11-12
 updated: 2026-11-12
 category: ksef-w-praktyce
