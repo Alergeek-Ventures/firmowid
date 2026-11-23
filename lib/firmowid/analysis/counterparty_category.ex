@@ -30,10 +30,12 @@ defmodule Firmowid.Analysis.CounterpartyCategory do
   code_interface do
     define :list, action: :read
     define :confirm
+    define :forget, action: :destroy
   end
 
   actions do
-    defaults [:read]
+    # Destroying a rule undoes a confirmation, so the counterparty's suggestion applies again.
+    defaults [:read, :destroy]
 
     create :confirm do
       description "Confirm or change the category of a counterparty's income or expenses."
@@ -77,7 +79,7 @@ defmodule Firmowid.Analysis.CounterpartyCategory do
       authorize_if {AtLeastRole, role: :invoicing}
     end
 
-    policy action_type(:create) do
+    policy action_type([:create, :destroy]) do
       authorize_if {AtLeastRole, role: :accountant}
     end
   end
