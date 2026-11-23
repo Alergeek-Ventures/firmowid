@@ -214,7 +214,7 @@ see colour, it tells you which side of the book you are looking at.
 
 Components are warm and tactile. Secondary actions and status pills use
 pastel tonal fills instead of hard outlines. Corners are gently rounded
-(8px on most controls). The page is flat by default: white surfaces sit on the
+(4px almost everywhere). The page is flat by default: white surfaces sit on the
 grey canvas through tonal contrast, and a shadowed card is used only in the
 few places that group a self-contained record. A heavy black sidebar
 frames the workspace like the spine of a ledger. The typeface is Geist
@@ -245,7 +245,7 @@ Firmowid's own.
 - Warm, tactile components with pastel tonal fills (secondary buttons, pills, badges).
 - Flat by default: white surfaces on the `grey-100` canvas separated by tone or a 1px `grey-200` line. Cards with a shadow are the exception.
 - Geist everywhere, Lexend only in the wordmark. Dense, 14px-led body text with medium weight for emphasis.
-- Gentle 8px corners on controls, 6px on small controls and cards, full pills for filters and toggles.
+- 4px corners almost everywhere, 6px or 8px in a few named places, full pills for filters and toggles.
 
 ## Colors
 
@@ -305,7 +305,8 @@ user may compare character by character: IBANs, NIPs, OAuth scopes and URIs.
 The frontmatter `typography` keys are the Tailwind text sizes; only `fontSize`
 becomes a CSS token. Weight and line height describe how each role is set.
 
-- **Headline** (`text-2xl`, 27px, 600): page and section titles, used sparingly.
+- **Page title** (`text-3xl/[1.3]`, 40px, 700, `grey-900`): the H1 at the top of a page (52px tall), with the page's actions on the right, aligned to its bottom, 12px apart.
+- **Headline** (`text-2xl`, 27px, 600): section titles, used sparingly.
 - **Title** (`text-lg`, 20px, 600): card and panel titles, modal headings.
 - **Subtitle** (`text-h5`, 18px, 500): sub-panel headings and invoice section headers.
 - **Body Large** (`text-base`, 16px): form controls and big buttons, set tight (1.25) so controls stay compact.
@@ -419,10 +420,17 @@ Text fields signal focus with their border (`grey-700`) instead of an outline.
 
 ## Shapes
 
-One radius for everything with corners: 4px. Buttons, inputs, selects,
-checkboxes, cards, modals, tiles, menus, tooltips and status badges all use it.
-Every `rounded` token (`sm` to `2xl`) is 4px, so `rounded-sm` is the one to
-write in new code; do not add arbitrary radii like `rounded-[3px]`.
+The main radius is 4px. Buttons, inputs, selects, cards, tiles, menus,
+tooltips and status badges use it. Every `rounded` token (`sm` to `2xl`) is 4px,
+so `rounded-sm` is the one to write in new code.
+
+Figma uses two larger radii in a few places, and only there:
+- **6px** (`rounded-[6px]`): small 24px controls inside a table heading (the rate
+  editor's Save and undo) and the role pill in the Team table.
+- **8px** (`rounded-[8px]`): the account menu panel above the sidebar.
+
+Sidebar and account menu rows keep 2px corners (`rounded-[2px]`); collapsed
+sidebar links use 4px. Do not add other arbitrary radii.
 
 Full pills (`rounded-full`) are only for toggle switches, avatars, filter chips
 and round counters. The marketing landing page keeps its own scaled radii.
@@ -432,12 +440,22 @@ placeholders.
 
 ## Icons
 
-New code uses [Lucide](https://lucide.dev) through the `lucide_icons` package
-(`<Lucideicons.search />`). Heroicons (`<.icon name="hero-…" />`) are the older
-set and remain only in existing code until it is touched; do not add new ones,
-and do not mix both libraries inside one component. Icons are 24px in big
-buttons and 16px in small ones; an icon that is the only content of a
-control needs an accessible label (`icon_button` requires one).
+Icons come from Figma first: the "Icons" page of the Firmowid file is the
+source of truth, and its set lives in code as `figma_icon`
+(`<.figma_icon name="czasosledz" class="size-4.5" />`,
+`FirmowidWeb.DesignSystem.Components.FigmaIcon`). Each icon is drawn on a 24px
+grid and scales to 16, 18 and 20px with its stroke (2px at 24px), following
+`currentColor`. Add a missing Figma icon to that module from its SVG export,
+never redrawn by eye.
+
+Only when Figma has no icon for the job, use [Lucide](https://lucide.dev)
+through the `lucide_icons` package (`<Lucideicons.calendar_days />`).
+Heroicons (`<.icon name="hero-…" />`) are the oldest set and remain only in
+existing code until it is touched; do not add new ones.
+
+Sizes: 20px in big buttons, 16px in small ones, 18px in sidebar rows, 24px in
+empty states. An icon that is the only content of a control needs an
+accessible label (`icon_button` requires one).
 
 ## Components
 
@@ -487,7 +505,7 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 
 ### Buttons
 Warm and tactile: flat fills, no gradients, quick 100ms colour transitions.
-- **Shape:** 4px corners and fixed heights. Big buttons are 36px tall (10px side padding, 16px medium text, 24px icon); small buttons are 30px tall (8px side padding, 14px medium text, 16px icon). Icon and text sit 6px apart.
+- **Shape:** 4px corners and fixed heights. Big buttons are 36px tall (10px side padding, 16px medium text, 20px icon); small buttons are 30px tall (8px side padding, 14px medium text, 16px icon). Icon and text sit 6px apart.
 - **Primary (directional):** a solid rust fill for cost-side actions and a solid teal fill for sales-side actions, with white text. Hover and active step to the deeper shades.
 - **Secondary (directional):** a pastel tint with deepest-shade text (rust or teal), or a grey tint for neutral.
 - **Special / Tertiary (neutral):** a black fill (hover graphite) or a graphite fill (hover charcoal) with white text. Use these for actions that belong to neither ledger side.
@@ -520,11 +538,11 @@ expression of the Two Sides of the Ledger Rule.
 - **When:** offer Undo only when there is something to undo. A toast stays 6 seconds; one that reports a removal stays 10.
 
 ### Inputs / Fields
-- **Style:** one style for every field (`FirmowidUI.Components.Inputs.input/1`): 1px grey-200 border, white background (grey-50 for selects), 8px radius, 16px text set tight, 6px by 12px padding, about 34px tall. Placeholders and selects showing their prompt use pale grey text.
+- **Style:** one style for every field (`FirmowidUI.Components.Inputs.input/1`): 1px grey-200 border, white background (grey-50 for selects), 4px radius, 16px text set tight, 6px by 12px padding, about 34px tall. Placeholders and selects showing their prompt use pale grey text.
 - **Focus:** the border deepens to `grey-700` (see Focus).
 - **Error:** the border turns red and a brick error bubble with an exclamation icon appears.
 - **Checkbox / Radio:** 16px squares with a 3px radius and graphite stroke.
-- **Switch:** a 38×24 pill. The grey track fills rust or teal when on, depending on the side it controls.
+- **Switch:** the Figma "Toggle": a 49×26 `grey-200` track with a 20px white knob 3px in. On, the track fills rust or teal by the side it controls, or black for neutral settings. Disabled, the track drops to 40% opacity and its label turns `grey-400`.
 
 ### Menus and Dropdowns
 One primitive (`FirmowidWeb.DesignSystem.Components.Menu`) in two variants.
@@ -535,7 +553,9 @@ One primitive (`FirmowidWeb.DesignSystem.Components.Menu`) in two variants.
 
 ### Navigation
 - **Sidebar:** a black column with the "Firmowid" wordmark and the collapse button on top, then the layer switch (company or the member's own), the inbox and the places of the current layer. Rows are 32px tall with an 18px icon and the label in `grey-300`; the current page sits on a `grey-900` fill. Collapsed, only the icons stay and a label shows as a tooltip.
-- **Account:** feedback and the account button sit at the bottom; the account button opens a black menu with the organization switcher, settings and logging out, whose items highlight with graphite/50.
+- **Labels:** the member's own layer names its places in the first person ("Moja ewidencja", "Moje konto"); the footer row is "Feedback".
+- **Layer switch:** two 116px halves with no gap under one white pill with 4px corners; collapsed, two 28px buttons on a `grey-900` tray.
+- **Account:** feedback and the account button sit at the bottom; the account button opens a `grey-950` menu (8px radius, 1px `grey-800` ring, `shadow-small`) with the organization switcher, settings and logging out, whose items highlight with a `grey-900` fill.
 - **Mobile:** below 768px the sticky top bar's menu button slides the sidebar in over the page at full width (see Layout).
 
 ### Modals
@@ -550,7 +570,8 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 - **Do** prefer pastel tint plus deep-text pairs for secondary actions, pills and statuses.
 - **Do** keep surfaces flat: white on the `grey-100` canvas, separated by tone or a `grey-200` line.
 - **Do** keep body text at 14px Geist in graphite, and lift emphasis with weight, not colour.
-- **Do** use the 8px radius for controls, 6px for small controls and cards, and pills only for filters, toggles and avatars.
+- **Do** use the 4px radius; 6px and 8px only in the places listed under Shapes, and pills only for filters, toggles and avatars.
+- **Do** take icons from the Figma set (`figma_icon`) and fall back to Lucide only when it has none.
 - **Do** change colours and text sizes in the DESIGN.md frontmatter and run `mix design.tokens`.
 - **Do** go through `FirmowidUI.Components.Button` and its variants instead of hand-rolled button classes.
 
