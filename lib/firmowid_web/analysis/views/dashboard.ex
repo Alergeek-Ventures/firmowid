@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Analysis.TagDefinition
   alias FirmowidWeb.Analysis.Components.AskAssistant
   alias FirmowidWeb.Analysis.Components.FinancialOverview
+  alias FirmowidWeb.Analysis.Components.FirstReview
   alias FirmowidWeb.Analysis.Components.MonthlyResults
   alias FirmowidWeb.Analysis.Components.PeriodDetails
   alias FirmowidWeb.Analysis.Components.ProjectSwitcher
@@ -44,6 +45,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       {:ok,
        assign(socket,
          tag_definitions: TagDefinition.list_tag_definitions!(scope: scope),
+         first_review: nil,
+         first_review_offered: false,
          page_title: pgettext("main navigation", "Analysis"),
          # What each category confirmation replaced, by the token its toast's undo sends back.
          category_undos: %{}
@@ -71,6 +74,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       socket
       |> assign(params: view, tag_filters: tag_filters)
       |> load_view()
+      |> offer_first_review()
 
     {:noreply, socket}
   end
@@ -103,6 +107,53 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       {undo, undos} -> undo_category(assign(socket, :category_undos, undos), undo)
     end
   end
+
+  # The first review goes through the counterparties to check when it starts, so their order stays put
+  # while the owner's choices refresh the suggestions; it resumes where it was left in the same period.
+  def handle_event("first-review-open", _params, socket) do
+    if review_groups(socket.assigns) == [] do
+      {:noreply, socket}
+    else
+      period = socket.assigns.params.period
+      fresh = %{steps: nil, index: 0, period: period}
+
+      first_review =
+        case socket.assigns.first_review do
+          %{steps: [_ | _] = steps, index: index, period: ^period} = state ->
+            if index < length(steps), do: state, else: fresh
+
+          _not_started_or_other_period ->
+            fresh
+        end
+
+      {:noreply, assign(socket, first_review: Map.put(first_review, :open, true))}
+    end
+  end
+
+  def handle_event("first-review-start", _params, %{assigns: %{first_review: %{steps: nil}}} = socket) do
+    case review_groups(socket.assigns) do
+      [] ->
+        {:noreply, socket}
+
+      _groups ->
+        steps = CategoryReview.to_check(socket.assigns.review, FirstReview.size())
+        {:noreply, update(socket, :first_review, &%{&1 | steps: steps, index: 0})}
+    end
+  end
+
+  def handle_event(
+        "first-review-step",
+        %{"index" => index},
+        %{assigns: %{first_review: %{steps: [_ | _] = steps}}} = socket
+      )
+      when is_integer(index) do
+    {:noreply, update(socket, :first_review, &%{&1 | index: index |> max(0) |> min(length(steps))})}
+  end
+
+  def handle_event("first-review-close", _params, %{assigns: %{first_review: %{}}} = socket),
+    do: {:noreply, update(socket, :first_review, &%{&1 | open: false})}
+
+  def handle_event("first-review-" <> _step, _params, socket), do: {:noreply, socket}
 
   def handle_event("select-period", %{"from" => from, "to" => to}, socket) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- Date.from_iso8601(from),
@@ -309,6 +360,20 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
+  # The owner's first visit, before they chose any category, opens the categories and the
+  # counterparties to check. Nothing records it: until their first choice, each visit offers it again.
+  defp offer_first_review(%{assigns: %{first_review_offered: false, params: %{view: :dashboard}}} = socket) do
+    %{review: review, ash_scope: scope, params: %{period: period}} = socket.assigns
+    socket = assign(socket, first_review_offered: true)
+
+    if scope.actor.member.role == :admin and review.rules == %{} and
+         review_groups(socket.assigns) != [],
+       do: assign(socket, first_review: %{open: true, steps: nil, index: 0, period: period}),
+       else: socket
+  end
+
+  defp offer_first_review(socket), do: socket
+
   # Entries without a category are classified in the background for members who may store categories.
   defp load_review(socket) do
     %{params: %{period: {from, to} = period}, ash_scope: scope} = socket.assigns
@@ -493,6 +558,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             aria-label={gettext("Period")}
             data-position="bottom right"
           />
+          <FirmowidUI.Components.Button.button
+            :if={@params.view == :dashboard and review_groups(assigns) != []}
+            id="analysis-first-review-open"
+            type="button"
+            variant="tertiary"
+            size="big"
+            phx-click="first-review-open"
+          >
+            <Lucideicons.list_checks aria-hidden="true" />
+            {gettext("Check categories")}
+          </FirmowidUI.Components.Button.button>
           <AskAssistant.button
             id="analysis-ask-assistant"
             context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
@@ -520,6 +596,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         industry={@review && @review.industry}
         can_edit={can_tag?(assigns)}
         assistant={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
+      />
+      <FirstReview.review
+        :if={
+          @params.view == :dashboard and @first_review != nil and @first_review.open and
+            @first_review.period == @params.period
+        }
+        review={@review}
+        steps={@first_review.steps}
+        index={@first_review.index}
+        period={Periods.label(@params.period)}
       />
       <%= if @params.view == :trends do %>
         <FinancialOverview.overview
