@@ -41,7 +41,10 @@ defmodule Mix.Tasks.Translations.Extract.Check do
     :ok
   end
 
-  defp compiler_context do
+  @doc false
+  # Public for its test: the context must stay equal across separate invocations.
+  @spec compiler_context() :: tuple()
+  def compiler_context do
     # Environment-dependent macros/configuration can affect extraction. Hash the
     # complete environment in memory; do not log or persist individual values.
     environment = System.get_env() |> Enum.sort() |> :erlang.term_to_binary()
@@ -54,7 +57,9 @@ defmodule Mix.Tasks.Translations.Extract.Check do
 
     {
       System.version(),
-      :erlang.system_info(:system_version),
+      # The OTP build, not `system_version`: that string also reports how many schedulers
+      # are online, which follows the CPUs the host currently gives this process.
+      {:erlang.system_info(:otp_release), :erlang.system_info(:version), :code.root_dir()},
       System.find_executable("mix"),
       mix_environment,
       Mix.target(),
