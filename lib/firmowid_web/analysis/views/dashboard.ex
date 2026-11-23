@@ -116,12 +116,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  # The period picker's clear button sends no months and goes back to this year; anything partial is ignored.
-  def handle_event("select-period", params, socket) when map_size(params) == 0 do
-    period = Navigation.year_period(Date.utc_today().year)
-    {:noreply, push_patch(socket, to: build_path(socket, period: period, month: nil))}
-  end
-
   def handle_event("select-period", _params, socket), do: {:noreply, socket}
 
   # A trends month of the whole company opens the summary narrowed to it.

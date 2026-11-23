@@ -76,13 +76,13 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   @doc """
   Renders a picker of a range of months, styled like the month picker. The picker shows a selected range, otherwise
   `label`. Choosing the second month sends `select-period` with the ISO `from`
-  and `to` months; the clear button sends it without them.
+  and `to` months; the `clear_label` button selects this whole year and sends it the same way.
   """
   @spec month_range_picker(map()) :: Rendered.t()
   attr :id, :string, required: true
   attr :selected, :any, required: true, doc: "first and last month of the selected range, or nil"
   attr :label, :string, required: true, doc: "what the trigger shows without a selected range"
-  attr :clear_label, :string, required: true, doc: "text of the button clearing the range"
+  attr :clear_label, :string, required: true, doc: "text of the button choosing this whole year"
   attr :size, :string, values: @sizes, default: "big"
   attr :variant, :string, values: @variants, default: "tertiary"
   attr :rest, :global

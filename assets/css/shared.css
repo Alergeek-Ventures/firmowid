@@ -196,20 +196,119 @@ html {
 }
 
 /* ── Air Datepicker ─────────────────────────────────────────────────── */
+/* Period picker (DESIGN.md "Period Picker"); app.css loads the library first */
 .air-datepicker {
-  --adp-background-color-selected-other-month-focused: #455e5e;
-  --adp-background-color-selected-other-month: #455e5e;
-  --adp-accent-color: #455e5e;
-  --adp-color-current-date: var(--adp-accent-color);
+  --adp-font-family: var(--font-sans);
+  --adp-width: 248px;
+  --adp-padding: 4px;
+  --adp-color: var(--color-grey-700);
+  --adp-color-disabled: var(--color-grey-400);
+  --adp-color-current-date: var(--color-grey-900);
+  --adp-accent-color: var(--color-teal-700);
+  --adp-border-color: var(--color-grey-200);
+  --adp-border-color-inner: var(--color-grey-200);
+  --adp-background-color-hover: var(--color-grey-200);
+  --adp-background-color-active: var(--color-grey-300);
+  --adp-nav-arrow-color: var(--color-grey-500);
   --adp-day-name-color: var(--adp-accent-color);
   --adp-day-name-color-hover: var(--adp-accent-color);
-  --adp-cell-background-color-selected: var(--adp-accent-color);
-  --adp-cell-background-color-selected-hover: var(--adp-accent-color);
-  --adp-cell-background-color-in-range: rgba(233, 84, 32, 0.1);
-  --adp-cell-background-color-in-range-hover: rgba(233, 84, 32, 0.2);
-  --adp-cell-border-color-in-range: var(--adp-cell-background-color-selected);
-  --adp-btn-color: var(--adp-accent-color);
-  --adp-font-family: "Geist", sans-serif;
+  --adp-month-cell-height: 40px;
+  --adp-cell-background-color-selected: var(--color-teal-700);
+  --adp-cell-background-color-selected-hover: var(--color-teal-800);
+  --adp-cell-background-color-in-range: var(--color-teal-100);
+  --adp-cell-background-color-in-range-hover: var(--color-teal-200);
+  --adp-cell-border-color-in-range: var(--color-teal-600);
+  --adp-background-color-selected-other-month: var(--color-teal-700);
+  --adp-background-color-selected-other-month-focused: var(--color-teal-800);
+  --adp-btn-color: var(--color-grey-700);
+  --adp-btn-color-hover: var(--color-grey-700);
+
+  box-shadow: var(--shadow-small);
+}
+
+.air-datepicker-nav--title,
+.air-datepicker-button,
+.air-datepicker-cell.-current-,
+.air-datepicker-cell.-selected- {
+  font-weight: 500;
+}
+
+.air-datepicker-body--cells.-months- {
+  row-gap: 4px;
+}
+
+/* A range band is its own segment in each row, like a text selection */
+.air-datepicker-cell.-month-.-in-range-,
+.air-datepicker-cell.-month-.-current-.-in-range- {
+  color: var(--color-teal-900);
+}
+
+.air-datepicker-cell.-month-:is(.-in-range-, .-range-from-, .-range-to-):nth-child(3n + 1) {
+  border-start-start-radius: var(--adp-cell-border-radius);
+  border-end-start-radius: var(--adp-cell-border-radius);
+}
+
+.air-datepicker-cell.-month-:is(.-in-range-, .-range-from-, .-range-to-):nth-child(3n) {
+  border-start-end-radius: var(--adp-cell-border-radius);
+  border-end-end-radius: var(--adp-cell-border-radius);
+}
+
+/* Motion (DESIGN.md "Motion"): the dropdown exit, 100ms ease-in, scaling down
+   to 95% towards its trigger; the entrance below reverses it */
+.air-datepicker {
+  --adp-transition-duration: 100ms;
+  --adp-transition-ease: ease-in;
+  --adp-transition-offset: 0px;
+}
+
+.air-datepicker:not(.-is-mobile-, .-active-) {
+  transform: scale(0.95);
+}
+
+.air-datepicker.-active- {
+  --adp-transition-duration: 150ms;
+  --adp-transition-ease: ease-out;
+}
+
+.air-datepicker.-bottom-left- {
+  transform-origin: top left;
+}
+
+.air-datepicker.-bottom-center- {
+  transform-origin: top;
+}
+
+.air-datepicker.-bottom-right- {
+  transform-origin: top right;
+}
+
+.air-datepicker.-top-left- {
+  transform-origin: bottom left;
+}
+
+.air-datepicker.-top-center- {
+  transform-origin: bottom;
+}
+
+.air-datepicker.-top-right- {
+  transform-origin: bottom right;
+}
+
+/* Colour change, 100ms: hover, press, and the range band following the pointer */
+.air-datepicker-cell,
+.air-datepicker-nav--action,
+.air-datepicker-nav--title,
+.air-datepicker-button {
+  transition-property: background-color, color, border-color;
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .air-datepicker,
+  .air-datepicker * {
+    transition: none;
+  }
 }
 
 /* ── Paper Plane Animation ──────────────────────────────────────────── */

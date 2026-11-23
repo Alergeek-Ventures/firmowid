@@ -384,6 +384,15 @@ stops under `prefers-reduced-motion` (`motion-reduce:transition-none`,
   100ms ease-in, the entrance reversed (opacity 1 to 0, scale 100% to 95%),
   played by `JS.hide`/`JS.toggle` before the element is hidden. Only the
   account menu closes this way; the other dropdowns close without animation.
+- **Period picker** (air-datepicker, in `assets/css/shared.css`): the same
+  entrance and exit, scaling from the corner at its trigger, through the
+  library's `-active-` class; its cells, arrows and "Ten rok" change colour in
+  100ms, so the range band follows the pointer smoothly. Its trigger names each
+  click at once, worded like the server's label ("Marzec 2026", then "Marzec –
+  Czerwiec 2026"), and eases to the new label's width in 200ms ease-out as the
+  text fades in (the `AirDatepicker` hook). The picker stays open; "Ten rok"
+  selects January to December the same way, and closing the picker on a
+  half-chosen range returns to the period in use.
 - **Revealed fields** (`list_enter/0` in `FirmowidWeb.Timetracker.Views.Index`):
   200ms ease-out, rising 8px from opacity 0, for content that opens in place,
   such as the manual time fields. It leaves no classes behind, as a lingering
@@ -550,6 +559,16 @@ One primitive (`FirmowidWeb.DesignSystem.Components.Menu`) in two variants.
 - **List** (`menu` + `menu_item`, actions from a button): white, as wide as its content, 4px under the button.
 - **Dropdown** (`dropdown_panel_styles/0` + `dropdown_option/1`, options of a select field): grey-50 like the field, 4px under its trigger. Under a full-width field it is as wide as the field (the project in the time tracker form); under a compact trigger it is as wide as its longest option. The selected option (`aria-selected`) has a check on the right.
 - **In use:** the time tracker's project and work mode pickers, in the session rows and in the form.
+
+### Period Picker
+The month and range picker is air-datepicker, themed in `assets/css/shared.css`
+through its `--adp-*` variables plus a few overrides. Figma: "Kalendarz okresu"
+(https://www.figma.com/design/VuAFwCL0WLvZlDUbnkODID/Firmowid---wielkie-porz%C4%85dki?node-id=18723-7008).
+- **Shape:** a popover: white, 1px `grey-200` border, 4px radius, the overlay shadow (`shadow-small`). 248px content width and 4px padding; the header and footer are separated by 1px `grey-200` lines.
+- **Navigation:** 32px arrow buttons with a `grey-500` chevron and the year in Geist Medium 14, `grey-700`. Hover `grey-200`, pressed `grey-300`.
+- **Month cells:** three columns of 80×40 with 14px `grey-700` text, 4px between rows and no gap between columns. Hover `grey-200`. The current month is `grey-900` Medium, never an accent colour; disabled months are `grey-400`.
+- **Selection:** `teal-700` with white Medium text (hover `teal-800`). A range is a `teal-100` band with `teal-900` text (hover `teal-200`). Each row is its own segment, like a text selection: the start rounds its left side, the end its right, and a band cell in the first or last column rounds that side too. While a range is being chosen, the previewed end is `teal-100` with a 1px `teal-600` border.
+- **Footer action:** "Ten rok", a full-width text button in `grey-700` Medium, hover `grey-200`, which selects this whole year.
 
 ### Navigation
 - **Sidebar:** a black column with the "Firmowid" wordmark and the collapse button on top, then the layer switch (company or the member's own), the inbox and the places of the current layer. Rows are 32px tall with an 18px icon and the label in `grey-300`; the current page sits on a `grey-900` fill. Collapsed, only the icons stay and a label shows as a tooltip.
