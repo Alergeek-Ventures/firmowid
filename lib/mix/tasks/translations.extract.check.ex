@@ -70,13 +70,19 @@ defmodule Mix.Tasks.Translations.Extract.Check do
       environment_hash
     ]
 
-    # Diagnostic: which part of the context changes between runs.
-    parts
-    |> Enum.map(&(:sha256 |> :crypto.hash(:erlang.term_to_binary(&1)) |> Base.encode16(case: :lower) |> binary_part(0, 6)))
-    |> Enum.join(" ")
-    |> then(&IO.puts(:stderr, "gettext extraction context parts: " <> &1))
-
+    report_parts(parts)
     List.to_tuple(parts)
+  end
+
+  # Diagnostic: which part of the context changes between runs.
+  defp report_parts(parts) do
+    hashes =
+      Enum.map_join(parts, " ", fn part ->
+        digest = :crypto.hash(:sha256, :erlang.term_to_binary(part))
+        digest |> Base.encode16(case: :lower) |> binary_part(0, 6)
+      end)
+
+    IO.puts(:stderr, "gettext extraction context parts: " <> hashes)
   end
 
   # A separate VM matches native `mix gettext.extract`. This VM has already loaded
