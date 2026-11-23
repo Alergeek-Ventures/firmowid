@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
-  @moduledoc false
+  @moduledoc "Serves authorized cost-invoice PDFs and complete correction archives."
   use FirmowidWeb, :controller
 
   alias Firmowid.Invoicing.CostInvoice
@@ -7,10 +7,55 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
   alias Firmowid.Invoicing.Services.MonthDownloadEntries
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
+  def pdf(conn, params), do: send_pdf(conn, params, :attachment)
+
+  def preview(conn, params), do: send_pdf(conn, params, :inline)
+
+  def archive(conn, %{"id" => id}) do
+    opts = [
+      scope: conn.assigns.ash_scope,
+      include_internal_note: InvoiceDownloadParams.parse_include_internal_note(conn.params)
+    ]
+
+    with {:ok, invoice} <- CostInvoice.by_id(id, scope: conn.assigns.ash_scope),
+         {:ok, invoices} <- CostInvoice.pdf_family(invoice, scope: conn.assigns.ash_scope),
+         {:ok, entries} <- archive_entries(invoices, opts),
+         {:ok, {_name, binary}} <- :zip.create(~c"faktury.zip", entries, [:memory]) do
+      send_download(conn, {:binary, binary},
+        filename: "faktury-#{invoice.id}.zip",
+        content_type: "application/zip"
+      )
+    else
+      {:error, %Ash.Error.Invalid{}} -> send_resp(conn, 404, "Not found")
+      {:error, %Ash.Error.Forbidden{}} -> send_resp(conn, 404, "Not found")
+      {:error, :missing_original_invoice} -> send_resp(conn, 422, "Original invoice unavailable")
+      {:error, :cyclic_invoice_family} -> send_resp(conn, 422, "Invalid invoice family")
+      {:error, _reason} -> send_resp(conn, 500, "PDF generation failed")
+    end
+  end
+
+  defp archive_entries(invoices, opts) do
+    invoices
+    |> Enum.reduce_while({:ok, []}, fn invoice, {:ok, entries} ->
+      case CostInvoicePdf.generate(invoice, opts) do
+        {:ok, binary} ->
+          # UUID names are unique and cannot contain archive traversal characters.
+          entry = {String.to_charlist("#{invoice.id}.pdf"), binary}
+          {:cont, {:ok, [entry | entries]}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, entries} -> {:ok, Enum.reverse(entries)}
+      error -> error
+    end
+  end
+
   # sobelow_skip ["XSS.SendResp"]
-  # The body is a generated PDF binary, served as an application/pdf attachment,
-  # not user-provided HTML; invoice lookup remains scoped to the authenticated actor.
-  def pdf(conn, %{"id" => id}) do
+  # Generated PDF bytes are served with application/pdf, never as HTML.
+  defp send_pdf(conn, %{"id" => id}, disposition) do
     include_internal_note = InvoiceDownloadParams.parse_include_internal_note(conn.params)
 
     case CostInvoice.by_id(id, scope: conn.assigns.ash_scope) do
@@ -23,6 +68,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
             filename = cost_invoice_filename(invoice, conn.assigns.ash_scope)
 
             send_download(conn, {:binary, pdf_binary},
+              disposition: disposition,
               filename: filename,
               content_type: "application/pdf"
             )
@@ -38,10 +84,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
 
   defp cost_invoice_filename(invoice, scope) do
     invoice =
-      Ash.load!(invoice, [:effective_seller_display_name, blob: [:blob_checksum]], scope: scope)
+      Ash.load!(invoice, [:effective_seller_display_name, :blob], scope: scope)
 
-    MonthDownloadEntries.clean_filename(
-      "#{invoice.issue_date}_#{invoice.effective_seller_display_name}_#{String.slice(invoice.blob.blob_checksum, 0, 8)}"
-    ) <> ".pdf"
+    suffix = if invoice.blob, do: String.slice(invoice.blob.blob_checksum, 0, 8), else: invoice.id
+
+    MonthDownloadEntries.clean_filename("#{invoice.issue_date}_#{invoice.effective_seller_display_name}_#{suffix}") <>
+      ".pdf"
   end
 end

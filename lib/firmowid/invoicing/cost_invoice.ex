@@ -962,4 +962,43 @@ defmodule Firmowid.Invoicing.CostInvoice do
         changeset
     end
   end
+
+  @doc "Returns the authorized root invoice and all descendants, rejecting incomplete or cyclic families."
+  @spec pdf_family(t(), keyword()) :: {:ok, [t()]} | {:error, term()}
+  def pdf_family(invoice, opts) do
+    with {:ok, root} <- pdf_root(invoice, opts, MapSet.new()) do
+      pdf_descendants([root], opts, MapSet.new(), [])
+    end
+  end
+
+  defp pdf_root(invoice, opts, visited) do
+    if MapSet.member?(visited, invoice.id) do
+      {:error, :cyclic_invoice_family}
+    else
+      invoice = Ash.load!(invoice, :original_invoice, opts)
+
+      case {invoice.original_invoice_ksef_number, invoice.original_invoice} do
+        {nil, _} -> {:ok, invoice}
+        {_, nil} -> {:error, :missing_original_invoice}
+        {_, original} -> pdf_root(original, opts, MapSet.put(visited, invoice.id))
+      end
+    end
+  end
+
+  defp pdf_descendants([], _opts, _visited, invoices), do: {:ok, Enum.reverse(invoices)}
+
+  defp pdf_descendants([invoice | rest], opts, visited, invoices) do
+    if MapSet.member?(visited, invoice.id) do
+      {:error, :cyclic_invoice_family}
+    else
+      invoice = Ash.load!(invoice, :correction_invoices, opts)
+
+      pdf_descendants(
+        invoice.correction_invoices ++ rest,
+        opts,
+        MapSet.put(visited, invoice.id),
+        [invoice | invoices]
+      )
+    end
+  end
 end

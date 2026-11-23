@@ -271,6 +271,8 @@ defmodule FirmowidWeb.Core.Router do
     get "/obrazy/:id/:width", Infrastructure.Controllers.Picture, :show
     get "/logotypy/:domain", Infrastructure.Controllers.CompanyLogo, :show
     get "/kosztowe/:id/pobierz", CostInvoicePdf, :pdf
+    get "/kosztowe/:id/pdf", CostInvoicePdf, :preview
+    get "/kosztowe/:id/pobierz-zestaw", CostInvoicePdf, :archive
     get "/sprzedazowe/:id/pdf", Pdf, :index
     get "/sprzedazowe/:id/pobierz", Pdf, :pdf
     get "/pobierz-miesiac", Infrastructure.Controllers.FileDownload, :batch

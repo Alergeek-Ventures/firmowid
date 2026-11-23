@@ -20,6 +20,8 @@ defmodule Firmowid.Invoicing.Services.CostInvoiceBasePdf.Blob do
     end
   end
 
+  defp load_blob_content(%{blob: nil}), do: {:error, :missing_invoice_document}
+
   defp load_blob_content(invoice) do
     case Req.get(invoice.blob.url) do
       {:ok, %{status: 200, body: body}} -> {:ok, body}
