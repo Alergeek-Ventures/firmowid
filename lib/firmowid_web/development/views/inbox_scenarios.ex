@@ -38,6 +38,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
     {"nowa-firma", "Nowa firma"},
     {"duzy-zespol", "Duży zespół"},
     {"wszystko-naraz", "Wszystko naraz"},
+    {"duzo-odlozonych", "Dużo spraw i odłożonych"},
     {"ty-sprawy", "Ty: sprawy i sesja"},
     {"ty-wszystko-zrobione", "Ty: wszystko zrobione"},
     {"ty-bez-sesji", "Ty: bez sesji"},
@@ -95,7 +96,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        layer: Map.get(scenario, :layer, :company),
        today: today,
        items: scenario.items,
-       put_aside: [],
+       put_aside: Map.get(scenario, :put_aside, []),
        hidden: [],
        presence: scenario.presence,
        month: scenario.month,
@@ -103,6 +104,8 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
        fresh: MapSet.new(),
        query: "",
        expanded: MapSet.new(),
+       showing_put_aside: false,
+       swapped: false,
        shortcuts:
          if(Map.get(scenario, :layer, :company) == :company,
            do: socket.assigns.company_shortcuts,
@@ -153,7 +156,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
   # Files chosen on the upload shortcut go nowhere in the preview.
   def handle_event("upload", _params, socket), do: {:noreply, socket}
 
-  def handle_event(event, params, socket) when event in ["toggle_group", "search"],
+  def handle_event(event, params, socket) when event in ["toggle_group", "search", "show_put_aside", "show_queue"],
     do: Index.handle_event(event, params, socket)
 
   def handle_event("set_workplace", %{"remote" => remote}, %{assigns: %{session: %Session{}}} = socket) do
@@ -596,6 +599,32 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
     |> Enum.map(&scenario(&1, today))
     |> Enum.reduce(fn s, acc -> %{acc | items: acc.items ++ s.items} end)
     |> Map.update!(:items, &Enum.uniq_by(&1, fn item -> item.id end))
+  end
+
+  # 32 items waiting (the urgent ones once) and 15 put aside, coming back over
+  # the next weeks.
+  defp scenario("duzo-odlozonych", today) do
+    base = scenario("wszystko-naraz", today)
+
+    {urgent, others} =
+      base.items |> Enum.reject(&(&1.tier == :info)) |> Enum.split_with(&(&1.tier == :urgent))
+
+    {waiting, aside} =
+      others
+      |> Stream.cycle()
+      |> Stream.with_index()
+      |> Enum.take(32 - length(urgent) + 15)
+      |> Enum.map(fn {item, index} -> %{item | id: "#{item.id}-#{index}"} end)
+      |> Enum.split(32 - length(urgent))
+
+    put_aside =
+      aside
+      |> Enum.with_index(1)
+      |> Enum.map(fn {item, index} ->
+        {item, %{until: DateTime.shift(DateTime.utc_now(), day: index * 3)}}
+      end)
+
+    Map.merge(base, %{items: urgent ++ waiting, put_aside: put_aside})
   end
 
   # Items, shaped like `FirmowidWeb.Inbox.Utilities.Queue.items/3`

@@ -233,8 +233,8 @@ msgstr[1] ""
 
 #: lib/firmowid_web/inbox/views/index.ex
 #, elixir-autogen, elixir-format
-msgid "%{count} item is waiting"
-msgid_plural "%{count} items are waiting"
+msgid "%{count} item"
+msgid_plural "%{count} items"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -293,13 +293,6 @@ msgid_plural "%{count} projects"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} put aside"
-msgid_plural "%{count} put aside"
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} remaining"
@@ -339,13 +332,6 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/inbox/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} urgent item"
-msgid_plural "%{count} urgent items"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -3011,11 +2997,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Come back later"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Coming back on their own"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex
@@ -7242,11 +7223,6 @@ msgstr ""
 msgid "Items"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "Items put aside"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "Items use a Polish rate although the buyer has an EU VAT number. Check whether the buyer should account for VAT instead."
@@ -8034,11 +8010,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "More employee details are needed"
-msgstr ""
-
-#: lib/firmowid_web/inbox/components/queue.ex
-#, elixir-autogen, elixir-format
-msgid "More options"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -10058,6 +10029,17 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Purpose:"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put aside"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "inbox section"
+msgid "Put aside"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
@@ -15047,11 +15029,6 @@ msgstr ""
 msgid "Your full name"
 msgstr ""
 
-#: lib/firmowid_web/inbox/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "Your matters"
-msgstr ""
-
 #: lib/firmowid_web/support/components/form.ex
 #, elixir-autogen, elixir-format
 msgid "Your message"
@@ -15811,6 +15788,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "profitability"
 msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "put aside"
+msgid_plural "put aside"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/firmowid_web/documents/components/documents_section.ex
 #, elixir-autogen, elixir-format

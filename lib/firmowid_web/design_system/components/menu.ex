@@ -15,6 +15,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents, only: [popover: 1, show_popover: 1]
   import FirmowidWeb.DesignSystem.Components.IconButton
+  import FirmowidWeb.DesignSystem.Components.Tooltip
 
   alias Phoenix.LiveView.Rendered
 
@@ -31,26 +32,50 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
     default: nil,
     doc: "Extra classes of the menu panel, for example its width."
 
+  attr :trigger_class, :any,
+    default: nil,
+    doc: "Extra classes of the trigger, for example a larger size for a custom trigger."
+
+  attr :trigger_variant, :string,
+    values: ~w(menu bare),
+    default: "menu",
+    doc: "`bare` leaves the trigger's colours to `trigger_class`."
+
+  attr :tooltip, :string,
+    default: nil,
+    doc: "Shown beside the trigger (the light hint, on its left) instead of the native tooltip."
+
   slot :trigger, doc: "Custom trigger content; defaults to a vertical ellipsis icon."
   slot :inner_block, required: true
 
   def menu(assigns) do
     ~H"""
     <div class={["inline-flex", @class]}>
-      <.icon_button
-        id={"#{@id}-trigger"}
-        label={@label}
-        variant="menu"
-        aria-haspopup="menu"
-        aria-expanded="false"
-        phx-click={show_popover("#{@id}-menu")}
+      <.tooltip
+        :if={@tooltip}
+        id={"#{@id}-tooltip"}
+        text={@tooltip}
+        placement="left"
+        variant="hint"
+        hide_on_click
       >
-        <%= if @trigger != [] do %>
-          {render_slot(@trigger)}
-        <% else %>
-          <Lucideicons.ellipsis_vertical />
-        <% end %>
-      </.icon_button>
+        <.menu_trigger
+          id={@id}
+          label={@label}
+          class={@trigger_class}
+          variant={@trigger_variant}
+          trigger={@trigger}
+          native_title={false}
+        />
+      </.tooltip>
+      <.menu_trigger
+        :if={!@tooltip}
+        id={@id}
+        label={@label}
+        class={@trigger_class}
+        variant={@trigger_variant}
+        trigger={@trigger}
+      />
       <.popover
         id={"#{@id}-menu"}
         reference_id={"#{@id}-trigger"}
@@ -62,7 +87,11 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
           role="menu"
           aria-label={@label}
           class={[
-            "flex min-w-48 origin-top-right flex-col rounded-sm border border-grey-200 bg-white p-1 shadow-small transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0",
+            "flex min-w-48 flex-col rounded-sm border border-grey-200 bg-white p-1 shadow-small transition-[opacity,scale] duration-150 ease-out motion-reduce:transition-none starting:scale-95 starting:opacity-0",
+            if(String.ends_with?(@placement, "-start"),
+              do: "origin-top-left",
+              else: "origin-top-right"
+            ),
             @panel_class
           ]}
         >
@@ -70,6 +99,34 @@ defmodule FirmowidWeb.DesignSystem.Components.Menu do
         </div>
       </.popover>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :label, :string, required: true
+  attr :class, :any, default: nil
+  attr :variant, :string, required: true
+  attr :native_title, :boolean, default: true
+  attr :trigger, :list, required: true
+
+  defp menu_trigger(assigns) do
+    ~H"""
+    <.icon_button
+      id={"#{@id}-trigger"}
+      label={@label}
+      variant={@variant}
+      native_title={@native_title}
+      class={@class}
+      aria-haspopup="menu"
+      aria-expanded="false"
+      phx-click={show_popover("#{@id}-menu")}
+    >
+      <%= if @trigger != [] do %>
+        {render_slot(@trigger)}
+      <% else %>
+        <Lucideicons.ellipsis_vertical />
+      <% end %>
+    </.icon_button>
     """
   end
 

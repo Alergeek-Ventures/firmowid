@@ -12,8 +12,9 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   layer changes. The search narrows the groups to matching items.
 
   Any item but an urgent one can be put aside for the whole company, for some
-  days or for good (`Firmowid.Core.InboxSnooze`). Those put aside until a day
-  are counted next to the title, which opens their list: there each can be
+  days or for good (`Firmowid.Core.InboxSnooze`), from its tile. Those put
+  aside until a day are counted next to the title; clicking the count swaps the
+  queue for their list, and the title brings the queue back. There each can be
   brought back at once or removed for good. Every such step can be undone from
   its toast.
 
@@ -63,7 +64,9 @@ defmodule FirmowidWeb.Inbox.Views.Index do
        shortcuts: [],
        fresh: MapSet.new(),
        query: "",
-       expanded: MapSet.new()
+       expanded: MapSet.new(),
+       showing_put_aside: false,
+       swapped: false
      )
      |> allow_cost_invoice_upload()}
   end
@@ -78,7 +81,14 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     socket =
       if socket.assigns[:layer] == layer,
         do: socket,
-        else: assign(socket, query: "", expanded: MapSet.new(), shortcuts: shortcuts(socket, layer))
+        else:
+          assign(socket,
+            query: "",
+            expanded: MapSet.new(),
+            showing_put_aside: false,
+            swapped: false,
+            shortcuts: shortcuts(socket, layer)
+          )
 
     # The company layer links to the assistant from its header instead.
     {:noreply,
@@ -218,6 +228,13 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   end
 
   def handle_event("search", %{"q" => query}, socket), do: {:noreply, assign(socket, :query, String.trim(query))}
+
+  # The title and the count of items put aside switch between the queue and
+  # their list; `swapped` lets the new one fade in, which the first load skips.
+  def handle_event("show_put_aside", _params, socket),
+    do: {:noreply, assign(socket, showing_put_aside: socket.assigns.put_aside != [], swapped: true)}
+
+  def handle_event("show_queue", _params, socket), do: {:noreply, assign(socket, showing_put_aside: false, swapped: true)}
 
   # The files upload on their own; `handle_progress/3` takes them from there.
   # A rejected file (too large or of a wrong type) is dropped with a toast:
@@ -504,6 +521,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     assigns =
       assign(assigns,
         shown: matching(assigns.items, assigns.query),
+        # The last item brought back or removed closes the list.
+        showing_put_aside?: assigns.showing_put_aside and assigns.put_aside != [],
         folded: @folded,
         # A session still running stays stoppable after hourly billing is turned off.
         session?:
@@ -517,21 +536,17 @@ defmodule FirmowidWeb.Inbox.Views.Index do
       data-layer-dissolve
       class="@container flex w-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8"
     >
-      <header class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex min-w-0 flex-col">
-          <p class="text-sm/[1.35] text-grey-600">
-            {if @layer == :company, do: @current_org.display_name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
-              @today,
-              format: :full
-            )}
-          </p>
-          <div class="flex flex-wrap items-baseline gap-x-3">
-            <h1 class="text-3xl leading-[normal] font-bold text-black">{greeting(@items)}</h1>
-            <.put_aside_link :if={@put_aside != []} count={length(@put_aside)} />
-          </div>
+      <%!-- Beside a long title the search narrows rather than drop under it. --%>
+      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4 md:flex-nowrap">
+        <div class="flex min-w-0 flex-col md:shrink-0">
+          <.title
+            greeting={greeting(@items)}
+            put_aside={length(@put_aside)}
+            showing_put_aside={@showing_put_aside?}
+          />
         </div>
-        <div class="flex items-center gap-4 max-md:w-full">
-          <form phx-change="search" phx-submit="search" class="w-70 max-md:min-w-0 max-md:flex-1">
+        <div class="flex min-w-0 items-center gap-4 max-md:w-full">
+          <form phx-change="search" phx-submit="search" class="w-70 min-w-0 shrink max-md:flex-1">
             <.search_field
               id="inbox-search"
               name="q"
@@ -571,65 +586,91 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           id="inbox-queue"
           class={[
             "flex min-w-0 flex-col",
-            if(@layer == :me, do: "gap-4", else: "gap-7"),
-            @items == [] && @session? && "@3xl:mt-7.75",
+            @items == [] && @session? && !@showing_put_aside? && "@3xl:mt-7.75",
             office_fold?(assigns) && "@3xl:min-h-(--presence-folded-height)"
           ]}
         >
-          <.all_done :if={@items == [] and not @session?} class="flex-1 justify-center" />
-          <p
-            :if={@items != [] and @shown == []}
-            class="rounded-sm bg-white px-5 py-4 text-sm text-grey-600"
-          >
-            {gettext("No items match your search.")}
-          </p>
-          <section
-            :for={{tier, items} <- Queue.by_tier(@shown)}
-            id={"inbox-group-#{tier}"}
-            class="flex flex-col gap-3"
-          >
-            <.tier_header tier={tier} count={length(items)} />
-            <div
-              id={"inbox-group-#{tier}-list"}
-              phx-hook=".SmoothHeight"
-              class="overflow-hidden rounded-sm bg-white"
-            >
-              <.item_row
-                :for={item <- if(tier in @expanded, do: items, else: Enum.take(items, @folded))}
-                item={item}
-                fresh={item.id in @fresh}
-                today={@today}
-              />
-              <.button
-                :if={length(items) > @folded}
-                type="button"
-                variant="unstyled"
-                id={"inbox-group-#{tier}-toggle"}
-                aria-expanded={to_string(tier in @expanded)}
-                aria-controls={"inbox-group-#{tier}"}
-                phx-click="toggle_group"
-                phx-value-tier={tier}
-                class="flex w-full cursor-pointer items-center justify-end gap-1 px-5 py-3 text-sm font-medium text-grey-700 transition-colors hover:bg-grey-50 hover:text-grey-900 max-md:px-4"
-              >
-                <%= if tier in @expanded do %>
-                  {gettext("Collapse")}<Lucideicons.chevron_up class="size-4" aria-hidden="true" />
-                <% else %>
-                  {gettext("Show %{count} more", count: length(items) - @folded)}<Lucideicons.chevron_down
-                    class="size-4"
-                    aria-hidden="true"
-                  />
-                <% end %>
-              </.button>
-            </div>
-          </section>
-          <.shortcuts
-            :if={@shortcuts != []}
-            shortcuts={@shortcuts}
-            upload={assigns[:uploads][:file]}
-            uploading={assigns[:currently_uploading_count]}
-            processing={assigns[:processing_blobs_count]}
+          <.put_aside_list
+            :if={@showing_put_aside?}
+            entries={@put_aside}
+            today={@today}
+            timezone={@timezone}
+            class={[@swapped && "motion-safe:animate-dissolve"]}
           />
-          <.session_panel :if={@session?} session={@session} last_session={@last_session} />
+          <%!-- Fades in when it comes back from the list of items put aside. --%>
+          <div
+            :if={!@showing_put_aside?}
+            id="inbox-queue-view"
+            class={[
+              "flex flex-1 flex-col",
+              if(@layer == :me, do: "gap-4", else: "gap-8"),
+              @swapped && "motion-safe:animate-dissolve"
+            ]}
+          >
+            <.all_done :if={@items == [] and not @session?} class="flex-1 justify-center" />
+            <p
+              :if={@items != [] and @shown == []}
+              class="rounded-sm bg-white px-5 py-4 text-sm text-grey-600"
+            >
+              {gettext("No items match your search.")}
+            </p>
+            <section
+              :for={{tier, items} <- Queue.by_tier(@shown)}
+              id={"inbox-group-#{tier}"}
+              class="flex flex-col gap-3"
+            >
+              <.tier_header tier={tier} count={length(items)} />
+              <div
+                id={"inbox-group-#{tier}-list"}
+                phx-hook=".SmoothHeight"
+                data-folded={@folded}
+                class="overflow-hidden rounded-sm bg-white"
+              >
+                <.item_row
+                  :for={item <- if(tier in @expanded, do: items, else: Enum.take(items, @folded))}
+                  item={item}
+                  fresh={item.id in @fresh}
+                  today={@today}
+                />
+                <.button
+                  :if={length(items) > @folded}
+                  type="button"
+                  variant="unstyled"
+                  id={"inbox-group-#{tier}-toggle"}
+                  aria-expanded={to_string(tier in @expanded)}
+                  aria-controls={"inbox-group-#{tier}"}
+                  phx-click={
+                    if tier in @expanded,
+                      do:
+                        JS.dispatch("inbox:fold",
+                          to: "#inbox-group-#{tier}-list",
+                          detail: %{tier: tier}
+                        ),
+                      else: "toggle_group"
+                  }
+                  phx-value-tier={tier}
+                  class="flex w-full cursor-pointer items-center justify-end gap-1 px-5 py-3 text-sm font-medium text-grey-700 transition-colors hover:bg-grey-50 hover:text-grey-900 max-md:px-4"
+                >
+                  <%= if tier in @expanded do %>
+                    {gettext("Collapse")}<Lucideicons.chevron_up class="size-4" aria-hidden="true" />
+                  <% else %>
+                    {gettext("Show %{count} more", count: length(items) - @folded)}<Lucideicons.chevron_down
+                      class="size-4"
+                      aria-hidden="true"
+                    />
+                  <% end %>
+                </.button>
+              </div>
+            </section>
+            <.shortcuts
+              :if={@shortcuts != []}
+              shortcuts={@shortcuts}
+              upload={assigns[:uploads][:file]}
+              uploading={assigns[:currently_uploading_count]}
+              processing={assigns[:processing_blobs_count]}
+            />
+            <.session_panel :if={@session?} session={@session} last_session={@last_session} />
+          </div>
         </div>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SmoothHeight">
           // Animates a card from its old height to its new one when rows are
@@ -652,6 +693,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               this.observer = new MutationObserver((mutations) => this.changed(mutations))
               this.observer.observe(this.el, { childList: true })
               this.el.addEventListener("inbox:leave", (event) => this.leave(event.target, event.detail))
+              this.el.addEventListener("inbox:fold", (event) => this.fold(event.detail))
             },
             destroyed() {
               window.removeEventListener("resize", this.onResize)
@@ -684,9 +726,39 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               if (this.leaving?.sent)
                 this.tops = new Map([...this.el.children].map((el) => [el, el.getBoundingClientRect().top]))
             },
+            // Folding: the rows past the folded ones fade while the card
+            // shrinks to them and "Show more" rises with its edge; only then is
+            // the fold sent, and the answer takes the faded rows off in place.
+            fold({ tier }) {
+              if (this.folding) return
+              const rows = [...this.el.querySelectorAll(":scope > article")]
+              const extra = rows.slice(Number(this.el.dataset.folded))
+              const toggle = this.el.querySelector(":scope > button")
+              if (reducedMotion() || extra.length === 0 || !toggle)
+                return this.pushEvent("toggle_group", { tier })
+              const from = this.el.getBoundingClientRect().height
+              const removed = extra.reduce((sum, row) => sum + row.getBoundingClientRect().height, 0)
+              const timing = { ...MOVE, fill: "forwards" }
+              this.folding = [
+                this.el.animate([{ height: `${from}px` }, { height: `${from - removed}px` }], timing),
+                toggle.animate([{ transform: "translateY(0)" }, { transform: `translateY(-${removed}px)` }], timing),
+                ...extra.map((row) => row.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE_MS, easing: "ease-out", fill: "forwards" }))
+              ]
+              // A timer rather than the animation's end, as in `leave`.
+              setTimeout(() => {
+                this.pushEvent("toggle_group", { tier }, () => this.unfold())
+              }, MOVE.duration)
+            },
+            // Lets go of the fold's held frames once the rows are gone.
+            unfold() {
+              this.folding?.forEach((animation) => animation.cancel())
+              this.folding = null
+              this.remember()
+            },
             changed(mutations) {
               const from = this.height
               this.remember()
+              if (this.folding) return this.unfold()
               if (reducedMotion()) return
               if (this.tops) return this.glide(from)
               if (Math.abs(this.height - from) < 1) return
@@ -738,7 +810,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             },
             place() {
               const card = this.el.querySelector("#inbox-session")
-              const lists = this.el.querySelectorAll("#inbox-queue > section > [id$=-list]")
+              const lists = this.el.querySelectorAll("#inbox-queue-view > section > [id$=-list]")
               const twoColumns = getComputedStyle(this.el).gridTemplateColumns.split(" ").length > 1
               if (card && card.offsetParent) this.height = card.getBoundingClientRect().height
               let compact = false
@@ -756,7 +828,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           }
         </script>
         <%!-- Starts level with the first card, below its group header (19px + 12px gap). --%>
-        <aside class={["flex flex-col gap-2.5", (@items != [] or @session?) && "@3xl:mt-7.75"]}>
+        <aside class={[
+          "flex flex-col gap-2.5",
+          (@items != [] or @session? or @showing_put_aside?) && "@3xl:mt-7.75"
+        ]}>
           <.session_panel
             :if={@session? and @items != []}
             session={@session}
@@ -773,12 +848,6 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           />
         </aside>
       </div>
-      <.put_aside_modal
-        :if={@put_aside != []}
-        entries={@put_aside}
-        today={@today}
-        timezone={@timezone}
-      />
     </div>
     """
   end
@@ -799,18 +868,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     end)
   end
 
-  # Items for information only wait for nothing.
+  # Every item waiting, urgent or not; items for information only wait for nothing.
   defp greeting(items) do
-    case Enum.reject(items, &(&1.tier == :info)) do
-      [] -> gettext("All done")
-      waiting -> waiting_greeting(waiting)
-    end
-  end
-
-  defp waiting_greeting(items) do
-    case Enum.count(items, &(&1.tier == :urgent)) do
-      0 -> ngettext("%{count} item is waiting", "%{count} items are waiting", length(items))
-      urgent -> ngettext("%{count} urgent item", "%{count} urgent items", urgent)
+    case Enum.count(items, &(&1.tier != :info)) do
+      0 -> gettext("All done")
+      count -> ngettext("%{count} item", "%{count} items", count)
     end
   end
 end

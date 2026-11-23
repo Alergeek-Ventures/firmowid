@@ -24,6 +24,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Tooltip do
     default: "default",
     doc: "`hint` is the light Figma \"Information tooltip\" with an arrow"
 
+  attr :hide_on_click, :boolean,
+    default: nil,
+    doc: "whether a click hides it; by default only the `default` variant hides"
+
   attr :class, :any, default: nil
   slot :inner_block, required: true
 
@@ -41,13 +45,17 @@ defmodule FirmowidWeb.DesignSystem.Components.Tooltip do
       data-tippy-theme={@variant == "hint" && "hint"}
       data-tippy-arrow={@variant == "hint" && "true"}
       data-tippy-maxWidth={@variant == "hint" && "220"}
-      data-tippy-hideOnClick={@variant == "hint" && "false"}
+      data-tippy-hideOnClick={hide_on_click(@hide_on_click, @variant)}
       class={["inline-flex", @class]}
     >
       {render_slot(@inner_block)}
     </span>
     """
   end
+
+  defp hide_on_click(nil, "hint"), do: "false"
+  defp hide_on_click(nil, _variant), do: nil
+  defp hide_on_click(hide?, _variant), do: to_string(hide?)
 
   defp content(nil, text), do: text
 
