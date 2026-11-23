@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Assistant.Components.History do
         <span class="line-clamp-2 overflow-clip wrap-anywhere group-aria-current:font-medium">
           {conversation.title || gettext("New conversation")}
         </span>
-        <span class="flex flex-wrap gap-x-3 text-xs leading-[1.35] text-grey-600">
+        <span class="flex flex-wrap gap-x-3 text-xs/[1.35] text-grey-600">
           <span>{Calendar.strftime(conversation.inserted_at, "%d.%m.%Y")}</span>
           <span :if={conversation.status != :idle} class="text-grey-700">
             {Presentation.status_label(conversation.status)}
