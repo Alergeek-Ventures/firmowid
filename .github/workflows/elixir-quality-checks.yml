@@ -101,6 +101,10 @@ jobs:
 
       - name: Check Credo
         run: mix credo --strict
+        env:
+          # ExDNA fingerprints files in one task per scheduler, each with a 5 s limit. On a
+          # busy selenge host 32 schedulers share far fewer free cores and tasks time out.
+          ELIXIR_ERL_OPTIONS: "+S 8"
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
 
       - name: Validate translation catalogs
