@@ -28,23 +28,20 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
     <section
       id="analysis-monthly-results"
       aria-labelledby="analysis-monthly-results-title"
-      class="@container flex flex-col gap-4"
+      class="@container flex flex-col gap-3 pt-4"
     >
-      <h2 id="analysis-monthly-results-title" class="text-lg font-semibold text-grey-900">
+      <h2 id="analysis-monthly-results-title" class="text-lg/[1.3] font-medium text-grey-900">
         {gettext("Month by month")}
       </h2>
-      <table class="w-full text-sm tabular-nums">
+      <%!-- Separate rows: each month is a white card 8px from the next. --%>
+      <table class="-my-2 w-full border-separate border-spacing-x-0 border-spacing-y-2 text-sm/[1.35] tabular-nums">
         <thead>
-          <tr class="border-be border-grey-200 text-xs text-grey-700">
-            <th scope="col" class="py-2 pe-3 text-start font-normal">{gettext("Month")}</th>
-            <th scope="col" class="hidden py-2 pe-3 text-end font-normal @lg:table-cell">
-              {gettext("Income")}
-            </th>
-            <th scope="col" class="hidden py-2 pe-3 text-end font-normal @lg:table-cell">
-              {gettext("Costs")}
-            </th>
-            <th scope="col" class="py-2 pe-3 text-end font-normal">{gettext("Result")}</th>
-            <th scope="col" class="w-2/5 py-2 text-start font-normal">
+          <tr class="text-grey-500 [&>th]:py-1 [&>th]:font-normal">
+            <th scope="col" class="ps-4 text-start">{gettext("Month")}</th>
+            <th scope="col" class={[amount_cell(), "hidden @lg:table-cell"]}>{gettext("Income")}</th>
+            <th scope="col" class={[amount_cell(), "hidden @lg:table-cell"]}>{gettext("Costs")}</th>
+            <th scope="col" class={amount_cell()}>{gettext("Result")}</th>
+            <th scope="col" class={[share_cell(), "text-start"]}>
               {gettext("Of every 100 zł of income")}
             </th>
           </tr>
@@ -53,9 +50,12 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
           <tr
             :for={month <- @months}
             id={"analysis-monthly-result-#{Date.to_iso8601(month.month)}"}
-            class="border-be border-grey-200"
+            class={[
+              "*:h-12 *:bg-white *:first:rounded-s-sm *:last:rounded-e-sm",
+              if(month.closed?, do: "text-grey-900", else: "text-grey-400")
+            ]}
           >
-            <th scope="row" class="py-3 pe-3 text-start font-medium text-grey-900">
+            <th scope="row" class={["ps-4 text-start", month.closed? && "font-medium"]}>
               <FirmowidUI.Components.Link.link
                 :if={@month_path && month.closed?}
                 kind="unstyled"
@@ -64,51 +64,44 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
               >
                 {Periods.month_name(month.month, "LLLL y")}
               </FirmowidUI.Components.Link.link>
-              <span :if={!(@month_path && month.closed?)} class={[!month.closed? && "text-grey-600"]}>
+              <span :if={!(@month_path && month.closed?)} class="font-normal">
                 {Periods.month_name(month.month, "LLLL y")}
               </span>
             </th>
             <%= if month.closed? do %>
-              <td class="hidden py-3 pe-3 text-end text-grey-800 @lg:table-cell">
+              <td class={[amount_cell(), "hidden @lg:table-cell"]}>
                 {whole_money(month.totals.total_income)}
               </td>
-              <td class="hidden py-3 pe-3 text-end text-grey-800 @lg:table-cell">
+              <td class={[amount_cell(), "hidden @lg:table-cell"]}>
                 {whole_money(Decimal.abs(month.totals.total_expenses))}
               </td>
-              <td class={["py-3 pe-3 text-end font-medium", result_styles(month.totals.net_profit)]}>
+              <td class={[amount_cell(), "font-medium", result_styles(month.totals.net_profit)]}>
                 {whole_money(month.totals.net_profit)}
               </td>
-              <td class="py-3">
-                <.kept totals={month.totals} />
-              </td>
+              <td class={share_cell()}><.kept totals={month.totals} /></td>
             <% else %>
-              <td class="hidden py-3 pe-3 text-end text-grey-500 @lg:table-cell">{no_money()}</td>
-              <td class="hidden py-3 pe-3 text-end text-grey-500 @lg:table-cell">{no_money()}</td>
-              <td class="py-3 pe-3 text-end text-grey-500">{no_money()}</td>
-              <td class="py-3">
-                <span class="flex items-center gap-3">
-                  <span class="h-2 w-full rounded-xs bg-grey-200" aria-hidden="true" />
-                  <span class="w-28 shrink-0 text-end whitespace-nowrap text-grey-600">
-                    {String.downcase(pgettext("month", "Not closed"))}
-                  </span>
-                </span>
+              <td class={[amount_cell(), "hidden @lg:table-cell"]}>{no_money()}</td>
+              <td class={[amount_cell(), "hidden @lg:table-cell"]}>{no_money()}</td>
+              <td class={amount_cell()}>{no_money()}</td>
+              <td class={share_cell()}>
+                <.share_bar label={String.downcase(pgettext("month", "Not closed"))} />
               </td>
             <% end %>
           </tr>
         </tbody>
         <tfoot>
-          <tr class="font-semibold text-grey-900">
-            <th scope="row" class="py-3 pe-3 text-start">{gettext("Total")}</th>
-            <td class="hidden py-3 pe-3 text-end @lg:table-cell">
+          <tr class="font-semibold text-grey-900 *:h-12">
+            <th scope="row" class="ps-4 text-start">{gettext("Total")}</th>
+            <td class={[amount_cell(), "hidden @lg:table-cell"]}>
               {whole_money(@totals.total_income)}
             </td>
-            <td class="hidden py-3 pe-3 text-end @lg:table-cell">
+            <td class={[amount_cell(), "hidden @lg:table-cell"]}>
               {whole_money(Decimal.abs(@totals.total_expenses))}
             </td>
-            <td class={["py-3 pe-3 text-end", result_styles(@totals.net_profit)]}>
+            <td class={[amount_cell(), result_styles(@totals.net_profit)]}>
               {whole_money(@totals.net_profit)}
             </td>
-            <td class="py-3"><.kept totals={@totals} /></td>
+            <td class={share_cell()}><.kept totals={@totals} total /></td>
           </tr>
         </tfoot>
       </table>
@@ -116,42 +109,71 @@ defmodule FirmowidWeb.Analysis.Components.MonthlyResults do
     """
   end
 
+  # Columns 24px apart; the amounts are 112px wide and the share 336px, as in Figma.
+  defp amount_cell, do: "w-34 ps-6 text-end"
+  defp share_cell, do: "w-2/5 ps-6 pe-4 @3xl:w-94"
+
   attr :totals, :map, required: true
+  attr :total, :boolean, default: false
 
   # What stayed of every 100 zł as a bar out of 100, or the loss on the same scale.
   defp kept(assigns) do
     income = assigns.totals.total_income
 
-    assigns =
-      assign(assigns,
-        per_100:
-          if(Decimal.positive?(income),
-            do:
-              assigns.totals.net_profit
-              |> Decimal.mult(100)
-              |> Decimal.div(income)
-              |> Decimal.round(0)
-              |> Decimal.to_integer()
-          )
-      )
+    per_100 =
+      if Decimal.positive?(income),
+        do:
+          assigns.totals.net_profit
+          |> Decimal.mult(100)
+          |> Decimal.div(income)
+          |> Decimal.round(0)
+          |> Decimal.to_integer()
+
+    assigns = assign(assigns, per_100: per_100)
 
     ~H"""
-    <span :if={@per_100 == nil} class="text-grey-600">{gettext("No income")}</span>
-    <span :if={@per_100 != nil} class="flex items-center gap-3">
-      <span class="h-2 w-full overflow-hidden rounded-xs bg-grey-200" aria-hidden="true">
+    <.share_bar
+      :if={@per_100 == nil}
+      label={String.downcase(gettext("No income"))}
+      tone="text-grey-500"
+    />
+    <.share_bar
+      :if={@per_100 != nil}
+      per_100={@per_100}
+      label={
+        if @per_100 < 0,
+          do: gettext("loss %{amount}", amount: whole_money(-@per_100)),
+          else: gettext("%{amount} stayed", amount: whole_money(@per_100))
+      }
+      tone={
+        cond do
+          @per_100 < 0 -> "text-brick-700"
+          @total -> "text-grey-900"
+          true -> "text-grey-700"
+        end
+      }
+    />
+    """
+  end
+
+  attr :per_100, :integer, default: nil
+  attr :label, :string, required: true
+
+  attr :tone, :string,
+    default: nil,
+    doc: "text colour of the label; a not closed month's row sets it"
+
+  defp share_bar(assigns) do
+    ~H"""
+    <span class="flex items-center gap-4">
+      <span class="h-2 min-w-0 flex-1 overflow-hidden rounded-xs bg-grey-200" aria-hidden="true">
         <span
+          :if={@per_100}
           class={["block h-full", if(@per_100 < 0, do: "bg-brick-700", else: "bg-teal-600")]}
           style={"width: #{min(abs(@per_100), 100)}%"}
         />
       </span>
-      <span class={[
-        "w-28 shrink-0 text-end whitespace-nowrap",
-        if(@per_100 < 0, do: "text-brick-700", else: "text-grey-900")
-      ]}>
-        {if @per_100 < 0,
-          do: gettext("loss %{amount}", amount: whole_money(-@per_100)),
-          else: gettext("%{amount} stayed", amount: whole_money(@per_100))}
-      </span>
+      <span class={["w-28 shrink-0 text-end whitespace-nowrap", @tone]}>{@label}</span>
     </span>
     """
   end

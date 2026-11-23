@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     <section
       id="analysis-financial-overview"
       aria-label={gettext("Net result by month")}
-      class="@container flex flex-col gap-6 rounded-xl border border-grey-200 bg-white p-4 @3xl:p-6"
+      class="@container flex flex-col gap-6 rounded-sm bg-white p-4 sm:p-6"
     >
       <p :if={@chart == :empty} id="analysis-month-results-empty" class="text-sm text-grey-700">
         {if @tag_filters == [],
@@ -46,8 +46,8 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
       <ol
         :if={@chart != :empty}
         id="analysis-month-results"
-        style={"--loss-share: #{@chart.loss_share}%; --profit-share: #{@chart.profit_share}%; grid-template-columns: repeat(#{length(@chart.bars)}, minmax(0, 1fr))"}
-        class="grid h-52 gap-0.5 @2xl:gap-1"
+        style={"--loss-share: #{@chart.loss_share}%; --profit-share: #{@chart.profit_share}%; --chart-height: #{@chart.height}px; grid-template-columns: repeat(#{length(@chart.bars)}, minmax(0, 1fr))"}
+        class="-my-2 grid h-(--chart-height) gap-0.5 @2xl:gap-2"
       >
         <li :for={bar <- @chart.bars} class="min-w-0">
           <FirmowidUI.Components.Button.button
@@ -61,19 +61,28 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
             aria-label={bar.name}
             aria-describedby={"analysis-month-tooltip-#{Date.to_iso8601(bar.month)}"}
             class={[
-              "group relative grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-2 rounded-md px-0.5 pt-6 pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:not-aria-disabled:bg-grey-200 aria-disabled:cursor-default @2xl:px-1 pointer-fine:not-aria-disabled:hover:bg-grey-100",
+              "group relative grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-2 rounded-sm pt-8.5 pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 aria-disabled:cursor-default motion-safe:transition-colors motion-safe:duration-150 pointer-fine:not-aria-disabled:hover:bg-grey-50",
               bar.month == @selected_month && "bg-teal-100"
             ]}
           >
-            <span class="flex h-full flex-col-reverse pb-5" aria-hidden="true">
+            <span
+              class={[
+                "flex h-full flex-col-reverse",
+                @chart.loss_share > 0 && "pb-6.5"
+              ]}
+              aria-hidden="true"
+            >
               <span class="relative shrink-0 grow-0 basis-(--loss-share)">
                 <.bar_mark :if={bar.mark && bar.mark.side == :loss} mark={bar.mark} />
               </span>
-              <span class="relative shrink-0 grow-0 basis-(--profit-share) border-be border-grey-300">
+              <span class="relative shrink-0 grow-0 basis-(--profit-share) border-be border-grey-200">
                 <.bar_mark :if={bar.mark && bar.mark.side == :profit} mark={bar.mark} />
               </span>
             </span>
-            <span class={["text-center text-xs @2xl:text-sm", bar_label_styles(bar, @selected_month)]}>
+            <span class={[
+              "text-center text-xs/[1.35] @2xl:text-sm/[1.35]",
+              bar_label_styles(bar, @selected_month)
+            ]}>
               {bar.label}
               <span :if={bar.year} class="block text-xs font-normal text-grey-600">
                 {if bar.year != :none, do: bar.year, else: raw("&nbsp;")}
@@ -95,16 +104,16 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     <span
       style={"--bar: #{@mark.length}%"}
       class={[
-        "absolute inset-x-0 mx-auto block h-(--bar) min-h-0.5 w-full max-w-10",
+        "absolute inset-x-0 mx-auto block h-(--bar) min-h-0.5 w-full max-w-8 motion-safe:transition-colors motion-safe:duration-150",
         if(@mark.side == :loss,
-          do: "top-0 rounded-b-sm bg-brick-700",
-          else: "bottom-0 rounded-t-sm bg-teal-600"
+          do: "top-0 rounded-b-xs bg-brick-700 pointer-fine:group-hover:bg-brick-800",
+          else: "bottom-0 rounded-t-xs bg-teal-600 pointer-fine:group-hover:bg-teal-700"
         )
       ]}
     >
       <span class={[
-        "absolute inset-x-0 hidden text-center text-xs whitespace-nowrap tabular-nums @xl:block",
-        if(@mark.side == :loss, do: "-bottom-5 text-brick-700", else: "-top-5 text-grey-700")
+        "absolute inset-x-0 hidden text-center text-sm/[1.3] font-medium whitespace-nowrap tabular-nums @xl:block",
+        if(@mark.side == :loss, do: "-bottom-6.5 text-brick-700", else: "-top-6.5 text-grey-700")
       ]}>
         {@mark.label}
       </span>
@@ -210,9 +219,17 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
       %{
         loss_share: percent(max_loss, range),
         profit_share: percent(max_profit, range),
+        height: chart_height(max_loss, years?),
         bars: bars
       }
     end
+  end
+
+  # 160px of bars between the value labels and the month names, as in Figma; a loss keeps
+  # room for its label below, and a year under the month names takes a line of its own.
+  defp chart_height(max_loss, years?) do
+    # 16px more: the hover background reaches 8px past the labels on both ends.
+    229 + if(Decimal.positive?(max_loss), do: 26, else: 0) + if(years?, do: 16, else: 0)
   end
 
   defp bar(%{closed?: false}, _max_profit, _max_loss), do: %{open?: true, empty?: true, mark: nil}
@@ -276,9 +293,9 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   defp bar_label_styles(bar, selected_month) do
     cond do
       bar.month == selected_month -> "font-semibold text-grey-900"
-      bar.open? -> "text-grey-500"
-      bar.empty? -> "text-grey-600"
-      true -> "text-grey-700"
+      bar.open? -> "text-grey-400"
+      bar.empty? or bar.mark == nil -> "text-grey-500"
+      true -> "font-medium text-grey-900"
     end
   end
 

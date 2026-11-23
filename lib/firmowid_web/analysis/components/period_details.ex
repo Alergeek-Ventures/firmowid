@@ -573,12 +573,14 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   end
 
   # A hovered category name is underlined in its ledger side's dark colour, drawn from the left.
-  defp underline_styles(:expenses), do: [underline_base_styles(), "from-rust-700 to-rust-700"]
-  defp underline_styles(:income), do: [underline_base_styles(), "from-teal-700 to-teal-700"]
+  defp underline_styles(:expenses), do: [underline_base_styles(), "after:bg-rust-700"]
+  defp underline_styles(:income), do: [underline_base_styles(), "after:bg-teal-700"]
 
+  # A rounded line under the name that grows from the left; its width animates, so the
+  # rounded ends keep their shape.
   defp underline_base_styles,
     do:
-      "bg-linear-to-r bg-size-[0%_2px] bg-[position:left_bottom_2px] bg-no-repeat pb-1 motion-safe:transition-[background-size] motion-safe:duration-300 motion-safe:ease-out pointer-fine:group-enabled:group-hover:bg-size-[100%_2px]"
+      "relative pb-1 after:absolute after:start-0 after:bottom-0.5 after:h-0.5 after:w-0 after:rounded-full after:content-[''] motion-safe:after:transition-[width] motion-safe:after:duration-300 motion-safe:after:ease-out pointer-fine:group-enabled:group-hover:after:w-full"
 
   defp sparkline_fill_styles(:expenses), do: "fill-rust-100"
   defp sparkline_fill_styles(:income), do: "fill-teal-100"

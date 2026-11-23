@@ -19,6 +19,8 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
   alias FirmowidWeb.Analysis.Utilities.Periods
   alias Phoenix.LiveView.Rendered
 
+  @cards_beside_panel 2
+
   @tiles 4
   @notable_change Decimal.new("0.1")
   @material_share Decimal.new("0.02")
@@ -64,27 +66,59 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
   attr :context, :map, required: true, doc: "as for `button/1`"
   attr :questions, :list, required: true, doc: "`t:question/0` maps"
 
-  @doc "Renders the suggested questions as tiles, each asking the assistant right away."
+  @doc """
+  Renders the suggested questions, each asking the assistant right away: a question with a
+  figure as a card of its own, the others together in one panel beside up to two cards. Beside
+  three cards or more the panel would be too narrow, so each question gets a card instead.
+  """
   @spec tiles(map()) :: Rendered.t()
   def tiles(assigns) do
+    {cards, plain} = Enum.split_with(assigns.questions, & &1.figure)
+
+    {cards, plain} =
+      if length(cards) > @cards_beside_panel, do: {cards ++ plain, []}, else: {cards, plain}
+
+    assigns = assign(assigns, cards: cards, plain: plain)
+
     ~H"""
     <ul
       :if={@questions != []}
       id={@id}
       aria-label={gettext("Questions for the assistant")}
-      class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4"
+      class="flex flex-wrap gap-4"
     >
-      <li :for={question <- @questions} class="flex">
+      <li :if={@plain != []} class="flex min-w-[min(100%,15rem)] flex-1">
+        <ul class="flex w-full flex-col justify-between rounded-sm bg-white p-1">
+          <li :for={question <- @plain}>
+            <FirmowidUI.Components.Button.button
+              id={"#{@id}-#{question.key}"}
+              type="button"
+              variant="unstyled"
+              phx-click={ask(@context, question)}
+              class="group flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-start text-sm/[1.3] font-medium whitespace-normal text-grey-900 select-none active:bg-grey-200 motion-safe:transition-colors motion-safe:duration-150 pointer-fine:hover:bg-grey-100 phx-click-loading:opacity-75"
+            >
+              <.assistant_icon />
+              <span class="min-w-0 flex-1">{question.question}</span>
+              <.figma_icon
+                name="chevron_right"
+                class="size-4 text-grey-500 motion-safe:transition-colors motion-safe:duration-150 pointer-fine:group-hover:text-grey-900"
+              />
+            </FirmowidUI.Components.Button.button>
+          </li>
+        </ul>
+      </li>
+      <li
+        :for={question <- @cards}
+        class={[
+          "flex",
+          if(@plain == [], do: "min-w-[min(100%,14rem)] flex-1", else: "w-66 max-sm:flex-1")
+        ]}
+      >
         <FirmowidUI.Components.Button.button
           id={"#{@id}-#{question.key}"}
           type="button"
           variant="unstyled"
-          phx-click={
-            JS.push("ask_analysis",
-              target: "#firmowid-assistant",
-              value: Map.put(@context, :question, question.prompt)
-            )
-          }
+          phx-click={ask(@context, question)}
           class="group flex w-full cursor-pointer flex-col items-stretch gap-3 rounded-sm bg-white p-4 text-start font-normal whitespace-normal select-none active:bg-grey-200 motion-safe:transition-colors motion-safe:duration-150 phx-click-loading:opacity-75"
         >
           <span :if={question.figure} class="flex flex-col gap-1">
@@ -93,18 +127,16 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
             </span>
             <span class="text-sm/[1.35] text-grey-600">{question.caption}</span>
           </span>
-          <span
-            :if={question.figure}
-            class="mt-auto h-px shrink-0 bg-grey-100"
-            aria-hidden="true"
-          />
+          <%!-- Without a figure the question takes its place, and the bottom row asks the
+          assistant, in line with the other cards' questions. --%>
+          <span :if={!question.figure} class="text-sm/[1.3] font-medium text-grey-900">
+            {question.question}
+          </span>
+          <span class="mt-auto h-px shrink-0 bg-grey-100" aria-hidden="true" />
           <span class="flex items-start gap-2 text-sm/[1.3] font-medium text-grey-900">
-            <.figma_icon
-              name="asystent"
-              class="size-4 text-grey-700 motion-safe:transition-colors motion-safe:duration-200 pointer-fine:group-hover:text-grey-900 [&>path]:fill-transparent motion-safe:[&>path]:transition-[fill] motion-safe:[&>path]:duration-200 motion-safe:[&>path]:ease-out pointer-fine:group-hover:[&>path:first-child]:fill-current"
-            />
+            <.assistant_icon />
             <span class="min-w-0 flex-1">
-              {question.question}
+              {if question.figure, do: question.question, else: gettext("Ask the assistant")}
             </span>
           </span>
         </FirmowidUI.Components.Button.button>
@@ -112,6 +144,19 @@ defmodule FirmowidWeb.Analysis.Components.AskAssistant do
     </ul>
     """
   end
+
+  # The speech bubble in front fills while its question is hovered.
+  defp assistant_icon(assigns) do
+    ~H"""
+    <.figma_icon
+      name="asystent"
+      class="size-4 text-grey-700 motion-safe:transition-colors motion-safe:duration-200 pointer-fine:group-hover:text-grey-900 [&>path]:fill-transparent motion-safe:[&>path]:transition-[fill] motion-safe:[&>path]:duration-200 motion-safe:[&>path]:ease-out pointer-fine:group-hover:[&>path:first-child]:fill-current"
+    />
+    """
+  end
+
+  defp ask(context, question),
+    do: JS.push("ask_analysis", target: "#firmowid-assistant", value: Map.put(context, :question, question.prompt))
 
   @doc """
   Questions about the summary's figures, as many as there are of: what one złoty more of
