@@ -136,10 +136,33 @@ jobs:
             test "$(cat _build/gettext-extraction/verified)" = "$SOURCE_TREE"
             echo "Gettext extraction already verified for this exact source tree and toolchain."
           else
-            mix translations.extract.check
-            mix translations.extract.check > "$RUNNER_TEMP/gettext-local-cache-hit.log"
-            cat "$RUNNER_TEMP/gettext-local-cache-hit.log"
-            grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            # DIAGNOSTIC ONLY: repeat the pair and print which inputs changed (names, never values).
+            export GETTEXT_DIAG_DIR="$RUNNER_TEMP/gettext-diag"
+            misses=0
+            for i in 1 2 3 4; do
+              rm -f _build/test/.gettext-extraction-check
+              mix run --no-compile --no-deps-check --no-start -e "Mix.Tasks.Diag.Gettext.run([~s(pair$i-before-run1)])"
+              mix translations.extract.check > "$RUNNER_TEMP/run1.log" 2>&1
+              grep -cE "Compiling [0-9]+ files" "$RUNNER_TEMP/run1.log" | sed "s/^/pair$i run1 compile lines: /"
+              last1=$(ls -1 "$GETTEXT_DIAG_DIR"/ctx-* | sort | tail -1)
+              mix run --no-compile --no-deps-check --no-start -e "Mix.Tasks.Diag.Gettext.run([~s(pair$i-before-run2)])"
+              mix translations.extract.check > "$RUNNER_TEMP/run2.log" 2>&1
+              grep -E "Compiling [0-9]+ files|cached success" "$RUNNER_TEMP/run2.log" | sed "s/^/pair$i run2: /"
+              first2=$(ls -1 "$GETTEXT_DIAG_DIR"/ctx-* | sort | grep -A1 -Fx "$last1" | tail -1)
+              m1=$(ls -1 "$GETTEXT_DIAG_DIR"/manifest-pair$i-before-run1-*); m2=$(ls -1 "$GETTEXT_DIAG_DIR"/manifest-pair$i-before-run2-*)
+              if grep -Fxq 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/run2.log"; then
+                echo "pair$i: HIT"
+              else
+                misses=$((misses + 1))
+                echo "::warning::pair$i: MISS"
+                echo "--- context keys that differ (run1 last vs run2 first):"
+                diff <(sort "$last1") <(sort "$first2") | grep '^[<>]' | awk '{print $1, $2, $3}' | sort -u -k2 || true
+                echo "--- manifest state before run1 / before run2:"
+                diff "$m1" "$m2" | grep -vE '^[<>] label' || true
+                cat "$m2" | grep -E '^(config_mtime|project_mtime|cwd_same|cache_key|dbg|lock|manifest_mtime|config_file)'
+              fi
+            done
+            echo "misses: $misses of 4"
             mkdir -p _build/gettext-extraction
             printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
           fi
