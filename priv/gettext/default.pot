@@ -6872,7 +6872,6 @@ msgstr ""
 msgid "Invoice categories"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice details"
@@ -9101,7 +9100,6 @@ msgid "Open invoice %{number}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
-#: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "Open invoice preview in a new tab"
 msgstr ""
