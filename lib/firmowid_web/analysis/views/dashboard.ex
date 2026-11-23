@@ -254,9 +254,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         do: Analysis.classify_categories_later(year, true, socket.assigns.ash_scope)
   end
 
-  # LiveToast shows it for 6 seconds; its undo comes back through `undo-category`.
+  # Shown for 10 seconds, like the inbox's removal, so a mistaken click can still be
+  # taken back; its undo comes back through `undo-category`.
   defp undo_toast(token, message) do
     LiveToast.send_toast(:info, message,
+      duration: 10_000,
       action: fn assigns ->
         assigns = assign(assigns, :token, token)
 
