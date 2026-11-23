@@ -20,8 +20,12 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
   alias Firmowid.Analysis.CategoryReview
   alias FirmowidWeb.Analysis.Components.PeriodDetails
   alias FirmowidWeb.Analysis.Utilities.Industry
+  alias FirmowidWeb.Analysis.Utilities.Periods
 
   @id "analysis-first-review"
+
+  # The largest entries of the counterparty under review; the rest are only counted.
+  @shown_entries 5
 
   @doc "How many counterparties the review goes through at most."
   @spec size() :: pos_integer()
@@ -230,7 +234,9 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
         group: group,
         amount: amount,
         step_id: "#{assigns.id}-step-#{assigns.index}",
+        entries: groups |> Enum.flat_map(& &1.entries) |> Enum.sort_by(& &1.amount, {:desc, Decimal}),
         confirmed: group.status == :confirmed,
+        shown_entries: @shown_entries,
         # Two or more comparable categories are a real choice, not a suggestion to keep.
         hesitating: group.status != :confirmed and length(group.options) > 1,
         bins:
@@ -247,7 +253,7 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
     <div
       id={@step_id}
       phx-mounted={JS.focus(to: "##{@step_id}-name")}
-      class="grid items-start gap-10 motion-safe:animate-step-in lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-20"
+      class="grid items-start gap-10 motion-safe:animate-step-in motion-safe:transition-opacity lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-20 phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60"
     >
       <section class="lg:sticky lg:top-28">
         <h2
@@ -257,8 +263,20 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
           <span id={"#{@step_id}-name"} tabindex="-1" class="outline-none">{@group.name}</span>
         </h2>
         <p class="mt-3 text-[1.0625rem]/relaxed text-grey-700">
-          <span class="font-medium text-grey-900 tabular-nums">{whole_money(@amount)}</span>
-          · {reason(@group)}
+          {gettext("%{amount} in this period", amount: whole_money(@amount))}
+        </p>
+        <ul class="mt-4 grid gap-2 text-[0.9375rem]">
+          <li
+            :for={entry <- Enum.take(@entries, @shown_entries)}
+            class="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-baseline gap-x-3"
+          >
+            <span class="text-grey-600 tabular-nums">{Periods.month_name(entry.month, "LLL y")}</span>
+            <span class="line-clamp-2 text-grey-700" title={description(entry)}>{description(entry)}</span>
+            <span class="text-end font-medium text-grey-900 tabular-nums">{whole_money(entry.amount)}</span>
+          </li>
+        </ul>
+        <p :if={length(@entries) > @shown_entries} class="mt-2 text-sm text-grey-600">
+          {gettext("Other entries: %{count}", count: length(@entries) - @shown_entries)}
         </p>
         <%= if @confirmed do %>
           <p class="mt-6 text-[1.0625rem]/relaxed text-grey-900">
@@ -580,6 +598,7 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
   # Confirms the counterparty's category, as the period details do.
   defp choose(group, category) do
     JS.push("confirm-category",
+      loading: "##{@id}",
       value: %{
         side: group.side,
         key: group.key,
@@ -590,8 +609,9 @@ defmodule FirmowidWeb.Analysis.Components.FirstReview do
     )
   end
 
-  defp reason(%{reason: [line | _]}), do: gettext("From the document: %{text}", text: line)
-  defp reason(_group), do: gettext("Chosen from the counterparty's name")
+  # What an entry was for: its invoice lines or transfer title, else its counterparty's name.
+  defp description(%{lines: [_ | _] = lines}), do: lines |> Enum.take(3) |> Enum.join("; ")
+  defp description(entry), do: entry.name
 
   # The classifier's probability in words, so the owner reads how sure it is without a number.
   defp certainty(:almost_sure), do: gettext("Firmowid is almost sure.")

@@ -40,7 +40,7 @@ defmodule Firmowid.Analysis.CategoryReview do
   group has no `key`, `name` or `names`, but `people`, the ids of the users
   paid per month. A group the classifier suggested has the `probability` of its
   least certain entry and, as `options`, the categories the classifier found
-  comparable for that entry, its own first. `unclassified` lists the entries still waiting for the classifier:
+  comparable for that entry, its own first. Every group keeps its `entries`. `unclassified` lists the entries still waiting for the classifier:
   without a confirmed counterparty, a certain signal or a stored category;
   `classifier_suggested` the entries whose suggestion came from it.
   `rules` holds the owner's rules by side and group key, the latest of a key.
@@ -289,6 +289,7 @@ defmodule Firmowid.Analysis.CategoryReview do
         |> Enum.group_by(& &1.month)
         |> Map.new(fn {month, entries} -> {month, sum(entries)} end),
       count: length(entries),
+      entries: entries,
       suggestion: if(source != :confirmed, do: category),
       source: if(source != :confirmed, do: source),
       probability: classifier.probability,

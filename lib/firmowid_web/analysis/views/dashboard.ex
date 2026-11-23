@@ -47,6 +47,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
          tag_definitions: TagDefinition.list_tag_definitions!(scope: scope),
          first_review: nil,
          first_review_offered: false,
+         classified_meanwhile: false,
          page_title: pgettext("main navigation", "Analysis"),
          # What each category confirmation replaced, by the token its toast's undo sends back.
          category_undos: %{}
@@ -150,8 +151,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     {:noreply, update(socket, :first_review, &%{&1 | index: index |> max(0) |> min(length(steps))})}
   end
 
-  def handle_event("first-review-close", _params, %{assigns: %{first_review: %{}}} = socket),
-    do: {:noreply, update(socket, :first_review, &%{&1 | open: false})}
+  def handle_event("first-review-close", _params, %{assigns: %{first_review: %{}}} = socket) do
+    socket = update(socket, :first_review, &%{&1 | open: false})
+
+    if socket.assigns.classified_meanwhile,
+      do: {:noreply, socket |> assign(classified_meanwhile: false) |> load_view()},
+      else: {:noreply, socket}
+  end
 
   def handle_event("first-review-" <> _step, _params, socket), do: {:noreply, socket}
 
@@ -188,6 +194,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   def handle_event("select-month", _params, socket), do: {:noreply, socket}
 
   @impl true
+  # Reloading the whole view takes seconds and would hold up the owner's clicks in the first
+  # review, whose choices reload its categories anyway; the summary catches up when it closes.
+  def handle_info(:analysis_classification_updated, %{assigns: %{first_review: %{open: true}}} = socket),
+    do: {:noreply, assign(socket, classified_meanwhile: true)}
+
   def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_view(socket)}
 
   defp can_tag?(assigns) do
