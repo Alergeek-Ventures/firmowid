@@ -1,6 +1,6 @@
 ---
-title: "Kontrahent nie widzi faktury w KSeF: najczęstsze przyczyny"
-description: "Czemu nabywca nie widzi faktury w KSeF: błędny NIP, plik odrzucony, faktura offline niewysłana, osoba prywatna, brak uprawnień biura. Co wtedy zrobić."
+title: "Kontrahent nie widzi faktury w KSeF? 6 przyczyn i co zrobić"
+description: "Najczęściej to błędny NIP nabywcy: KSeF go nie sprawdza i faktura trafia do innej firmy. Inne przyczyny: plik odrzucony, offline24, brak uprawnień biura."
 published: 2026-11-12
 updated: 2026-11-12
 category: ksef-w-praktyce
