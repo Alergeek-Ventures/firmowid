@@ -57,7 +57,7 @@ defmodule Mix.Tasks.Translations.Extract.Check do
     # credo:disable-for-next-line Credo.Check.Warning.MixEnv
     mix_environment = Mix.env()
 
-    {
+    parts = [
       System.version(),
       :erlang.system_info(:system_version),
       System.find_executable("mix"),
@@ -68,7 +68,15 @@ defmodule Mix.Tasks.Translations.Extract.Check do
       :firmowid |> Application.get_all_env() |> Enum.sort(),
       :gettext |> Application.get_all_env() |> Enum.sort(),
       environment_hash
-    }
+    ]
+
+    # Diagnostic: which part of the context changes between runs.
+    parts
+    |> Enum.map(&(:sha256 |> :crypto.hash(:erlang.term_to_binary(&1)) |> Base.encode16(case: :lower) |> binary_part(0, 6)))
+    |> Enum.join(" ")
+    |> then(&IO.puts(:stderr, "gettext extraction context parts: " <> &1))
+
+    List.to_tuple(parts)
   end
 
   # A separate VM matches native `mix gettext.extract`. This VM has already loaded
