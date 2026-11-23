@@ -19,7 +19,7 @@ Małe firmy żyją z miesiąca na miesiąc. Takie dane pozwalają mądrzej plano
 | Przychód projektu | opłacone faktury sprzedaży przypisane do projektu |
 | Koszty bezpośrednie | faktury kosztowe i wydatki oznaczone projektem, także dzielone między kilka projektów |
 | Wynagrodzenia | dzielone między projekty według godzin danej osoby w miesiącu |
-| Koszty firmy i podatki | rozkładane na projekty według przepracowanych godzin |
+| Koszty firmy i podatki | rozkładane na projekty według [przepracowanych godzin](/funkcje/czas-pracy) |
 | Projekty wewnętrzne | bez udziału w kosztach firmy, widoczne osobno |
 | Nieopłacone faktury | pokazane osobno, poza wynikiem |
 
