@@ -1,6 +1,6 @@
 ---
 title: "Jak wybrać program do faktur? 9 rzeczy, które warto sprawdzić przed rejestracją"
-description: "Na co patrzeć przy wyborze programu do faktur z KSeF: limit dokumentów, koszty, bank, waluty, użytkownicy, czas pracy, eksport dla biura księgowego i cena po próbie."
+description: "Wybór programu do faktur z KSeF: limit dokumentów, koszty, bank, waluty, użytkownicy, czas pracy, eksport dla biura księgowego i cena po okresie próbnym."
 published: 2026-11-02
 updated: 2026-11-02
 category: wybor-programu
