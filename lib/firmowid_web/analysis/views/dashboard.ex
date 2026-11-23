@@ -196,10 +196,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @impl true
   # Reloading the whole view takes seconds and would hold up the owner's clicks in the first
   # review, whose choices reload its categories anyway; the summary catches up when it closes.
-  def handle_info(:analysis_classification_updated, %{assigns: %{first_review: %{open: true}}} = socket),
-    do: {:noreply, assign(socket, classified_meanwhile: true)}
+  def handle_info(:analysis_classification_updated, socket) do
+    if first_review_shown?(socket.assigns),
+      do: {:noreply, assign(socket, classified_meanwhile: true)},
+      else: {:noreply, load_view(socket)}
+  end
 
-  def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_view(socket)}
+  # Open in the summary of the period it started in; a link elsewhere leaves it open but hidden.
+  defp first_review_shown?(%{params: %{view: :dashboard, period: period}, first_review: %{open: true, period: period}}),
+    do: true
+
+  defp first_review_shown?(_assigns), do: false
 
   defp can_tag?(assigns) do
     flag_enabled?(:analysis_dashboard, assigns) and
@@ -242,7 +249,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     case result do
       {:ok, _rule} ->
         token = Ecto.UUID.generate()
-        undo = %{group: group, category: category, previous: previous}
+        # The undo needs the counterparty, not the entries the review kept with it.
+        undo = %{group: Map.delete(group, :entries), category: category, previous: previous}
         undo_toast(token, "#{group.name}: #{PeriodDetails.category_label(category)}")
 
         {:noreply, update(socket, :category_undos, &Map.put(&1, token, undo))}
@@ -603,10 +611,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         assistant={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
       />
       <FirstReview.review
-        :if={
-          @params.view == :dashboard and @first_review != nil and @first_review.open and
-            @first_review.period == @params.period
-        }
+        :if={first_review_shown?(assigns)}
         review={@review}
         steps={@first_review.steps}
         index={@first_review.index}
