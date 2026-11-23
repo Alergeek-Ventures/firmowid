@@ -351,9 +351,10 @@ defmodule Firmowid.Analysis do
   together with the owner's confirmed counterparty categories and the
   categories the classifier stored per entry. The organization's industry is
   returned as `:industry`. Each entry carries its `entity`
-  (`{entity_type, id}`), `nip` (of the invoice's counterparty, as written there)
-  and `lines`: invoice line names, else the cost invoice description or the
-  transfer title. See `CategoryReview.build/3` for the rest.
+  (`{entity_type, id}`), `nip` (of the invoice's counterparty, as written there),
+  `transfer_names` (the counterparty's names on transfers paired with the
+  invoice) and `lines`: invoice line names, else the cost invoice description or
+  the transfer title. See `CategoryReview.build/3` for the rest.
   """
   @spec get_category_review(integer() | Date.Range.t(), Scope.t()) :: map()
   def get_category_review(year, scope) when is_integer(year),
@@ -399,6 +400,7 @@ defmodule Firmowid.Analysis do
           month: entry_month(entity),
           name: counterparty_name(entity),
           nip: counterparty_nip(entity),
+          transfer_names: transfer_names(entity),
           amount: amount |> Decimal.abs() |> Decimal.round(2),
           lines: entry_lines(entity),
           salary_user_id: salary_user_id(entity),
@@ -489,11 +491,19 @@ defmodule Firmowid.Analysis do
 
   defp counterparty_name(%SalesInvoice{} = invoice), do: invoice.buyer_display_name_label || "?"
 
-  defp counterparty_name(%Transaction{amount: amount} = transaction) do
-    name =
-      if Money.negative?(amount), do: transaction.creditor_name, else: transaction.debtor_name
+  defp counterparty_name(%Transaction{} = transaction) do
+    transfer_counterparty(transaction) || transaction.remittance_information_unstructured || "?"
+  end
 
-    name || transaction.remittance_information_unstructured || "?"
+  defp transfer_counterparty(%Transaction{amount: amount} = transaction) do
+    if Money.negative?(amount), do: transaction.creditor_name, else: transaction.debtor_name
+  end
+
+  # The names the bank gives an invoice's counterparty on the transfers paired with it.
+  defp transfer_names(%Transaction{}), do: []
+
+  defp transfer_names(invoice) do
+    invoice.transactions |> Enum.map(&transfer_counterparty/1) |> Enum.reject(&is_nil/1)
   end
 
   @doc "Returns the NIP of an invoice's counterparty as written there, unvalidated; transactions carry none."
