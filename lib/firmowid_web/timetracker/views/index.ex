@@ -258,32 +258,43 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     projects_by_id = Map.merge(socket.assigns.projects_by_id, projects_by_id)
 
+    edited = if socket.assigns.is_form_extended, do: socket.assigns[:current_session]
+
     socket
     |> assign(:next_sessions_after, next_sessions_after)
     |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:current_session, current_session)
     |> assign(:projects_by_id, projects_by_id)
-    |> update(:form, fn form ->
-      case current_session do
-        nil ->
-          form
-
-        # An open edit of the running session keeps what the user typed.
-        _session when socket.assigns.is_form_extended ->
-          form
-
-        session ->
-          session
-          |> SessionForm.from_session(socket.assigns.timezone)
-          |> SessionForm.changeset(%{})
-          |> to_form()
-      end
-    end)
+    |> assign_session_form(edited, current_session)
     |> assign_page_title()
     |> assign_hours_record_submitted()
     |> assign_timesheet_month()
     |> assign_filtered_tasks()
+  end
+
+  # An open edit of the running session keeps what the user typed, but only while that
+  # session is still the running one: stopped or replaced elsewhere, the edit is dropped.
+  defp assign_session_form(socket, %Session{id: id}, %Session{id: id}), do: socket
+
+  defp assign_session_form(socket, edited, current_session) do
+    socket
+    |> then(&if(edited, do: assign(&1, is_form_extended: false, edit_check: nil), else: &1))
+    |> update(:form, fn form ->
+      cond do
+        current_session ->
+          current_session
+          |> SessionForm.from_session(socket.assigns.timezone)
+          |> SessionForm.changeset(%{})
+          |> to_form()
+
+        edited ->
+          to_form(SessionForm.changeset(%{"project_id" => edited.project_id}))
+
+        true ->
+          form
+      end
+    end)
   end
 
   # Mondays of the newest weeks with matching sessions, as dates in the user's timezone.
