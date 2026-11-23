@@ -14,10 +14,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
 
   @doc """
-  A queue item: a tile coloured by its kind, the title, one meta line and its
-  actions. Urgent items get the solid black button, leave requests decide in
-  place, items for information only have no button and everything else opens
-  its page.
+  A queue item, a row of its group's card: the tile coloured by its kind, the title
+  linking to the item's page, one meta line and its actions. The tile puts the
+  item aside (`snooze_menu/1`), except for urgent items, which keep the solid
+  black button; leave requests decide in place.
   """
   attr :item, :map, required: true
   attr :fresh, :boolean, default: false, doc: "arrived while the page was open; it lights up once"
@@ -38,16 +38,27 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       ]}
     >
       <%!-- Level with the text's top, as next to a two-line text, however long it runs. --%>
-      <span class={[
-        "mt-0.5 flex size-10 shrink-0 items-center justify-center self-start rounded-sm",
-        icon_styles(@item)
-      ]}>
+      <span
+        :if={@item.tier == :urgent}
+        class={[
+          "mt-0.5 flex size-10 shrink-0 items-center justify-center self-start rounded-sm",
+          icon_styles(@item)
+        ]}
+      >
         <Lucideicons.render! name={@item.icon} class="size-6" aria-hidden="true" />
       </span>
+      <.snooze_menu :if={@item.tier != :urgent} item={@item} today={@today} />
       <div class="flex min-w-0 flex-1 flex-col gap-1">
         <h3 class="text-base/[normal] font-medium text-black">
-          {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
-          <span class="whitespace-nowrap">{@item.date_range}</span></span>
+          <.link
+            :if={Map.has_key?(@item, :href)}
+            kind="unstyled"
+            navigate={@item.href}
+            class="decoration-from-font underline-offset-auto hover:underline focus-visible:underline"
+          >
+            <.item_title item={@item} />
+          </.link>
+          <.item_title :if={!Map.has_key?(@item, :href)} item={@item} />
         </h3>
         <.meta_line item={@item} />
       </div>
@@ -61,53 +72,59 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         </p>
       </div>
       <%!-- On phones the actions wrap under the text, level with the title. --%>
-      <div class="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:justify-end max-md:pl-14">
-        <%= if @item.tier == :urgent do %>
-          <.link kind="button" navigate={@item.href} size="small" variant="special">
-            {@item.action}
-          </.link>
-        <% else %>
-          <div :if={@decisions != []} class="flex items-center gap-2">
-            <%!-- Holds the ✕'s place when an item cannot be rejected, so the buttons line up across rows;
-            on phones the actions sit right-aligned on their own line, where it would only crowd them. --%>
-            <span :if={length(@decisions) == 1} class="w-8 shrink-0 max-md:hidden" aria-hidden="true"></span>
-            <%= for decision <- Enum.sort_by(@decisions, & &1.show_label?) do %>
-              <.icon_button
-                :if={!decision.show_label?}
-                id={"item-#{@item.id}-#{decision.action}"}
-                label={decision.label}
-                variant="tertiary"
-                class="w-8"
-                phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
-              >
-                <Lucideicons.render! name={decision.icon} aria-hidden="true" />
-              </.icon_button>
-              <.button
-                :if={decision.show_label?}
-                id={"item-#{@item.id}-#{decision.action}"}
-                type="button"
-                size="small"
-                variant="tertiary"
-                phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
-              >
-                <Lucideicons.render! name={decision.icon} aria-hidden="true" />{decision.label}
-              </.button>
-            <% end %>
-          </div>
-          <.link
-            :if={Map.has_key?(@item, :href)}
-            kind="button"
-            navigate={@item.href}
-            size="small"
-            variant={if @decisions == [], do: "tertiary", else: "outline"}
+      <div
+        :if={@item.tier == :urgent or @decisions != []}
+        class="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:justify-end max-md:pl-14"
+      >
+        <.link
+          :if={@item.tier == :urgent}
+          kind="button"
+          navigate={@item.href}
+          size="small"
+          variant="special"
+        >
+          {@item.action}
+        </.link>
+        <%!-- Holds the ✕'s place when an item cannot be rejected, so the buttons line up across rows;
+        on phones the actions sit right-aligned on their own line, where it would only crowd them. --%>
+        <span
+          :if={@item.tier != :urgent and length(@decisions) == 1}
+          class="w-8 shrink-0 max-md:hidden"
+          aria-hidden="true"
+        ></span>
+        <%= for decision <- Enum.sort_by(@decisions, & &1.show_label?), @item.tier != :urgent do %>
+          <.icon_button
+            :if={!decision.show_label?}
+            id={"item-#{@item.id}-#{decision.action}"}
+            label={decision.label}
+            variant="tertiary"
+            class="w-8"
+            phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
           >
-            {@item.action}
-          </.link>
-          <%!-- Urgent items cannot be put aside. --%>
-          <.snooze_menu item={@item} today={@today} />
+            <Lucideicons.render! name={decision.icon} aria-hidden="true" />
+          </.icon_button>
+          <.button
+            :if={decision.show_label?}
+            id={"item-#{@item.id}-#{decision.action}"}
+            type="button"
+            size="small"
+            variant="tertiary"
+            phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
+          >
+            <Lucideicons.render! name={decision.icon} aria-hidden="true" />{decision.label}
+          </.button>
         <% end %>
       </div>
     </article>
+    """
+  end
+
+  attr :item, :map, required: true
+
+  defp item_title(assigns) do
+    ~H"""
+    {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
+    <span class="whitespace-nowrap">{@item.date_range}</span></span>
     """
   end
 
@@ -150,15 +167,31 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   attr :item, :map, required: true
   attr :today, Date, required: true
 
-  # Puts the item aside for the whole company (`Firmowid.Core.InboxSnooze`);
-  # each option shows the day the item comes back.
+  # The item's tile puts it aside for the whole company
+  # (`Firmowid.Core.InboxSnooze`): while the row is hovered it shows a clock,
+  # and hovered itself it darkens a step and names what it does. Each option
+  # shows the day the item comes back.
   defp snooze_menu(assigns) do
     ~H"""
     <.menu
       id={"item-#{@item.id}-snooze"}
-      label={gettext("More options")}
+      label={gettext("Put aside")}
+      tooltip={gettext("Put aside")}
+      placement="bottom-start"
       panel_class="w-70"
+      class="mt-0.5 shrink-0 self-start"
+      trigger_variant="bare"
+      trigger_class={["size-10!", icon_styles(@item), tile_hover_styles(@item)]}
     >
+      <:trigger>
+        <span class="relative size-6" aria-hidden="true">
+          <Lucideicons.render!
+            name={@item.icon}
+            class="size-6 transition-opacity duration-100 group-hover:opacity-0 group-has-aria-expanded:opacity-0"
+          />
+          <Lucideicons.history class="absolute inset-0 size-6 opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-has-aria-expanded:opacity-100" />
+        </span>
+      </:trigger>
       <p
         class="px-3 pt-2 pb-1 text-caps-sm/[normal] font-medium text-grey-600 uppercase"
         aria-hidden="true"
@@ -196,29 +229,78 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   defp hide_for_good_note(_item), do: gettext("It will not come back to the inbox.")
 
   @doc """
-  Next to the page title: how many items the company put aside until a day,
-  opening the list of them (`put_aside_modal/1`).
+  The page title: how many items wait and, after a slash, how many the company
+  put aside until a day. Both are buttons that switch the page between the
+  queue and the list of items put aside (`put_aside_list/1`): the one shown is
+  dark, the other grey, and "put aside" unfolds after its count while the clock
+  turns back.
   """
-  attr :count, :integer, required: true
+  attr :greeting, :string, required: true
+  attr :put_aside, :integer, required: true, doc: "items put aside until a day"
+  attr :showing_put_aside, :boolean, required: true
 
-  def put_aside_link(assigns) do
+  def title(assigns) do
     ~H"""
-    <.link
-      id="inbox-put-aside-link"
-      kind="text"
-      size="big"
-      aria-label={ngettext("Show %{count} item put aside", "Show %{count} items put aside", @count)}
-      phx-click={JS.push_focus() |> show_modal("inbox-put-aside")}
-      class="max-md:w-full max-md:justify-start"
-    >
-      {ngettext("%{count} put aside", "%{count} put aside", @count)}<Lucideicons.history aria-hidden="true" />
-    </.link>
+    <h1 class="flex flex-wrap items-baseline gap-x-1 text-3xl/[normal] font-bold">
+      <.button
+        id="inbox-title-queue"
+        type="button"
+        variant="unstyled"
+        phx-click="show_queue"
+        disabled={!@showing_put_aside}
+        class={[
+          "uppercase transition-colors duration-300 ease-out disabled:cursor-default motion-reduce:transition-none",
+          if(@showing_put_aside,
+            do: "cursor-pointer text-grey-300 hover:text-grey-400",
+            else: "text-black"
+          )
+        ]}
+      >
+        {@greeting}
+      </.button>
+      <.button
+        :if={@put_aside > 0}
+        id="inbox-put-aside-toggle"
+        type="button"
+        variant="unstyled"
+        phx-click={if @showing_put_aside, do: "show_queue", else: "show_put_aside"}
+        aria-pressed={to_string(@showing_put_aside)}
+        aria-label={
+          ngettext("Show %{count} item put aside", "Show %{count} items put aside", @put_aside)
+        }
+        class={[
+          "flex cursor-pointer items-center uppercase transition-colors duration-300 ease-out motion-reduce:transition-none",
+          if(@showing_put_aside, do: "text-grey-900", else: "text-grey-300 hover:text-grey-400")
+        ]}
+      >
+        <span class="pr-2.5 text-grey-300" aria-hidden="true">/</span>
+        <span class="tabular-nums">{@put_aside}</span>
+        <%!-- Unfolds from no width; the grid track eases between 0fr and 1fr. --%>
+        <span class={[
+          "grid transition-[grid-template-columns,opacity] duration-300 ease-out motion-reduce:transition-none",
+          if(@showing_put_aside, do: "grid-cols-[1fr] opacity-100", else: "grid-cols-[0fr] opacity-0")
+        ]}>
+          <span class="overflow-hidden">
+            <span class="block pr-0.5 pl-2.5 whitespace-nowrap">
+              {ngettext("put aside", "put aside", @put_aside)}
+            </span>
+          </span>
+        </span>
+        <Lucideicons.history
+          class={[
+            "ml-1 size-11 shrink-0 self-center transition-transform duration-500 ease-out motion-reduce:transition-none",
+            @showing_put_aside && "-rotate-360"
+          ]}
+          aria-hidden="true"
+        />
+      </.button>
+    </h1>
     """
   end
 
   @doc """
-  Items the company put aside until a day: each says when it comes back and
-  can be brought back right away or removed for good.
+  Items the company put aside until a day, in place of the queue: each says
+  when it comes back and can be brought back right away or removed for good.
   """
   attr :entries, :list,
     required: true,
@@ -226,80 +308,74 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   attr :today, Date, required: true
   attr :timezone, :string, required: true
+  attr :class, :any, default: nil
 
-  def put_aside_modal(assigns) do
+  def put_aside_list(assigns) do
     ~H"""
-    <.modal id="inbox-put-aside">
-      <:header>
-        <h2 id="inbox-put-aside-title" class="text-xl/6.5 font-medium text-black">
-          {gettext("Items put aside")}
+    <section id="inbox-put-aside" class={["flex flex-col gap-3", @class]}>
+      <div class="flex items-baseline gap-2">
+        <h2 class="text-caps-sm/none font-medium text-grey-900 uppercase">
+          {pgettext("inbox section", "Put aside")}
         </h2>
-        <p id="inbox-put-aside-description" class="mt-1 text-sm/[1.35] text-grey-600">
+        <span class="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 px-1.5 text-caps-sm font-semibold text-grey-700 tabular-nums">
+          {length(@entries)}
+        </span>
+        <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
           {gettext("They will come back to the inbox on their own, on the chosen day.")}
         </p>
-      </:header>
-      <section class="flex flex-col gap-1">
-        <div class="flex items-baseline gap-2">
-          <h3 class="text-caps-sm/none font-medium text-grey-900 uppercase">
-            {gettext("Coming back on their own")}
-          </h3>
-          <span class="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-grey-200 px-1.5 text-caps-sm font-semibold text-grey-700 tabular-nums">
-            {length(@entries)}
+      </div>
+      <ul class="overflow-hidden rounded-sm bg-white">
+        <li
+          :for={{item, snooze} <- @entries}
+          id={"put-aside-#{item.id}"}
+          class="flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4"
+        >
+          <span class={[
+            "flex size-10 shrink-0 items-center justify-center rounded-sm",
+            icon_styles(item)
+          ]}>
+            <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
           </span>
-        </div>
-        <ul>
-          <li
-            :for={{item, snooze} <- @entries}
-            id={"put-aside-#{item.id}"}
-            class="flex items-center gap-4 border-b border-grey-100 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3"
-          >
-            <span class={[
-              "flex size-10 shrink-0 items-center justify-center rounded-sm",
-              icon_styles(item)
-            ]}>
-              <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
-            </span>
-            <div class="flex min-w-0 flex-1 flex-col gap-1">
-              <p class="truncate text-base/[21px] font-medium text-black">
-                {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
-              </p>
-              <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
-            </div>
-            <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
-              {gettext("comes back %{date}",
-                date:
-                  snooze.until
-                  |> DateTime.shift_zone!(@timezone)
-                  |> DateTime.to_date()
-                  |> Queue.short_date(@today)
-              )}
+          <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <p class="truncate text-base/[normal] font-medium text-black">
+              {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
             </p>
-            <div class="flex shrink-0 items-center gap-3">
-              <.icon_button
-                id={"put-aside-#{item.id}-remove"}
-                label={gettext("Remove notification")}
-                variant="destructive"
-                class="w-8"
-                phx-click="remove_item"
-                phx-value-id={item.id}
-              >
-                <Lucideicons.trash_2 aria-hidden="true" />
-              </.icon_button>
-              <.button
-                id={"put-aside-#{item.id}-restore"}
-                type="button"
-                size="small"
-                variant="tertiary"
-                phx-click="restore_item"
-                phx-value-id={item.id}
-              >
-                {gettext("Bring back")}
-              </.button>
-            </div>
-          </li>
-        </ul>
-      </section>
-    </.modal>
+            <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
+          </div>
+          <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
+            {gettext("comes back %{date}",
+              date:
+                snooze.until
+                |> DateTime.shift_zone!(@timezone)
+                |> DateTime.to_date()
+                |> Queue.short_date(@today)
+            )}
+          </p>
+          <div class="flex shrink-0 items-center gap-2">
+            <.icon_button
+              id={"put-aside-#{item.id}-remove"}
+              label={gettext("Remove notification")}
+              variant="destructive"
+              class="w-8"
+              phx-click="remove_item"
+              phx-value-id={item.id}
+            >
+              <Lucideicons.trash_2 aria-hidden="true" />
+            </.icon_button>
+            <.button
+              id={"put-aside-#{item.id}-restore"}
+              type="button"
+              size="small"
+              variant="tertiary"
+              phx-click="restore_item"
+              phx-value-id={item.id}
+            >
+              {gettext("Bring back")}
+            </.button>
+          </div>
+        </li>
+      </ul>
+    </section>
     """
   end
 
@@ -308,6 +384,18 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   defp icon_styles(%{tier: :books, side: :cost}), do: "bg-rust-200 text-rust-700"
   defp icon_styles(%{tier: :books, side: :sales}), do: "bg-teal-200 text-teal-700"
   defp icon_styles(_item), do: "bg-grey-100 text-grey-900"
+
+  # A tile that puts its item aside darkens a step while its row is hovered
+  # and another under the pointer, keeping the colour of its ledger side.
+  defp tile_hover_styles(%{tier: :info}), do: tile_hover_styles("teal")
+  defp tile_hover_styles(%{tier: :books, side: :cost}), do: tile_hover_styles("rust")
+  defp tile_hover_styles(%{tier: :books, side: :sales}), do: tile_hover_styles("teal")
+
+  defp tile_hover_styles(%{}), do: "group-hover:bg-grey-200 hover:bg-grey-300! aria-expanded:bg-grey-300!"
+
+  defp tile_hover_styles("teal"), do: "group-hover:bg-teal-300 hover:bg-teal-400! aria-expanded:bg-teal-400!"
+
+  defp tile_hover_styles("rust"), do: "group-hover:bg-rust-300 hover:bg-rust-400! aria-expanded:bg-rust-400!"
 
   @doc "Header of a queue group: its name, how many items it has and why it matters."
   attr :tier, :atom, required: true

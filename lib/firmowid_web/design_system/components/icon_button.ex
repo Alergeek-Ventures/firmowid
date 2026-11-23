@@ -13,7 +13,15 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
   @spec icon_button(map()) :: Phoenix.LiveView.Rendered.t()
   attr :label, :string, required: true, doc: "Accessible name, also shown as the native tooltip."
   attr :size, :string, values: ~w(small big), default: "small"
-  attr :variant, :string, values: ~w(ghost outline tertiary destructive menu), default: "ghost"
+
+  attr :variant, :string,
+    values: ~w(ghost outline tertiary destructive menu bare),
+    default: "ghost"
+
+  attr :native_title, :boolean,
+    default: true,
+    doc: "false drops the native tooltip, for a button that sits in a `tooltip/1`"
+
   attr :type, :string, default: "button"
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
@@ -24,7 +32,7 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
     <button
       type={@type}
       aria-label={@label}
-      title={@label}
+      title={@native_title && @label}
       class={[
         "inline-flex shrink-0 cursor-pointer items-center justify-center border transition duration-100 ease-out select-none disabled:pointer-events-none disabled:opacity-50 phx-click-loading:opacity-75",
         icon_button_size_styles(@size),
@@ -50,6 +58,9 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
       "hover:bg-grey-200 hover:text-grey-900 focus-visible:bg-grey-200 focus-visible:text-grey-900",
       "aria-expanded:bg-grey-200 aria-expanded:text-grey-900 disabled:text-grey-400"
     ]
+
+  # No colours of its own: the caller's classes paint it, as for a coloured tile.
+  defp icon_button_variant_styles("bare"), do: "border-transparent"
 
   defp icon_button_variant_styles(variant), do: ButtonStyles.variant_classes(variant, nil)
 end
