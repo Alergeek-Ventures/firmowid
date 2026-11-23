@@ -19,17 +19,17 @@ Ministerstwo Finansów podaje w odpowiedziach na pytania podatników, że KSeF n
 
 ## Co sprawdzić po stronie klienta
 
-Spółka cywilna ma własny NIP, a każdy wspólnik swój. Kto wchodzi do Aplikacji Podatnika KSeF jako osoba fizyczna, ląduje w kontekście swojej jednoosobowej firmy i faktury wystawionej na spółkę tam nie zobaczy, dopóki nie przejdzie do kontekstu spółki. Pracownik zakupów czy biuro księgowe zalogują się profilem zaufanym bez problemu, a lista faktur i tak będzie pusta, jeśli nikt w firmie nie nadał im w KSeF uprawnienia do przeglądania faktur.
+Spółka cywilna ma własny NIP, a każdy wspólnik swój. Wspólnik loguje się do Aplikacji Podatnika KSeF jako on sam i widzi faktury swojej JDG. Faktura na spółkę czeka piętro wyżej, w kontekście spółki. A pracownik? Profil zaufany wpuszcza go do KSeF, tylko że faktur firmy nie zobaczy, dopóki właściciel nie nada mu uprawnienia do przeglądania faktur. Z biurem księgowym jest dokładnie tak samo.
 
-W wyszukiwarce MF zakupy i sprzedaż to dwie osobne listy, a datę można ustawić jako datę wystawienia albo datę przyjęcia do KSeF. Fakturę z 30 listopada, którą sprzedawca wysłał w trybie offline24 1 grudnia, klient filtrujący listopad po dacie przyjęcia po prostu przeoczy. Kod QR z PDF-a rozstrzyga sprawę szybciej niż wymiana maili: telefon otwiera stronę ministerstwa z fakturą z KSeF, razem z NIP nabywcy.
+Druga pułapka siedzi w wyszukiwarce. Zakupy i sprzedaż są w aplikacji MF osobno, a filtr dat działa albo po dacie wystawienia, albo po dacie przyjęcia do KSeF. Faktura z 30 listopada wysłana offline 1 grudnia? W listopadzie liczonym po dacie przyjęcia jej nie ma. Wtedy wystarczy wysłać klientowi kod QR z PDF-a i po sprawie: telefon pokaże fakturę na stronie ministerstwa, razem z NIP, na który poszła.
 
 ## Faktura dla gminy i jej jednostek
 
-Od 2017 r. VAT w samorządach rozlicza gmina, więc szkoła czy przedszkole nie są nabywcą, tylko odbiorcą. Na fakturze FA(3) w polu nabywcy jest gmina, a jednostka idzie do sekcji Podmiot3 z rolą jednostki samorządu terytorialnego jako odbiorcy. Bez tego wpisu faktura trafia wyłącznie do gminy i do szkoły dociera dopiero wtedy, gdy ktoś w urzędzie ją przekaże.
+Od 2017 r. VAT w samorządach rozlicza gmina, więc szkoła czy przedszkole nie są nabywcą, tylko odbiorcą. W FA(3) gmina idzie w pole nabywcy, a szkoła do Podmiot3, z rolą odbiorcy przewidzianą dla jednostek samorządu. Bez Podmiot3 fakturę ma tylko gmina i szkoła czeka, aż urząd ją prześle.
 
 ## Kiedy faktury w KSeF nie ma i nie musi być
 
-Do 31 grudnia 2026 r. faktury mogą powstawać poza KSeF w dwóch sytuacjach: gdy sprzedaż na fakturach nie przekracza 10 000 zł brutto miesięcznie ([jak liczyć ten limit](/poradnik/limit-10000-ksef)) i gdy fakturę drukuje kasa fiskalna ([paragon z NIP i faktura z kasy](/poradnik/kasa-fiskalna-paragon-z-nip-po-2026)). Taka faktura jest ważna, choć klient zna ją tylko z PDF-a albo wydruku. Od 1 stycznia 2027 r. oba wyjątki przestają działać.
+Bywa też, że faktury w KSeF nie ma, bo nie musi jej tam być. Do końca 2026 r. firmy, które sprzedają na fakturach za mniej niż 10 000 zł brutto miesięcznie, mogą wystawiać je po staremu ([jak liczyć ten limit](/poradnik/limit-10000-ksef)). Po staremu wolno też drukować faktury z kasy fiskalnej ([paragon z NIP i faktura z kasy](/poradnik/kasa-fiskalna-paragon-z-nip-po-2026)). Klient ma PDF albo papier i to wystarcza. Od stycznia 2027 r. ta furtka się zamyka.
 
 ## Numer KSeF
 
