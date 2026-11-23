@@ -143,6 +143,17 @@ defmodule FirmowidWeb.Landing.Views.GuidesTest do
     refute sitemap =~ "/funkcje/projekty"
   end
 
+  test "the merged guide redirects to the free KSeF programs guide", %{conn: conn} do
+    assert conn |> get("/poradnik/program-do-faktur-bez-abonamentu") |> redirected_to(301) ==
+             "/poradnik/darmowe-programy-ksef"
+
+    html = build_conn() |> get(~p"/poradnik/darmowe-programy-ksef") |> html_response(200)
+    sitemap = build_conn() |> get(~p"/sitemap.xml") |> response(200)
+
+    assert html =~ "Plan darmowy czy okres próbny"
+    refute sitemap =~ "/poradnik/program-do-faktur-bez-abonamentu"
+  end
+
   test "an unknown guide is not found", %{conn: conn} do
     assert_error_sent 404, fn -> get(conn, ~p"/poradnik/nie-ma-takiego") end
   end
