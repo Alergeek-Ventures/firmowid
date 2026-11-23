@@ -33,6 +33,11 @@ msgctxt "landing card price"
 msgid "%{amount} PLN"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "%{amount} in this period"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} in total"
@@ -2894,7 +2899,6 @@ msgstr ""
 msgid "Choose whether to include the page with the internal comment."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Chosen from the counterparty's name"
@@ -6033,7 +6037,6 @@ msgctxt "time range column"
 msgid "From"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "From the document: %{text}"
@@ -9240,6 +9243,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Other employment below minimum wage"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Other entries: %{count}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
