@@ -100,6 +100,7 @@ defmodule FirmowidWeb do
       import FirmowidWeb.DesignSystem.Components.CoreComponents
       import FirmowidWeb.DesignSystem.Components.EmptyState
       import FirmowidWeb.DesignSystem.Components.Fields
+      import FirmowidWeb.DesignSystem.Components.FigmaIcon
       import FirmowidWeb.DesignSystem.Components.Filters
       import FirmowidWeb.DesignSystem.Components.IconButton
       import FirmowidWeb.DesignSystem.Components.Menu

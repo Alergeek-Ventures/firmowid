@@ -10,6 +10,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   alias Firmowid.Blobs.Blob
   alias Firmowid.Blobs.PictureVariants
+  alias FirmowidWeb.DesignSystem.Components.FigmaIcon
   alias Phoenix.HTML.Form
   alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.JS
@@ -36,6 +37,12 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :on_cancel, JS, default: %JS{}
   attr :class, :any, default: nil
 
+  attr :size, :string,
+    values: ~w(default large),
+    default: "default",
+    doc:
+      "large is Figma's \"Duży Modal Container\": 640px wide, 32px padding, 24px under the header, a 24px grey-500 close icon level with a 30px title row, no ring or shadow."
+
   slot :header,
     doc: "Title and description, as one box beside the close button, 16px clear of it."
 
@@ -61,29 +68,53 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full max-w-3xl p-4 sm:p-6 lg:py-8", @class]}>
+          <div class={[
+            "w-full p-4 sm:p-6 lg:py-8",
+            if(@size == "large", do: "max-w-172", else: "max-w-3xl"),
+            @class
+          ]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="relative hidden rounded-sm border border-grey-700/10 bg-white p-10 shadow-small transition"
+              class={[
+                "relative hidden rounded-sm bg-white transition",
+                if(@size == "large",
+                  do: "p-8",
+                  else: "border border-grey-700/10 p-10 shadow-small"
+                )
+              ]}
             >
               <%!-- Figma's header: the title box fills the row, 16px before "Button / Zamknij"
               (32×30, a 16px cross). Without a header the button floats, so the content wraps
               16px before it. --%>
-              <div class={["gap-4", if(@header != [], do: "mb-6 flex items-start", else: "contents")]}>
+              <div class={[
+                "gap-4",
+                cond do
+                  @header == [] -> "contents"
+                  @size == "large" -> "mb-6 flex items-start"
+                  true -> "mb-6 flex items-start"
+                end
+              ]}>
                 <div :if={@header != []} class="min-w-0 flex-1">{render_slot(@header)}</div>
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
                   class={[
-                    "flex h-7.5 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm text-grey-600 hover:bg-grey-200 hover:text-grey-900",
+                    "flex shrink-0 cursor-pointer items-center justify-center rounded-sm",
+                    if(@size == "large",
+                      do: "mt-0.75 size-6 text-grey-500 hover:text-grey-900",
+                      else: "h-7.5 w-8 text-grey-600 hover:bg-grey-200 hover:text-grey-900"
+                    ),
                     @header == [] && "float-right ml-4"
                   ]}
                   aria-label={gettext("close")}
                 >
-                  <Lucideicons.x class="size-4" aria-hidden="true" />
+                  <FigmaIcon.figma_icon
+                    name="close"
+                    class={[if(@size == "large", do: "size-6", else: "size-4")]}
+                  />
                 </button>
               </div>
               <div id={"#{@id}-content"}>
@@ -509,6 +540,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :reference_id, :string, required: true
   attr :strategy, :string, default: "absolute", values: ["absolute", "fixed"]
   attr :class, :any, default: nil
+  ## JS Commands
   attr :rest, :global
 
   attr :placement, :string,
@@ -554,7 +586,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
-  Renders a toggle switch
+  Renders a toggle switch as the Figma "Toggle": a 49×26 grey-200 track with a 20px white knob
+  3px in, filled with the side's colour when on; disabled, the track fades to 40% and the label
+  turns grey-400.
   """
 
   attr :field, FormField, required: true
@@ -569,7 +603,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   def switch(assigns) do
     ~H"""
     <label class={[
-      "inline-flex cursor-pointer items-center gap-2 has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50",
+      "group/switch inline-flex cursor-pointer items-center gap-2 has-[input:disabled]:cursor-not-allowed",
       @class
     ]}>
       <input
@@ -589,22 +623,25 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {@rest}
       />
       <div class={[
-        "relative h-[24px] w-[38px] shrink-0 rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px]",
+        "relative h-6.5 w-12.25 shrink-0 rounded-full bg-grey-200 transition-colors duration-200 ease-out peer-disabled:opacity-40 after:absolute after:top-0.75 after:left-0.75 after:size-5 after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-5.75",
         @color == "rust" && "peer-checked:bg-rust-700",
         @color == "teal" && "peer-checked:bg-teal-700",
         @color == "black" && "peer-checked:bg-black"
       ]}>
       </div>
-      <span :if={@label} class="text-grey-900">{@label}</span>
+      <span :if={@label} class="text-grey-900 group-has-[input:disabled]/switch:text-grey-400">
+        {@label}
+      </span>
       <%!-- hack: label_slot is a list of slots --%>
-      <span :if={Enum.any?(@label_slot)} class="flex flex-row items-center text-grey-900">
+      <span
+        :if={Enum.any?(@label_slot)}
+        class="flex flex-row items-center text-grey-900 group-has-[input:disabled]/switch:text-grey-400"
+      >
         {render_slot(@label_slot)}
       </span>
     </label>
     """
   end
-
-  ## JS Commands
 
   def show(js \\ %JS{}, selector) do
     JS.show(js,
