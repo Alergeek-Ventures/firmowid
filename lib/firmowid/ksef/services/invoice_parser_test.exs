@@ -229,6 +229,7 @@ defmodule Firmowid.Ksef.Services.InvoiceParserTest do
       assert Money.to_currency_code(attrs.amount) == :EUR
       assert attrs.issue_date == ~D[2025-06-15]
       assert attrs.sale_date == ~D[2025-06-15]
+      assert attrs.due_date == ~D[2025-06-15]
       assert Decimal.equal?(Money.to_decimal(attrs.amount), Decimal.new("250.50"))
     end
 
@@ -300,6 +301,9 @@ defmodule Firmowid.Ksef.Services.InvoiceParserTest do
 
       assert {:ok, attrs} = InvoiceParser.parse(xml)
       assert attrs.original_invoice_ksef_number == "KSEF-ORIGINAL-123"
+
+      # Without TerminPlatnosci the corrected invoice's term stands, so none is made up.
+      assert is_nil(attrs.due_date)
     end
 
     test "reads an advance invoice's items from its order" do

@@ -9131,6 +9131,11 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
+msgid "Overdue cost invoice %{number} after correction %{correction}"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
 msgid "Overdue invoices with no matched payment."
 msgstr ""
 
