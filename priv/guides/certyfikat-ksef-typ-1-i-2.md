@@ -63,7 +63,7 @@ Typem 2 oznacza się fakturę offline kodem, który według MF pozwala nabywcy p
 
 W rozdziale 2.5.9 podręcznika MF pisze: „Certyfikaty KSeF nie są natomiast nośnikiem uprawnień”, a typ 1 stanowi wyłącznie środek uwierzytelnienia, podobnie jak podpis kwalifikowany. Po zalogowaniu brane są pod uwagę uprawnienia powiązane z NIP-em lub PESEL-em zapisanym w certyfikacie, przy czym system uwzględnia powiązanie obu identyfikatorów tej samej osoby.
 
-Podręcznik pokazuje to na przykładzie: „Księgowa Anna Nowak (NIP 9999999999) prowadząca jednoosobową działalność gospodarczą dysponuje certyfikatem KSeF typu 1”, a uprawnienia nadały jej firmy X, Y i Z. Dalej MF pisze: „Jeżeli po określonym czasie firma Z odbierze Annie Nowak uprawnienia, to posiadany przez nią certyfikat KSeF nie ulegnie unieważnieniu”. Nowy klient też nie wymaga nowego certyfikatu, wystarczy, że nada uprawnienia.
+Podręcznik pokazuje to na przykładzie Anny Nowak, która prowadzi jednoosobową działalność, ma jeden certyfikat typu 1 i uprawnienia od firm X, Y i Z. MF pisze: „Jeżeli po określonym czasie firma Z odbierze Annie Nowak uprawnienia, to posiadany przez nią certyfikat KSeF nie ulegnie unieważnieniu”. Nowy klient też nie wymaga nowego certyfikatu, wystarczy, że nada uprawnienia.
 
 O tokenie ten sam rozdział mówi, że „zawiera w sobie uprawnienia podatnika, które są deklarowane w momencie jego generowania”.
 
@@ -106,7 +106,7 @@ Według MF certyfikat jest osobistym poświadczeniem tożsamości. Nie pożycza 
 
 Najprościej połączyć go Profilem Zaufanym, bo wtedy Firmowid sam zamawia certyfikat w KSeF. Kto ma już własny certyfikat typu 1, wgrywa dwa pliki, `.crt` i `.key`, i podaje hasło do klucza prywatnego. Przy tokenie w ustawieniach widać ostrzeżenie: „Tokeny KSeF będą obsługiwane tylko do 1 stycznia 2027 roku. Zalecamy uwierzytelnienie Profilem Zaufanym lub certyfikatem KSeF”.
 
-Faktur offline u nas nie ma, więc typ 2 się nie przyda. Zrzuty ekranu każdego kroku: [jak połączyć Firmowid z KSeF](/pomoc/polaczenie-z-ksef).
+Zrzuty ekranu każdego kroku: [jak połączyć Firmowid z KSeF](/pomoc/polaczenie-z-ksef).
 
 ![Certyfikat typu 1 służy do logowania do KSeF, certyfikat typu 2 do drugiego kodu QR z napisem CERTYFIKAT na fakturze offline, a token do logowania programu; rozporządzenie pozwala logować się nim do 31 grudnia 2026 r. Certyfikatu nie przekazuje się biuru księgowemu, tylko nadaje mu uprawnienia.](/images/guides/certyfikat-ksef-typ-1-typ-2-token.webp)
 
