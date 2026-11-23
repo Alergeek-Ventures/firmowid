@@ -408,7 +408,8 @@ defmodule Firmowid.Analysis do
           salary_user_id: salary_user_id(entity),
           certain: certain_category(entity, tags, amount),
           classified: stored && stored.category,
-          probability: stored && stored.probability
+          probability: stored && stored.probability,
+          probabilities: stored && stored.probabilities
         }
       end
     end)

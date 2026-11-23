@@ -1931,6 +1931,7 @@ msgstr ""
 msgid "B2B — gross amount"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/design_system/components/core_components.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
@@ -2604,9 +2605,20 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#: lib/firmowid_web/analysis/views/dashboard.ex
+#, elixir-autogen, elixir-format
+msgid "Check categories"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Check correction details"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Check counterparties"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -2882,6 +2894,7 @@ msgstr ""
 msgid "Choose whether to include the page with the internal comment."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Chosen from the counterparty's name"
@@ -2922,6 +2935,11 @@ msgstr ""
 msgid "Clear the identifier"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Click a category to choose it."
+msgstr ""
+
 #: lib/firmowid_web/bank_sync/views/create.ex
 #, elixir-autogen, elixir-format
 msgid "Click to add a bank account prepared by us, which contains a dozen or so transactions and lets you try out the system."
@@ -2932,6 +2950,7 @@ msgstr ""
 msgid "Click to confirm the connection"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/core/toast.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
@@ -3211,6 +3230,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Confirmed gross pay for this month"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Confirmed: %{checked} of %{count}"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/confirm_email.ex
@@ -3660,6 +3684,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/analysis_context.ex
 #, elixir-autogen, elixir-format
 msgid "Costs took all of the income."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Costs · %{period}"
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -4129,6 +4158,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Counterparty %{name} created"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Counterparty %{position} of %{count}"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
@@ -5644,6 +5678,11 @@ msgstr ""
 msgid "Find the next invoice number"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Finish later"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Fintech and payments: Revolut, Wise, Stripe, PayPal, Paysera, N26, Airwallex, Finom, Vivid Money, Monese, Lunar, Swan, Soldo, Ebury, Skrill, Neteller."
@@ -5711,6 +5750,11 @@ msgstr ""
 msgid "Firmowid helps Polish companies issue KSeF-compliant invoices, sync their bank, track working time and settle with the team in one place."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid hesitates. Which category fits?"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid in ChatGPT (panel beside the conversation)"
@@ -5726,6 +5770,21 @@ msgstr ""
 msgid "Firmowid is a tool supporting the conduct of business activities."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid is almost sure."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid is fairly sure."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid is guessing."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid is not a product made by a hundred managers for a hundred processes. It is a tool made by people who run a company themselves and know what working with KSeF, payroll, and month-end closing really looks like."
@@ -5734,6 +5793,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid is open source. Host it yourself, without limits or fees."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid is still choosing the categories. Once it is done, the counterparties it is least sure of will be here to check."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
@@ -5746,6 +5810,11 @@ msgstr ""
 msgid "Firmowid pricing: choose your plan"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid sorts costs and income into categories, shown as these bars. Check the counterparties whose category it is unsure about."
+msgstr ""
+
 #: lib/firmowid_web/analysis/utilities/industry.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid splits income into the store and online sales, and watches the cost of goods."
@@ -5754,6 +5823,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/utilities/industry.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid splits income into the venue, delivery and catering, and watches the cost of food."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid suggests %{category}. Keep it?"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -5959,6 +6033,7 @@ msgctxt "time range column"
 msgid "From"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "From the document: %{text}"
@@ -6117,6 +6192,11 @@ msgstr ""
 msgid "Go to signature"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Go to the analysis"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #, elixir-autogen, elixir-format
 msgid "Go to the invoice"
@@ -6218,6 +6298,11 @@ msgstr ""
 #: lib/firmowid_web/core/toast.ex
 #, elixir-autogen, elixir-format
 msgid "Hang in there while we get back on track"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Hatched: suggested by Firmowid"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
@@ -6596,6 +6681,11 @@ msgstr ""
 msgid "Income tax advance"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Income · %{period}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Income, expenses and net result month by month, also for each project. Firmowid counts only paid invoices, so the numbers match your bank account."
@@ -6639,6 +6729,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Industry"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Industry: %{industry}."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/matching_components.ex
@@ -8178,6 +8273,11 @@ msgctxt "sales invoice creator"
 msgid "Next"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Next"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Next: connect the bank"
@@ -8242,6 +8342,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "No card, no trial period"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "No category of this period waits for your check."
 msgstr ""
 
 #: lib/firmowid/ksef/submission_info.ex
@@ -10416,6 +10521,11 @@ msgstr ""
 msgid "Review changes"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Review finished"
+msgstr ""
+
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #, elixir-autogen, elixir-format
 msgid "Review the request"
@@ -10669,6 +10779,11 @@ msgstr ""
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "Saved. Whatever was switched off comes back with a higher plan."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Saved: %{category}. Future entries of this counterparty go there too."
 msgstr ""
 
 #: lib/firmowid_web/auth/components/mcp_consent.ex
@@ -11360,6 +11475,7 @@ msgstr ""
 msgid "Skip"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Skip for now"
@@ -11369,6 +11485,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "counterparty suggestions"
 msgid "Skipped"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Skipped counterparties stay as they are; %{button} brings you back to them. You can change any category later in the analysis."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -11399,6 +11520,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgid "Sole proprietorship"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Solid: confirmed or certain"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -13024,6 +13150,11 @@ msgstr ""
 msgid "This is an indicative preview of the current month. The final settlement is based solely on the recorded snapshot."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "This is how Firmowid sorts your money"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "This is my company"
@@ -14590,6 +14721,11 @@ msgstr ""
 msgid "Yes, in every plan, including Free. KSeF invoices arrive automatically, and you simply drag invoices from outside KSeF (e.g. foreign invoices) into Firmowid. We match them with transfers just like the rest."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Yes, keep it"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."
@@ -14846,6 +14982,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Your choice"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/first_review.ex
+#, elixir-autogen, elixir-format
+msgid "Your choice covers all entries of this counterparty, also future ones."
 msgstr ""
 
 #: lib/firmowid_web/organization/components/company_card.ex

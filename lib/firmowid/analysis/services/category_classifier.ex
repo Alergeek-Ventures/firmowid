@@ -2,7 +2,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   @moduledoc """
   Lets Jev choose an industry template category for each analysis entry from
   its description, and stores the choice per entry with Jev's probability that
-  it is right.
+  it is right and its probabilities of all the categories.
 
   Jev sees the entry's side, counterparty with its main activity (PKD) from the
   public registers when the invoice names its NIP, invoice lines or transfer title
@@ -147,7 +147,8 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
                entity_type: entity_type,
                resource_id: resource_id,
                category: category,
-               probability: Map.fetch!(probabilities, choice)
+               probability: Map.fetch!(probabilities, choice),
+               probabilities: probabilities
              },
              scope: scope
            ) do

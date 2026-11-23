@@ -26,7 +26,8 @@ defmodule Firmowid.Analysis.CategoryReview do
           salary_user_id: Ash.UUID.t() | nil,
           certain: IndustryTemplate.category() | nil,
           classified: IndustryTemplate.category() | nil,
-          probability: float() | nil
+          probability: float() | nil,
+          probabilities: %{String.t() => float()} | nil
         }
 
   @doc """
@@ -37,7 +38,9 @@ defmodule Firmowid.Analysis.CategoryReview do
   Groups are sorted by amount, largest first; `months` holds their amount per
   month and `names` the names of its counterparty in any category, one per key. The salaries
   group has no `key`, `name` or `names`, but `people`, the ids of the users
-  paid per month. `unclassified` lists the entries still waiting for the classifier:
+  paid per month. A group the classifier suggested has the `probability` of its
+  least certain entry and, as `options`, the categories the classifier found
+  comparable for that entry, its own first. `unclassified` lists the entries still waiting for the classifier:
   without a confirmed counterparty, a certain signal or a stored category;
   `classifier_suggested` the entries whose suggestion came from it.
   `rules` holds the owner's rules by side and group key, the latest of a key.
@@ -79,6 +82,31 @@ defmodule Firmowid.Analysis.CategoryReview do
       industry: industry
     }
   end
+
+  @doc """
+  Lists at most `count` counterparties of the review whose category the owner
+  should check first, as `{side, key}`: those the classifier suggested with
+  several comparable `options` or without being almost sure, the larger amount
+  first.
+  """
+  @spec to_check(map(), pos_integer()) :: [{IndustryTemplate.side(), String.t()}]
+  def to_check(review, count) do
+    review.groups
+    |> Enum.filter(
+      &(&1.source == :jev and
+          (length(&1.options) > 1 or certainty(&1.probability) != :almost_sure))
+    )
+    |> Enum.sort_by(& &1.amount, {:desc, Decimal})
+    |> Enum.map(&{&1.side, &1.key})
+    |> Enum.uniq()
+    |> Enum.take(count)
+  end
+
+  @doc "Reads the classifier's probability of its choice as how sure it is."
+  @spec certainty(float()) :: :almost_sure | :fairly_sure | :guessing
+  def certainty(probability) when probability >= 0.85, do: :almost_sure
+  def certainty(probability) when probability >= 0.6, do: :fairly_sure
+  def certainty(_probability), do: :guessing
 
   @doc """
   Pairs each entry with its counterparty key and its category with where it
@@ -259,10 +287,26 @@ defmodule Firmowid.Analysis.CategoryReview do
       count: length(entries),
       suggestion: if(source != :confirmed, do: category),
       source: if(source != :confirmed, do: source),
+      # Each of its entries comes from the classifier, which stores a probability with its choice.
+      probability: if(source == :jev, do: entries |> Enum.map(& &1.probability) |> Enum.min()),
+      options: if(source == :jev, do: options(entries, side)),
       reason: reason(entries),
       status: status,
       category: if(status == :confirmed, do: category)
     }
+  end
+
+  # The categories at least half as likely as the likeliest one for the entry the classifier was
+  # least sure of, likeliest first; the classifier names them as strings.
+  defp options(entries, side) do
+    probabilities = Enum.min_by(entries, & &1.probability).probabilities
+    top = probabilities |> Map.values() |> Enum.max()
+    categories = Map.new(IndustryTemplate.all_categories(side), &{Atom.to_string(&1), &1})
+
+    for {name, probability} <- Enum.sort_by(probabilities, &elem(&1, 1), :desc),
+        probability >= top / 2,
+        Map.has_key?(categories, name),
+        do: Map.fetch!(categories, name)
   end
 
   # The largest described entry explains the group; transfers may come without a title.
