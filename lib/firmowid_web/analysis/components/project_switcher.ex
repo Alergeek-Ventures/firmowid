@@ -5,6 +5,9 @@ defmodule FirmowidWeb.Analysis.Components.ProjectSwitcher do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.FigmaIcon, only: [figma_icon: 1]
+  import FirmowidWeb.DesignSystem.Components.Menu, only: [dropdown_panel_styles: 0]
+
   attr :id, :string, required: true
   attr :label, :string, required: true, doc: "the shown slice's name"
 
@@ -26,15 +29,18 @@ defmodule FirmowidWeb.Analysis.Components.ProjectSwitcher do
         aria-label={gettext("Show: %{slice}", slice: @label)}
         phx-click={show_popover("#{@id}-menu")}
       >
-        <Lucideicons.folder_kanban aria-hidden="true" />
+        <.figma_icon name="projekty" />
         <span class="max-w-48 truncate">{@label}</span>
-        <Lucideicons.chevron_down class="size-4 text-grey-700" aria-hidden="true" />
+        <.figma_icon name="chevron_down" />
       </FirmowidUI.Components.Button.button>
-      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-start">
+      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-end">
         <div
           role="menu"
           aria-label={gettext("Show")}
-          class="flex max-h-(--popover-available-height) min-w-56 flex-col overflow-y-auto overscroll-contain rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10"
+          class={[
+            "flex max-h-(--popover-available-height) w-60 flex-col overflow-y-auto overscroll-contain",
+            dropdown_panel_styles()
+          ]}
         >
           <FirmowidUI.Components.Link.link
             :for={option <- @options}
@@ -43,10 +49,10 @@ defmodule FirmowidWeb.Analysis.Components.ProjectSwitcher do
             patch={option.patch}
             phx-click={hide_popover("#{@id}-menu")}
             aria-current={option.selected? && "true"}
-            class="flex min-h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 text-start text-sm text-grey-900 hover:bg-grey-100 active:bg-grey-200"
+            class="flex min-h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-sm px-3 text-start text-sm/[1.35] text-black hover:bg-grey-200 active:bg-grey-300"
           >
             <span class="truncate">{option.name}</span>
-            <Lucideicons.check :if={option.selected?} class="size-4 shrink-0" aria-hidden="true" />
+            <.figma_icon :if={option.selected?} name="check" class="size-4" />
           </FirmowidUI.Components.Link.link>
         </div>
       </.popover>

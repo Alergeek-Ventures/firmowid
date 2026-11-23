@@ -579,31 +579,33 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
           />
         </header>
-        <div class="flex flex-wrap items-center gap-4">
-          <.month_range_picker
-            id="analysis-period-picker"
-            selected={range(@params.period)}
-            label={Periods.label(@params.period)}
-            clear_label={gettext("This year")}
-            aria-label={gettext("Period")}
-            data-position="bottom left"
-          />
-          <.view_switch label={gettext("Analysis views")}>
-            <:option
-              id="analysis-overview"
-              patch={Navigation.view_path(view_for(@params, :dashboard), [])}
-              active={@params.view == :dashboard}
-            >
-              {pgettext("analysis view", "Summary")}
-            </:option>
-            <:option
-              id="analysis-trends-tab"
-              patch={Navigation.view_path(view_for(@params, :trends), @tag_filters)}
-              active={@params.view == :trends}
-            >
-              {pgettext("analysis view", "Trends")}
-            </:option>
-          </.view_switch>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <.month_range_picker
+              id="analysis-period-picker"
+              selected={range(@params.period)}
+              label={Periods.label(@params.period)}
+              clear_label={gettext("This year")}
+              aria-label={gettext("Period")}
+              data-position="bottom left"
+            />
+            <.view_switch label={gettext("Analysis views")}>
+              <:option
+                id="analysis-overview"
+                patch={Navigation.view_path(view_for(@params, :dashboard), [])}
+                active={@params.view == :dashboard}
+              >
+                {pgettext("analysis view", "Summary")}
+              </:option>
+              <:option
+                id="analysis-trends-tab"
+                patch={Navigation.view_path(view_for(@params, :trends), @tag_filters)}
+                active={@params.view == :trends}
+              >
+                {pgettext("analysis view", "Trends")}
+              </:option>
+            </.view_switch>
+          </div>
           <ProjectSwitcher.switcher
             :if={@params.view == :trends}
             id="analysis-project-switcher"
