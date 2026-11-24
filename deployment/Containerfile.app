@@ -60,7 +60,6 @@ COPY accent.json ./accent.json
 COPY scripts/accent.exs scripts/accent.exs
 
 ARG SOURCE_COMMIT
-ARG ACCENT_API_KEY
 RUN test -s priv/gettext/pl/LC_MESSAGES/default.po || elixir scripts/accent.exs export --version "$SOURCE_COMMIT"
 
 # Dependencies compile before fetching translations; app compile follows the fetch.
