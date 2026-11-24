@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Private runtime helper for Mix.Tasks.Chatgpt.Tunnel, not a target-selection CLI.
+# Private runtime helper for the Mix tasks that keep a client running in the foreground
+# (chatgpt.tunnel, stripe.listen), not a target-selection CLI.
 # Mix supplies its numeric OS PID, a resolved trusted executable and fixed args.
 # No credentials in argv. No process-group/global kills or independent watchdog.
 set +x
@@ -56,8 +57,8 @@ trap 'forward HUP 129' HUP
 trap '' PIPE
 
 kill -0 "$parent_pid" 2>/dev/null || exit 1
-# HTTP-only client; stdin is deliberately unavailable. Cloudflare and stdio
-# subprocess targets are disabled by Mix, so only this direct child is owned.
+# The clients are HTTP-only; stdin is deliberately unavailable. Mix starts no other
+# subprocess through them, so only this direct child is owned.
 "$@" </dev/null &
 child_pid=$!
 if [[ -n $pending_signal ]]; then
