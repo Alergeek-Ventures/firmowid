@@ -608,7 +608,7 @@ katalog jako artefakt i sprawdzają znacznik. Nowe i zmienione teksty muszą wi�
 tłumaczenia w Accent, zanim CI PR-a przejdzie.
 
 Po eksporcie na `main` job `Publish translation snapshot` publikuje zwalidowany
-katalog jako niezmienny plik `FULL_SHA.tar.gz` w wydaniu GitHub
+katalog jako plik `FULL_SHA.tar.gz` w wydaniu GitHub
 `translation-snapshots`. Build wdrożeniowy (`deployment/Containerfile.app`) instaluje
 ten snapshot przez `elixir scripts/accent.exs export --version FULL_SHA`, więc
 produkcja dostaje dokładnie katalog zwalidowany dla swojego commita. Ponowne
@@ -616,13 +616,22 @@ uruchomienie CI dla commita `main` używa już opublikowanego snapshotu. Nie
 tworzymy wersji w Accent.
 
 Ten sam job podpisuje proweniencję snapshotu przez `actions/attest` (Sigstore) i
-publikuje bundle obok niego jako `FULL_SHA.tar.gz.intoto.jsonl`. Awaria Sigstore
-nie blokuje wdrożenia: snapshot trafia wtedy do wydania bez podpisu. Wydanie trzyma
-400 najnowszych snapshotów, bo GitHub mieści najwyżej 1000 plików w jednym wydaniu.
-Pochodzenie pobranego snapshotu sprawdzisz tak:
+publikuje bundle obok niego jako `FULL_SHA.tar.gz.intoto.jsonl`. Pliki wydania
+może podmienić każdy z prawem zapisu do repozytorium, a znacznik w PO jest tylko
+etykietą, więc `export` przed instalacją wywołuje `gh attestation verify` i
+przyjmuje tylko snapshot podpisany przez `ci.yml` na `refs/heads/main` dla
+dokładnie tego commita. Snapshot bez bundla albo z niepasującym podpisem przerywa
+eksport, także przy `--fallback-version`. Podpis jest wymagany: awaria Sigstore
+blokuje publikację i wdrożenie commita. Snapshoty opublikowane przed 14 listopada
+2026 nie mają bundli, więc nie przejdą weryfikacji.
+Wydanie trzyma 400 najnowszych snapshotów, bo GitHub mieści najwyżej 1000 plików w
+jednym wydaniu. Pochodzenie pobranego snapshotu sprawdzisz tak:
 
 ```bash
-gh attestation verify FULL_SHA.tar.gz --repo Alergeek-Ventures/firmowid
+gh attestation verify FULL_SHA.tar.gz --bundle FULL_SHA.tar.gz.intoto.jsonl \
+  --repo Alergeek-Ventures/firmowid \
+  --cert-identity https://github.com/Alergeek-Ventures/firmowid/.github/workflows/ci.yml@refs/heads/main \
+  --source-digest FULL_SHA
 ```
 
 Lokalnie:

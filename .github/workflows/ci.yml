@@ -55,11 +55,11 @@ jobs:
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
         run: tar -czf "$SNAPSHOT" -C priv/gettext pl/LC_MESSAGES/default.po uk/LC_MESSAGES/default.po
 
-      # Best effort: a Sigstore outage must not block deployments, which need this job.
+      # Required: deployment builds install only snapshots whose provenance verifies, so a
+      # Sigstore outage blocks this commit's deployment rather than publishing it unsigned.
       - name: Attest the snapshot's build provenance
         id: attest
         if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
-        continue-on-error: true
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.SNAPSHOT }}
@@ -73,7 +73,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          ATTESTED: ${{ steps.attest.outcome == 'success' }}
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
           set -euo pipefail
@@ -81,14 +80,15 @@ jobs:
             gh release create translation-snapshots --prerelease --title "Translation snapshots" \
               --notes "Validated translation catalogs of main commits, installed by deployment builds. Managed by CI." ||
             gh release view translation-snapshots > /dev/null
-          if [ "$ATTESTED" = "true" ]; then
-            cp "$BUNDLE_PATH" "$SNAPSHOT.intoto.jsonl"
-            gh release upload translation-snapshots "$SNAPSHOT.intoto.jsonl" --clobber
-          else
-            echo "::warning::Publishing $SNAPSHOT without a provenance attestation"
-            # A bundle left by an earlier attempt signs other tarball bytes.
-            gh release delete-asset translation-snapshots "$SNAPSHOT.intoto.jsonl" --yes < /dev/null || true
+          # The translations job found no verifiable snapshot. If an archive exists anyway, replacing
+          # only its bundle would leave a pair that never verifies, so leave the release unchanged.
+          assets=$(gh release view translation-snapshots --json assets --jq '.assets[].name')
+          if grep -Fxq "$SNAPSHOT" <<< "$assets"; then
+            echo "::error::$SNAPSHOT is published but failed verification; delete it from the release and re-run."
+            exit 1
           fi
+          cp "$BUNDLE_PATH" "$SNAPSHOT.intoto.jsonl"
+          gh release upload translation-snapshots "$SNAPSHOT.intoto.jsonl" --clobber
           gh release upload translation-snapshots "$SNAPSHOT"
 
       # A release holds at most 1000 assets and a snapshot takes two. Keeping the newest 400 snapshots

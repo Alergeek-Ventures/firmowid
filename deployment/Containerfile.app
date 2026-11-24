@@ -5,7 +5,8 @@ ARG RUNNER_IMAGE="alpine:3.24.4@sha256:f59abe656b692d901e184be3445e0847866021085
 
 FROM ${BUILDER_IMAGE} AS builder
 
-RUN apk add --no-cache build-base git nodejs npm curl
+# github-cli verifies the provenance of the published translation snapshot.
+RUN apk add --no-cache build-base git nodejs npm curl github-cli
 
 WORKDIR /app
 
