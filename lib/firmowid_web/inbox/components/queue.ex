@@ -249,9 +249,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         phx-click="show_queue"
         disabled={!@showing_put_aside}
         class={[
-          "uppercase transition-colors duration-300 ease-out disabled:cursor-default motion-reduce:transition-none",
+          "transition-colors duration-300 ease-out disabled:cursor-default motion-reduce:transition-none",
           if(@showing_put_aside,
-            do: "cursor-pointer text-grey-300 hover:text-grey-400",
+            do: "cursor-pointer text-grey-400 hover:text-grey-500",
             else: "text-black"
           )
         ]}
@@ -269,11 +269,11 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           ngettext("Show %{count} item put aside", "Show %{count} items put aside", @put_aside)
         }
         class={[
-          "flex cursor-pointer items-center uppercase transition-colors duration-300 ease-out motion-reduce:transition-none",
-          if(@showing_put_aside, do: "text-grey-900", else: "text-grey-300 hover:text-grey-400")
+          "flex cursor-pointer items-center transition-colors duration-300 ease-out motion-reduce:transition-none",
+          if(@showing_put_aside, do: "text-grey-900", else: "text-grey-400 hover:text-grey-500")
         ]}
       >
-        <span class="pr-2.5 text-grey-300" aria-hidden="true">/</span>
+        <span class="pr-2.5 text-grey-400" aria-hidden="true">/</span>
         <span class="tabular-nums">{@put_aside}</span>
         <%!-- Unfolds from no width; the grid track eases between 0fr and 1fr. --%>
         <span class={[
@@ -295,6 +295,38 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         />
       </.button>
     </h1>
+    """
+  end
+
+  @doc """
+  The inbox search folded into a 32px magnifier button. Focused or holding a
+  query it unfolds to 240px; emptied and left, it folds back.
+  """
+  attr :id, :string, required: true
+  attr :query, :string, required: true
+  attr :placeholder, :string, required: true
+
+  def folding_search(assigns) do
+    ~H"""
+    <form
+      id={"#{@id}-form"}
+      phx-change="search"
+      phx-submit="search"
+      class="group/search relative w-8 min-w-8 shrink transition-[width] duration-200 ease-out focus-within:w-60 has-[input:not(:placeholder-shown)]:w-60 motion-reduce:transition-none"
+    >
+      <FirmowidWeb.DesignSystem.Components.Fields.search_icon class="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-grey-900 transition-all duration-200 ease-out group-focus-within/search:left-1.5 group-focus-within/search:size-5 group-focus-within/search:text-grey-500 group-has-[input:not(:placeholder-shown)]/search:left-1.5 group-has-[input:not(:placeholder-shown)]/search:size-5 group-has-[input:not(:placeholder-shown)]/search:text-grey-500 motion-reduce:transition-none" />
+      <input
+        id={@id}
+        type="search"
+        name="q"
+        value={@query}
+        placeholder={@placeholder}
+        aria-label={@placeholder}
+        autocomplete="off"
+        phx-debounce="200"
+        class="h-8 w-full cursor-pointer rounded-sm border border-transparent bg-grey-200 px-0 text-sm text-grey-700 transition-colors duration-200 not-placeholder-shown:cursor-text not-placeholder-shown:bg-grey-100 not-placeholder-shown:pr-1 not-placeholder-shown:pl-8.5 placeholder:text-transparent focus:cursor-text focus:border-teal-300 focus:bg-grey-100 focus:pr-1 focus:pl-8.5 focus:shadow-[inset_0_0_0_1px_var(--color-teal-300)] focus:ring-0 focus:outline-none focus:placeholder:text-grey-400 [&::-webkit-search-cancel-button]:hidden [&:not(:focus):not(:placeholder-shown)]:border-grey-200 [&:placeholder-shown:not(:focus):hover]:bg-grey-300"
+      />
+    </form>
     """
   end
 

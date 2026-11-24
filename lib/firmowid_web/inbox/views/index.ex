@@ -35,6 +35,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.LeaveRequest
   alias Firmowid.Timetracker.Session
@@ -338,13 +339,14 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         |> decide(socket.assigns.ash_scope)
         |> decision_changed(socket)
     end
+
+    # Another tab started one meanwhile: show it instead of starting a second.
   end
 
   def handle_event("start_session", _params, %{assigns: %{session: nil, last_session: %{} = last}} = socket) do
     scope = socket.assigns.ash_scope
 
     case Session.get_current(scope: scope, load: [:project]) do
-      # Another tab started one meanwhile: show it instead of starting a second.
       {:ok, %Session{} = running} ->
         session_changed({:ok, running}, socket)
 
@@ -536,27 +538,20 @@ defmodule FirmowidWeb.Inbox.Views.Index do
       data-layer-dissolve
       class="@container flex w-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8"
     >
-      <%!-- Beside a long title the search narrows rather than drop under it. --%>
-      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4 md:flex-nowrap">
+      <%!-- Too narrow for both, the search and the assistant drop under the title. --%>
+      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4">
         <div class="flex min-w-0 flex-col md:shrink-0">
+          <p class="text-sm/[1.35] text-grey-600">
+            {@current_org.name} · {TimeFormatter.format_date(@today, "EEEE, d MMMM y")}
+          </p>
           <.title
             greeting={greeting(@items)}
             put_aside={length(@put_aside)}
             showing_put_aside={@showing_put_aside?}
           />
         </div>
-        <div class="flex min-w-0 items-center gap-4 max-md:w-full">
-          <form phx-change="search" phx-submit="search" class="w-70 min-w-0 shrink max-md:flex-1">
-            <.search_field
-              id="inbox-search"
-              name="q"
-              value={@query}
-              placeholder={gettext("Search the inbox")}
-              size="small"
-              autocomplete="off"
-              phx-debounce="200"
-            />
-          </form>
+        <div class="flex min-w-0 items-center gap-3">
+          <.folding_search id="inbox-search" query={@query} placeholder={gettext("Search the inbox")} />
           <.link
             kind="button"
             navigate={AssistantNavigation.page_path()}
