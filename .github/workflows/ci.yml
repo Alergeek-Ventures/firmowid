@@ -121,8 +121,12 @@ jobs:
                 echo "::warning::Could not delete $asset; another run may have pruned it"
             done
 
+  # The merge queue pushes the exact commit its merge_group run already tested, so its
+  # pushes skip verification; the Dialyzer and Docker jobs still run to refresh main's caches.
+  # A direct push, such as an admin bypassing the queue, is verified in full.
   build:
     name: Build and Test
+    if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
     needs: translations
     uses: ./.github/workflows/elixir-build-and-test.yml
     with:

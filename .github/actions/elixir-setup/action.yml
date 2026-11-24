@@ -113,7 +113,7 @@ runs:
           build-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-
 
     - name: Get Hex cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: hex-cache
       if: steps.deps-cache.outputs.cache-hit != 'true'
       with:
@@ -156,17 +156,25 @@ runs:
       shell: sh
       if: inputs.build-app == 'true'
 
-    # Save completed setup before a later quality check or test can fail.
+    # Save completed setup before a later quality check or test can fail. A merge_group run
+    # saves nothing: its caches are scoped to a temporary queue branch no later run can read.
+    - name: Save Hex cache
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: github.event_name != 'merge_group' && steps.hex-cache.outcome == 'success' && steps.hex-cache.outputs.cache-hit != 'true'
+      with:
+        path: ~/.hex
+        key: ${{ steps.hex-cache.outputs.cache-primary-key }}
+
     - name: Save deps cache
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: steps.deps-cache.outputs.cache-hit != 'true'
+      if: github.event_name != 'merge_group' && steps.deps-cache.outputs.cache-hit != 'true'
       with:
         path: deps/
         key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
     - name: Save build cache
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: inputs.build-app == 'true' && steps.build-cache.outputs.cache-hit != 'true'
+      if: github.event_name != 'merge_group' && inputs.build-app == 'true' && steps.build-cache.outputs.cache-hit != 'true'
       with:
         path: |
           _build/${{ env.MIX_ENV || 'dev' }}/lib

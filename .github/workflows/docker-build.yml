@@ -46,7 +46,9 @@ jobs:
           push: false
           outputs: type=cacheonly
           cache-from: type=gha,scope=firmowid-app
-          # Optional cache export must not fail image validation; build failures remain fatal.
-          cache-to: type=gha,scope=firmowid-app,mode=max,ignore-error=true
+          # Only main exports layers: PR and merge queue exports filled most of the repository's
+          # 10 GB cache and evicted main's caches. Optional cache export must not fail image
+          # validation; build failures remain fatal.
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=firmowid-app,mode=max,ignore-error=true' || '' }}
           build-args: |
             SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
