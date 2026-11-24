@@ -169,10 +169,10 @@ export and validation.
 ### 5. Rerun CI
 
 - Use **Re-run all jobs**. **Re-run failed jobs** reuses the successful
-  translation job and its old PO artifact, so the quality job downloads the same
+  translation job and its old PO artifact, so the Gettext job downloads the same
   stale catalog and fails identically.
-- The translation job feeds `Build and Test`, `Elixir Quality Checks` and the
-  Docker check, so refreshing only one is not enough.
+- The translation job feeds `Build and Test`, the Gettext, Dialyzer and Docker
+  jobs, so refreshing only one is not enough.
 
 ## Failure modes
 

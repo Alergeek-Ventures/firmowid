@@ -68,7 +68,7 @@ runs:
         fi
         elixir_version=${BASH_REMATCH[1]}
         elixir_store=${BASH_REMATCH[2]}
-        # Production builds from .tool-versions (version-sync-check ties it to the Containerfile).
+        # Production builds from .tool-versions (the lint job in ci.yml ties it to the Containerfile).
         pinned_otp=$(awk '$1 == "erlang" { print $2 }' .tool-versions)
         pinned_elixir=$(awk '$1 == "elixir" { sub(/-otp-.*/, "", $2); print $2 }' .tool-versions)
         if [ "$otp_version" != "$pinned_otp" ] || [ "$elixir_version" != "$pinned_elixir" ]; then

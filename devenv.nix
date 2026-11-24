@@ -1,7 +1,7 @@
 { pkgs, config, ... }:
 
 let
-  # Owner of the Hex version; version-sync-check.yml keeps CI and Containerfile.app in sync.
+  # Owner of the Hex version; the lint job in ci.yml keeps CI and Containerfile.app in sync.
   hex-version = "2.7.0";
 
   # The pinned nixpkgs ships pnpm 11.27.0, without the 11.28.9 fix for GHSA-xjj6-f33q-929c.
