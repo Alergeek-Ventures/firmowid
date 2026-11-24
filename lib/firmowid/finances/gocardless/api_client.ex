@@ -2,7 +2,7 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   @moduledoc """
   HTTP client for the GoCardless Bank Account Data API (v2).
 
-  All public functions return `{:ok, result}` or `{:error, reason}` where
+  The functions calling the API return `{:ok, result}` or `{:error, reason}` where
   reason is one of the atoms defined in `handle_response/1`:
 
   - `:transport_error` — TCP/TLS failure (`Req.TransportError`)
@@ -28,16 +28,17 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   end
 
   # The end user authentication errors GoCardless appends to the redirect URL as `error`:
-  # https://developer.gocardless.com/bank-account-data/statuses
+  # https://developer.gocardless.com/bank-account-data/statuses and
+  # https://bankaccountdata.zendesk.com/hc/en-gb/articles/15926622146716
   @redirect_errors ~w(InstitutionTechnicalError GoCardlessTechnicalError RequisitionLinkReused
-    UserCancelledSession UserSessionRejected CompanyRequisitionLimitReached SSNVerificationFailed
-    NoAccountsConnected UnknownError)
+    ConsentLinkReused UserCancelledSession UserSessionRejected CompanyRequisitionLimitReached
+    SSNVerificationFailed NoAccountsConnected InstitutionUnavailable UnknownError)
 
   @doc """
   Returns the documented error code GoCardless sent the end user back with, safe to log,
   or `"other"` for any other value.
   """
-  @spec redirect_error(String.t()) :: String.t()
+  @spec redirect_error(term()) :: String.t()
   def redirect_error(error) when error in @redirect_errors, do: error
   def redirect_error(_error), do: "other"
 
