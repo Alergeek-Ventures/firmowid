@@ -13,6 +13,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
+  alias Firmowid.Finances.GoCardless.ApiClient
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
@@ -150,12 +151,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
          )
          |> push_navigate(to: ~p"/ustawienia/konta-bankowe")}
       else
-        details = params["details"]
-
-        Logger.warning("Failed to connect to bank",
-          error_kind: ErrorKind.classify(error),
-          details_kind: ErrorKind.classify(details)
-        )
+        Logger.warning("Failed to connect to bank", error_kind: ApiClient.redirect_error(error))
 
         {:noreply,
          socket
