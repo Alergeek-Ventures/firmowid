@@ -53,6 +53,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :internal_note,
           :is_draft,
           :is_paid_on_issue,
+          :payment_date,
+          :reconciliation_status,
           :is_correctable,
           :is_cancellable,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
@@ -467,7 +469,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 label={
-                  if @invoice.is_paid_on_issue,
+                  if @invoice.ksef_invoice_kind == :advance,
                     do: gettext("Payment date"),
                     else: gettext("Sale date")
                 }
@@ -479,6 +481,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 label={gettext("Payment due date")}
                 value={@invoice.effective_due_date}
                 piece_id="due-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                :if={@invoice.is_paid_on_issue and @invoice.ksef_invoice_kind != :advance}
+                label={gettext("Payment date")}
+                value={@invoice.payment_date}
+                piece_id="payment-date"
               />
             </InvoiceDetails.invoice_metadata>
 
@@ -526,7 +534,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           <.live_component
             :if={
               flag_enabled?(:analysis_dashboard, assigns) and
-                (@invoice.skip_invoicing or @invoice.transactions != [])
+                @invoice.reconciliation_status != :pending
             }
             module={FirmowidWeb.Analysis.Components.EntryCategories}
             id="invoice-categories"

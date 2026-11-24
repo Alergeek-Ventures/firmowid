@@ -239,9 +239,9 @@
 		<% end %>
 		<Platnosc>
 			<%= if @invoice.is_paid_on_issue do %>
-				<%!-- The payment was received before the invoice, on the date in P_6. --%>
+				<%!-- The payment was received before the invoice: on the date in P_6 for an advance invoice. --%>
 				<Zaplacono>1</Zaplacono>
-				<DataZaplaty><%= @invoice.sale_date %></DataZaplaty>
+				<DataZaplaty><%= @invoice.payment_date %></DataZaplaty>
 			<% else %>
 				<%= if @invoice.due_date do %>
 					<TerminPlatnosci>

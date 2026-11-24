@@ -157,11 +157,11 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
     </div>
     <div class="mt-1 text-[10px]">
       <span>
-        {case {@sales_invoice.invoice_type, @sales_invoice.is_paid_on_issue} do
-          {:poland, true} -> "Data otrzymania zapłaty:"
-          {:foreign, true} -> "Data otrzymania zapłaty / Payment received:"
-          {:poland, _paid?} -> "Data sprzedaży:"
-          {:foreign, _paid?} -> "Data sprzedaży / Sale date:"
+        {case {@sales_invoice.invoice_type, @sales_invoice.ksef_invoice_kind} do
+          {:poland, :advance} -> "Data otrzymania zapłaty:"
+          {:foreign, :advance} -> "Data otrzymania zapłaty / Payment received:"
+          {:poland, _kind} -> "Data sprzedaży:"
+          {:foreign, _kind} -> "Data sprzedaży / Sale date:"
         end}
       </span>
       <span class="font-bold">
@@ -559,7 +559,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           </div>
           <%!-- An advance invoice states the order value beside the amount received (art. 106f). --%>
           <div
-            :if={@sales_invoice.is_paid_on_issue == true}
+            :if={@sales_invoice.ksef_invoice_kind == :advance}
             class="flex items-center justify-between"
           >
             <span>Wartość zamówienia z VAT:</span>
@@ -585,7 +585,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           </span>
         </div>
         <div
-          :if={@sales_invoice.is_paid_on_issue == true}
+          :if={@sales_invoice.ksef_invoice_kind == :advance}
           class="flex items-center justify-between"
         >
           <span>Wartość zamówienia z VAT / Order value incl. VAT:</span>
@@ -809,7 +809,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
         end}
 
         <span class="font-bold">
-          {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
+          {@sales_invoice.payment_date |> Calendar.strftime("%d.%m.%Y")}
         </span>
       </div>
       <div :if={@sales_invoice.is_paid_on_issue != true}>

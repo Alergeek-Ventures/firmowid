@@ -491,6 +491,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
            )
   end
 
+  test "copy of a VAT invoice paid on issue is a VAT invoice, not an advance one", %{conn: conn} do
+    admin = admin_fixture()
+    source_invoice = sales_invoice_fixture!(admin, %{paid_on: ~D[2026-01-10]})
+    conn = log_in_user(conn, admin)
+
+    {:ok, _view, _html} = live(conn, "/sprzedazowe?skopiuj=#{source_invoice.id}")
+
+    assert %{ksef_invoice_kind: :vat} = copied_draft!(admin)
+  end
+
   test "copied invoice renders its Money total in the preview", %{conn: conn} do
     admin = admin_fixture()
     scope = scope_for(admin)
@@ -871,7 +881,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
     assert_redirect(view)
 
-    assert [%{ksef_invoice_kind: :advance, sale_date: ^sale_date, due_date: ^sale_date}] =
+    assert [%{ksef_invoice_kind: :advance, sale_date: ^sale_date, due_date: nil}] =
              Invoicing.list_sales_invoices!(scope: scope)
   end
 

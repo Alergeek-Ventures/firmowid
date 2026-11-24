@@ -24,7 +24,10 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
           :ok | {:error, [Exception.t()]}
   @impl true
   def validate(changeset, _opts, context) do
-    required = Enum.map(@required_fields, &{&1, gettext_noop("This field is required.")})
+    required =
+      changeset
+      |> required_fields(context)
+      |> Enum.map(&{&1, gettext_noop("This field is required.")})
 
     errors =
       Enum.flat_map(seller_requirements() ++ required, fn {field, message} ->
@@ -62,6 +65,20 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
       seller_display_name: gettext_noop("Complete the company name in the organization settings."),
       seller_address: gettext_noop("Complete the company address in the organization settings.")
     ]
+  end
+
+  # An invoice paid on issue states its payment date instead of a payment term.
+  defp required_fields(changeset, context) do
+    refs = %{
+      ksef_invoice_kind: Ash.Changeset.get_attribute(changeset, :ksef_invoice_kind),
+      paid_on: Ash.Changeset.get_attribute(changeset, :paid_on)
+    }
+
+    opts = context |> Ash.Context.to_opts() |> Keyword.put(:refs, refs)
+
+    if Ash.calculate!(changeset.resource, :is_paid_on_issue, opts),
+      do: @required_fields -- [:due_date],
+      else: @required_fields
   end
 
   defp validations(changeset) do

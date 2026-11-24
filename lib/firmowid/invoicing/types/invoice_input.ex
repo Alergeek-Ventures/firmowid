@@ -17,6 +17,12 @@ defmodule Firmowid.Invoicing.Types.InvoiceInput do
         issue_date: [type: :date],
         sale_date: [type: :date],
         due_date: [type: :date],
+        paid_on: [
+          type: :date,
+          description:
+            "The day a VAT invoice was paid in full, no later than its issue date. It is then issued as paid, " <>
+              "with no due date. Leave null for an invoice the buyer still has to pay, and for an advance invoice."
+        ],
         payment_method: [
           type: :atom,
           constraints: [one_of: [:cash, :card, :voucher, :check, :credit, :transfer, :mobile]]

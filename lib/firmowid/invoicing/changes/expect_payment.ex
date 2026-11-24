@@ -38,7 +38,11 @@ defmodule Firmowid.Invoicing.Changes.ExpectPayment do
 
   defp expect(invoice, opts) do
     with {:ok, loaded} <-
-           Ash.load(invoice, [:is_paid_on_issue, :amount, :buyer_display_name_label], opts),
+           Ash.load(
+             invoice,
+             [:is_paid_on_issue, :payment_date, :amount, :buyer_display_name_label],
+             opts
+           ),
          {:ok, _expected} <- create_expected(loaded, opts) do
       {:ok, invoice}
     end
@@ -49,7 +53,7 @@ defmodule Firmowid.Invoicing.Changes.ExpectPayment do
   defp create_expected(invoice, opts) do
     Finances.create_expected_transaction(
       %{
-        date: invoice.sale_date,
+        date: invoice.payment_date,
         amount: invoice.amount,
         description: invoice.invoice_number,
         counterparty_name: invoice.buyer_display_name_label,

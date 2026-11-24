@@ -141,6 +141,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceBasePdf do
       :gross_value,
       :amount,
       :is_paid_on_issue,
+      :payment_date,
       sales_invoice_items: @item_calcs
     ]
 
