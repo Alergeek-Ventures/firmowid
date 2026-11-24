@@ -692,23 +692,39 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   defp step(_missing, _assigns), do: :gotowe
 
   # GoCardless sends the owner back with the requisition as `ref`, or with an error.
-  defp handle_bank_return(socket, %{"ref" => _requisition, "error" => error}) do
+  defp handle_bank_return(socket, %{"ref" => requisition_id, "error" => error}) do
+    requisition_id
+    |> Finances.cancel_requisition(scope: socket.assigns.ash_scope)
+    |> pending_requisition_handled()
+
     Logger.warning("Failed to connect to bank",
       error_kind: Firmowid.Finances.GoCardless.ApiClient.redirect_error(error)
     )
 
-    LiveToast.put_toast(socket, :error, gettext("We will keep trying to connect on your behalf."),
+    LiveToast.put_toast(
+      socket,
+      :error,
+      gettext("The bank did not confirm the connection. Try again."),
       title: gettext("The bank connection could not be created at this time.")
     )
   end
 
-  defp handle_bank_return(socket, %{"ref" => _requisition}) do
+  defp handle_bank_return(socket, %{"ref" => requisition_id}) do
+    requisition_id
+    |> Finances.check_requisition_now(scope: socket.assigns.ash_scope)
+    |> pending_requisition_handled()
+
     socket
     |> PosthogBusinessEvents.capture(:bank_connection_completed)
     |> assign_bank()
   end
 
   defp handle_bank_return(socket, _params), do: socket
+
+  # A repeated or late return finds no pending requisition, which leaves nothing to do.
+  defp pending_requisition_handled({:ok, _requisition}), do: :ok
+
+  defp pending_requisition_handled({:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}}), do: :ok
 
   defp assign_invoice_count(socket) do
     assign(socket, :invoice_count, Ash.count!(CostInvoice, scope: socket.assigns.ash_scope))

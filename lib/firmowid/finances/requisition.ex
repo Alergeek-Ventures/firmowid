@@ -35,6 +35,7 @@ defmodule Firmowid.Finances.Requisition do
     transitions do
       transition :accept, from: :pending, to: :accepted
       transition :reject, from: [:pending, :accepted], to: :rejected
+      transition :cancel, from: :pending, to: :rejected
       transition :auto_reject, from: :pending, to: :rejected
       transition :expire, from: :accepted, to: :expired
     end
@@ -44,16 +45,18 @@ defmodule Firmowid.Finances.Requisition do
     use_tenant_from_record? true
 
     triggers do
+      # GoCardless has no callback, but it sends the owner back once the bank
+      # answered, so :check_now starts the check instead of a scheduler.
+      # A requisition whose owner never comes back is left to :auto_reject.
       trigger :check_status do
         action :check_status
         read_action :read_global
         where expr(status == :pending)
-        scheduler_cron "* * * * *"
+        scheduler_cron false
         max_attempts 7
         queue :requisition_checks
 
         worker_module_name Firmowid.Finances.Requisition.Worker.CheckStatus
-        scheduler_module_name Firmowid.Finances.Requisition.Scheduler.CheckStatus
       end
 
       trigger :auto_reject do
@@ -156,6 +159,26 @@ defmodule Firmowid.Finances.Requisition do
       accept [:id]
     end
 
+    update :check_now do
+      description "Check a pending requisition's status with GoCardless right away."
+      require_atomic? false
+
+      change filter(expr(status == :pending))
+      change run_oban_trigger(:check_status)
+    end
+
+    update :cancel do
+      description """
+      Reject a pending requisition the bank did not authorize. GoCardless keeps
+      such a requisition in a processing status for good, so checking it cannot help.
+      """
+
+      require_atomic? false
+
+      change filter(expr(status == :pending))
+      change transition_state(:rejected)
+    end
+
     update :check_status do
       require_atomic? false
       description "AshOban trigger action — polls GoCardless API and transitions state."
@@ -229,7 +252,7 @@ defmodule Firmowid.Finances.Requisition do
       forbid_if always()
     end
 
-    policy action(:create_requisition) do
+    policy action([:create_requisition, :check_now, :cancel]) do
       authorize_if {ActorRole, role: :admin}
     end
 
