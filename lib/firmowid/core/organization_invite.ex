@@ -4,7 +4,9 @@ defmodule Firmowid.Core.OrganizationInvite do
 
   Each invite has a unique code, an expiration date, and tracks who
   issued it and (optionally) who consumed it. Consuming an invite
-  assigns the consuming user to the invite's organization.
+  assigns the consuming user to the invite's organization. Archiving a member
+  deletes the organization's pending invites (see
+  `Firmowid.Core.revoke_pending_invites/1`).
 
   Scoped by `organization_id` (attribute multitenancy).
   """
@@ -14,6 +16,7 @@ defmodule Firmowid.Core.OrganizationInvite do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core
   alias Firmowid.Core.Organization
   alias Firmowid.Core.User
@@ -124,8 +127,10 @@ defmodule Firmowid.Core.OrganizationInvite do
       authorize_if actor_present()
     end
 
+    # The plan limit archives members, which revokes the pending invites.
     policy action_type(:destroy) do
       authorize_if {ActorRole, role: :admin}
+      authorize_if {SystemActorRole, roles: [:plan_limits]}
     end
   end
 

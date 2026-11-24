@@ -188,7 +188,7 @@ defmodule Firmowid.Core.Member do
     end
 
     update :archive do
-      description "Archive the member and cut their account's sessions."
+      description "Archive the member, cut their account's sessions and revoke the organization's pending invites."
       accept []
       require_atomic? false
 
@@ -211,7 +211,8 @@ defmodule Firmowid.Core.Member do
                opts = Ash.Context.to_opts(context)
 
                with {:ok, user} <- Core.get_user(member.user_id, opts),
-                    {:ok, _user} <- Core.leave_organization(user, member.organization_id, opts) do
+                    {:ok, _user} <- Core.leave_organization(user, member.organization_id, opts),
+                    :ok <- Core.revoke_pending_invites(opts) do
                  {:ok, member}
                end
              end)

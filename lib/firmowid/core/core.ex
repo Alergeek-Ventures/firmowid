@@ -18,6 +18,7 @@ defmodule Firmowid.Core do
   alias Firmowid.Core.Organization
   alias Firmowid.Core.OrganizationCleanup
   alias Firmowid.Core.OrganizationExternalCleanup
+  alias Firmowid.Core.OrganizationInvite
   alias Firmowid.Core.RegisteredCompany
   alias Firmowid.Core.User
   alias Firmowid.Finances.Requisition
@@ -31,6 +32,8 @@ defmodule Firmowid.Core do
   alias Firmowid.Timetracker.LeaveRequest
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
+
+  require Ash.Query
 
   @impersonator_claim "impersonator_id"
 
@@ -110,7 +113,7 @@ defmodule Firmowid.Core do
         args: [:user_id, :strategy]
     end
 
-    resource Firmowid.Core.OrganizationInvite do
+    resource OrganizationInvite do
       define :list_invites, action: :read
       define :create_invite, action: :create
       define :get_invite, action: :read, get_by: [:id]
@@ -217,6 +220,28 @@ defmodule Firmowid.Core do
     |> set_organization!(%{organization_id: organization_id, role: role, name: name},
       actor: actor
     )
+  end
+
+  @doc """
+  Deletes the tenant organization's unconsumed, unexpired invites.
+
+  Archiving a member calls it: the member could hold any of their codes (one they
+  issued, or one they saw in the invite list as an administrator), and redeeming
+  one would restore their membership (see `add_to_organization!/4`). An invite
+  issued after the archival still restores them.
+  """
+  @spec revoke_pending_invites(keyword()) :: :ok | {:error, term()}
+  def revoke_pending_invites(opts) do
+    pending = Ash.Query.filter(OrganizationInvite, is_nil(consumed_at) and expires_at > now())
+
+    # The destroy policy authorizes the deletion; the plan limit, which archives
+    # members too, may delete invites without reading their codes.
+    bulk_options = [authorize_query?: false, return_errors?: true, strategy: [:atomic]]
+
+    case destroy_invite(pending, Keyword.put(opts, :bulk_options, bulk_options)) do
+      %Ash.BulkResult{status: :success} -> :ok
+      %Ash.BulkResult{errors: errors} -> {:error, Ash.Error.to_error_class(errors)}
+    end
   end
 
   @doc """
