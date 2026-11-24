@@ -1,14 +1,17 @@
 defmodule Firmowid.Core.User.Changes.RevokeAuthentication do
   @moduledoc """
-  Revokes organization OAuth grants on departure and all authentication before deletion.
+  Revokes organization OAuth grants and API keys on departure and all authentication
+  before deletion.
 
   Departure includes grants without an organization, but keeps other organizations'
-  grants and browser sessions. Password changes use `revoke/3` to revoke everything.
+  grants and keys and browser sessions. Password changes use `revoke/3` to revoke
+  everything.
   """
 
   use Ash.Resource.Change
 
   alias Ash.Resource.Change.Context
+  alias Firmowid.Core.ApiKey
   alias Firmowid.Core.OauthAuthorizationCode
   alias Firmowid.Core.OauthConsent
   alias Firmowid.Core.OauthRefreshToken
@@ -36,14 +39,14 @@ defmodule Firmowid.Core.User.Changes.RevokeAuthentication do
       opts = authentication_opts(context)
       organization_id = Ash.Changeset.get_argument(changeset, :organization_id)
 
-      with :ok <- revoke_oauth_grants(user.id, organization_id, opts) do
+      with :ok <- revoke_grants(user.id, organization_id, opts) do
         {:ok, user}
       end
     end)
   end
 
   @doc """
-  Revokes the user's browser sessions and OAuth grants within the current action.
+  Revokes the user's browser sessions, OAuth grants and API keys within the current action.
 
   `keep_jti` leaves one stored token for the caller to revoke itself, such as the
   password reset token the reset action is consuming.
@@ -54,7 +57,7 @@ defmodule Firmowid.Core.User.Changes.RevokeAuthentication do
     opts = authentication_opts(context)
 
     with :ok <- revoke_sessions(user, keep_jti, opts) do
-      revoke_oauth_grants(user.id, nil, opts)
+      revoke_grants(user.id, nil, opts)
     end
   end
 
@@ -72,11 +75,12 @@ defmodule Firmowid.Core.User.Changes.RevokeAuthentication do
     |> Keyword.delete(:tenant)
   end
 
-  # Without `organization_id`, revokes the grants for every organization.
-  defp revoke_oauth_grants(user_id, organization_id, opts) do
+  # OAuth grants and API keys. Without `organization_id`, revokes them in every organization.
+  defp revoke_grants(user_id, organization_id, opts) do
     with :ok <- revoke_refresh_tokens(user_id, organization_id, opts),
-         :ok <- destroy_grants(OauthAuthorizationCode, user_id, organization_id, opts) do
-      destroy_grants(OauthConsent, user_id, organization_id, opts)
+         :ok <- destroy_grants(OauthAuthorizationCode, user_id, organization_id, opts),
+         :ok <- destroy_grants(OauthConsent, user_id, organization_id, opts) do
+      destroy_grants(ApiKey, user_id, organization_id, opts)
     end
   end
 

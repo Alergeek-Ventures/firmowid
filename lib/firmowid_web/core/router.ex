@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Core.Router do
   alias AshAuthentication.Phoenix.Oauth2Server.RequireScopePlug
   alias Auth.Controllers.AuthController
   alias Delegations.Views.DelegationForm
+  alias Firmowid.Core.User
   alias FirmowidMcp.Utilities.Authenticate
   alias FirmowidWeb.Core.Telemetry
   alias FirmowidWeb.Inbox.Hooks.LiveQueue
@@ -24,6 +25,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
   alias FirmowidWeb.Infrastructure.Hooks.RequireUser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
+  alias FirmowidWeb.Infrastructure.Plugs.ApiKeyOrganization
   alias Infrastructure.Controllers.AgentDiscovery
   alias Infrastructure.Controllers.LegacyIndex
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
@@ -69,6 +71,17 @@ defmodule FirmowidWeb.Core.Router do
       scope: "api"
 
     plug Authenticate
+  end
+
+  # A server of an organization, with one of its API keys (see `Firmowid.Core.ApiKey`).
+  pipeline :api_key do
+    plug :accepts, ["json"]
+
+    plug AshAuthentication.Strategy.ApiKey.Plug,
+      resource: User,
+      on_error: &ApiKeyOrganization.unauthorized/2
+
+    plug ApiKeyOrganization
   end
 
   pipeline :oauth_api do
@@ -144,7 +157,7 @@ defmodule FirmowidWeb.Core.Router do
     ## MCP resource server
     pipe_through [:browser, :google_remember_me]
 
-    auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
+    auth_routes(AuthController, User, path: "/auth")
   end
 
   scope "/", FirmowidWeb do

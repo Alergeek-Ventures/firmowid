@@ -177,6 +177,14 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         roles: [:admin]
       },
       %{
+        id: :api_keys,
+        layer: :company,
+        label: SettingsNavigation.page_title(:api_keys),
+        icon: "klucz",
+        path: SettingsNavigation.canonical_path(:api_keys),
+        roles: [:admin]
+      },
+      %{
         id: :subscription,
         layer: :company,
         label: SettingsNavigation.page_title(:subscription),

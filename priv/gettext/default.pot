@@ -681,6 +681,11 @@ msgstr ""
 msgid "/ month net"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "1 year"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgid "1.67% applies to companies reporting fewer than 10 people for insurance. You will find a different rate in the notice from ZUS."
@@ -697,6 +702,11 @@ msgstr ""
 msgid "2 years"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "30 days"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "50 credits / month"
@@ -705,6 +715,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgid "9% – small taxpayer"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "90 days"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -745,6 +760,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "A health contribution reduction under the 2021 rules may apply; this case is not calculated."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "A key lets your company's server, such as an online store, use the Firmowid API without signing in. It acts as the administrator who created it, in this company."
 msgstr ""
 
 #: lib/firmowid/taxes/tax_year/changes/fit_legal_form.ex
@@ -822,6 +842,11 @@ msgstr ""
 msgid "AI score: %{percent}% confidence"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "API keys"
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Above the %{plan} plan"
@@ -858,6 +883,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/change_request.ex
 #, elixir-autogen, elixir-format
 msgid "Accept request"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Access"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -2822,6 +2852,11 @@ msgstr ""
 msgid "Choose an issued VAT invoice to correct."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Choose at least one."
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Choose exactly two files."
@@ -2953,6 +2988,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/core/toast.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
+#: lib/firmowid_web/settings/components/api_keys_section.ex
 #, elixir-autogen, elixir-format
 msgid "Close"
 msgstr ""
@@ -3465,8 +3501,14 @@ msgstr ""
 msgid "Convert at the NBP rate"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Copied"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/views/guides.ex
+#: lib/firmowid_web/settings/components/api_keys_section.ex
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr ""
@@ -3511,6 +3553,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "share invoice tooltip"
 msgid "Copy invoice link"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Copy the key now. It will not be shown again."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -3977,6 +4024,11 @@ msgstr ""
 msgid "Could not return to editing."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Could not revoke the key."
+msgstr ""
+
 #: lib/firmowid/delegations/changes/create_signed_command_blob.ex
 #, elixir-autogen, elixir-format
 msgid "Could not safely reduce this PDF to 8 MB. Choose an unprotected PDF or scan it again with a smaller file size. Your order details are saved."
@@ -4231,6 +4283,11 @@ msgstr ""
 msgid "Create an account and fill in a short form to use Firmowid in %{client}. Then you will return to %{client}."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Create key"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Create new"
@@ -4244,6 +4301,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Create, send, receive. Firmowid connects to the National e-Invoice System and tracks every regulatory change for you."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Created %{date}"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/registration.ex
@@ -5473,6 +5535,16 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/financial_overview.ex
 #, elixir-autogen, elixir-format
 msgid "Expenses"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Expired %{date}"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Expires %{date}"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
@@ -8094,6 +8166,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/landing/components/sections.ex
+#: lib/firmowid_web/settings/components/api_keys_section.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -8423,6 +8496,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "No expenses have been added in this category."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "No expiry"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -10536,6 +10614,16 @@ msgstr ""
 msgid "Reviewed %{items}"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Revoke"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Revoke the key %{name}? Servers that use it will lose access."
+msgstr ""
+
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "Right of access to data (Article 15 GDPR)"
@@ -10685,6 +10773,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Sales invoices · %{count}"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Sales invoices: issue and read"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -12262,6 +12355,11 @@ msgstr ""
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "The company has no API keys yet."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "The company is almost ready."
@@ -12627,6 +12725,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice was sent to KSeF."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "The key has been revoked."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -14118,6 +14221,11 @@ msgstr ""
 msgid "VIES does not confirm this number. Check it with the buyer before you rely on it."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "Valid for"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Valid from"
@@ -15320,6 +15428,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgid "e.g. A trip to Elixir Conf"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "e.g. Online store"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex

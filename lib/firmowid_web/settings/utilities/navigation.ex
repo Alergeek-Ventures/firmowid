@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           | :subscription
           | :ksef
           | :bank_accounts
+          | :api_keys
           | :roles
           | :documents
           | :delegations
@@ -34,6 +35,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
     "abonament" => :subscription,
     "ksef" => :ksef,
     "konta-bankowe" => :bank_accounts,
+    "klucze-api" => :api_keys,
     "role" => :roles,
     "dokumenty" => :documents,
     "delegacje" => :delegations,
@@ -43,7 +45,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   # Former addresses of settings pages, so that old links still lead to them.
   @legacy_slugs %{"bezpieczenstwo" => :account, "organizacja" => :organization}
 
-  @admin_pages [:organization, :ksef, :bank_accounts, :roles]
+  @admin_pages [:organization, :ksef, :bank_accounts, :api_keys, :roles]
 
   @doc """
   Returns the default settings path.
@@ -62,6 +64,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   def canonical_path(:ksef), do: ~p"/ustawienia/ksef"
   def canonical_path(:bank_accounts), do: ~p"/ustawienia/konta-bankowe"
+  def canonical_path(:api_keys), do: ~p"/ustawienia/klucze-api"
   # Roles and invitations are managed on the team page.
   def canonical_path(:roles), do: ~p"/zarzadzanie/pracownicy"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
@@ -76,6 +79,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def page_title(:subscription), do: pgettext("settings tab", "Subscription")
   def page_title(:ksef), do: "KSeF"
   def page_title(:bank_accounts), do: gettext("Bank accounts")
+  def page_title(:api_keys), do: gettext("API keys")
   def page_title(:documents), do: gettext("Documents")
   def page_title(:delegations), do: gettext("Business trips")
   def page_title(:leaves), do: gettext("Absences")

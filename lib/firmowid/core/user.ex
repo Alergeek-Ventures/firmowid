@@ -13,6 +13,7 @@ defmodule Firmowid.Core.User do
   Authentication is managed by `ash_authentication`:
   - Password strategy with Argon2 hashing
   - Google OAuth2 with `UserIdentity` for provider links
+  - API keys (`Firmowid.Core.ApiKey`) for an organization's servers
   - Token-based confirmation and password reset
   """
   use Ash.Resource,
@@ -76,6 +77,11 @@ defmodule Firmowid.Core.User do
 
       remember_me :remember_me do
         token_lifetime {30, :days}
+      end
+
+      # The organization's key, used by its servers; see `Firmowid.Core.ApiKey`.
+      api_key :api_key do
+        api_key_relationship :valid_api_keys
       end
     end
 
@@ -200,6 +206,12 @@ defmodule Firmowid.Core.User do
 
       metadata :token, :string, allow_nil?: false
       metadata :remember_me, :map, allow_nil?: true
+    end
+
+    read :sign_in_with_api_key do
+      description "Find the account an API key acts as."
+      argument :api_key, :string, allow_nil?: false, sensitive?: true
+      prepare AshAuthentication.Strategy.ApiKey.SignInPreparation
     end
 
     read :sign_in_with_token do
@@ -686,6 +698,10 @@ defmodule Firmowid.Core.User do
     has_one :member, Member do
       public? true
       destination_attribute :user_id
+    end
+
+    has_many :valid_api_keys, Firmowid.Core.ApiKey do
+      filter expr(valid)
     end
   end
 
