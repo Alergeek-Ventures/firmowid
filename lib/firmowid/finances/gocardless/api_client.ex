@@ -27,6 +27,20 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
     request(:get, "/institutions/?country=#{country}", :bank_data_institutions)
   end
 
+  # The end user authentication errors GoCardless appends to the redirect URL as `error`:
+  # https://developer.gocardless.com/bank-account-data/statuses
+  @redirect_errors ~w(InstitutionTechnicalError GoCardlessTechnicalError RequisitionLinkReused
+    UserCancelledSession UserSessionRejected CompanyRequisitionLimitReached SSNVerificationFailed
+    NoAccountsConnected UnknownError)
+
+  @doc """
+  Returns the documented error code GoCardless sent the end user back with, safe to log,
+  or `"other"` for any other value.
+  """
+  @spec redirect_error(String.t()) :: String.t()
+  def redirect_error(error) when error in @redirect_errors, do: error
+  def redirect_error(_error), do: "other"
+
   @doc """
   Fetches a single requisition by its GoCardless ID.
   """

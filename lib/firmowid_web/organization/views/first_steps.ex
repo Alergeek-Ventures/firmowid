@@ -693,7 +693,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   # GoCardless sends the owner back with the requisition as `ref`, or with an error.
   defp handle_bank_return(socket, %{"ref" => _requisition, "error" => error}) do
-    Logger.warning("Failed to connect to bank", error_kind: Firmowid.ErrorKind.classify(error))
+    Logger.warning("Failed to connect to bank",
+      error_kind: Firmowid.Finances.GoCardless.ApiClient.redirect_error(error)
+    )
 
     LiveToast.put_toast(socket, :error, gettext("We will keep trying to connect on your behalf."),
       title: gettext("The bank connection could not be created at this time.")
