@@ -9,7 +9,7 @@ RUN apk add --no-cache build-base git nodejs npm curl
 
 WORKDIR /app
 
-# Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
+# Keep in sync with hex-version in devenv.nix (checked by the lint job in ci.yml).
 ARG HEX_VERSION="2.7.0"
 
 RUN mix local.hex "${HEX_VERSION}" --force && \

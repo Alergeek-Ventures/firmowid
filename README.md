@@ -647,17 +647,15 @@ Sekrety CI utrzymujemy w Infisicalu.
 
 ### CI: cache obrazów Dockera
 
-`Docker Build Check` działa na standardowych runnerach GitHub-hosted i używa Buildx
-`gha` cache o zakresie `firmowid-app`, w trybie `max`, obejmującym również
-pośrednie warstwy zależności. Kosztowne `mix deps.compile` jest wykonywane przed
+Job `Docker image build` w `ci.yml` używa Buildx `gha` cache o zakresie
+`firmowid-app`, w trybie `max`, obejmującym również pośrednie warstwy zależności.
+Cache eksportuje tylko `main`; PR-y i merge queue go tylko odczytują. Kosztowne `mix deps.compile` jest wykonywane przed
 kopiowaniem źródeł npm i assetów; `npm ci` zależy tylko od manifestów. Pełne
 źródła assetów są kopiowane po `mix compile`, przed budowaniem assetów.
 
 Eksport cache jest opcjonalny (`ignore-error`): błędy eksportu nie przerywają
 jobu, ale błędy samego builda nadal są fatalne. Cache jest izolowany między
-branchami: `main` nie może odtworzyć cache utworzonego wyłącznie dla PR-a, choć
-PR może korzystać z cache `main`. Pierwszy build `main` po merge może więc być
-zimny.
+branchami: PR-y i merge queue korzystają z cache `main`.
 
 Zmierzony przypadek dla PR #38 — ten sam SHA i artefakt, drugi przebieg:
 

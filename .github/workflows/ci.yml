@@ -177,22 +177,562 @@ jobs:
     permissions:
       actions: read
       contents: read
-      packages: write
+      packages: read
       pull-requests: write
 
-  quality:
-    name: Elixir Quality Checks
-    needs: translations
-    uses: ./.github/workflows/elixir-quality-checks.yml
-    with:
-      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+  # Checks that need no Elixir: commit messages, pinned versions and secrets.
+  lint:
+    name: Lint commits, versions and secrets
+    if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
+    runs-on: selenge
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-  docker:
-    name: Docker Build Check
+      - name: Mark workspace as safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Validate current commit message with commitlint
+        if: github.event_name == 'push'
+        run: |
+          npx --yes --package @commitlint/cli@21.2.4 --package @commitlint/config-conventional@21.2.4 \
+            commitlint --extends @commitlint/config-conventional --last --verbose
+
+      - name: Validate PR and merge queue commit messages with commitlint
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          npx --yes --package @commitlint/cli@21.2.4 --package @commitlint/config-conventional@21.2.4 \
+            commitlint --extends @commitlint/config-conventional --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+
+      - name: Ensure no merge commits are present in PR or merge queue
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          MERGE_COMMITS=$(git rev-list --merges "$BASE_SHA..$HEAD_SHA")
+
+          if [ -n "$MERGE_COMMITS" ]; then
+            echo "Merge commits are not allowed in pull requests."
+            echo "Found merge commits:"
+            echo "$MERGE_COMMITS"
+            exit 1
+          fi
+
+      - name: Ensure current commit is not a merge commit
+        if: github.event_name == 'push'
+        run: |
+          PARENT_COUNT=$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')
+
+          if [ "$PARENT_COUNT" -gt 1 ]; then
+            echo "Merge commits are not allowed on push."
+            exit 1
+          fi
+
+      # ── Elixir / Erlang: .tool-versions ↔ Containerfile.app ────────
+      - name: Compare Elixir/Erlang versions
+        run: |
+          TOOL_ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
+          TOOL_ERLANG=$(grep "^erlang " .tool-versions | awk '{print $2}')
+          TOOL_ELIXIR=${TOOL_ELIXIR_FULL/-otp-*/}
+
+          # Strip the @sha256:... digest before parsing version components
+          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"@]*\).*/\1/')
+          DOCKERFILE_ELIXIR=${BUILDER_IMAGE%%-erlang*}
+          DOCKERFILE_ERLANG=${BUILDER_IMAGE#*erlang-}
+          DOCKERFILE_ERLANG=${DOCKERFILE_ERLANG%%-*}
+
+          echo "=== Elixir / Erlang ==="
+          echo ""
+          echo "From .tool-versions:"
+          echo "  Elixir: $TOOL_ELIXIR"
+          echo "  Erlang: $TOOL_ERLANG"
+          echo "From Containerfile.app:"
+          echo "  Elixir: $DOCKERFILE_ELIXIR"
+          echo "  Erlang: $DOCKERFILE_ERLANG"
+          echo ""
+
+          MISMATCH=0
+
+          if [ "$TOOL_ELIXIR" != "$DOCKERFILE_ELIXIR" ]; then
+            echo "❌ Elixir version mismatch!"
+            echo "   .tool-versions: $TOOL_ELIXIR"
+            echo "   Containerfile:  $DOCKERFILE_ELIXIR"
+            MISMATCH=1
+          else
+            echo "✅ Elixir version matches: $TOOL_ELIXIR"
+          fi
+
+          if [ "$TOOL_ERLANG" != "$DOCKERFILE_ERLANG" ]; then
+            echo "❌ Erlang version mismatch!"
+            echo "   .tool-versions: $TOOL_ERLANG"
+            echo "   Containerfile:  $DOCKERFILE_ERLANG"
+            MISMATCH=1
+          else
+            echo "✅ Erlang version matches: $TOOL_ERLANG"
+          fi
+
+          if [ $MISMATCH -eq 1 ]; then
+            echo ""
+            echo "Please update deployment/Containerfile.app to match .tool-versions:"
+            echo "1. Query Docker Hub for matching image:"
+            echo "   curl -s \"https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&name=${TOOL_ELIXIR}-erlang-${TOOL_ERLANG}\" | jq -r '.results[].name | select(contains(\"alpine\"))' | sort -V -r | head -5"
+            echo "2. Update BUILDER_IMAGE in deployment/Containerfile.app"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Elixir/Erlang versions in sync"
+
+      # ── Hex: devenv.nix owns the version; the Containerfile copies it ──
+      - name: Compare Hex versions
+        run: |
+          echo "=== Hex ==="
+          echo ""
+
+          DEVENV_HEX=$(sed -n 's/^ *hex-version = "\(.*\)";$/\1/p' devenv.nix)
+          echo "  owner (devenv.nix): $DEVENV_HEX"
+
+          if [ -z "$DEVENV_HEX" ]; then
+            echo ""
+            echo "❌ Hex version owner missing!"
+            echo "   Expected devenv.nix to define hex-version = \"<version>\";"
+            exit 1
+          fi
+
+          MISMATCH=0
+
+          CONTAINERFILE_HEX=$(sed -n 's/^ARG HEX_VERSION="\(.*\)"$/\1/p' deployment/Containerfile.app)
+          if [ "$CONTAINERFILE_HEX" != "$DEVENV_HEX" ]; then
+            echo "❌ Hex version mismatch in deployment/Containerfile.app: ${CONTAINERFILE_HEX:-unpinned}"
+            MISMATCH=1
+          else
+            echo "✅ deployment/Containerfile.app: $CONTAINERFILE_HEX"
+          fi
+
+          if [ $MISMATCH -eq 1 ]; then
+            echo ""
+            echo "Please update every Hex version to match hex-version in devenv.nix."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Hex versions in sync"
+
+      # ── ParadeDB: compose.yml owns the image, CI derives from it ───
+      - name: Validate ParadeDB image ownership
+        run: |
+          echo "=== ParadeDB ==="
+          echo ""
+
+          COMPOSE_PARADEDB=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
+          CI_HARDCODED_PARADEDB=$(grep -E '^[[:space:]]*image:[[:space:]]*.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml || true)
+          CI_DERIVED_PARADEDB=$(grep -F 'local/compose.yml' .github/workflows/elixir-build-and-test.yml || true)
+
+          echo "  owner (local/compose.yml): $COMPOSE_PARADEDB"
+
+          if [ -z "$COMPOSE_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image owner missing!"
+            echo "   Expected local/compose.yml to contain the pinned paradedb/paradedb image."
+            echo ""
+            echo "Dependabot should update local/compose.yml; CI derives the service image from it."
+            exit 1
+          fi
+
+          if [ -n "$CI_HARDCODED_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image duplicated in CI!"
+            echo "   local/compose.yml is the owner. Build and Test must read the image from it."
+            echo ""
+            echo "$CI_HARDCODED_PARADEDB"
+            exit 1
+          fi
+
+          if [ -z "$CI_DERIVED_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image is not derived in CI!"
+            echo "   Expected elixir-build-and-test.yml to read the ParadeDB image from local/compose.yml."
+            exit 1
+          fi
+
+          echo "✅ ParadeDB image ownership is correct"
+
+      # ── SeaweedFS: Containerfile owns the upstream image ───────────
+      - name: Validate SeaweedFS image ownership
+        run: |
+          echo "=== SeaweedFS ==="
+          echo ""
+
+          COMPOSE_SEAWEEDFS=$(grep -E '^[[:space:]]*image:[[:space:]]*.*chrislusf/seaweedfs' local/compose.yml || true)
+          CONTAINERFILE_SEAWEEDFS=$(grep '^FROM.*seaweedfs' deployment/Containerfile.seaweedfs | sed 's/^FROM *//')
+          CI_LATEST_SEAWEEDFS=$(grep 'seaweedfs-s3:latest' \
+            .github/workflows/build-seaweedfs.yml \
+            .github/workflows/elixir-build-and-test.yml || true)
+          CI_MAIN_SEAWEEDFS=$(grep 'seaweedfs-s3:main' .github/workflows/build-seaweedfs.yml || true)
+          CI_SHA_SEAWEEDFS=$(grep 'seaweedfs-s3:sha-' .github/workflows/build-seaweedfs.yml || true)
+          CI_DERIVED_SEAWEEDFS=$(grep -F 'seaweedfs-s3:containerfile-' .github/workflows/elixir-build-and-test.yml || true)
+
+          echo "  owner (Containerfile.seaweedfs): $CONTAINERFILE_SEAWEEDFS"
+
+          if [ -n "$COMPOSE_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS upstream image duplicated in compose!"
+            echo "   deployment/Containerfile.seaweedfs owns the upstream chrislusf/seaweedfs ref."
+            echo ""
+            echo "$COMPOSE_SEAWEEDFS"
+            exit 1
+          fi
+
+          if [ -z "$CONTAINERFILE_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS owner missing!"
+            echo "   Expected deployment/Containerfile.seaweedfs to contain the upstream FROM image."
+            exit 1
+          fi
+
+          if [ -n "$CI_LATEST_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS CI still references the floating latest tag!"
+            echo "   PRs use :main; main tests use the Containerfile content hash tag."
+            echo ""
+            echo "$CI_LATEST_SEAWEEDFS"
+            exit 1
+          fi
+
+          if [ -z "$CI_MAIN_SEAWEEDFS" ] || [ -z "$CI_SHA_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS main publisher tags are incomplete!"
+            echo "   build-seaweedfs.yml should publish :main and :sha-<github.sha>."
+            exit 1
+          fi
+
+          if [ -z "$CI_DERIVED_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS image is not derived in Build/Test!"
+            echo "   Expected elixir-build-and-test.yml to test main with the seaweedfs-s3:containerfile-<hash> image."
+            exit 1
+          fi
+
+          echo "✅ SeaweedFS image ownership is correct"
+
+      # A PR proposing policy edits is scanned with its base policy until the edit lands.
+      - name: Resolve trusted scanner configuration
+        id: scanner-config
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONFIG_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request) trusted_config_sha=$PULL_REQUEST_BASE_SHA ;;
+            merge_group) trusted_config_sha=$MERGE_GROUP_BASE_SHA ;;
+            *) trusted_config_sha=$CURRENT_SHA ;;
+          esac
+          if [[ ! "$trusted_config_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::No valid trusted Betterleaks configuration SHA" >&2
+            exit 1
+          fi
+
+          config_path=$(mktemp "$RUNNER_TEMP/trusted-betterleaks.XXXXXX.toml")
+          gh api --method GET "repos/$CONFIG_REPOSITORY/contents/.betterleaks.toml" \
+            --field ref="$trusted_config_sha" --jq '.content' |
+            base64 --decode > "$config_path"
+          if [[ ! -s "$config_path" ]]; then
+            echo "::error::Trusted Betterleaks configuration is empty" >&2
+            exit 1
+          fi
+          python3 - "$config_path" <<'PY'
+          import sys
+          import tomllib
+
+          try:
+              with open(sys.argv[1], "rb") as config:
+                  tomllib.load(config)
+          except (OSError, ValueError):
+              raise SystemExit("Trusted Betterleaks configuration is not valid TOML")
+          PY
+
+          # Betterleaks also reads ignore files from the scanned directory: use the trusted
+          # revision's copies, and drop any the trusted revision does not have.
+          for ignore in .betterleaksignore .gitleaksignore; do
+            rm -f "$ignore"
+            if gh api --method GET "repos/$CONFIG_REPOSITORY/contents/$ignore" \
+              --field ref="$trusted_config_sha" --jq '.content' > "$RUNNER_TEMP/ignore.b64" 2> /dev/null; then
+              base64 --decode "$RUNNER_TEMP/ignore.b64" > "$ignore"
+            fi
+          done
+
+          # Docker actions mount the runner temp directory at this fixed path.
+          echo "config-path=/github/runner_temp/$(basename "$config_path")" >> "$GITHUB_OUTPUT"
+
+      - name: Scan repository with Betterleaks
+        uses: docker://ghcr.io/betterleaks/betterleaks@sha256:f345c1ac502abc51ec334c3d815ad18a79fb1509555fc4496b2cb88e760681b3 # v1.10.1
+        with:
+          # --ignore-gitleaks-allow: inline allow comments would let a PR silence its own finding.
+          args: git . --config ${{ steps.scanner-config.outputs.config-path }} --ignore-gitleaks-allow --validation=false --redact --no-banner --no-color
+
+  # Formatting, Credo and the dependency checks need compiled dependencies, but neither
+  # the application nor its translations, so they start without waiting for the catalog.
+  static:
+    name: Format, Credo and dependency checks
+    if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
+    runs-on: selenge
+    env:
+      MIX_ENV: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Elixir Project
+        id: setup
+        uses: ./.github/actions/elixir-setup
+        with:
+          build-app: "false"
+
+      # Install npm asset dependencies, including the Tailwind CLI
+      - name: Install npm asset dependencies
+        id: npm
+        run: npm ci --prefix assets
+
+      - name: Check for unused deps
+        run: mix deps.unlock --check-unused
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Check Hex dependency licenses
+        run: mix depscheck
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Audit Hex dependencies
+        run: mix hex.audit
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Audit npm dependencies
+        run: mix assets.audit
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.npm.outcome == 'success' }}
+
+      - name: Check npm dependency licenses
+        run: mix assets.licenses
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.npm.outcome == 'success' }}
+
+      - name: Check code formatting
+        run: mix format --check-formatted
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Check for security vulnerabilities in Phoenix project
+        run: mix sobelow --config
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Check Credo
+        run: mix credo --strict
+        env:
+          # ExDNA fingerprints files in one task per scheduler, each with a 5 s limit. On a
+          # busy selenge host 32 schedulers share far fewer free cores and tasks time out.
+          ELIXIR_ERL_OPTIONS: "+S 8"
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+  # Gettext extraction recompiles the whole application, so it runs beside the other checks.
+  gettext:
+    name: Translation catalogs and Gettext extraction
+    if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
     needs: translations
-    uses: ./.github/workflows/docker-build.yml
-    with:
-      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+    runs-on: selenge
+    env:
+      MIX_ENV: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
+        with:
+          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+      - name: Setup Elixir Project
+        id: setup
+        uses: ./.github/actions/elixir-setup
+
+      - name: Validate translation catalogs
+        run: mix translations.check
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      # A Git tree includes file contents AND paths, including POT references.
+      # Cache only successful validation of an identical tree/toolchain, never POTs.
+      - name: Identify translation extraction inputs
+        id: extraction_inputs
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore translation extraction verification
+        id: extraction_cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          key: gettext-extraction-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ steps.extraction_inputs.outputs.tree }}
+          path: _build/gettext-extraction/verified
+
+      # Gettext 1.0 forces compilation even with --check-up-to-date. Keep that
+      # authoritative check on a miss; an exact hit reuses its successful result.
+      - name: Check translation extraction
+        id: extraction
+        env:
+          CACHE_HIT: ${{ steps.extraction_cache.outputs.cache-hit }}
+          SOURCE_TREE: ${{ steps.extraction_inputs.outputs.tree }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            test "$(cat _build/gettext-extraction/verified)" = "$SOURCE_TREE"
+            echo "Gettext extraction already verified for this exact source tree and toolchain."
+          else
+            mix translations.extract.check
+            mix translations.extract.check > "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            cat "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            mkdir -p _build/gettext-extraction
+            printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
+          fi
+
+      - name: Save translation extraction verification
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name != 'merge_group' && steps.extraction_cache.outputs.cache-hit != 'true' && steps.extraction.outcome == 'success'
+        with:
+          key: ${{ steps.extraction_cache.outputs.cache-primary-key }}
+          path: _build/gettext-extraction/verified
+
+  # PLTs take ~10 min to build, so dialyzer runs alongside the other checks. On merge queue
+  # pushes this job only refreshes main's deps, build and PLT caches. Guides and static files
+  # cannot change its result, so pull requests changing only those skip it.
+  dialyzer:
+    name: Dialyzer
+    if: needs.translations.outputs.content-only != 'true'
+    needs: translations
+    runs-on: selenge
+    env:
+      MIX_ENV: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
+        with:
+          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+      - name: Setup Elixir Project
+        id: setup
+        uses: ./.github/actions/elixir-setup
+
+      - name: Restore core PLT cache
+        id: core_plt_cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          key: plt-core-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}
+          path: |
+            _build/plts/core/*.plt
+            _build/plts/core/*.plt.hash
+
+      - name: Restore PLT cache
+        id: plt_cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          key: plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
+          # Updating a PLT built for another lock takes as long as rebuilding it
+          # from the core PLT (~10 min), so only reuse PLTs of the same lock.
+          restore-keys: |
+            plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
+          path: |
+            _build/test/*.plt
+            _build/test/*.plt.hash
+
+      # Dialyxir validates the lock/app selection; locked dependencies need no forced recheck.
+      - name: Create or update PLTs
+        id: plt_create
+        if: steps.plt_cache.outputs.cache-hit != 'true'
+        run: mix dialyzer --plt
+
+      # Preserve successfully built PLTs even if analysis later finds warnings.
+      # A merge_group run saves nothing: its caches are scoped to a temporary queue branch
+      # that no later run can read. PRs keep saving PLTs, which their next pushes reuse.
+      - name: Save core PLT cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name != 'merge_group' && steps.core_plt_cache.outputs.cache-hit != 'true' && steps.plt_create.outcome == 'success'
+        with:
+          key: ${{ steps.core_plt_cache.outputs.cache-primary-key }}
+          path: |
+            _build/plts/core/*.plt
+            _build/plts/core/*.plt.hash
+
+      - name: Save PLT cache
+        id: plt_cache_save
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name != 'merge_group' && steps.plt_cache.outputs.cache-hit != 'true' && steps.plt_create.outcome == 'success'
+        with:
+          key: ${{ steps.plt_cache.outputs.cache-primary-key }}
+          path: |
+            _build/test/*.plt
+            _build/test/*.plt.hash
+
+      - name: Run dialyzer
+        if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
+        # Two formats are included for ease of debugging and it is lightly recommended to use both, see https://github.com/jeremyjh/dialyxir/issues/530 for reasoning
+        # --format github is helpful to print the warnings in a way that GitHub understands and can place on the /files page of a PR
+        # --format dialyxir allows the raw GitHub actions logs to be useful because they have the full warning printed
+        run: mix dialyzer --format github --format dialyxir
+
+  # On main this build also exports the layer cache. Pull requests changing only guides and
+  # static files skip it: those files cannot break the image build.
+  docker:
+    name: Docker image build
+    if: needs.translations.outputs.content-only != 'true'
+    needs: translations
+    runs-on: selenge
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
+        with:
+          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver: docker-container
+          # The runner container is deleted after the job; do not wait to remove the builder.
+          cleanup: false
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ./deployment/Containerfile.app
+          push: false
+          outputs: type=cacheonly
+          cache-from: type=gha,scope=firmowid-app
+          # Only main exports layers: PR and merge queue exports filled most of the repository's
+          # 10 GB cache and evicted main's caches. Optional cache export must not fail image
+          # validation; build failures remain fatal.
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=firmowid-app,mode=max,ignore-error=true' || '' }}
+          build-args: |
+            SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
 
   # Keep the existing deployment gate (Sentry), independent of test completion.
   deploy:

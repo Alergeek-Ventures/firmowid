@@ -18,6 +18,9 @@ on:
       published:
         description: Whether a snapshot for this main commit was already published
         value: ${{ jobs.prepare.outputs.published }}
+      content-only:
+        description: Whether a pull request changes only guides and static files
+        value: ${{ jobs.prepare.outputs.content-only }}
 
 permissions:
   contents: read
@@ -31,6 +34,7 @@ jobs:
     outputs:
       catalog-version: ${{ steps.catalog.outputs.version }}
       published: ${{ steps.published.outputs.published }}
+      content-only: ${{ steps.changes.outputs.content-only }}
     env:
       ACCENT_VERSION: ${{ inputs.version || github.sha }}
       CALLER_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -86,6 +90,26 @@ jobs:
           marker=$(head -n 1 priv/gettext/pl/LC_MESSAGES/default.po)
           [[ "$marker" == "# Accent version: $ACCENT_VERSION" ]]
           echo "version=$ACCENT_VERSION" >> "$GITHUB_OUTPUT"
+
+      # CI skips Dialyzer and the Docker build for pull requests changing only guides and
+      # static files. The compare API needs only contents: read; it lists at most 300 files,
+      # so a longer list counts as more than content.
+      - name: Detect pull requests changing only content
+        id: changes
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          files=$(gh api "repos/$GITHUB_REPOSITORY/compare/$BASE_SHA...$HEAD_SHA" \
+            --jq 'if (.files | length) >= 300 then "too-many" else .files[].filename end')
+          if grep -Evq '^priv/(guides|static)/' <<< "$files"; then
+            echo "content-only=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "content-only=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload generated PO catalog
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
