@@ -26,28 +26,22 @@ jobs:
     secrets:
       ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
 
-  release:
-    name: Create and finalize Sentry release
+  # The build needs devenv, so it runs on selenge, without the production environment:
+  # selenge runners share a kernel with pull request jobs, so the Sentry token stays off them.
+  assets:
+    name: Build production assets with sourcemaps
     if: ${{ !cancelled() && github.ref == 'refs/heads/main' && (inputs.catalog-version != '' || needs.translations.result == 'success') }}
     runs-on: selenge
-    environment: production
     needs:
       - translations
     env:
       MIX_ENV: prod
 
     steps:
-      - name: Verify Sentry token
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        run: |
-          : "${SENTRY_AUTH_TOKEN:?SENTRY_AUTH_TOKEN must be configured in the production environment}"
-
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 0
 
       - name: Download generated PO catalog
         uses: ./.github/actions/download-translations
@@ -65,6 +59,43 @@ jobs:
           npm ci --prefix assets
           mix compile --force
           mix assets.sentry.deploy
+
+      - name: Upload production assets
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: sentry-assets-${{ github.sha }}
+          path: priv/static/assets
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Create and finalize Sentry release
+    # A skipped translations job would skip this job through the default success() check.
+    if: ${{ !cancelled() && needs.assets.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - assets
+
+    steps:
+      - name: Verify Sentry token
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          : "${SENTRY_AUTH_TOKEN:?SENTRY_AUTH_TOKEN must be configured in the production environment}"
+
+      # The release action associates commits from the local history.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Download production assets
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: sentry-assets-${{ github.sha }}
+          path: priv/static/assets
 
       - name: Create and finalize Sentry release
         uses: getsentry/action-release@d55c8c3b7375607e972b710f12926b676d89d7d2 # v3.8.0
