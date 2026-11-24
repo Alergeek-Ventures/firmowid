@@ -173,7 +173,7 @@
                 aria-label={gettext("Enter time manually")}
                 aria-pressed={to_string(@is_form_extended)}
               >
-                <.figma_icon name="edit" />
+                <.figma_icon name="edit" class="max-md:size-5!" />
               </.button>
             </div>
 
@@ -455,19 +455,12 @@
       </div>
     </div>
 
-    <%!-- On phones the list starts with its last two sessions; a button below shows the rest
-    and folds them away again. --%>
-    <% {phone_shown, row_count} = phone_rows(@today_sessions, @grouped_sessions) %>
-    <% phone_extra? = fn session_group ->
-      not Enum.any?(session_group, &(hd(&1).id in phone_shown))
-    end %>
     <div
       :if={!@filter}
       id="all-sessions"
       phx-mounted={list_enter()}
-      data-collapsed
       class={[
-        "group/list mb-16 flex w-full min-w-0 flex-col gap-10 has-[#sessions-empty-state]:mb-0 max-md:gap-4 max-md:data-collapsed:**:data-phone-extra:hidden md:pr-8 lg:pr-0",
+        "mb-16 flex w-full min-w-0 flex-col gap-10 has-[#sessions-empty-state]:mb-0 max-md:gap-4 md:pr-8 lg:pr-0",
         phone_list_panel_classes()
       ]}
     >
@@ -523,7 +516,6 @@
             sessions={sessions}
             active_projects={@active_projects}
             projects_by_id={@projects_by_id}
-            data-phone-extra={phone_extra?.([sessions])}
           />
         </div>
       </div>
@@ -531,25 +523,15 @@
       <div
         :if={@grouped_sessions != []}
         class="flex flex-col gap-10 max-md:gap-4"
-        data-phone-extra={
-          phone_extra?.(
-            for {_week, days} <- @grouped_sessions, {_day, group} <- days, row <- group, do: row
-          )
-        }
       >
         <div
           :for={{week, days} <- @grouped_sessions}
           :key={week}
           class={if Enum.empty?(@today_sessions), do: "order-first", else: ""}
-          data-phone-extra={phone_extra?.(Enum.flat_map(days, &elem(&1, 1)))}
         >
           <div :if={Enum.empty?(@today_sessions)} />
           <div class="flex flex-col gap-10 max-md:gap-4">
-            <div
-              :for={{day, session_group} <- days}
-              :key={day}
-              data-phone-extra={phone_extra?.(session_group)}
-            >
+            <div :for={{day, session_group} <- days} :key={day}>
               <p class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-10 flex bg-white pb-2 pl-2 text-caps-sm/[1.6] font-medium text-grey-500 uppercase max-md:bg-grey-50">
                 {format_day_header(day)}
               </p>
@@ -560,7 +542,6 @@
                   sessions={sessions}
                   active_projects={@active_projects}
                   projects_by_id={@projects_by_id}
-                  data-phone-extra={phone_extra?.([sessions])}
                 />
               </div>
             </div>
@@ -568,32 +549,11 @@
         </div>
       </div>
 
-      <%!-- Figma "Pokaż mniej": 18 px of text in a 44 px touch target. --%>
-      <.button
-        :if={row_count > MapSet.size(phone_shown)}
-        id="phone-sessions-toggle"
-        type="button"
-        variant="unstyled"
-        aria-expanded="false"
-        phx-click={
-          JS.toggle_attribute({"data-collapsed", ""}, to: "#all-sessions")
-          |> JS.toggle_attribute({"aria-expanded", "true", "false"})
-        }
-        class="my-[-13px] flex cursor-pointer items-center gap-1 self-start py-[13px] pl-2 text-sm/[normal] font-medium text-grey-700 md:hidden"
-      >
-        <span class="hidden group-data-collapsed/list:inline">
-          {gettext("Show all sessions (%{count})", count: row_count)}
-        </span>
-        <.figma_icon name="chevron_down" class="hidden size-4 group-data-collapsed/list:block" />
-        <span class="group-data-collapsed/list:hidden">{gettext("Show less")}</span>
-        <.figma_icon name="chevron_up" class="size-4 group-data-collapsed/list:hidden" />
-      </.button>
-
       <.button
         :if={@next_sessions_after}
         phx-click="load_more"
         variant="tertiary"
-        class="mx-auto block max-md:group-data-collapsed/list:hidden"
+        class="mx-auto block"
       >
         {gettext("Show more")}
       </.button>
