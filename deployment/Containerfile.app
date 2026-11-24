@@ -52,7 +52,6 @@ COPY assets/package.json assets/package-lock.json assets/
 COPY assets/patches assets/patches
 COPY assets/.npmrc assets/.npmrc
 RUN npm ci --prefix assets
-RUN npm install --global accent-cli@0.19.0
 
 COPY priv priv
 
