@@ -5,11 +5,13 @@ defmodule Firmowid.Core.UserTest do
 
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
+  alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
   alias Firmowid.Core.Member
   alias Firmowid.Scope
   alias Firmowid.SystemActor
+  alias Firmowid.Timetracker.HoursRecord
 
   describe "member archive authorization" do
     test "an admin cannot archive or restore another organization's member" do
@@ -152,6 +154,59 @@ defmodule Firmowid.Core.UserTest do
                )
 
       assert Core.load_member(employee).member.avatar_blob_id == nil
+    end
+
+    # The whole organization reads an avatar, so a document set as one would be
+    # readable by members its owner record hides it from.
+    test "a member cannot set a document they may read as their avatar" do
+      accountant = user_fixture(%{role: :accountant})
+      org_id = accountant.member.organization_id
+      scope = Scope.new!(accountant, org_id)
+
+      seed_blob = fn checksum, attrs ->
+        Ash.Seed.seed!(
+          Blob,
+          Map.merge(
+            %{
+              organization_id: org_id,
+              blob_path: "#{org_id}/#{checksum}.pdf",
+              blob_checksum: checksum,
+              original_filename: "#{checksum}.pdf"
+            },
+            attrs
+          )
+        )
+      end
+
+      pending_invoice =
+        seed_blob.("pending-invoice", %{
+          processing_target: :cost_invoice,
+          processing_state: :pending
+        })
+
+      hours_file = seed_blob.("hours-record", %{})
+
+      Ash.Seed.seed!(HoursRecord, %{
+        organization_id: org_id,
+        member_id: accountant.member.id,
+        blob_id: hours_file.id,
+        month: 3,
+        year: 2025,
+        number_of_hours: 160
+      })
+
+      for document <- [pending_invoice, hours_file] do
+        assert {:ok, %Blob{}} = Blobs.get_blob(document.id, scope: scope)
+
+        # Without the check the update would go on to make picture copies of
+        # the seeded files, which have no stored contents.
+        assert {:error, %Invalid{}} =
+                 Oban.Testing.with_testing_mode(:manual, fn ->
+                   Core.update_member_avatar(accountant.member, %{avatar_blob_id: document.id}, scope: scope)
+                 end)
+      end
+
+      assert Core.load_member(accountant).member.avatar_blob_id == nil
     end
   end
 

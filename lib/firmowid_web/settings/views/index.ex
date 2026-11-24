@@ -260,32 +260,49 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp handle_avatar_upload(:user_avatar, blob_id, socket) do
     current_user = socket.assigns.current_user
 
-    {:ok, updated} =
-      Core.update_member_avatar(current_user.member, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
+    case Core.update_member_avatar(current_user.member, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope) do
+      {:ok, updated} ->
+        updated_with_avatar =
+          Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-    updated_with_avatar =
-      Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
+        LiveToast.send_toast(:info, gettext("The picture has been updated."))
 
-    LiveToast.send_toast(:info, gettext("The picture has been updated."))
+        {:noreply, assign(socket, :current_user, %{current_user | member: updated_with_avatar})}
 
-    {:noreply, assign(socket, :current_user, %{current_user | member: updated_with_avatar})}
+      {:error, %Invalid{}} ->
+        document_not_picture(socket)
+    end
   end
 
   defp handle_avatar_upload(:organization_avatar, blob_id, socket) do
     current_org = socket.assigns.current_org
 
-    {:ok, updated} =
-      Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
+    case Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope) do
+      {:ok, updated} ->
+        updated_with_avatar =
+          Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-    updated_with_avatar =
-      Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
+        LiveToast.send_toast(:info, gettext("The picture has been updated."))
 
-    LiveToast.send_toast(:info, gettext("The picture has been updated."))
+        {:noreply,
+         socket
+         |> assign(:current_org, updated_with_avatar)
+         |> assign_subscription_preview_if_visible()}
 
-    {:noreply,
-     socket
-     |> assign(:current_org, updated_with_avatar)
-     |> assign_subscription_preview_if_visible()}
+      {:error, %Invalid{}} ->
+        document_not_picture(socket)
+    end
+  end
+
+  # Uploads reuse a stored file with the same contents, so a picture identical
+  # to a document comes back as that document, which cannot become an avatar.
+  defp document_not_picture(socket) do
+    LiveToast.send_toast(
+      :error,
+      gettext("This file is already saved as a document. Choose another picture.")
+    )
+
+    {:noreply, socket}
   end
 
   defp handle_progress(:document_upload, %{done?: false}, socket) do

@@ -33,43 +33,6 @@ defmodule Firmowid.Core.Changes.CleanupOldAvatarBlobTest do
       assert Blobs.get_blob!(shared_blob.id, scope: other_scope).id == shared_blob.id
     end
 
-    test "replacing an avatar that reused a pending document blob keeps the document" do
-      admin = user_fixture(%{role: :admin})
-      employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
-      admin_scope = %Scope{actor: admin, tenant: admin.member.organization_id}
-      scope = %Scope{actor: employee, tenant: employee.member.organization_id}
-      {:ok, path} = Briefly.create()
-      File.write!(path, "%PDF-1.4 employment contract")
-
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        assert {:ok, document} =
-                 Blobs.create_blob_for_processing(
-                   path,
-                   "application/pdf",
-                   "contract.pdf",
-                   :employment_contract,
-                   %{member_id: employee.member.id},
-                   scope: admin_scope
-                 )
-
-        # Avatar upload trusts the client MIME type, so the same bytes reuse the document blob.
-        assert {:ok, %{id: document_id}} =
-                 Blobs.create_or_reuse_blob(path, "application/pdf", "avatar.png", scope: scope)
-
-        assert document_id == document.id
-
-        assert {:ok, member} =
-                 Core.update_member_avatar(employee.member, %{avatar_blob_id: document.id}, scope: scope)
-
-        replacement = create_blob!(scope, "replacement avatar", "replacement.txt")
-
-        assert {:ok, _member} =
-                 Core.update_member_avatar(member, %{avatar_blob_id: replacement.id}, scope: scope)
-
-        assert %{processing_state: :pending} = Blobs.get_blob!(document.id, scope: admin_scope)
-      end)
-    end
-
     test "non-admin replace avatar and destroys the previous unreferenced blob" do
       # Explicit non-admin: admins bypass Blob.destroy and would not catch this.
       user = user_fixture(%{role: :employee})

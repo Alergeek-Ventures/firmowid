@@ -367,6 +367,25 @@ defmodule Firmowid.Blobs.Blob do
 
   calculations do
     calculate :url, :string, Firmowid.Blobs.Calculations.BlobUrl
+
+    # Tax declarations and payroll inputs hold only employment contract files,
+    # which the processing target already marks.
+    calculate :document?,
+              :boolean,
+              expr(
+                processing_target != :none or
+                  exists(cost_invoices, true) or
+                  exists(employment_contracts, true) or
+                  exists(hours_records, true) or
+                  exists(leave_requests, true) or
+                  exists(signed_command_delegations, true) or
+                  exists(signed_settlement_delegations, true) or
+                  exists(delegation_expenses, true) or
+                  exists(statement_delegation_expenses, true) or
+                  exists(delegation_expense_links, true)
+              ) do
+      description "Whether the file waits for document processing or a record other than an avatar holds it."
+    end
   end
 
   identities do

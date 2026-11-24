@@ -105,8 +105,9 @@ defmodule Firmowid.SystemActor do
     invoice identified by the share token.
 
   - `:avatar_cleanup` — cleans up an unreferenced avatar blob after a member or
-    organization replaces their avatar. `blob_id` names the old blob: the actor
-    can read and destroy only that blob and read only records referencing it.
+    organization replaces their avatar, and checks that a blob about to become
+    an avatar is not a document. `blob_id` names that blob: the actor can read
+    and destroy only that blob and read only records referencing it.
 
   - `:actor_member_loader` — loads the authenticated user's active member, which
     decides the user's organization and which policies read the user's role from.

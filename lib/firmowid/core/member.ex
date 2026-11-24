@@ -182,6 +182,8 @@ defmodule Firmowid.Core.Member do
       require_atomic? false
 
       validate Firmowid.Blobs.Validations.ReadableBlob
+      # Says nothing about a file the actor may not read.
+      validate Firmowid.Blobs.Validations.NotDocumentBlob, only_when_valid?: true
 
       change Firmowid.Core.Changes.CleanupOldAvatarBlob
       change Firmowid.Core.Changes.GenerateAvatarVariants

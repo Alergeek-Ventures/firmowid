@@ -13104,6 +13104,11 @@ msgstr ""
 msgid "This file is already being processed"
 msgstr ""
 
+#: lib/firmowid_web/settings/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "This file is already saved as a document. Choose another picture."
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "This insurance title requires an individual contribution assessment."
@@ -15464,6 +15469,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "member role"
 msgid "invoicing"
+msgstr ""
+
+#: lib/firmowid/blobs/validations/not_document_blob.ex
+#, elixir-autogen, elixir-format
+msgid "is a document, not a picture"
 msgstr ""
 
 #: lib/firmowid_ui/components/inputs.ex
