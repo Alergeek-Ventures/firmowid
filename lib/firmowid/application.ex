@@ -43,6 +43,7 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
         Supervisor.child_spec({Cachex, name: :sidebar_status}, id: :sidebar_status_cache),
         Supervisor.child_spec({Cachex, name: :feature_flags}, id: :feature_flags_cache),
+        Firmowid.Core.Services.RegisterRateLimiter,
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
         {AshAuthentication.Supervisor, otp_app: :firmowid},

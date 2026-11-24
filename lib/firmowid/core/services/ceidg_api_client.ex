@@ -1,24 +1,23 @@
 defmodule Firmowid.Core.Services.CeidgApiClient do
   @moduledoc "CEIDG register of sole proprietorships, shared by invoicing and company registration."
 
-  # CEIDG allows 50 requests in 3 minutes and 1000 an hour, and blocks for 3 minutes
-  # when exceeded; a steady 3.7 s between requests keeps under both. Tests set it to 0.
-  @pause_ms Application.compile_env(:firmowid, :ceidg_pause_ms, 3_700)
+  alias Firmowid.Core.Services.RegisterRateLimiter
 
   @doc """
   Returns the businesses CEIDG lists for a NIP, deregistered ones included, each
   with its `"status"` (`"AKTYWNY"`, `"ZAWIESZONY"`, `"WYKRESLONY"`, …); `[]` when
-  CEIDG does not know the NIP. Waits before each request to stay within the limit.
+  CEIDG does not know the NIP. Waits for its turn in the limit shared by all
+  processes (`RegisterRateLimiter`), or returns `{:error, :rate_limited}`.
   """
-  @spec fetch_businesses(String.t()) :: {:ok, [map()]} | {:error, :not_configured | term()}
+  @spec fetch_businesses(String.t()) ::
+          {:ok, [map()]} | {:error, :not_configured | :rate_limited | term()}
   def fetch_businesses(nip) do
     case Application.get_env(:firmowid, :ceidg_api_token) do
       nil ->
         {:error, :not_configured}
 
       token ->
-        Process.sleep(@pause_ms)
-        request(nip, token)
+        with :ok <- RegisterRateLimiter.acquire(:ceidg), do: request(nip, token)
     end
   end
 
