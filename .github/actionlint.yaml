@@ -1,3 +1,4 @@
 self-hosted-runner:
-  # Ephemeral runners on selenge (Alergeek-Ventures/infrastructure, av.ci_runners).
-  labels: [selenge]
+  # Ephemeral runners on selenge (Alergeek-Ventures/infrastructure, av.ci_runners):
+  # selenge has 8 CPUs for builds and tests, selenge-small 2 CPUs for light jobs.
+  labels: [selenge, selenge-small]
