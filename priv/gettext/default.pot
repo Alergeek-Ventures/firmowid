@@ -1394,14 +1394,8 @@ msgstr ""
 msgid "An error occurred while changing the account name."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "An error occurred while connecting the bank account. Please try again."
-msgstr ""
-
 #: lib/firmowid_web/bank_sync/views/create.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
-#: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "An error occurred while connecting the bank account. Try again."
 msgstr ""
@@ -4696,7 +4690,6 @@ msgstr ""
 msgid "Don't see your bank? Add an account manually by entering its IBAN. You can issue invoices with this account, just without automatically importing transfers."
 msgstr ""
 
-#: lib/firmowid_web/bank_sync/views/create.ex
 #: lib/firmowid_web/hours_record/components/document.ex
 #: lib/firmowid_web/invoicing/components/bank_transfer_modal.ex
 #, elixir-autogen, elixir-format
@@ -12155,11 +12148,6 @@ msgstr ""
 msgid "The bank account was connected successfully!"
 msgstr ""
 
-#: lib/firmowid_web/bank_sync/views/create.ex
-#, elixir-autogen, elixir-format
-msgid "The bank account was connected successfully."
-msgstr ""
-
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "The bank confirms the consent within a minute or two. The stamp will appear by itself."
@@ -12190,6 +12178,12 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The bank connection was rejected. Try again."
+msgstr ""
+
+#: lib/firmowid_web/bank_sync/views/create.ex
+#: lib/firmowid_web/organization/views/first_steps.ex
+#, elixir-autogen, elixir-format
+msgid "The bank did not confirm the connection. Try again."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -14301,12 +14295,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "We will delete your account and all data assigned to it."
-msgstr ""
-
-#: lib/firmowid_web/bank_sync/views/create.ex
-#: lib/firmowid_web/organization/views/first_steps.ex
-#, elixir-autogen, elixir-format
-msgid "We will keep trying to connect on your behalf."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex

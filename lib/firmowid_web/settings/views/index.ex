@@ -903,7 +903,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
-        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
+        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: %{name: action}}},
         socket
       ) do
     {toast_type, message} =
@@ -913,9 +913,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         :reject ->
           {:error, gettext("The bank connection was rejected. Try again.")}
-
-        :handle_check_error ->
-          {:error, gettext("An error occurred while connecting the bank account. Try again.")}
 
         _ ->
           {:info, gettext("The bank connection status has been updated.")}

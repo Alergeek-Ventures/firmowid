@@ -15,7 +15,6 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   alias Firmowid.Finances
   alias Firmowid.Finances.GoCardless.ApiClient
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
@@ -133,37 +132,41 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   def handle_params(params, _url, socket) do
     socket = assign(socket, :redirect_url, Endpoint.url() <> ~p"/ustawienia/bank/dodaj")
 
-    requisition_id = params["ref"]
-
-    if is_nil(requisition_id) do
-      {:noreply, socket}
-    else
-      error = params["error"]
-
-      if is_nil(error) do
-        {:noreply,
-         socket
-         |> PosthogBusinessEvents.capture(:bank_connection_completed)
-         |> LiveToast.put_toast(
-           :success,
-           gettext("The bank account was connected successfully."),
-           title: gettext("Done")
-         )
-         |> push_navigate(to: ~p"/ustawienia/konta-bankowe")}
-      else
-        Logger.warning("Failed to connect to bank", error_kind: ApiClient.redirect_error(error))
-
-        {:noreply,
-         socket
-         |> LiveToast.put_toast(
-           :error,
-           gettext("We will keep trying to connect on your behalf."),
-           title: gettext("The bank connection could not be created at this time.")
-         )
-         |> push_navigate(to: InboxNavigation.inbox_path(:company))}
-      end
-    end
+    {:noreply, handle_bank_return(socket, params)}
   end
+
+  # GoCardless sends the owner back with the requisition as `ref`, or with an error.
+  defp handle_bank_return(socket, %{"ref" => requisition_id, "error" => error}) do
+    requisition_id
+    |> Finances.cancel_requisition(scope: socket.assigns.ash_scope)
+    |> pending_requisition_handled()
+
+    Logger.warning("Failed to connect to bank", error_kind: ApiClient.redirect_error(error))
+
+    socket
+    |> LiveToast.put_toast(:error, gettext("The bank did not confirm the connection. Try again."),
+      title: gettext("The bank connection could not be created at this time.")
+    )
+    |> push_navigate(to: ~p"/ustawienia/konta-bankowe")
+  end
+
+  # The bank accounts page shows the check running and announces its result.
+  defp handle_bank_return(socket, %{"ref" => requisition_id}) do
+    requisition_id
+    |> Finances.check_requisition_now(scope: socket.assigns.ash_scope)
+    |> pending_requisition_handled()
+
+    socket
+    |> PosthogBusinessEvents.capture(:bank_connection_completed)
+    |> push_navigate(to: ~p"/ustawienia/konta-bankowe")
+  end
+
+  defp handle_bank_return(socket, _params), do: socket
+
+  # A repeated or late return finds no pending requisition, which leaves nothing to do.
+  defp pending_requisition_handled({:ok, _requisition}), do: :ok
+
+  defp pending_requisition_handled({:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}}), do: :ok
 
   @impl true
   def handle_event(

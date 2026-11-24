@@ -180,6 +180,8 @@ defmodule Firmowid.Finances do
 
       define :get_requisition, action: :read, get_by: [:id]
       define :list_requisitions, action: :list
+      define :check_requisition_now, action: :check_now, get_by: [:id]
+      define :cancel_requisition, action: :cancel, get_by: [:id]
     end
 
     resource Transaction do

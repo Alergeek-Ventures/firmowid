@@ -6,9 +6,8 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
   @moduledoc """
   Tests for the bank connection creation LiveView.
 
-  Note: AshOban automatically schedules the check_status trigger when a
-  requisition is created. We verify the requisition exists with pending status
-  rather than checking internal job structure.
+  The owner's return from GoCardless starts the check_status trigger; Oban runs
+  it inline in tests, against the stubbed GoCardless API.
   """
   use FirmowidWeb.ConnCase
 
@@ -35,44 +34,37 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       %{conn: log_in_user(conn, user), user: user}
     end
 
-    test "redirects to company settings with success toast for pending requisition", %{
+    test "checks the requisition as soon as the owner comes back and claims nothing yet", %{
       conn: conn,
       user: user
     } do
       requisition_id = Ecto.UUID.generate()
+      tenant = user.member.organization_id
 
-      # Pre-create the requisition as pending (simulating what happens after GoCardless redirect)
-      # In production, the requisition is created during the institution_selection event
-      # and the redirect back from GoCardless includes the ref param
+      # The bank turned the connection down, which only the check can tell.
+      status_checks = :counters.new(1, [])
+
+      Req.Test.stub(:bank_data_requisition, fn conn ->
+        :counters.add(status_checks, 1, 1)
+        Req.Test.json(conn, %{id: requisition_id, status: "RJ"})
+      end)
+
+      # The requisition is created before the owner leaves for the bank, which
+      # sends them back with its id as `ref`.
       {:ok, _requisition} =
         %{id: requisition_id}
-        |> Requisition.changeset_to_persist(
-          tenant: user.member.organization_id,
-          actor: user,
-          authorize?: false
-        )
-        |> Ash.create(tenant: user.member.organization_id, actor: user, authorize?: false)
+        |> Requisition.changeset_to_persist(tenant: tenant, actor: user, authorize?: false)
+        |> Ash.create(tenant: tenant, actor: user, authorize?: false)
 
-      # Verify requisition exists with pending status
-      assert {:ok, requisition} =
-               Finances.get_requisition(requisition_id,
-                 tenant: user.member.organization_id,
-                 actor: user
-               )
+      # The bank accounts page announces the result of the check.
+      assert {:error, {:live_redirect, %{to: "/ustawienia/konta-bankowe", flash: flash}}} =
+               live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
 
-      assert requisition.status == :pending
+      assert flash == %{}
+      assert :counters.get(status_checks, 1) == 1
 
-      # When user returns from GoCardless, they get redirected to company settings
-      {:error,
-       {:live_redirect,
-        %{
-          to: "/ustawienia/konta-bankowe",
-          flash: %{"success" => "Konto bankowe zostało poprawnie połączone."}
-        }}} =
-        live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
-
-      # The AshOban trigger on Requisition will automatically poll for status changes.
-      # No manual job insertion needed.
+      assert {:ok, %{status: :rejected}} =
+               Finances.get_requisition(requisition_id, tenant: tenant, actor: user)
     end
   end
 

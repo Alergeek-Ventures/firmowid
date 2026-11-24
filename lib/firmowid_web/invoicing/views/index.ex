@@ -110,7 +110,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
       Endpoint.subscribe("requisition:expired:#{organization_id}")
-      Endpoint.subscribe("requisition:error:#{organization_id}")
       # KSeF status (separate system)
       Ksef.subscribe_ksef_status(organization_id)
     end
@@ -621,7 +620,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
-        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
+        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: %{name: action}}},
         socket
       ) do
     {toast_type, message} =
@@ -631,9 +630,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         :reject ->
           {:error, gettext("The bank connection was rejected. Please try again.")}
-
-        :handle_check_error ->
-          {:error, gettext("An error occurred while connecting the bank account. Please try again.")}
 
         _ ->
           {:info, gettext("The bank connection status has been updated.")}
