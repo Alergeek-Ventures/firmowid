@@ -28,7 +28,9 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: sentry-release
-    runs-on: selenge-small
+    # The production deploy credentials stay off selenge, whose runners share a kernel
+    # with pull request jobs. The job only calls Infisical and Coolify, so it needs no devenv.
+    runs-on: ubuntu-latest
     environment: production
 
     steps:
