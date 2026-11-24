@@ -121,13 +121,56 @@ jobs:
                 echo "::warning::Could not delete $asset; another run may have pruned it"
             done
 
+  # PRs and the merge queue test with the last published main SeaweedFS image; main publishes
+  # the image of its own Containerfile. This happens here rather than in Build and Test,
+  # which merge queue pushes skip.
+  seaweedfs-image:
+    name: Check main SeaweedFS image
+    if: github.ref == 'refs/heads/main'
+    runs-on: selenge
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      publish-required: ${{ steps.check.outputs.publish-required }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check whether this Containerfile's image is published
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          hash=$(sha256sum deployment/Containerfile.seaweedfs | cut -d ' ' -f 1)
+          if docker manifest inspect "ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:containerfile-$hash" > /dev/null 2>&1; then
+            echo "publish-required=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish-required=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-seaweedfs:
+    name: Publish main SeaweedFS image
+    needs: seaweedfs-image
+    if: needs.seaweedfs-image.outputs.publish-required == 'true'
+    uses: ./.github/workflows/build-seaweedfs.yml
+    permissions:
+      contents: read
+      packages: write
+
   # The merge queue pushes the exact commit its merge_group run already tested, so its
   # pushes skip verification; the Dialyzer and Docker jobs still run to refresh main's caches.
   # A direct push, such as an admin bypassing the queue, is verified in full.
   build:
     name: Build and Test
-    if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
-    needs: translations
+    if: >-
+      ${{ !cancelled() && needs.translations.result == 'success' && needs.publish-seaweedfs.result != 'failure' &&
+          (github.event_name != 'push' || github.actor != 'github-merge-queue[bot]') }}
+    needs: [translations, publish-seaweedfs]
     uses: ./.github/workflows/elixir-build-and-test.yml
     with:
       catalog-version: ${{ needs.translations.outputs.catalog-version }}
