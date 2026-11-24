@@ -12728,7 +12728,7 @@ msgstr ""
 
 #: lib/firmowid/invoicing/changes/pay_on_issue.ex
 #, elixir-autogen, elixir-format
-msgid "The payment date of an advance invoice cannot be after its issue date."
+msgid "The payment date cannot be after the issue date."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex

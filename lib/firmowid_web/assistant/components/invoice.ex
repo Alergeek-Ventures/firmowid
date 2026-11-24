@@ -333,9 +333,15 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
     |> Enum.join(" · ")
   end
 
-  # An invoice paid on issue has its payment date where others have a sale date and a term.
-  defp payment_date(%{is_paid_on_issue: true} = invoice),
+  # An invoice paid on issue has its payment date where others have a term. An advance invoice's
+  # sale date is that payment date.
+  defp payment_date(%{ksef_invoice_kind: :advance} = invoice),
     do: gettext("paid %{date}", date: format_date(invoice.sale_date))
+
+  defp payment_date(%{is_paid_on_issue: true} = invoice) do
+    gettext("Sale %{date}", date: format_date(invoice.sale_date)) <>
+      " · " <> gettext("paid %{date}", date: format_date(invoice.payment_date))
+  end
 
   defp payment_date(invoice) do
     gettext("Sale %{date}", date: format_date(invoice.sale_date)) <>

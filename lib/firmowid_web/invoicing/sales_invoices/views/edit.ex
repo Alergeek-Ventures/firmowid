@@ -96,6 +96,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
                :amount,
                :is_editable,
                :is_paid_on_issue,
+               :payment_date,
                :buyer_id_type,
                :reference_invoice,
                sales_invoice_items: [:net_value, :vat_value, :gross_value],
@@ -874,7 +875,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     PriceInput.normalize_gross_value_params(params, :sales_invoice_items, indexes)
   end
 
-  defp not_editable_message(%SalesInvoice{is_paid_on_issue: true}) do
+  defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :advance}) do
     gettext("Firmowid cannot edit or correct an advance invoice.")
   end
 

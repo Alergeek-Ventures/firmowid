@@ -127,7 +127,7 @@
 
           <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
             invoice={@invoice}
-            advance?={@invoice.is_paid_on_issue}
+            advance?={@invoice.ksef_invoice_kind == :advance}
             bank_accounts={@bank_accounts}
             selected_bank_account={@selected_bank_account}
             payment_form={@form}

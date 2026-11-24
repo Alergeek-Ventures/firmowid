@@ -160,7 +160,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     item_calcs = [:net_value, :vat_value, :gross_value]
 
     case SalesInvoice.by_id(invoice_id,
-           load: [:is_paid_on_issue, sales_invoice_items: item_calcs],
+           load: [sales_invoice_items: item_calcs],
            scope: scope
          ) do
       {:error, _} ->
@@ -234,8 +234,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       buyer_phone: base_invoice.buyer_phone,
       buyer_description: base_invoice.buyer_description,
       invoice_type: base_invoice.invoice_type,
-      # A copy keeps an advance invoice an advance; any other kind, a correction too, becomes a VAT invoice.
-      ksef_invoice_kind: if(base_invoice.is_paid_on_issue, do: :advance, else: :vat),
+      # A copy keeps an advance invoice an advance; any other kind, a correction too, becomes a VAT
+      # invoice. Its payment, if it was paid on issue, is not copied.
+      ksef_invoice_kind: if(base_invoice.ksef_invoice_kind == :advance, do: :advance, else: :vat),
       is_reverse_charge: base_invoice.is_reverse_charge,
       currency: base_invoice.currency,
       payment_method: base_invoice.payment_method,
@@ -796,7 +797,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     base_invoice =
       SalesInvoice.by_id!(invoice_id,
-        load: [:is_paid_on_issue, :sales_invoice_items],
+        load: [:sales_invoice_items],
         scope: scope
       )
 

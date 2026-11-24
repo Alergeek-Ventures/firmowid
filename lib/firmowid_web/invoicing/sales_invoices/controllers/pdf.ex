@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   @pdf_loads [
     :amount,
     :is_paid_on_issue,
+    :payment_date,
     :internal_note,
     :corrected_invoice,
     :net_value,

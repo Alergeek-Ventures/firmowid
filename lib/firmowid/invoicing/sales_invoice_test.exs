@@ -979,6 +979,47 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       )
     end
 
+    test "issues a VAT invoice paid before issue as paid, stating the payment in its XML" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+      paid_on = Date.add(LocalDate.today(), -1)
+
+      input =
+        Map.merge(issue_input(), %{
+          invoice_number: "FV/#{System.unique_integer([:positive])}",
+          payment_method: :card,
+          paid_on: paid_on,
+          due_date: Date.add(paid_on, 14),
+          skip_invoicing: false
+        })
+
+      assert {:ok, invoice} =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 Invoicing.issue_sales_invoice(%{input: input}, scope: scope)
+               end)
+
+      # Nothing is due, so no reminder scan or matching waits for a transaction.
+      assert %{
+               ksef_invoice_kind: :vat,
+               paid_on: ^paid_on,
+               due_date: ^paid_on,
+               skip_invoicing: true
+             } =
+               invoice
+
+      assert %{reconciliation_status: :matched} =
+               Ash.load!(invoice, [:reconciliation_status], scope: scope)
+
+      xml = issued_invoice_xml(invoice, scope)
+
+      assert xml =~
+               ~r/<Platnosc>\s*<Zaplacono>1<\/Zaplacono>\s*<DataZaplaty>#{paid_on}<\/DataZaplaty>/
+
+      assert xml =~ ~r/<RodzajFaktury>\s*VAT\s*<\/RodzajFaktury>/
+      refute xml =~ "<TerminPlatnosci>"
+    end
+
     test "points to organization settings when seller details are missing" do
       user = admin_fixture()
 
@@ -1158,8 +1199,22 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
     user
   end
 
-  describe "advance invoice payment" do
-    test "rejects a payment date after the issue date" do
+  describe "payment on issue" do
+    test "rejects a VAT invoice paid after its issue date" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      input =
+        Map.merge(issue_input(), %{
+          invoice_number: "FV/#{System.unique_integer([:positive])}",
+          paid_on: Date.add(LocalDate.today(), 1)
+        })
+
+      assert {:error, %Invalid{errors: [%InvalidAttribute{field: :paid_on}]}} =
+               Invoicing.issue_sales_invoice(%{input: input}, scope: scope_for(user))
+    end
+
+    test "rejects an advance invoice paid after its issue date" do
       user = invoicing_admin_fixture()
       InvoicingFixtures.connect_ksef!(user.member.organization_id)
 
@@ -1172,6 +1227,27 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       assert {:error, %Invalid{errors: [%InvalidAttribute{field: :sale_date}]}} =
                Invoicing.issue_sales_invoice(%{input: input}, scope: scope_for(user))
+    end
+
+    test "an advance invoice is paid on its sale date, not on a paid_on day" do
+      user = invoicing_admin_fixture()
+      today = LocalDate.today()
+
+      draft =
+        Invoicing.draft_sales_invoice!(
+          %{
+            input:
+              Map.merge(issue_input(), %{
+                ksef_invoice_kind: :advance,
+                sale_date: Date.add(today, -3),
+                paid_on: Date.add(today, -1)
+              })
+          },
+          scope: scope_for(user)
+        )
+
+      assert %{paid_on: nil, due_date: due_date} = draft
+      assert due_date == Date.add(today, -3)
     end
 
     test "a draft revised from an advance to a VAT invoice awaits a transaction again" do

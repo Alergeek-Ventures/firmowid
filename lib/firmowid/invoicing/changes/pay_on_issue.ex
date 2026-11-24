@@ -1,8 +1,11 @@
 defmodule Firmowid.Invoicing.Changes.PayOnIssue do
   @moduledoc """
   Keeps an invoice that is paid when issued (the resource's `is_paid_on_issue`) free of payment
-  expectations: it is due on the payment date, its `sale_date`, which cannot be after its issue
-  date, and awaits no transaction. A draft revised away from such a kind awaits a transaction again.
+  expectations: it is due on its payment date (the resource's `payment_date`), which cannot be
+  after its issue date, and awaits no transaction. A draft revised so it is no longer paid on
+  issue awaits a transaction again.
+
+  An advance invoice is paid on its sale date, so it keeps no `paid_on`.
 
   Runs after the issue date is set.
   """
@@ -13,15 +16,26 @@ defmodule Firmowid.Invoicing.Changes.PayOnIssue do
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
   def change(changeset, _opts, context) do
-    cond do
-      paid_on_issue?(
-        changeset,
-        Ash.Changeset.get_attribute(changeset, :ksef_invoice_kind),
-        context
-      ) ->
-        pay_on_issue(changeset)
+    kind = Ash.Changeset.get_attribute(changeset, :ksef_invoice_kind)
 
-      paid_on_issue?(changeset, changeset.data.ksef_invoice_kind, context) ->
+    changeset =
+      if kind == :advance,
+        do: Ash.Changeset.force_change_attribute(changeset, :paid_on, nil),
+        else: changeset
+
+    refs = %{
+      ksef_invoice_kind: kind,
+      sale_date: Ash.Changeset.get_attribute(changeset, :sale_date),
+      paid_on: Ash.Changeset.get_attribute(changeset, :paid_on)
+    }
+
+    saved_refs = Map.take(changeset.data, [:ksef_invoice_kind, :sale_date, :paid_on])
+
+    cond do
+      calculate(changeset, :is_paid_on_issue, refs, context) ->
+        pay_on_issue(changeset, kind, calculate(changeset, :payment_date, refs, context))
+
+      calculate(changeset, :is_paid_on_issue, saved_refs, context) ->
         Ash.Changeset.force_change_attribute(changeset, :skip_invoicing, false)
 
       true ->
@@ -29,13 +43,12 @@ defmodule Firmowid.Invoicing.Changes.PayOnIssue do
     end
   end
 
-  defp paid_on_issue?(changeset, kind, context) do
-    opts = context |> Ash.Context.to_opts() |> Keyword.put(:refs, %{ksef_invoice_kind: kind})
-    Ash.calculate!(changeset.resource, :is_paid_on_issue, opts)
+  defp calculate(changeset, calculation, refs, context) do
+    opts = context |> Ash.Context.to_opts() |> Keyword.put(:refs, refs)
+    Ash.calculate!(changeset.resource, calculation, opts)
   end
 
-  defp pay_on_issue(changeset) do
-    payment_date = Ash.Changeset.get_attribute(changeset, :sale_date)
+  defp pay_on_issue(changeset, kind, payment_date) do
     issue_date = Ash.Changeset.get_attribute(changeset, :issue_date)
 
     changeset =
@@ -47,8 +60,8 @@ defmodule Firmowid.Invoicing.Changes.PayOnIssue do
     # The invoice states the payment as made, so it cannot be dated after the invoice itself.
     if payment_date && issue_date && Date.after?(payment_date, issue_date) do
       Ash.Changeset.add_error(changeset,
-        field: :sale_date,
-        message: gettext_noop("The payment date of an advance invoice cannot be after its issue date.")
+        field: if(kind == :advance, do: :sale_date, else: :paid_on),
+        message: gettext_noop("The payment date cannot be after the issue date.")
       )
     else
       changeset
