@@ -11280,6 +11280,11 @@ msgstr ""
 msgid "Show all months"
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Show all sessions (%{count})"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Show companies only"
@@ -11293,6 +11298,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Show individuals only"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Show less"
 msgstr ""
 
 #: lib/firmowid_web/admin/views/organizations.ex

@@ -332,6 +332,54 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     "rounded bg-grey-200 px-2.5 py-1 text-base/[1.25] font-semibold text-grey-900 tabular-nums"
   end
 
+  @doc """
+  Figma "Sesje (rozwinięte)": on phones a session list sits on a grey panel across the screen,
+  down to its bottom edge, with room at the end to scroll its last row out from under the
+  timesheet bar.
+  """
+  @spec phone_list_panel_classes() :: String.t()
+  def phone_list_panel_classes do
+    "max-md:-mx-4 max-md:-mb-4 max-md:w-[calc(100%+2rem)] max-md:rounded-t max-md:bg-grey-50 max-md:px-4 max-md:pt-4 max-md:pb-30"
+  end
+
+  @doc """
+  The rows a phone shows before the list is unfolded, the first two in the list's order, and how
+  many rows there are in all.
+  """
+  @spec phone_rows([[struct()]], list()) :: {MapSet.t(), non_neg_integer()}
+  def phone_rows(today_sessions, grouped_sessions) do
+    rows =
+      today_sessions ++
+        for {_week, days} <- grouped_sessions, {_day, group} <- days, row <- group, do: row
+
+    shown = rows |> Enum.take(2) |> MapSet.new(&hd(&1).id)
+    {shown, length(rows)}
+  end
+
+  # Figma's clipboard, drawn at 20 px with a 2 px line; Lucide's is a shade
+  # different and thinner.
+  defp timesheet_icon(assigns) do
+    ~H"""
+    <svg
+      class="size-5 shrink-0 text-grey-900"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7.8125 2.5H12.1875C12.5902 2.5 12.9167 2.77982 12.9167 3.125V4.375C12.9167 4.72018 12.5902 5 12.1875 5H7.8125C7.40979 5 7.08333 4.72018 7.08333 4.375V3.125C7.08333 2.77982 7.40979 2.5 7.8125 2.5Z" />
+      <path d="M12.9167 4.16667H14.375C14.7618 4.16667 15.1327 4.32275 15.4062 4.60058C15.6797 4.87841 15.8333 5.25523 15.8333 5.64815V16.0185C15.8333 16.4114 15.6797 16.7883 15.4062 17.0661C15.1327 17.3439 14.7618 17.5 14.375 17.5H5.625C5.23823 17.5 4.86729 17.3439 4.5938 17.0661C4.32031 16.7883 4.16667 16.4114 4.16667 16.0185V5.64815C4.16667 5.25523 4.32031 4.87841 4.5938 4.60058C4.86729 4.32275 5.23823 4.16667 5.625 4.16667H7.08333" />
+      <path d="M10.2777 9.375H13.3333" />
+      <path d="M10.2777 13.1942H13.3333" />
+      <path d="M7.22209 9.375H7.23042" />
+      <path d="M7.22209 13.1942H7.23042" />
+    </svg>
+    """
+  end
+
   def assign_page_title(socket) do
     case socket.assigns.current_session do
       nil -> assign(socket, :page_title, pgettext("page title", "Time tracker"))

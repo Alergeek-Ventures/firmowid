@@ -67,22 +67,23 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
 
     ~H"""
     <%!-- Same insets as the sidebar head, so the wordmark and button stay put as it slides in. --%>
-    <.navbar class="sticky top-0 z-40 flex h-navbar items-start gap-3 px-3! pt-4 sm:px-3! md:hidden">
-      <span class="pl-1 font-logo text-[22px]/7 font-extrabold text-white">
+    <.navbar class="sticky top-0 z-40 flex h-14 items-center gap-3 pr-2! pl-4! md:hidden">
+      <span class="font-logo text-[22px]/7 font-extrabold text-white">
         Firmowid
       </span>
+      <%!-- Figma "Górny pasek": the sidebar's own panel icon, 24 px in a 44 px touch target. --%>
       <.panel_button
-        class="ml-auto"
+        class="m-0! ml-auto! size-11!"
         phx-click={JS.toggle_class(@closed_on_phone, to: "#app-sidebar")}
         label={pgettext("main navigation", "Navigation menu")}
       >
-        <Lucideicons.menu class="size-5.5" aria-hidden="true" />
+        <.figma_icon name="zwin_panel" class="size-6 text-grey-300" />
       </.panel_button>
     </.navbar>
     <aside
       id="app-sidebar"
       class={[
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-4 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] motion-safe:max-md:duration-300 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width] motion-safe:md:duration-250",
+        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-4 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:pt-3.5 max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] motion-safe:max-md:duration-300 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width] motion-safe:md:duration-250",
         @closed_on_phone
       ]}
     >
@@ -100,6 +101,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           phx-hook=".SidebarCollapse"
           phx-click={close_on_phone()}
           label={gettext("Collapse or expand the menu")}
+          class="max-md:-my-2 max-md:-mr-1 max-md:size-11"
         >
           <%!-- Collapses on desktop; on phones it closes the menu the hamburger opened. --%>
           <.figma_icon

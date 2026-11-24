@@ -27,8 +27,9 @@
       "max-md:has-data-page-actions:pb-28",
       # the sidebar replaces the navbar on desktop, so sticky headers stick to the top;
       # the margin follows the sidebar's width as it collapses
+      # the phone's top bar is 56 px, as in Figma "Górny pasek"
       app_navigation?(assigns) &&
-        "md:ms-64 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start] motion-safe:md:duration-250",
+        "max-md:[--navbar-height:56px] max-md:[--spacing-navbar:56px] md:ms-64 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start] motion-safe:md:duration-250",
       assigns[:main_class]
     ]
   }
