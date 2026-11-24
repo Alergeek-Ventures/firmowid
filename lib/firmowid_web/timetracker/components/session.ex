@@ -27,6 +27,8 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     default: false,
     doc: "lights the row up for a moment and scrolls to it, for a task a link points at"
 
+  attr :rest, :global
+
   def render(assigns) do
     ~H"""
     <% parent_session = hd(@sessions) %>
@@ -40,13 +42,19 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       phx-submit={JS.push("validate_and_update_list_onsubmit") |> hide_popover(popover_id)}
       phx-change="validate_and_update_list_onchange"
       phx-auto-recover="ignore"
-      class={[
-        "group/row relative flex w-full min-w-0 flex-row items-center border-b px-2 max-md:flex-wrap",
-        if(@filter, do: "min-h-12 border-grey-200 py-2", else: "border-grey-100 py-3"),
-        @highlighted &&
-          "animate-[t-row-highlight_2.4s_ease-out] rounded-sm outline -outline-offset-1 outline-transparent motion-reduce:animate-none"
-      ]}
+      class={
+        [
+          # Figma "Sesja · wiersz / mobile": the title over two lines, the project, session count
+          # and work mode below it, the time on the right across both. The popovers' empty
+          # focus wraps share the first cell instead of opening a row.
+          "group/row relative flex w-full min-w-0 flex-row items-center border-b px-2 max-md:grid max-md:grid-cols-[auto_auto_minmax(0,1fr)_auto] max-md:gap-y-1 max-md:*:[[phx-hook$=FocusWrap]]:col-start-1 max-md:*:[[phx-hook$=FocusWrap]]:row-start-1",
+          if(@filter, do: "min-h-12 border-grey-200 py-2", else: "border-grey-100 py-3"),
+          @highlighted &&
+            "animate-[t-row-highlight_2.4s_ease-out] rounded-sm outline -outline-offset-1 outline-transparent motion-reduce:animate-none"
+        ]
+      }
       phx-hook={@highlighted && "ScrollIntoView"}
+      {@rest}
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
@@ -57,34 +65,44 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       />
 
       <%!-- Pulled left so the title's hover background starts at the row's edge, as in Figma. --%>
-      <div class="group -ml-2 flex min-w-0 flex-1 flex-row items-center gap-[11px] max-md:basis-full">
-        <.hidden_input>
-          <:input>
-            <%!-- In the filtered list a title stands for a whole task, so say that renaming moves all its sessions. --%>
-            <.tooltip
-              :if={@filter && length(@sessions) > 1}
-              id={"task-rename-#{parent_session.id}"}
-              text={
-                ngettext(
-                  "The change applies to the %{count} session of this task in %{month}",
-                  "The change applies to all %{count} sessions of this task in %{month}",
-                  length(@sessions),
-                  month: Index.month_after_in(@filter.month)
-                )
-              }
-              variant="hint"
-              placement="top-start"
-              class="max-w-full min-w-0"
-            >
-              <.title_input field={sessions_form[:title]} />
-            </.tooltip>
-            <.title_input :if={!(@filter && length(@sessions) > 1)} field={sessions_form[:title]} />
-          </:input>
-        </.hidden_input>
+      <div class="group -ml-2 flex min-w-0 flex-1 flex-row items-center gap-[11px] max-md:contents">
+        <%!-- On phones the title shows as text that wraps; the field lies over it and shows up
+        only while it is being edited, as an input keeps to one line. --%>
+        <div class="group/title contents max-md:relative max-md:col-span-3 max-md:col-start-1 max-md:row-start-1 max-md:block max-md:min-w-0">
+          <span
+            aria-hidden="true"
+            class="hidden text-sm/[1.4] wrap-break-word text-grey-900 group-focus-within/title:invisible max-md:line-clamp-2"
+          >
+            {sessions_form[:title].value}
+          </span>
+          <.hidden_input>
+            <:input>
+              <%!-- In the filtered list a title stands for a whole task, so say that renaming moves all its sessions. --%>
+              <.tooltip
+                :if={@filter && length(@sessions) > 1}
+                id={"task-rename-#{parent_session.id}"}
+                text={
+                  ngettext(
+                    "The change applies to the %{count} session of this task in %{month}",
+                    "The change applies to all %{count} sessions of this task in %{month}",
+                    length(@sessions),
+                    month: Index.month_after_in(@filter.month)
+                  )
+                }
+                variant="hint"
+                placement="top-start"
+                class="max-w-full min-w-0 max-md:static"
+              >
+                <.title_input field={sessions_form[:title]} />
+              </.tooltip>
+              <.title_input :if={!(@filter && length(@sessions) > 1)} field={sessions_form[:title]} />
+            </:input>
+          </.hidden_input>
+        </div>
 
         <span
           :if={length(@sessions) > 1}
-          class="shrink-0 text-sm/[1.4] whitespace-nowrap text-grey-500"
+          class="shrink-0 text-sm/[1.4] whitespace-nowrap text-grey-500 max-md:col-start-2 max-md:row-start-2 max-md:ml-2"
         >
           | {ngettext("%{count} session", "%{count} sessions", length(@sessions))}
         </span>
@@ -93,7 +111,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           type="button"
           phx-click={JS.focus(to: "##{sessions_form[:title].id}")}
           variant="unstyled"
-          class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden"
+          class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden max-md:hidden"
         >
           <span class="sr-only">{gettext("Edit title")}</span>
         </.button>
@@ -104,7 +122,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <%!-- The column keeps Figma's width, the hover background only the name's. --%>
       <span
         :if={!@filter}
-        class="-mr-2 ml-[3px] flex min-w-0 justify-end max-md:-ml-2 xl:w-39 xl:shrink-0"
+        class="-mr-2 ml-[3px] flex min-w-0 justify-end max-md:col-start-1 max-md:row-start-2 max-md:-ml-2 max-md:justify-start xl:w-39 xl:shrink-0"
       >
         <.button
           id={"project-select-#{parent_session.id}"}
@@ -161,7 +179,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <span class={[
-        "-mr-2 flex w-18 shrink-0 justify-end max-md:ml-auto",
+        "-mr-2 flex w-18 shrink-0 justify-end max-md:col-start-4 max-md:row-span-2 max-md:row-start-1 max-md:ml-3 max-md:w-auto",
         if(@filter, do: "ml-1", else: "ml-[3px]")
       ]}>
         <.button
@@ -370,7 +388,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       )
 
     ~H"""
-    <div class="group/mode-slot ml-[11px] flex h-6 w-10 shrink-0 items-center">
+    <div class="group/mode-slot ml-[11px] flex h-6 w-10 shrink-0 items-center max-md:col-start-3 max-md:row-start-2 max-md:ml-1 max-md:w-auto">
       <.tooltip
         :if={@mode == :mixed}
         id={"session-work-mode-hint-#{@id}"}
@@ -685,7 +703,8 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       value={@field.value}
       class={
         text_like_input_styles([
-          "-my-1! ml-0! h-7 max-w-full truncate px-2! py-0! text-sm/7 text-grey-900 hover:bg-grey-100! focus:bg-grey-100! focus-visible:outline-none"
+          "-my-1! ml-0! h-7 max-w-full truncate px-2! py-0! text-sm/7 text-grey-900 hover:bg-grey-100! focus:bg-grey-100! focus-visible:outline-none",
+          "max-md:absolute max-md:inset-y-0 max-md:-left-2 max-md:my-0! max-md:h-full max-md:w-[calc(100%+0.5rem)] max-md:max-w-none max-md:opacity-0 max-md:focus:opacity-100"
         ])
       }
       style="field-sizing: content;"
