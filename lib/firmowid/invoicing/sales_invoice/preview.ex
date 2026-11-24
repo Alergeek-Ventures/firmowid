@@ -10,7 +10,8 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     :buyer_display_name_label,
     :is_draft,
     :is_confirmed,
-    :is_paid_on_issue
+    :is_paid_on_issue,
+    :payment_date
   ]
   @review_fields [
     :invoice_type,
@@ -19,6 +20,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     :issue_date,
     :sale_date,
     :due_date,
+    :paid_on,
     :currency,
     :payment_method,
     :should_send_emails,

@@ -26,7 +26,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @invoice_aggs [:net_value, :vat_value, :gross_value]
-  @invoice_calcs [:buyer_id_type, :is_paid_on_issue]
+  @invoice_calcs [:buyer_id_type, :is_paid_on_issue, :payment_date]
 
   @doc """
   Renders the FA(3) XML template with the given sales invoice.

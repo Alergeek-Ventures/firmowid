@@ -221,10 +221,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
     with {:ok, invoice} <- invoice_input(input),
          # Skipping the draft in matching has no row on the card, so it cannot be approved.
-         # An invoice paid on issue is always skipped, which its kind's row tells.
          {:ok, draft} <-
            result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
-      if draft.skip_invoicing and not draft.is_paid_on_issue,
+      if draft.skip_invoicing,
         do: :error,
         else: {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
     end
@@ -449,8 +448,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # A draft is compared by the fields it writes that decide who is invoiced, for what and how
   # they pay.
   defp invoice_changes(saved, revised) do
-    # An invoice paid on issue has no due date: its sale date is the day the payment arrived.
+    # An invoice paid on issue has no due date. An advance invoice's sale date is the day the
+    # payment arrived; a VAT invoice states that day apart.
     paid? = revised.is_paid_on_issue == true
+    advance? = revised.ksef_invoice_kind == :advance
 
     [
       {gettext("Invoice type"), &invoice_type(&1.invoice_type)},
@@ -472,8 +473,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Phone"), & &1.buyer_phone},
       {gettext("Description"), & &1.buyer_description},
       {gettext("Issue date"), &(&1.issue_date && date(&1.issue_date))},
-      {if(paid?, do: gettext("Payment date"), else: gettext("Sale date")), &(&1.sale_date && date(&1.sale_date))},
+      {if(advance?, do: gettext("Payment date"), else: gettext("Sale date")), &(&1.sale_date && date(&1.sale_date))},
       not paid? && {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
+      {gettext("Payment date"), &(&1.paid_on && date(&1.paid_on))},
       {gettext("Payment method"), &payment_method(&1.payment_method)},
       {gettext("Bank account number"), & &1.seller_account_number},
       {gettext("Cash accounting"), &flag(&1.is_cash_account)},

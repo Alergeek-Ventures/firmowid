@@ -249,6 +249,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def sales_invoice_metadata(assigns) do
     paid? = assigns.invoice.is_paid_on_issue == true
+    # An advance invoice's sale date is its payment date; a VAT invoice paid on issue shows both.
+    advance? = assigns.invoice.ksef_invoice_kind == :advance
 
     labels =
       if assigns.lang == :en do
@@ -257,8 +259,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           ksef_id: "KSeF ID",
           buyer: "Buyer",
           issue_date: "Issue date",
-          sale_date: if(paid?, do: "Payment date", else: "Sale date"),
-          due_date: "Payment deadline"
+          sale_date: if(advance?, do: "Payment date", else: "Sale date"),
+          due_date: "Payment deadline",
+          payment_date: "Payment date"
         }
       else
         %{
@@ -266,12 +269,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           ksef_id: "Identyfikator KSeF",
           buyer: "Kupujący",
           issue_date: "Data wystawienia",
-          sale_date: if(paid?, do: "Data zapłaty", else: "Data sprzedaży"),
-          due_date: "Termin płatności"
+          sale_date: if(advance?, do: "Data zapłaty", else: "Data sprzedaży"),
+          due_date: "Termin płatności",
+          payment_date: "Data zapłaty"
         }
       end
 
-    assigns = assign(assigns, labels: labels, paid?: paid?)
+    assigns = assign(assigns, labels: labels, paid?: paid?, advance?: advance?)
 
     ~H"""
     <div class="flex flex-col gap-4">
@@ -308,6 +312,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           label={@labels.due_date}
           value={@invoice.due_date}
           piece_id="due-date"
+        />
+        <.invoice_metadata_piece
+          :if={@paid? and not @advance?}
+          label={@labels.payment_date}
+          value={@invoice.payment_date}
+          piece_id="payment-date"
         />
       </div>
 

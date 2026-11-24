@@ -92,7 +92,13 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   # An imported document arrives complete, with the seller and dates the other software issued,
   # and already locked like an invoice KSeF confirmed, so it also brings its denormalized item names.
   @ksef_import_fields (@draft_fields --
-                         [:counterparty_id, :internal_note, :skip_invoicing, :should_send_emails]) ++
+                         [
+                           :counterparty_id,
+                           :internal_note,
+                           :skip_invoicing,
+                           :should_send_emails,
+                           :paid_on
+                         ]) ++
                         [
                           :invoice_number,
                           :issue_date,
@@ -1139,6 +1145,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     attribute :issue_date, :date, public?: true
     attribute :due_date, :date, public?: true
 
+    attribute :paid_on, :date,
+      public?: true,
+      description:
+        "The day a VAT invoice was paid in full, by its issue date. An advance invoice is paid on its sale date instead."
+
     attribute :payment_method, :atom,
       constraints: [one_of: ~w[cash card voucher check credit transfer mobile]a],
       default: :transfer,
@@ -1422,9 +1433,19 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       description "Corrects an issued invoice. Every other kind is issued as a new document."
     end
 
-    calculate :is_paid_on_issue, :boolean, expr(ksef_invoice_kind == :advance) do
-      description "Documents a payment already received (an advance invoice), so nothing is due: " <>
-                    "it has no payment term, awaits no transaction and gets no reminder."
+    calculate :is_paid_on_issue,
+              :boolean,
+              expr(ksef_invoice_kind == :advance or not is_nil(paid_on)) do
+      description "Documents a payment already received (an advance invoice or a VAT invoice paid " <>
+                    "by its issue date), so nothing is due: it has no payment term and gets no reminder, and " <>
+                    "its payment is expected as a transaction once it is issued."
+    end
+
+    calculate :payment_date,
+              :date,
+              expr(if(ksef_invoice_kind == :advance, do: sale_date, else: paid_on)) do
+      description "The day an invoice paid on issue was paid: an advance invoice's sale date, " <>
+                    "or a VAT invoice's `paid_on`."
     end
 
     calculate :is_correctable, :boolean, expr(ksef_invoice_kind == :vat and is_confirmed) do
