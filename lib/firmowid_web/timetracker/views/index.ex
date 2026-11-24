@@ -342,20 +342,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     "max-md:-mx-4 max-md:-mb-4 max-md:w-[calc(100%+2rem)] max-md:rounded-t max-md:bg-grey-50 max-md:px-4 max-md:pt-4 max-md:pb-30"
   end
 
-  @doc """
-  The rows a phone shows before the list is unfolded, the first two in the list's order, and how
-  many rows there are in all.
-  """
-  @spec phone_rows([[struct()]], list()) :: {MapSet.t(), non_neg_integer()}
-  def phone_rows(today_sessions, grouped_sessions) do
-    rows =
-      today_sessions ++
-        for {_week, days} <- grouped_sessions, {_day, group} <- days, row <- group, do: row
-
-    shown = rows |> Enum.take(2) |> MapSet.new(&hd(&1).id)
-    {shown, length(rows)}
-  end
-
   # Figma's clipboard, drawn at 20 px with a 2 px line; Lucide's is a shade
   # different and thinner.
   defp timesheet_icon(assigns) do

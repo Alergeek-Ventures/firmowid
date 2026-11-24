@@ -27,8 +27,6 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     default: false,
     doc: "lights the row up for a moment and scrolls to it, for a task a link points at"
 
-  attr :rest, :global
-
   def render(assigns) do
     ~H"""
     <% parent_session = hd(@sessions) %>
@@ -54,7 +52,6 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         ]
       }
       phx-hook={@highlighted && "ScrollIntoView"}
-      {@rest}
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
