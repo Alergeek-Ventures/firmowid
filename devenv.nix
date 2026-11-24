@@ -136,6 +136,9 @@ in
 
     podman
     podman-compose
+
+    # For mix stripe.listen.
+    stripe-cli
   ]
   ++ lib.optionals stdenv.isLinux [
     tunnel-client

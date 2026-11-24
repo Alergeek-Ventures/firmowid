@@ -38,7 +38,7 @@ defmodule Mix.Tasks.Chatgpt.Tunnel do
     infisical = executable!("infisical")
     client = executable!("tunnel-client")
     bash = executable!("bash")
-    supervisor = Path.join(root, "priv/scripts/chatgpt_tunnel_supervisor.bash")
+    supervisor = Path.join(root, "priv/scripts/client_supervisor.bash")
     parent_pid = parent_pid!()
     args = tunnel_args(origin)
     env = child_env()
