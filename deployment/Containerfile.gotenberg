@@ -11,22 +11,34 @@ FROM docker.io/gotenberg/gotenberg:9.6.0-chromium@sha256:d9ff624bb96d7c9eb37e2d8
 # Keep Chromium warm from boot instead of starting on first conversion.
 ENV CHROMIUM_AUTO_START=true
 
-# Install custom fonts
+# Install custom fonts from a pinned google/fonts commit. The SHA-256 sums were
+# computed from the files at that commit; the build fails before installing
+# anything if a download differs. Moving the commit means recomputing all sums.
+ARG GOOGLE_FONTS_COMMIT=06bfe0d62a98375cb09c942fa18e68bd32cff057
 USER root
 RUN mkdir -p /usr/share/fonts/truetype/geist \
              /usr/share/fonts/truetype/lexend \
              /usr/share/fonts/truetype/open-sans \
              /usr/share/fonts/truetype/montserrat && \
     cd /tmp && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/geist/Geist%5Bwght%5D.ttf -o Geist.ttf && \
+    fonts="https://raw.githubusercontent.com/google/fonts/${GOOGLE_FONTS_COMMIT}/ofl" && \
+    curl -fsSL "$fonts/geist/Geist%5Bwght%5D.ttf" -o Geist.ttf && \
+    curl -fsSL "$fonts/lexend/Lexend%5Bwght%5D.ttf" -o Lexend.ttf && \
+    curl -fsSL "$fonts/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf" -o OpenSans.ttf && \
+    curl -fsSL "$fonts/opensans/OpenSans-Italic%5Bwdth%2Cwght%5D.ttf" -o OpenSans-Italic.ttf && \
+    curl -fsSL "$fonts/montserrat/Montserrat%5Bwght%5D.ttf" -o Montserrat.ttf && \
+    curl -fsSL "$fonts/montserrat/Montserrat-Italic%5Bwght%5D.ttf" -o Montserrat-Italic.ttf && \
+    printf '%s  %s\n' \
+      73894e0448cae90a92b6c2f8732b7bb9acb7b94c418bff559dad4a18e1de9659 Geist.ttf \
+      3add53e641fbc81da64da4bb254285e2831b52b029527bc0714e2b9610832ee6 Lexend.ttf \
+      36643644f318a812aab2d2ed3bb98f8cf0872527f835fe9398d95fe6b9adb878 OpenSans.ttf \
+      fe269381e992f32e135801740998544d6235061e37c93ec067ad2be3edd5b17b OpenSans-Italic.ttf \
+      0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7 Montserrat.ttf \
+      51607f316bc020e59f03cbf51543eecffbea501c0b31d73e5b82927c5cca442c Montserrat-Italic.ttf \
+      | sha256sum --strict -c - && \
     mv Geist.ttf /usr/share/fonts/truetype/geist/ && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/lexend/Lexend%5Bwght%5D.ttf -o Lexend.ttf && \
     mv Lexend.ttf /usr/share/fonts/truetype/lexend/ && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf -o OpenSans.ttf && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans-Italic%5Bwdth%2Cwght%5D.ttf -o OpenSans-Italic.ttf && \
     mv OpenSans.ttf OpenSans-Italic.ttf /usr/share/fonts/truetype/open-sans/ && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf -o Montserrat.ttf && \
-    curl -fsSL https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Italic%5Bwght%5D.ttf -o Montserrat-Italic.ttf && \
     mv Montserrat.ttf Montserrat-Italic.ttf /usr/share/fonts/truetype/montserrat/ && \
     fc-cache -f -v
 
