@@ -240,7 +240,7 @@ jobs:
     # The unused translations branch is skipped; do not propagate that to reporting.
     # Only pull requests get the coverage comment; other runs would occupy a runner for nothing.
     if: ${{ !cancelled() && needs.build.result == 'success' && github.event_name == 'pull_request' }}
-    runs-on: selenge
+    runs-on: selenge-small
     needs: build
     permissions:
       actions: read

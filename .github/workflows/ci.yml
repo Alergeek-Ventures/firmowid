@@ -35,7 +35,7 @@ jobs:
     name: Publish translation snapshot
     if: github.ref == 'refs/heads/main'
     needs: translations
-    runs-on: selenge
+    runs-on: selenge-small
     permissions:
       contents: write
       # Sigstore signs the snapshot's build provenance with the job's OIDC identity.
@@ -127,7 +127,7 @@ jobs:
   seaweedfs-image:
     name: Check main SeaweedFS image
     if: github.ref == 'refs/heads/main'
-    runs-on: selenge
+    runs-on: selenge-small
     permissions:
       contents: read
       packages: read
@@ -184,7 +184,7 @@ jobs:
   lint:
     name: Lint commits, versions and secrets
     if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
-    runs-on: selenge
+    runs-on: selenge-small
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -489,7 +489,7 @@ jobs:
   static:
     name: Format, Credo and dependency checks
     if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
-    runs-on: selenge
+    runs-on: selenge-small
     env:
       MIX_ENV: test
     steps:

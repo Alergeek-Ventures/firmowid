@@ -28,7 +28,7 @@ permissions:
 jobs:
   prepare:
     name: Export Accent PO catalog
-    runs-on: selenge
+    runs-on: selenge-small
     permissions:
       contents: read
     outputs:

@@ -14,7 +14,7 @@ permissions:
 jobs:
   submit:
     name: Submit sitemap URLs
-    runs-on: selenge
+    runs-on: selenge-small
     continue-on-error: true
     env:
       SITE: https://firmowid.pl

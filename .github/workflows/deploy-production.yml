@@ -28,7 +28,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: sentry-release
-    runs-on: selenge
+    runs-on: selenge-small
     environment: production
 
     steps:
