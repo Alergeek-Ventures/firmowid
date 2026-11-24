@@ -107,6 +107,8 @@ in
     beam29Packages.elixir_1_20
     beam29Packages.erlang
     infisical
+    # Verifies the provenance of published translation snapshots.
+    gh
     worktrunk
     betterleaks
     bash

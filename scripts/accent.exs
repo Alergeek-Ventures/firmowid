@@ -11,15 +11,19 @@ defmodule Firmowid.Translations.Accent do
   `snapshot` exports the current Accent catalog, validates every translated locale
   against the source POT and installs it marked with a commit SHA. CI publishes the
   snapshot of each main commit as `<sha>.tar.gz` in the `translation-snapshots`
-  GitHub release; `export` installs such a published snapshot, so deployment builds
-  use exactly the catalog CI validated for their commit.
+  GitHub release with its Sigstore provenance bundle; `export` installs such a
+  published snapshot only after verifying that provenance, so deployment builds use
+  exactly the catalog CI validated for their commit.
   """
 
   @root Path.expand("..", __DIR__)
   @config Path.join(@root, "accent.json")
   @catalog Path.join(@root, "priv/gettext/default.pot")
 
-  @snapshot_url "https://github.com/Alergeek-Ventures/firmowid/releases/download/translation-snapshots"
+  @repository "Alergeek-Ventures/firmowid"
+  @snapshot_url "https://github.com/#{@repository}/releases/download/translation-snapshots"
+  # The publish-translations job of ci.yml running on main is the only snapshot signer.
+  @signer "https://github.com/#{@repository}/.github/workflows/ci.yml@refs/heads/main"
   @request_timeout 30_000
   @usage "usage: accent.exs snapshot --version FULL_SHA | accent.exs export --version FULL_SHA [--fallback-version FULL_SHA]"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
@@ -63,27 +67,54 @@ defmodule Firmowid.Translations.Accent do
   end
 
   defp download_snapshot(version, fallback, temporary_directory) do
-    case Req.get("#{@snapshot_url}/#{version}.tar.gz",
-           receive_timeout: @request_timeout,
-           connect_options: [timeout: 10_000],
-           retry: false,
-           decode_body: false
-         ) do
-      {:ok, %Req.Response{status: 200, body: body}} ->
+    case download("#{version}.tar.gz") do
+      {:ok, body} ->
+        archive = Path.join(temporary_directory, "#{version}.tar.gz")
+        bundle = Path.join(temporary_directory, "#{version}.tar.gz.intoto.jsonl")
+        File.write!(archive, body)
+        File.write!(bundle, download_bundle(version))
+        verify_provenance(archive, bundle, version)
+
         :ok =
-          :erl_tar.extract({:binary, body}, [
+          :erl_tar.extract(String.to_charlist(archive), [
             :compressed,
             {:cwd, String.to_charlist(temporary_directory)}
           ])
 
         version
 
-      {:ok, %Req.Response{status: 404}} when version != fallback ->
+      :not_found when version != fallback ->
         IO.puts("No published translation snapshot for #{version}; using #{fallback}")
         download_snapshot(fallback, fallback, temporary_directory)
 
-      {:ok, %Req.Response{status: 404}} ->
+      :not_found ->
         raise RuntimeError, "No published translation snapshot for #{version}"
+    end
+  end
+
+  defp download_bundle(version) do
+    case download("#{version}.tar.gz.intoto.jsonl") do
+      {:ok, body} ->
+        body
+
+      :not_found ->
+        raise RuntimeError,
+              "Published translation snapshot #{version} has no provenance attestation"
+    end
+  end
+
+  defp download(asset) do
+    case Req.get("#{@snapshot_url}/#{asset}",
+           receive_timeout: @request_timeout,
+           connect_options: [timeout: 10_000],
+           retry: false,
+           decode_body: false
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %Req.Response{status: 404}} ->
+        :not_found
 
       {:ok, %Req.Response{status: status}} ->
         raise RuntimeError, "Translation snapshot download failed (HTTP #{status})"
@@ -91,6 +122,38 @@ defmodule Firmowid.Translations.Accent do
       {:error, reason} ->
         raise RuntimeError,
               "Translation snapshot download failed (transport: #{error_kind(reason)})"
+    end
+  end
+
+  # Anyone who can write to the repository can replace release assets, and the version
+  # marker inside the archive is only a label. Install an archive only when its Sigstore
+  # provenance was signed by ci.yml on main for exactly this commit.
+  defp verify_provenance(archive, bundle, version) do
+    gh =
+      System.find_executable("gh") ||
+        raise(RuntimeError, "The GitHub CLI (gh) is required to verify translation snapshots")
+
+    arguments = [
+      "attestation",
+      "verify",
+      archive,
+      "--bundle",
+      bundle,
+      "--repo",
+      @repository,
+      "--cert-identity",
+      @signer,
+      "--source-digest",
+      version
+    ]
+
+    case System.cmd(gh, arguments, stderr_to_stdout: true) do
+      {_output, 0} ->
+        :ok
+
+      {output, status} ->
+        raise RuntimeError,
+              "Translation snapshot #{version} failed provenance verification (status #{status}): #{String.trim(output)}"
     end
   end
 

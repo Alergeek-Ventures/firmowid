@@ -104,8 +104,10 @@ Follow these steps in order when changing user-facing text:
   Accent already holds its new strings in both languages.
 - On `main`, CI publishes the validated catalog as `FULL_SHA.tar.gz` in the
   `translation-snapshots` GitHub release; the deployment build installs it with
-  `elixir scripts/accent.exs export --version FULL_SHA`. A published snapshot is
-  immutable; reruns of that commit reuse it. Accent versions are not used.
+  `elixir scripts/accent.exs export --version FULL_SHA`, which first verifies the
+  snapshot's Sigstore provenance with `gh attestation verify` (signer: `ci.yml` on
+  `main`, source digest: that SHA). A published snapshot is never replaced by CI;
+  reruns of that commit reuse it. Accent versions are not used.
 - `mix translations.fetch --latest` reproduces the CI export locally;
   `mix translations.fetch [--version FULL_SHA] [--fallback-version FULL_SHA]`
   installs a published snapshot, falling back only when the requested one is not
