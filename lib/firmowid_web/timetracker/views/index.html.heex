@@ -562,24 +562,28 @@
 </div>
 
 <%!-- Figma "Pasek Ewidencji": on phones the month's total and the way into the timesheet float
-at the bottom. They step aside while a field is focused, as the keyboard pushes them up. --%>
-<.link
-  id="timesheet-bar"
-  navigate={Navigation.hours_record_index_path(@timesheet_month.date)}
-  kind="unstyled"
-  class="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex h-12 items-center gap-1 rounded border border-black bg-teal-100 px-3 shadow-small md:hidden [body:has(:is(input,textarea):focus)_&]:hidden"
->
-  <span class="flex min-w-0 flex-1 items-center gap-1.5">
-    <.timesheet_icon />
-    <span class="truncate text-base/[normal] font-medium text-grey-900">
-      {@timesheet_month.duration}
+at the bottom. They step aside while a field is focused, as the keyboard pushes them up. The
+strip behind them is the list's grey down to the screen's edge, which Safari carries into its
+own bar below. --%>
+<div class="fixed inset-x-0 bottom-0 z-30 bg-grey-50 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:hidden [body:has(:is(input,textarea):focus)_&]:hidden">
+  <.link
+    id="timesheet-bar"
+    navigate={Navigation.hours_record_index_path(@timesheet_month.date)}
+    kind="unstyled"
+    class="flex h-12 items-center gap-1 rounded border border-black bg-teal-100 px-3 shadow-small"
+  >
+    <span class="flex min-w-0 flex-1 items-center gap-1.5">
+      <.timesheet_icon />
+      <span class="truncate text-base/[normal] font-medium text-grey-900">
+        {@timesheet_month.duration}
+      </span>
     </span>
-  </span>
-  <span class="text-base/[normal] font-medium text-black">
-    {pgettext("timesheet link", "Timesheet")}
-  </span>
-  <.figma_icon name="chevron_right" class="size-4 text-grey-700" />
-</.link>
+    <span class="text-base/[normal] font-medium text-black">
+      {pgettext("timesheet link", "Timesheet")}
+    </span>
+    <.figma_icon name="chevron_right" class="size-4 text-grey-700" />
+  </.link>
+</div>
 
 <%!-- Figma "Nakładające się sesje — modal (nowy styl)": asks before a session overlaps others,
 a new one or the running one whose times were edited. The session in question first, then

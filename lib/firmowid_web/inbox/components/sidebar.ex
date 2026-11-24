@@ -66,8 +66,11 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       )
 
     ~H"""
-    <%!-- Same insets as the sidebar head, so the wordmark and button stay put as it slides in. --%>
-    <.navbar class="sticky top-0 z-40 flex h-14 items-center gap-3 pr-2! pl-4! md:hidden">
+    <%!-- Same insets as the sidebar head, so the wordmark and button stay put as it slides in.
+    Fixed rather than sticky, and its black runs on above the screen's top edge, where Safari
+    shows the page through its address bar: there the bar shows black instead of the page
+    scrolling under it. The layout keeps the bar's height free (see the app layout). --%>
+    <.navbar class="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 pr-2! pl-4! before:absolute before:inset-x-0 before:bottom-full before:h-screen before:bg-black md:hidden">
       <span class="font-logo text-[22px]/7 font-extrabold text-white">
         Firmowid
       </span>
