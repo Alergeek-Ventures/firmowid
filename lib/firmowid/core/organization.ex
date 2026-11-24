@@ -16,6 +16,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.PlanLimits
   alias Firmowid.Blobs.Blob
+  alias Firmowid.Blobs.Validations.NotDocumentBlob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
@@ -183,6 +184,8 @@ defmodule Firmowid.Core.Organization do
       description "Replace the organization's avatar blob."
       accept [:avatar_blob_id]
       require_atomic? false
+
+      validate NotDocumentBlob
 
       change CleanupOldAvatarBlob
       change GenerateAvatarVariants
