@@ -69,7 +69,7 @@ defmodule Firmowid.Invoicing.NipRegistration do
   # The white list's search keeps subjects removed from the VAT register, with their KRS
   # number; its daily limit is low, so it is asked only for such NIPs.
   defp krs(nip, %{white_list: :not_registered} = registers, nil) do
-    case VatApiClient.fetch_by_nip(nip, retry: false) do
+    case VatApiClient.fetch_by_nip(nip) do
       {:ok, %{"result" => %{"subject" => %{"krs" => number}}}} when number not in [nil, ""] ->
         krs_lookup(nip, registers, number)
 

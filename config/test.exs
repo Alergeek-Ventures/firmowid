@@ -60,7 +60,6 @@ config :firmowid, :bank_data_api_client,
 
 config :firmowid, :ceidg_api_request_options, plug: Firmowid.Test.Support.CeidgApiStub
 config :firmowid, :ceidg_api_token, "test-ceidg-api-token"
-config :firmowid, :ceidg_pause_ms, 0
 
 # Gotenberg is not running during tests, so it is excluded from /health.
 config :firmowid, :health_checks, [:database, :oban]
@@ -75,6 +74,12 @@ config :firmowid, :openai_api_key, "test-openai-api-key"
 # so tests never wait for the real API; tests needing a response start a stub.
 config :firmowid, :openai_ex, base_url: "http://127.0.0.1:9/v1"
 config :firmowid, :reducto_api_key, "test-reducto-api-key"
+
+config :firmowid, :register_rate_limits, %{
+  ceidg: %{every_ms: 0, max_wait_ms: 0},
+  mf_search: %{per_day: 1_000_000},
+  mf_status: %{per_day: 1_000_000}
+}
 
 config :firmowid, :s3,
   scheme: System.get_env("S3_SCHEME", "http://"),
