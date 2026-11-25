@@ -89,6 +89,9 @@ defmodule Firmowid.Billing.Subscription.Actions.Checkout do
     %{
       subscription_data: Map.put(trial, :metadata, %{organization_id: organization_id}),
       mode: :subscription,
+      # Plans are priced and invoiced in PLN. Stripe's Adaptive Pricing would let a buyer abroad
+      # pay in their own currency, and the advance invoice would follow it.
+      adaptive_pricing: %{enabled: false},
       customer: customer_id,
       locale: :pl,
       payment_method_types: [:card],
