@@ -70,17 +70,17 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
     Fixed rather than sticky, and its black runs on above the screen's top edge, where Safari
     shows the page through its address bar: there the bar shows black instead of the page
     scrolling under it. The layout keeps the bar's height free (see the app layout). --%>
-    <.navbar class="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 pr-2! pl-4! before:absolute before:inset-x-0 before:bottom-full before:h-screen before:bg-black md:hidden">
+    <.navbar class="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 pr-1! pl-4! before:absolute before:inset-x-0 before:bottom-full before:h-screen before:bg-black md:hidden">
       <span class="font-logo text-[22px]/7 font-extrabold text-white">
         Firmowid
       </span>
-      <%!-- Figma "Górny pasek": the sidebar's own panel icon, 24 px in a 44 px touch target. --%>
+      <%!-- Figma "Górny pasek": the sidebar's own panel icon, white, 24 px in a 48 px touch target. --%>
       <.panel_button
-        class="m-0! ml-auto! size-11!"
+        class="m-0! ml-auto! size-12!"
         phx-click={JS.toggle_class(@closed_on_phone, to: "#app-sidebar")}
         label={pgettext("main navigation", "Navigation menu")}
       >
-        <.figma_icon name="zwin_panel" class="size-6 text-grey-300" />
+        <.figma_icon name="zwin_panel" class="size-6 text-white" />
       </.panel_button>
     </.navbar>
     <aside
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           phx-hook=".SidebarCollapse"
           phx-click={close_on_phone()}
           label={gettext("Collapse or expand the menu")}
-          class="max-md:-my-2 max-md:-mr-1 max-md:size-11"
+          class="max-md:-my-2.5 max-md:-mr-2 max-md:size-12"
         >
           <%!-- Collapses on desktop; on phones it closes the menu the hamburger opened. --%>
           <.figma_icon

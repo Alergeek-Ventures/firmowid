@@ -12,6 +12,16 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   end
 
   @doc """
+  Figma "Main buttons" Size=Mobile (48px): on phones it takes over from the
+  control's own size. Add it to the control's classes. The padding is Figma's
+  12px less the 1px border, which Figma draws inside it.
+  """
+  @spec phone_size_classes() :: String.t()
+  def phone_size_classes do
+    "max-md:h-12 max-md:gap-2 max-md:p-2.75 max-md:text-base/[normal] max-md:[&>svg]:size-5"
+  end
+
+  @doc """
   Returns the shared design-system variant classes for button-like controls.
 
   The primary variant defaults to the rust accent.

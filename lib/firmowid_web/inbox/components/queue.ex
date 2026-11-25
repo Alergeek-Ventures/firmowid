@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidUI.Utilities.ButtonStyles
   alias FirmowidWeb.Inbox.Utilities.Queue
   alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
 
@@ -30,10 +31,14 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     assigns = assign(assigns, :decisions, Map.get(assigns.item, :decisions, []))
 
     ~H"""
+    <%!-- On phones a row that can be put aside slides left under the finger
+         (the inbox's `.SwipeRows`) and shows the action that does it. --%>
     <article
       id={"item-#{@item.id}"}
+      data-swipe={@item.tier != :urgent}
       class={[
-        "group flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4",
+        "group flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:relative max-md:flex-wrap max-md:items-start max-md:gap-3 max-md:px-4 max-md:py-3",
+        @item.tier != :urgent && "max-md:touch-pan-y",
         @fresh && "motion-safe:animate-arrive"
       ]}
     >
@@ -41,20 +46,37 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       <span
         :if={@item.tier == :urgent}
         class={[
-          "mt-0.5 flex size-10 shrink-0 items-center justify-center self-start rounded-sm",
+          "mt-0.5 flex size-10 shrink-0 items-center justify-center self-start rounded-sm max-md:mt-0",
           icon_styles(@item)
         ]}
       >
         <Lucideicons.render! name={@item.icon} class="size-6" aria-hidden="true" />
       </span>
       <.snooze_menu :if={@item.tier != :urgent} item={@item} today={@today} />
-      <div class="flex min-w-0 flex-1 flex-col gap-1">
-        <h3 class="text-base/[normal] font-medium text-black">
+      <%!-- On phones the tile opens the same sheet as the swipe: a dropdown would run under the
+           rows below and out of the list. --%>
+      <.button
+        :if={@item.tier != :urgent}
+        id={"item-#{@item.id}-snooze-phone"}
+        type="button"
+        variant="unstyled"
+        aria-label={gettext("Put aside")}
+        phx-click={show_snooze_sheet(@item.id)}
+        class={[
+          "relative z-10 flex size-10 shrink-0 cursor-pointer items-center justify-center self-start rounded-sm md:hidden",
+          icon_styles(@item)
+        ]}
+      >
+        <Lucideicons.render! name={@item.icon} class="size-6" aria-hidden="true" />
+      </.button>
+      <div class="flex min-w-0 flex-1 flex-col gap-1 max-md:gap-0.5">
+        <h3 class="text-base/[normal] font-medium text-black max-md:leading-[1.4]">
+          <%!-- On phones the whole row opens the item, as the chevron says. --%>
           <.link
             :if={Map.has_key?(@item, :href)}
             kind="unstyled"
             navigate={@item.href}
-            class="decoration-from-font underline-offset-auto hover:underline focus-visible:underline"
+            class="decoration-from-font underline-offset-auto hover:underline focus-visible:underline max-md:after:absolute max-md:after:inset-0"
           >
             <.item_title item={@item} />
           </.link>
@@ -64,17 +86,22 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       </div>
       <div
         :if={Map.has_key?(@item, :amount)}
-        class="flex shrink-0 flex-col items-end gap-1 whitespace-nowrap"
+        class="flex shrink-0 flex-col items-end gap-1 whitespace-nowrap max-md:gap-0.5"
       >
-        <p class="text-base/[normal] font-medium text-black">{@item.amount}</p>
-        <p class="text-sm/[1.35] text-brick-700">
+        <p class="text-base/[normal] font-medium text-black max-md:leading-[1.4]">{@item.amount}</p>
+        <p class="text-sm/[1.35] text-brick-700 max-md:text-xs/[1.4] max-md:font-medium">
           {ngettext("%{count} day late", "%{count} days late", @item.days_late)}
         </p>
       </div>
-      <%!-- On phones the actions wrap under the text, level with the title. --%>
+      <.figma_icon
+        :if={Map.has_key?(@item, :href) and not Map.has_key?(@item, :amount)}
+        name="chevron_right"
+        class="mt-0.5 size-5 text-black md:hidden"
+      />
+      <%!-- On phones the actions wrap under the text, as wide as it and 48px tall. --%>
       <div
         :if={@item.tier == :urgent or @decisions != []}
-        class="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:justify-end max-md:pl-14"
+        class="flex shrink-0 flex-wrap items-center gap-2 max-md:relative max-md:z-10 max-md:w-full max-md:flex-nowrap max-md:pr-8 max-md:pl-13"
       >
         <.link
           :if={@item.tier == :urgent}
@@ -82,6 +109,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           navigate={@item.href}
           size="small"
           variant="special"
+          class={phone_action_styles()}
         >
           {@item.action}
         </.link>
@@ -98,26 +126,56 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             id={"item-#{@item.id}-#{decision.action}"}
             label={decision.label}
             variant="tertiary"
-            class="w-8"
+            class="w-8 max-md:hidden"
             phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
           >
             <Lucideicons.render! name={decision.icon} aria-hidden="true" />
           </.icon_button>
+          <%!-- On phones the icon-only decision is named, outlined beside the other one. --%>
+          <.button
+            :if={!decision.show_label?}
+            id={"item-#{@item.id}-#{decision.action}-phone"}
+            type="button"
+            size="small"
+            variant="outline"
+            class={["md:hidden", phone_action_styles()]}
+            phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
+          >
+            <Lucideicons.render! name={decision.icon} aria-hidden="true" />{decision.label}
+          </.button>
           <.button
             :if={decision.show_label?}
             id={"item-#{@item.id}-#{decision.action}"}
             type="button"
             size="small"
             variant="tertiary"
+            class={phone_action_styles()}
             phx-click={leave(@item.id, "decide_item", %{decision: decision.action})}
           >
             <Lucideicons.render! name={decision.icon} aria-hidden="true" />{decision.label}
           </.button>
         <% end %>
       </div>
+      <%!-- Figma "Akcja / Odłóż": just past the row's right edge, where the card clips it,
+           so it slides in with the row. --%>
+      <.button
+        :if={@item.tier != :urgent}
+        id={"item-#{@item.id}-swipe-action"}
+        type="button"
+        variant="unstyled"
+        data-swipe-action
+        tabindex="-1"
+        phx-click={show_snooze_sheet(@item.id)}
+        class="absolute inset-y-0 left-full flex w-22 cursor-pointer flex-col items-center justify-center gap-1 bg-grey-700 text-xs/[normal] font-medium text-white md:hidden"
+      >
+        <.figma_icon name="history" class="size-6" />{gettext("Put aside")}
+      </.button>
     </article>
     """
   end
+
+  # Figma "Decyzja": on phones the actions share the row equally, as Mobile (48px) buttons.
+  defp phone_action_styles, do: [ButtonStyles.phone_size_classes(), "max-md:min-w-0 max-md:flex-1"]
 
   attr :item, :map, required: true
 
@@ -145,11 +203,11 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   # elsewhere the context is what ends with an ellipsis.
   defp meta_line(assigns) do
     ~H"""
-    <p class="flex min-w-0 gap-x-1.5 text-sm/[1.35] whitespace-nowrap text-grey-600">
+    <p class="flex min-w-0 gap-x-1.5 text-sm/[1.35] whitespace-nowrap text-grey-600 max-md:block max-md:leading-[1.4] max-md:whitespace-normal">
       <span
         :if={@item.person}
         class={[
-          "truncate font-medium text-black",
+          "truncate font-medium text-black max-md:font-normal max-md:whitespace-normal",
           if(Map.has_key?(@item, :amount), do: "min-w-0", else: "max-w-2/3 shrink-0")
         ]}
         title={@item.person}
@@ -157,7 +215,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         {@item.person}
       </span>
       <span :if={@item.person} class="shrink-0" aria-hidden="true">·</span>
-      <span class={[if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate")]}>
+      <span class={[
+        if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate"),
+        "max-md:whitespace-normal"
+      ]}>
         {@item.context}
       </span>
     </p>
@@ -179,7 +240,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       tooltip={gettext("Put aside")}
       placement="bottom-start"
       panel_class="w-70"
-      class="mt-0.5 shrink-0 self-start"
+      class="mt-0.5 shrink-0 self-start max-md:hidden"
       trigger_variant="bare"
       trigger_class={["size-10!", icon_styles(@item), tile_hover_styles(@item)]}
     >
@@ -241,7 +302,13 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def title(assigns) do
     ~H"""
-    <h1 class="flex flex-wrap items-baseline gap-x-1 text-3xl/[normal] font-bold">
+    <%!-- On phones the title stays on one line beside its buttons: a long one ("Wszystko
+         załatwione") shrinks from 40px until it fits (`.FitTitle`). --%>
+    <h1
+      id="inbox-title"
+      phx-hook=".FitTitle"
+      class="flex flex-wrap items-baseline gap-x-1 text-3xl/[normal] font-bold max-md:min-w-0 max-md:flex-nowrap max-md:whitespace-nowrap"
+    >
       <.button
         id="inbox-title-queue"
         type="button"
@@ -269,7 +336,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           ngettext("Show %{count} item put aside", "Show %{count} items put aside", @put_aside)
         }
         class={[
-          "flex cursor-pointer items-center transition-colors duration-300 ease-out motion-reduce:transition-none",
+          "flex cursor-pointer items-center transition-colors duration-300 ease-out motion-reduce:transition-none max-md:hidden",
           if(@showing_put_aside, do: "text-grey-900", else: "text-grey-400 hover:text-grey-500")
         ]}
       >
@@ -294,7 +361,61 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           aria-hidden="true"
         />
       </.button>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".FitTitle">
+        // Below the md breakpoint, scales the title's font down so its text
+        // fits the width left beside the buttons; on wider screens it wraps.
+        const PHONE = "(max-width: 47.99rem)"
+
+        export default {
+          mounted() {
+            this.onResize = () => this.fit()
+            window.addEventListener("resize", this.onResize)
+            this.fit()
+            // Text set in a font that is still loading measures narrower.
+            document.fonts.ready.then(() => this.fit())
+          },
+          updated() { this.fit() },
+          destroyed() { window.removeEventListener("resize", this.onResize) },
+          fit() {
+            this.el.style.removeProperty("font-size")
+            if (!window.matchMedia(PHONE).matches) return
+            const overflow = this.el.scrollWidth / this.el.clientWidth
+            if (overflow <= 1) return
+            const size = parseFloat(getComputedStyle(this.el).fontSize)
+            this.el.style.fontSize = `${Math.floor((size / overflow) * 10) / 10}px`
+          }
+        }
+      </script>
     </h1>
+    """
+  end
+
+  @doc """
+  On phones, in place of the title's "/ 2": the clock of the items put aside
+  with their count on it, a 48px button that switches between the queue and their list.
+  """
+  attr :count, :integer, required: true
+  attr :showing_put_aside, :boolean, required: true
+
+  def put_aside_button(assigns) do
+    ~H"""
+    <.button
+      id="inbox-put-aside-phone"
+      type="button"
+      variant="unstyled"
+      phx-click={if @showing_put_aside, do: "show_queue", else: "show_put_aside"}
+      aria-pressed={to_string(@showing_put_aside)}
+      aria-label={ngettext("Show %{count} item put aside", "Show %{count} items put aside", @count)}
+      class="relative flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-sm text-black aria-pressed:bg-grey-200 md:hidden"
+    >
+      <.figma_icon name="history" class="size-6" />
+      <span
+        class="absolute top-1.5 left-6.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-grey-200 px-1 text-caps-sm/none font-medium text-grey-700 tabular-nums"
+        aria-hidden="true"
+      >
+        {@count}
+      </span>
+    </.button>
     """
   end
 
@@ -312,21 +433,72 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       id={"#{@id}-form"}
       phx-change="search"
       phx-submit="search"
-      class="group/search relative w-8 min-w-8 shrink transition-[width] duration-200 ease-out focus-within:w-60 has-[input:not(:placeholder-shown)]:w-60 motion-reduce:transition-none"
+      phx-hook=".FoldingSearch"
+      class={
+        [
+          "group/search relative w-8 min-w-8 shrink transition-[width] duration-200 ease-out focus-within:w-60 has-[input:not(:placeholder-shown)]:w-60 motion-reduce:transition-none",
+          # On phones a 48px magnifier that, open, covers the whole header band in the page's grey,
+          # edge to edge, with a way out on the right.
+          "max-md:size-12 max-md:min-w-12",
+          "max-md:focus-within:absolute max-md:focus-within:inset-y-0 max-md:focus-within:-right-1 max-md:focus-within:-left-4 max-md:focus-within:z-10 max-md:focus-within:flex max-md:focus-within:size-auto max-md:focus-within:items-end max-md:focus-within:gap-1 max-md:focus-within:bg-grey-100 max-md:focus-within:pr-1 max-md:focus-within:pl-4",
+          "max-md:has-[input:not(:placeholder-shown)]:absolute max-md:has-[input:not(:placeholder-shown)]:inset-y-0 max-md:has-[input:not(:placeholder-shown)]:-right-1 max-md:has-[input:not(:placeholder-shown)]:-left-4 max-md:has-[input:not(:placeholder-shown)]:z-10 max-md:has-[input:not(:placeholder-shown)]:flex max-md:has-[input:not(:placeholder-shown)]:size-auto max-md:has-[input:not(:placeholder-shown)]:items-end max-md:has-[input:not(:placeholder-shown)]:gap-1 max-md:has-[input:not(:placeholder-shown)]:bg-grey-100 max-md:has-[input:not(:placeholder-shown)]:pr-1 max-md:has-[input:not(:placeholder-shown)]:pl-4"
+        ]
+      }
     >
-      <FirmowidWeb.DesignSystem.Components.Fields.search_icon class="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-grey-900 transition-all duration-200 ease-out group-focus-within/search:left-1.5 group-focus-within/search:size-5 group-focus-within/search:text-grey-500 group-has-[input:not(:placeholder-shown)]/search:left-1.5 group-has-[input:not(:placeholder-shown)]/search:size-5 group-has-[input:not(:placeholder-shown)]/search:text-grey-500 motion-reduce:transition-none" />
-      <input
-        id={@id}
-        type="search"
-        name="q"
-        value={@query}
-        placeholder={@placeholder}
-        aria-label={@placeholder}
-        autocomplete="off"
-        phx-debounce="200"
-        class="h-8 w-full cursor-pointer rounded-sm border border-transparent bg-grey-200 px-0 text-sm text-grey-700 transition-colors duration-200 not-placeholder-shown:cursor-text not-placeholder-shown:bg-grey-100 not-placeholder-shown:pr-1 not-placeholder-shown:pl-8.5 placeholder:text-transparent focus:cursor-text focus:border-teal-300 focus:bg-grey-100 focus:pr-1 focus:pl-8.5 focus:shadow-[inset_0_0_0_1px_var(--color-teal-300)] focus:ring-0 focus:outline-none focus:placeholder:text-grey-400 [&::-webkit-search-cancel-button]:hidden [&:not(:focus):not(:placeholder-shown)]:border-grey-200 [&:placeholder-shown:not(:focus):hover]:bg-grey-300"
-      />
+      <div class="relative w-full max-md:min-w-0 max-md:flex-1">
+        <FirmowidWeb.DesignSystem.Components.Fields.search_icon class="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-grey-900 transition-all duration-200 ease-out group-focus-within/search:left-1.5 group-focus-within/search:size-5 group-focus-within/search:text-grey-500 group-has-[input:not(:placeholder-shown)]/search:left-1.5 group-has-[input:not(:placeholder-shown)]/search:size-5 group-has-[input:not(:placeholder-shown)]/search:text-grey-500 motion-reduce:transition-none max-md:hidden" />
+        <%!-- On phones the Figma set's magnifier, 24px, a step smaller and lighter once open. --%>
+        <.figma_icon
+          name="search"
+          class="pointer-events-none absolute top-1/2 left-3 size-6 -translate-y-1/2 text-grey-900 transition-all duration-200 ease-out group-focus-within/search:size-5 group-focus-within/search:text-grey-500 group-has-[input:not(:placeholder-shown)]/search:size-5 group-has-[input:not(:placeholder-shown)]/search:text-grey-500 motion-reduce:transition-none md:hidden"
+        />
+        <input
+          id={@id}
+          type="search"
+          name="q"
+          value={@query}
+          placeholder={@placeholder}
+          aria-label={@placeholder}
+          autocomplete="off"
+          phx-debounce="200"
+          class="h-8 w-full cursor-pointer rounded-sm border border-transparent bg-grey-200 px-0 text-sm text-grey-700 transition-colors duration-200 not-placeholder-shown:cursor-text not-placeholder-shown:bg-grey-100 not-placeholder-shown:pr-1 not-placeholder-shown:pl-8.5 placeholder:text-transparent focus:cursor-text focus:border-teal-300 focus:bg-grey-100 focus:pr-1 focus:pl-8.5 focus:shadow-[inset_0_0_0_1px_var(--color-teal-300)] focus:ring-0 focus:outline-none focus:placeholder:text-grey-400 max-md:h-12 max-md:text-base max-md:not-placeholder-shown:bg-white max-md:not-placeholder-shown:pl-10 max-md:focus:bg-white max-md:focus:pl-10 [&::-webkit-search-cancel-button]:hidden [&:not(:focus):not(:placeholder-shown)]:border-grey-200 max-md:[&:placeholder-shown:not(:focus)]:bg-transparent [&:placeholder-shown:not(:focus):hover]:bg-grey-300"
+        />
+      </div>
+      <%!-- Phones only: clears the search and folds it back to the magnifier. --%>
+      <button
+        type="button"
+        data-search-close
+        aria-label={gettext("Close")}
+        class="hidden size-12 shrink-0 cursor-pointer items-center justify-center rounded-sm text-black max-md:group-focus-within/search:flex max-md:group-has-[input:not(:placeholder-shown)]/search:flex"
+      >
+        <.figma_icon name="close" class="size-6" />
+      </button>
     </form>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".FoldingSearch">
+      // The close button clears the query, telling the server, and gives up the focus, which folds the
+      // field. Pressing it must not take the focus first: the field would fold before the click lands.
+      export default {
+        mounted() {
+          const input = this.el.querySelector("input")
+          const close = () => {
+            if (input.value !== "") {
+              input.value = ""
+              input.dispatchEvent(new Event("input", {bubbles: true}))
+            }
+            input.blur()
+          }
+          this.el.addEventListener("pointerdown", (e) => {
+            if (e.target.closest("[data-search-close]")) e.preventDefault()
+          })
+          this.el.addEventListener("click", (e) => {
+            if (e.target.closest("[data-search-close]")) close()
+          })
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") close()
+          })
+        }
+      }
+    </script>
     """
   end
 
@@ -356,11 +528,12 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           {gettext("They will come back to the inbox on their own, on the chosen day.")}
         </p>
       </div>
-      <ul class="overflow-hidden rounded-sm bg-white">
+      <%!-- On phones edge to edge, as the queue's lists. --%>
+      <ul class="overflow-hidden rounded-sm bg-white max-md:-mx-4 max-md:rounded-none max-md:border-y max-md:border-grey-200">
         <li
           :for={{item, snooze} <- @entries}
           id={"put-aside-#{item.id}"}
-          class="flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:gap-y-3 max-md:px-4"
+          class="flex items-center gap-4 border-b border-grey-100 px-5 py-4 last:border-b-0 max-md:flex-wrap max-md:items-start max-md:gap-3 max-md:px-4 max-md:py-3"
         >
           <span class={[
             "flex size-10 shrink-0 items-center justify-center rounded-sm",
@@ -368,13 +541,13 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           ]}>
             <Lucideicons.render! name={item.icon} class="size-6" aria-hidden="true" />
           </span>
-          <div class="flex min-w-0 flex-1 flex-col gap-1">
-            <p class="truncate text-base/[normal] font-medium text-black">
+          <div class="flex min-w-0 flex-1 flex-col gap-1 max-md:basis-[calc(100%-3.25rem)] max-md:gap-0.5">
+            <p class="truncate text-base/[normal] font-medium text-black max-md:leading-[1.4] max-md:whitespace-normal">
               {item.title}<span :if={Map.has_key?(item, :date_range)}>, {item.date_range}</span>
             </p>
             <.meta_line item={Map.update!(item, :context, &(Map.get(item, :amount) || &1))} />
           </div>
-          <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600">
+          <p class="shrink-0 text-sm/[1.35] whitespace-nowrap text-grey-600 max-md:-mt-2.5 max-md:basis-full max-md:pl-13 max-md:leading-[1.4]">
             {gettext("comes back %{date}",
               date:
                 snooze.until
@@ -383,12 +556,12 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
                 |> Queue.short_date(@today)
             )}
           </p>
-          <div class="flex shrink-0 items-center gap-2">
+          <div class="flex shrink-0 items-center gap-2 max-md:w-full max-md:pl-13">
             <.icon_button
               id={"put-aside-#{item.id}-remove"}
               label={gettext("Remove notification")}
               variant="destructive"
-              class="w-8"
+              class={["w-8 max-md:w-12", ButtonStyles.phone_size_classes()]}
               phx-click="remove_item"
               phx-value-id={item.id}
             >
@@ -399,6 +572,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               type="button"
               size="small"
               variant="tertiary"
+              class={phone_action_styles()}
               phx-click="restore_item"
               phx-value-id={item.id}
             >
@@ -429,23 +603,146 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   defp tile_hover_styles("rust"), do: "group-hover:bg-rust-300 hover:bg-rust-400! aria-expanded:bg-rust-400!"
 
+  @doc """
+  On phones, the ways to put an item aside in a sheet from the bottom (Figma
+  "Bottom sheet / Odłóż sprawę"), opened by the action its row shows when
+  swiped. The same options as the tile's menu (`snooze_menu/1`).
+  """
+  attr :item, :map, required: true
+  attr :today, Date, required: true
+
+  def snooze_sheet(assigns) do
+    ~H"""
+    <div
+      id={"item-#{@item.id}-sheet"}
+      class="fixed inset-0 z-50 hidden md:hidden"
+      phx-window-keydown={cancel_snooze_sheet(@item.id)}
+      phx-key="escape"
+    >
+      <div
+        id={"item-#{@item.id}-sheet-bg"}
+        class="absolute inset-0 bg-black/60"
+        phx-click={cancel_snooze_sheet(@item.id)}
+        aria-hidden="true"
+      >
+      </div>
+      <div
+        id={"item-#{@item.id}-sheet-panel"}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={"item-#{@item.id}-sheet-title"}
+        class="absolute inset-x-0 bottom-0 flex flex-col rounded-t-sm bg-white pt-2 pb-[calc(2rem+env(safe-area-inset-bottom))] after:absolute after:inset-x-0 after:top-full after:h-[50vh] after:bg-white"
+      >
+        <div class="flex justify-center pb-2" aria-hidden="true">
+          <div class="h-1 w-8 rounded-[2px] bg-grey-300"></div>
+        </div>
+        <div class="flex flex-col gap-0.5 px-4 pt-2 pb-4 leading-[1.4]">
+          <h2 id={"item-#{@item.id}-sheet-title"} class="text-h5 font-medium text-grey-900">
+            {gettext("Put the item aside")}
+          </h2>
+          <p class="truncate text-sm text-grey-600">
+            {@item.title}<span :if={@item.person}> · {@item.person}</span>
+          </p>
+        </div>
+        <p class="px-4 pb-1 text-caps-sm/[1.6] font-medium text-grey-700 uppercase" aria-hidden="true">
+          {gettext("Put aside until")}
+        </p>
+        <.button
+          :for={{days, label} <- snooze_options()}
+          type="button"
+          variant="unstyled"
+          phx-click={
+            leave(@item.id, "snooze_item", %{days: to_string(days)}) |> hide_snooze_sheet(@item.id)
+          }
+          class="flex h-12 cursor-pointer items-center gap-3 border-t border-grey-100 px-4 text-left active:bg-grey-50"
+        >
+          <span class="min-w-0 flex-1 text-base/[normal] text-grey-900">{label}</span>
+          <span class="shrink-0 text-sm/[normal] whitespace-nowrap text-grey-600">
+            {Queue.short_date(Date.add(@today, days), @today)}
+          </span>
+        </.button>
+        <.button
+          type="button"
+          variant="unstyled"
+          phx-click={leave(@item.id, "snooze_item") |> hide_snooze_sheet(@item.id)}
+          class="flex cursor-pointer flex-col items-start gap-0.5 border-t border-grey-100 px-4 py-3 text-left leading-[1.4] active:bg-grey-50"
+        >
+          <span class="text-base font-medium text-brick-700">{gettext("Remove notification")}</span>
+          <span class="text-sm text-grey-600">{hide_for_good_note(@item)}</span>
+        </.button>
+      </div>
+    </div>
+    """
+  end
+
+  defp show_snooze_sheet(id) do
+    [to: "#item-#{id}-sheet"]
+    |> JS.show()
+    |> JS.show(
+      to: "#item-#{id}-sheet-bg",
+      time: 250,
+      transition: {"transition-opacity ease-out duration-250", "opacity-0", "opacity-100"}
+    )
+    |> JS.show(
+      to: "#item-#{id}-sheet-panel",
+      time: 300,
+      display: "flex",
+      transition:
+        {"transition-transform ease-[cubic-bezier(0.23,1,0.32,1)] duration-300 motion-reduce:transition-none",
+         "translate-y-full", "translate-y-0"}
+    )
+    |> JS.add_class("overflow-hidden", to: "body")
+    |> JS.focus_first(to: "#item-#{id}-sheet-panel")
+  end
+
+  # Closes the sheet; the row that was swiped to open it leaves with the choice.
+  defp hide_snooze_sheet(js \\ %JS{}, id) do
+    js
+    |> JS.hide(
+      to: "#item-#{id}-sheet-bg",
+      time: 200,
+      transition: {"transition-opacity ease-in duration-200", "opacity-100", "opacity-0"}
+    )
+    |> JS.hide(
+      to: "#item-#{id}-sheet-panel",
+      time: 200,
+      transition:
+        {"transition-transform ease-in duration-200 motion-reduce:transition-none", "translate-y-0", "translate-y-full"}
+    )
+    |> JS.hide(to: "#item-#{id}-sheet", time: 200, transition: {"block", "block", "hidden"})
+    |> JS.remove_class("overflow-hidden", to: "body")
+  end
+
+  # Closed without a choice, the swiped row slides back.
+  defp cancel_snooze_sheet(id) do
+    id |> hide_snooze_sheet() |> JS.dispatch("inbox:close-swipe", to: "#item-#{id}")
+  end
+
   @doc "Header of a queue group: its name, how many items it has and why it matters."
   attr :tier, :atom, required: true
   attr :count, :integer, required: true
 
   def tier_header(assigns) do
     ~H"""
-    <div class="flex items-baseline gap-2">
-      <h2 class={["text-caps-sm/none font-medium uppercase", header_styles(@tier)]}>
+    <div class="flex items-baseline gap-2 max-md:flex-wrap max-md:items-center max-md:gap-y-0.5">
+      <h2 class={[
+        "text-caps-sm/none font-medium uppercase max-md:leading-[1.6]",
+        header_styles(@tier)
+      ]}>
         {Queue.tier_label(@tier)}
       </h2>
       <span class={[
-        "flex size-4.5 shrink-0 items-center justify-center rounded-full text-caps-sm font-semibold tabular-nums",
+        "flex size-4.5 shrink-0 items-center justify-center rounded-full text-caps-sm font-semibold tabular-nums max-md:font-medium",
         badge_styles(@tier)
       ]}>
         {@count}
       </span>
-      <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
+      <%!-- On phones the hint takes a line of its own under the name; the team's
+           requests go without one, as in Figma "DO AKCEPTACJI". --%>
+      <p class={[
+        "truncate text-sm/[1.35] text-grey-600 max-md:w-full max-md:leading-[normal] max-md:whitespace-normal",
+        @tier == :people && "max-md:hidden"
+      ]}>
         {Queue.tier_hint(@tier)}
       </p>
     </div>
@@ -455,7 +752,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   # Urgent groups stand out in brick; the rare KSeF sync group in calm teal.
   defp header_styles(:urgent), do: "text-brick-700"
   defp header_styles(:info), do: "text-teal-700"
-  defp header_styles(_tier), do: "text-grey-900"
+  defp header_styles(_tier), do: "text-grey-900 max-md:text-grey-700"
 
   defp badge_styles(:urgent), do: "bg-brick-200 text-brick-700"
   defp badge_styles(:info), do: "bg-teal-200 text-teal-700"
@@ -489,17 +786,18 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def shortcuts(assigns) do
     ~H"""
-    <section id="inbox-shortcuts" class="flex flex-col gap-3">
+    <section id="inbox-shortcuts" class="flex flex-col gap-3 max-md:gap-2">
       <div class="flex items-baseline gap-3">
-        <h2 class="text-caps-sm/none font-medium text-grey-900 uppercase">
+        <h2 class="text-caps-sm/none font-medium text-grey-900 uppercase max-md:leading-[1.6] max-md:text-grey-700">
           {gettext("Shortcuts")}
         </h2>
         <p class="truncate text-sm/[1.35] text-grey-600 max-md:hidden">
           {gettext("What your company does most often.")}
         </p>
       </div>
-      <ul class="flex flex-wrap gap-2">
-        <li :for={shortcut <- @shortcuts}>
+      <%!-- On phones one row that scrolls sideways, from edge to edge. --%>
+      <ul class="flex flex-wrap gap-2 max-md:-mx-4 max-md:scrollbar-none max-md:flex-nowrap max-md:overflow-x-auto max-md:px-4">
+        <li :for={shortcut <- @shortcuts} class="shrink-0">
           <form
             :if={shortcut.target == :upload}
             id="inbox-upload-form"
@@ -511,7 +809,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               id={"inbox-shortcut-#{shortcut.id}"}
               size="small"
               variant="outline"
-              class="relative has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus-ring)"
+              class={[
+                "relative has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus-ring)",
+                ButtonStyles.phone_size_classes()
+              ]}
             >
               <.live_file_input upload={@upload} class="sr-only" />
               <Lucideicons.render! name={shortcut.icon} aria-hidden="true" />{shortcut.label}
@@ -529,6 +830,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             navigate={elem(shortcut.target, 1)}
             size="small"
             variant="outline"
+            class={ButtonStyles.phone_size_classes()}
           >
             <Lucideicons.render! name={shortcut.icon} aria-hidden="true" />{shortcut.label}
           </.link>
@@ -747,7 +1049,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       data-absent-labels={JSON.encode!(@absent_labels)}
       data-more-labels={JSON.encode!(@more_labels)}
       data-collapse-label={gettext("Collapse")}
-      class="flex flex-col gap-4 rounded-sm bg-white px-5 pt-5 pb-4"
+      class="flex flex-col gap-4 rounded-sm bg-white px-5 pt-5 pb-4 max-md:hidden"
     >
       <div class="flex items-center justify-between gap-2 text-grey-600">
         <h2 class="text-caps-sm font-medium uppercase">{gettext("Today at the company")}</h2>
@@ -908,6 +1210,86 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           }
         }
       </script>
+    </section>
+    """
+  end
+
+  @doc """
+  Who works today, on phones in place of `office_panel/1` (Figma "Dziś w
+  firmie (karta)"): one row with how many work and a legend of where,
+  which unfolds the people in place.
+  """
+  attr :presence, :list,
+    required: true,
+    doc: "from `Firmowid.Timetracker.Session.team_presence/2`"
+
+  def office_summary(assigns) do
+    counts =
+      Enum.frequencies_by(
+        assigns.presence,
+        &if(&1.status in [:office, :remote], do: &1.status, else: :away)
+      )
+
+    {working, absent} = Enum.split_with(assigns.presence, &(&1.status in [:office, :remote]))
+
+    assigns =
+      assign(assigns,
+        people: working ++ absent,
+        working: length(working),
+        legend: for(status <- [:office, :remote, :away], counts[status], do: {status, counts[status]})
+      )
+
+    ~H"""
+    <section id="inbox-presence-summary" class="flex flex-col gap-2 md:hidden">
+      <h2 class="text-caps-sm/[1.6] font-medium text-grey-700 uppercase">
+        {gettext("Today at the company")}
+      </h2>
+      <%!-- A card within the page's margins, as the month's tiles above it. --%>
+      <div class="overflow-hidden rounded-sm bg-white">
+        <.button
+          type="button"
+          variant="unstyled"
+          id="inbox-presence-summary-toggle"
+          aria-expanded="false"
+          aria-controls="inbox-presence-summary-people"
+          phx-click={
+            JS.toggle_attribute({"hidden", ""}, to: "#inbox-presence-summary-people")
+            |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+          }
+          class="group flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
+        >
+          <span class="flex min-w-0 flex-1 flex-col gap-1">
+            <span class="text-base/[1.4] font-medium text-grey-900">
+              {ngettext(
+                "%{working} of %{count} person working",
+                "%{working} of %{count} people working",
+                length(@presence),
+                working: @working
+              )}
+            </span>
+            <span class="flex flex-wrap gap-x-3 gap-y-1 text-sm/[normal] text-grey-600">
+              <span :for={{status, count} <- @legend} class="flex items-center gap-1.5">
+                <.presence_dot status={status} />{count} {status_label(status)}
+              </span>
+            </span>
+          </span>
+          <.figma_icon
+            name="chevron_down"
+            class="size-5 text-black transition-transform group-aria-expanded:rotate-180 motion-reduce:transition-none"
+          />
+        </.button>
+        <ul
+          id="inbox-presence-summary-people"
+          hidden
+          class="flex flex-col gap-3 border-t border-grey-100 px-4 py-3"
+        >
+          <li :for={person <- @people} class="flex items-center gap-2.5 text-sm">
+            <.presence_dot status={person.status} />
+            <span class="min-w-0 flex-1 truncate text-black">{person_name(person)}</span>
+            <span class="sr-only">{status_label(person.status)}</span>
+          </li>
+        </ul>
+      </div>
     </section>
     """
   end
@@ -1142,13 +1524,21 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def month_list(assigns) do
     ~H"""
-    <section class="flex flex-col gap-2.5 rounded-sm bg-white p-5">
-      <h2 class="text-caps-sm font-medium text-grey-600 uppercase">{gettext("This month")}</h2>
-      <dl class="flex flex-col gap-2.5">
-        <div :for={kpi <- @month} class="flex items-baseline justify-between gap-3 text-sm">
-          <dt class="truncate text-grey-700">{kpi.label}</dt>
+    <%!-- On phones (Figma "Ten miesiąc") each number is a tile of its own, two to a row. --%>
+    <section class="flex flex-col gap-2.5 rounded-sm bg-white p-5 max-md:gap-2 max-md:rounded-none max-md:bg-transparent max-md:p-0">
+      <h2 class="text-caps-sm font-medium text-grey-600 uppercase max-md:leading-[1.6] max-md:text-grey-700">
+        {gettext("This month")}
+      </h2>
+      <dl class="flex flex-col gap-2.5 max-md:grid max-md:grid-cols-2 max-md:gap-2">
+        <div
+          :for={kpi <- @month}
+          class="flex items-baseline justify-between gap-3 text-sm max-md:min-w-0 max-md:flex-col max-md:items-start max-md:justify-start max-md:gap-1 max-md:rounded-sm max-md:bg-white max-md:px-4 max-md:py-3"
+        >
+          <dt class="truncate text-grey-700 max-md:max-w-full max-md:leading-[normal] max-md:text-grey-600">
+            {kpi.label}
+          </dt>
           <dd class={[
-            "shrink-0 font-medium tabular-nums",
+            "shrink-0 font-medium tabular-nums max-md:text-lg/[1.4] max-md:font-semibold",
             if(kpi.side == :sales, do: "text-teal-700", else: "text-rust-700")
           ]}>
             {kpi.value}

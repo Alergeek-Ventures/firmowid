@@ -573,6 +573,13 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
+msgid "%{working} of %{count} person working"
+msgid_plural "%{working} of %{count} people working"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
 msgid "%{working} of %{count} working"
 msgstr ""
 
@@ -2941,6 +2948,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/first_review.ex
 #: lib/firmowid_web/core/toast.ex
+#: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Close"
@@ -10043,6 +10051,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Put aside until"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Put the item aside"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex

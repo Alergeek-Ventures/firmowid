@@ -536,13 +536,19 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     <%!-- Dissolves in when the layer changes (see the sidebar's LayerSwitch hook). --%>
     <div
       data-layer-dissolve
-      class="@container flex w-full flex-col gap-6 px-4 py-6 md:px-10 md:py-8"
+      class="@container flex w-full flex-col gap-6 px-4 py-6 max-md:pt-3 max-md:pb-24 md:px-10 md:py-8"
     >
-      <%!-- Too narrow for both, the search and the assistant drop under the title. --%>
-      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4">
-        <div class="flex min-w-0 flex-col md:shrink-0">
-          <p class="text-sm/[1.35] text-grey-600">
-            {@current_org.name} · {TimeFormatter.format_date(@today, "EEEE, d MMMM y")}
+      <%!-- Too narrow for both, the search and the assistant drop under the title. On phones
+           (Figma "Podgląd 390") the date and the title sit beside 48px buttons for the items
+           put aside and the search, level with the title's foot and 4px from the edge; the assistant waits in
+           the bar at the bottom. --%>
+      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4 max-md:relative max-md:-mr-3 max-md:flex-nowrap max-md:items-end max-md:gap-0">
+        <div class="flex min-w-0 flex-col max-md:flex-1 max-md:gap-0.5 md:shrink-0">
+          <p class="truncate text-sm/[1.35] text-grey-600 max-md:leading-[1.4]">
+            {@current_org.name} ·
+            <span class="max-md:hidden">{TimeFormatter.format_date(@today, "EEEE, d MMMM y")}</span>
+            <%!-- On phones the short weekday, without its dot, and no year: "śr, 11 listopada". --%>
+            <span class="md:hidden">{phone_date(@today)}</span>
           </p>
           <.title
             greeting={greeting(@items)}
@@ -550,14 +556,19 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             showing_put_aside={@showing_put_aside?}
           />
         </div>
-        <div class="flex min-w-0 items-center gap-3">
+        <div class="flex min-w-0 items-center gap-3 max-md:gap-0">
+          <.put_aside_button
+            :if={length(@put_aside) > 0}
+            count={length(@put_aside)}
+            showing_put_aside={@showing_put_aside?}
+          />
           <.folding_search id="inbox-search" query={@query} placeholder={gettext("Search the inbox")} />
           <.link
             kind="button"
             navigate={AssistantNavigation.page_path()}
             size="small"
             variant="tertiary"
-            class="shrink-0"
+            class="shrink-0 max-md:hidden"
           >
             <Lucideicons.message_square aria-hidden="true" />{gettext("Ask Firmowid")}
           </.link>
@@ -596,9 +607,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           <div
             :if={!@showing_put_aside?}
             id="inbox-queue-view"
+            phx-hook=".SwipeRows"
             class={[
               "flex flex-1 flex-col",
               if(@layer == :me, do: "gap-4", else: "gap-8"),
+              "max-md:gap-6",
               @swapped && "motion-safe:animate-dissolve"
             ]}
           >
@@ -612,14 +625,14 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             <section
               :for={{tier, items} <- Queue.by_tier(@shown)}
               id={"inbox-group-#{tier}"}
-              class="flex flex-col gap-3"
+              class="flex flex-col gap-3 max-md:gap-2"
             >
               <.tier_header tier={tier} count={length(items)} />
               <div
                 id={"inbox-group-#{tier}-list"}
                 phx-hook=".SmoothHeight"
                 data-folded={@folded}
-                class="overflow-hidden rounded-sm bg-white"
+                class="overflow-hidden rounded-sm bg-white max-md:-mx-4 max-md:rounded-none max-md:border-y max-md:border-grey-200"
               >
                 <.item_row
                   :for={item <- if(tier in @expanded, do: items, else: Enum.take(items, @folded))}
@@ -780,6 +793,90 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             }
           }
         </script>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".SwipeRows">
+          // On phones, a row that can be put aside follows a sideways swipe to
+          // the left and stays open on its "Put aside" action (the queue's
+          // `item_row/1`) past halfway. One row is open at a time; a tap on it,
+          // another swipe, scrolling or a closed sheet (`inbox:close-swipe`)
+          // slides it back. Vertical swipes scroll the page as usual.
+          const OPEN = 88
+          const SLOP = 8
+          const PHONE = "(max-width: 47.99rem)"
+          const SNAP = "transform 250ms cubic-bezier(0.23, 1, 0.32, 1)"
+          const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+          export default {
+            mounted() {
+              this.listeners = [
+                [this.el, "touchstart", (e) => this.start(e), { passive: true }],
+                [this.el, "touchmove", (e) => this.move(e), { passive: false }],
+                [this.el, "touchend", () => this.end()],
+                [this.el, "touchcancel", () => this.end()],
+                [this.el, "click", (e) => this.click(e), true],
+                [this.el, "inbox:close-swipe", () => this.close()],
+                // An open sheet locks the page; the row stays open behind it.
+                [window, "scroll", () => { if (!this.drag && !document.body.classList.contains("overflow-hidden")) this.close() }, { passive: true }]
+              ]
+              this.listeners.forEach(([target, ...args]) => target.addEventListener(...args))
+            },
+            destroyed() {
+              this.listeners.forEach(([target, ...args]) => target.removeEventListener(...args))
+            },
+            // A patch that redraws the open row drops its offset.
+            updated() {
+              if (this.open && (!this.open.isConnected || !this.open.style.transform)) this.open = null
+            },
+            start(e) {
+              if (!window.matchMedia(PHONE).matches || e.touches.length !== 1) return
+              const row = e.target.closest("article[data-swipe]")
+              if (this.open && this.open !== row) this.close()
+              if (!row || e.target.closest("[data-swipe-action]")) return
+              const touch = e.touches[0]
+              this.drag = { row, x: touch.clientX, y: touch.clientY, dx: 0, axis: null, base: row === this.open ? -OPEN : 0 }
+            },
+            move(e) {
+              const drag = this.drag
+              if (!drag) return
+              const touch = e.touches[0]
+              const dx = touch.clientX - drag.x
+              const dy = touch.clientY - drag.y
+              if (!drag.axis) {
+                if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return
+                drag.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y"
+              }
+              if (drag.axis !== "x") return
+              e.preventDefault()
+              drag.dx = dx
+              drag.row.style.transition = "none"
+              drag.row.style.transform = `translateX(${Math.min(0, Math.max(-OPEN, drag.base + dx))}px)`
+            },
+            end() {
+              const drag = this.drag
+              this.drag = null
+              if (!drag || drag.axis !== "x") return
+              // The tap that ends a swipe opens nothing.
+              this.swiped = true
+              setTimeout(() => { this.swiped = false }, 300)
+              this.set(drag.row, drag.base + drag.dx < -OPEN / 2)
+            },
+            click(e) {
+              if (this.swiped || (this.open && !e.target.closest("[data-swipe-action]"))) {
+                e.preventDefault()
+                e.stopPropagation()
+                if (!this.swiped) this.close()
+              }
+            },
+            set(row, open) {
+              row.style.transition = reducedMotion() ? "none" : SNAP
+              row.style.transform = open ? `translateX(-${OPEN}px)` : ""
+              if (open) this.open = row
+              else if (this.open === row) this.open = null
+            },
+            close() {
+              if (this.open) this.set(this.open, false)
+            }
+          }
+        </script>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SessionPlacement">
           // Moves the member's session to the side column, in its compact form,
           // when the large card under the queue would end below the first
@@ -824,7 +921,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </script>
         <%!-- Starts level with the first card, below its group header (19px + 12px gap). --%>
         <aside class={[
-          "flex flex-col gap-2.5",
+          "flex flex-col gap-2.5 max-md:gap-6",
           (@items != [] or @session? or @showing_put_aside?) && "@3xl:mt-7.75"
         ]}>
           <.session_panel
@@ -841,10 +938,33 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             presence={@presence}
             fit_to={@items != [] && "inbox-queue"}
           />
+          <.office_summary :if={@layer == :company and @presence != []} presence={@presence} />
         </aside>
       </div>
+      <%!-- Outside the rows: a row slid aside is transformed, which would hold a fixed sheet in it. --%>
+      <%!-- On phones the way to the assistant floats in the bottom right corner. --%>
+      <.link
+        id="inbox-ask"
+        kind="unstyled"
+        navigate={AssistantNavigation.page_path()}
+        aria-label={gettext("Ask Firmowid")}
+        class="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex size-14 items-center justify-center rounded-full bg-black text-white shadow-[0_4px_16px_rgb(0_0_0/0.2)] md:hidden [body:has(:is(input,textarea):focus)_&]:hidden"
+      >
+        <.figma_icon name="chat_bubble_left_ellipsis" class="size-6" />
+      </.link>
+      <.snooze_sheet
+        :for={item <- @shown}
+        :if={item.tier != :urgent and !@showing_put_aside?}
+        item={item}
+        today={@today}
+      />
     </div>
     """
+  end
+
+  defp phone_date(date) do
+    weekday = date |> TimeFormatter.format_date("EEE") |> String.trim_trailing(".")
+    "#{weekday}, #{TimeFormatter.format_date(date, "d MMMM")}"
   end
 
   # With nothing waiting, the empty state follows the office panel, which folds
