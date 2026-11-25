@@ -1339,6 +1339,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     # The invoice's total as the document states it (P_15): the unrounded item sum rounded to
     # the grosz. A calculation of its own because Ash 3.38 cannot type `round/2` inside the
     # `composite_type` map below (`Round.can_return_nil?/1` matches only `round/1`).
+    # TODO: Once Ash's `Round.can_return_nil?/1` handles `round/2`, inline
+    # `round(gross_value, 2)` into `amount` and remove this calculation.
     calculate :rounded_gross_value, :decimal, expr(round(gross_value, 2))
 
     calculate :amount,
