@@ -1,7 +1,8 @@
 defmodule Firmowid.Taxes.Forecast.Income do
   @moduledoc """
-  The income of a company from a list of entries: revenue and costs, net of
-  VAT, in PLN, each on the day it counts. Income taxes build on it.
+  The income of a company from a list of entries: revenue and costs in PLN,
+  each on the day it counts, net of VAT where the document tells it (see
+  `Firmowid.Taxes.Forecast.IncomeEntries`). Income taxes build on it.
   """
 
   alias Firmowid.Taxes.Forecast.Projection
@@ -10,16 +11,19 @@ defmodule Firmowid.Taxes.Forecast.Income do
           required(:side) => :revenue | :cost,
           required(:amount) => Decimal.t(),
           required(:date) => Date.t(),
-          optional(:projected?) => boolean()
+          optional(:projected?) => boolean(),
+          optional(:transfer?) => boolean()
         }
 
   @doc """
   Returns the revenue and the costs of the entries dated from `first` to `last`, both inclusive,
   and the part of each that comes from projected entries (see `Firmowid.Taxes.Forecast.Projection`).
+  The revenue also tells how much of it comes from bank transfers (entries marked `transfer?: true`).
   """
   @spec between([entry()], Date.t(), Date.t()) :: %{
           revenue: Decimal.t(),
           costs: Decimal.t(),
+          transfer_revenue: Decimal.t(),
           projected_revenue: Decimal.t(),
           projected_costs: Decimal.t()
         }
@@ -30,6 +34,7 @@ defmodule Firmowid.Taxes.Forecast.Income do
     %{
       revenue: total(in_range, :revenue),
       costs: total(in_range, :cost),
+      transfer_revenue: in_range |> Enum.filter(&Map.get(&1, :transfer?, false)) |> total(:revenue),
       projected_revenue: total(projected, :revenue),
       projected_costs: total(projected, :cost)
     }

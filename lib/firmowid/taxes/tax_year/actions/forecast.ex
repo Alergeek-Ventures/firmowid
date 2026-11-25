@@ -23,9 +23,11 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
       after which a sale to a non-taxpayer counts anyway (art. 21 ust. 1
       pkt 2), nor a payment of an invoice older than the year before, nor the
       size of a transfer in another currency than the invoice;
-    * input VAT is deducted in full, and sales outside invoices, reverse-charge
+    * input VAT is deducted in full, and the VAT of sales outside invoices, reverse-charge
       purchases and bad debt relief are not counted;
-    * a skipped outgoing transfer is a cost only when the analysis put it into
+    * a skipped incoming transfer is revenue, at its gross amount, only when the
+      analysis put it into a revenue category, and a skipped outgoing transfer
+      is a cost only when the analysis put it into
       a category other than taxes (see `Firmowid.Taxes.Forecast.IncomeEntries`);
     * a VAT surplus is carried forward and lowered by the refunds from a tax
       office (incoming skipped transfers titled with VAT), not refunded itself.

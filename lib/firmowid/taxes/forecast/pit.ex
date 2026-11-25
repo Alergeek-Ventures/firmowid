@@ -25,7 +25,9 @@ defmodule Firmowid.Taxes.Forecast.Pit do
 
   The entries may include projected ones (`Firmowid.Taxes.Forecast.Projection`)
   that count like the rest; `details` tells how much of the cumulative revenue
-  and costs they make (`projected_revenue`, `projected_costs`).
+  and costs they make (`projected_revenue`, `projected_costs`), and how much of
+  the cumulative revenue comes from bank transfers without an invoice
+  (`transfer_revenue`, booked ones only).
 
   The social contributions deducted are pension, disability, sickness and
   accident, not the Labour Fund.
@@ -85,6 +87,7 @@ defmodule Firmowid.Taxes.Forecast.Pit do
           member_id: member_id,
           details: %{
             revenue: Decimal.round(revenue, 2),
+            transfer_revenue: Decimal.round(sums.transfer_revenue, 2),
             costs: Decimal.round(costs, 2),
             projected_revenue: Decimal.round(sums.projected_revenue, 2),
             projected_costs: Decimal.round(sums.projected_costs, 2),

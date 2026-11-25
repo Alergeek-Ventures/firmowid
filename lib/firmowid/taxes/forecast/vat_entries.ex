@@ -15,6 +15,7 @@ defmodule Firmowid.Taxes.Forecast.VatEntries do
 
   alias Firmowid.Invoicing
   alias Firmowid.Taxes.Forecast.Corrections
+  alias Firmowid.Taxes.Forecast.PublicOffices
   alias Firmowid.Taxes.Forecast.Vat
 
   @doc """
@@ -41,7 +42,7 @@ defmodule Firmowid.Taxes.Forecast.VatEntries do
   def refunds(skipped_transactions) do
     for transaction <- skipped_transactions,
         Money.positive?(transaction.amount),
-        tax_office?(transaction.debtor_name),
+        PublicOffices.tax_office?(transaction.debtor_name),
         vat_title?(transaction.remittance_information_unstructured) do
       %{
         side: :refund,
@@ -51,20 +52,7 @@ defmodule Firmowid.Taxes.Forecast.VatEntries do
     end
   end
 
-  defp tax_office?(name), do: String.contains?(plain(name), "urzad skarbowy")
-
-  defp vat_title?(title), do: Regex.match?(~r/\bvat\b/, plain(title))
-
-  # Lowercase without diacritics; ł has no decomposition.
-  defp plain(nil), do: ""
-
-  defp plain(text) do
-    text
-    |> String.downcase()
-    |> :unicode.characters_to_nfd_binary()
-    |> String.replace(~r/\p{Mn}/u, "")
-    |> String.replace("ł", "l")
-  end
+  defp vat_title?(title), do: Regex.match?(~r/\bvat\b/, PublicOffices.plain(title))
 
   @doc "Returns the day a cost invoice's VAT counts on: the latest of its sale, issue and KSeF storage dates."
   @spec cost_date(struct()) :: Date.t()

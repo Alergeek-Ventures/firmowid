@@ -12,7 +12,9 @@ defmodule Firmowid.Taxes.Forecast.Cit do
 
   The entries may include projected ones (`Firmowid.Taxes.Forecast.Projection`)
   that count like the rest; `details` tells how much of the cumulative revenue
-  and costs they make (`projected_revenue`, `projected_costs`).
+  and costs they make (`projected_revenue`, `projected_costs`), and how much of
+  the cumulative revenue comes from bank transfers without an invoice
+  (`transfer_revenue`, booked ones only).
 
   The `:simplified` form pays a fixed monthly amount taken from an earlier tax
   return, which Firmowid does not have, so it forecasts nothing.
@@ -67,6 +69,7 @@ defmodule Firmowid.Taxes.Forecast.Cit do
           member_id: nil,
           details: %{
             revenue: Decimal.round(revenue, 2),
+            transfer_revenue: Decimal.round(sums.transfer_revenue, 2),
             costs: Decimal.round(costs, 2),
             projected_revenue: Decimal.round(sums.projected_revenue, 2),
             projected_costs: Decimal.round(sums.projected_costs, 2),

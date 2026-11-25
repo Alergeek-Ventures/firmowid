@@ -6,6 +6,7 @@ defmodule Firmowid.TaxesTest do
 
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
+  alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Core
   alias Firmowid.Finances
@@ -461,6 +462,84 @@ defmodule Firmowid.TaxesTest do
       forecast = first_quarter.()
       assert Decimal.equal?(forecast.details.costs, 1000)
       assert Decimal.equal?(forecast.amount, 810)
+    end
+
+    test "counts a categorized incoming skipped transfer as PIT revenue and tells that part", %{
+      admin: admin,
+      org_id: org_id,
+      scope: scope
+    } do
+      set_legal_form(scope, :sole_proprietorship)
+
+      Taxes.create_tax_year!(
+        %{
+          year: 2026,
+          vat_period: :monthly,
+          partners: [%{partner(admin.member.id, 100) | income_tax: :tax_scale}]
+        },
+        scope: scope
+      )
+
+      bank_account = bank_account_fixture_for_organization!(org_id)
+
+      payout = fn debtor_name ->
+        Ash.Seed.seed!(Transaction, %{
+          organization_id: org_id,
+          bank_account_id: bank_account.id,
+          debtor_name: debtor_name,
+          remittance_information_unstructured: "Payout",
+          amount: Money.new!(:PLN, "1000"),
+          booking_date: ~D[2026-01-15],
+          value_date: ~D[2026-01-15],
+          skip_invoicing: true
+        })
+      end
+
+      categorize = fn transaction, category ->
+        Ash.Seed.seed!(
+          EntryCategory,
+          %{
+            organization_id: org_id,
+            entity_type: :transaction,
+            resource_id: transaction.id,
+            category: category,
+            probability: 0.9,
+            probabilities: %{Atom.to_string(category) => 0.9}
+          },
+          tenant: org_id
+        )
+      end
+
+      january = fn ->
+        {:ok, forecasts} = forecast(scope)
+        Enum.find(forecasts, &(&1.kind == :pit and &1.period == "2026-01"))
+      end
+
+      counted = payout.("Acme Terminals")
+      payout.("Acme Terminals")
+      tax_office = payout.("Urząd Skarbowy w Testowie")
+      zus = payout.("Zakład Ubezpieczeń Społecznych")
+      grant = payout.("Acme Fund")
+      internal = payout.("Acme Cash")
+
+      EntityTag.set_entity_category!(
+        %{entity_type: :transaction, resource_id: internal.id, kind: :internal},
+        scope: scope
+      )
+
+      # Nothing is classified: no revenue.
+      assert Decimal.equal?(january.().details.revenue, 0)
+
+      categorize.(counted, :sales)
+      categorize.(tax_office, :sales)
+      categorize.(zus, :sales)
+      categorize.(grant, :other_income)
+      categorize.(internal, :sales)
+
+      # Only the payout classified as sales counts, and the details tell it came from a transfer.
+      details = january.().details
+      assert Decimal.equal?(details.revenue, 1000)
+      assert Decimal.equal?(details.transfer_revenue, 1000)
     end
 
     test "forecasts the owner's PIT advances and ZUS, and nothing of the kind for a limited company",
