@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   import FirmowidWeb.Landing.Components.Primitives, only: [landing_button: 1]
 
   alias Firmowid.Billing.PlanCatalog
+  alias FirmowidWeb.Billing.Utilities.PlanOffer
   alias Phoenix.LiveView.Rendered
 
   @plans [
@@ -16,7 +17,6 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       plan: :free,
       name: gettext_noop("Free"),
       monthly_detail: gettext_noop("No card, no trial period"),
-      audience: gettext_noop("For everyone who issues invoices in KSeF"),
       cta: gettext_noop("Create a free account")
     },
     %{
@@ -25,7 +25,6 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       name: gettext_noop("Entrepreneur"),
       monthly_detail: gettext_noop("Monthly, no commitment"),
       yearly_detail: gettext_noop("PLN 276 per year (save PLN 72)"),
-      audience: gettext_noop("For sole traders with several accounts and small teams"),
       cta: gettext_noop("Try for free")
     },
     %{
@@ -34,62 +33,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       name: gettext_noop("Company"),
       monthly_detail: gettext_noop("Monthly, no commitment"),
       yearly_detail: gettext_noop("PLN 1,428 per year (save PLN 360)"),
-      audience: gettext_noop("For service companies with 6–20 people"),
       cta: gettext_noop("Try for free")
     }
-  ]
-
-  @rows [
-    {gettext_noop("Users"), :users},
-    {gettext_noop("Bank accounts with transfer matching"), :bank_institutions},
-    {gettext_noop("Time tracking"),
-     [gettext_noop("up to 3 projects"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-    {gettext_noop("Leave requests with approval"), [false, true, true]},
-    {gettext_noop("Firmowid in ChatGPT (panel beside the conversation)"), [false, true, true]}
-  ]
-
-  @sections [
-    {gettext_noop("Invoices and KSeF"),
-     [
-       {gettext_noop("Sales invoices"),
-        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-       {gettext_noop("KSeF: sending invoices and downloading purchases"),
-        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-       {gettext_noop("Clear invoice wizard"), [true, true, true]},
-       {gettext_noop("Customer database with cooperation statistics"), [true, true, true]},
-       {gettext_noop("Invoices in 33 currencies"), [true, true, true]},
-       {gettext_noop("Reverse charge for EU customers (automatic)"), [true, true, true]},
-       {gettext_noop("ZIP package for your accountant"), [true, true, true]},
-       {gettext_noop("Document OCR"),
-        [
-          gettext_noop("10 credits / month"),
-          gettext_noop("50 credits / month"),
-          gettext_noop("unlimited")
-        ]}
-     ]},
-    {gettext_noop("Banking and payments"), [{gettext_noop("Email notifications"), [false, true, true]}]},
-    {gettext_noop("Team and working time"),
-     [
-       {gettext_noop("Project cost"), [true, true, true]},
-       {gettext_noop("Employee and project management"), [false, true, true]},
-       {gettext_noop("PDF time tracking and payroll report"), [false, false, true]}
-     ]},
-    {gettext_noop("HR"),
-     [
-       {gettext_noop("Employee contracts and documents"), [false, true, true]},
-       {gettext_noop("Business trips"), [false, false, true]}
-     ]},
-    {gettext_noop("ChatGPT and integrations"), [{gettext_noop("MCP (Claude, Cursor and others)"), [false, true, true]}]},
-    {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true]}]},
-    {gettext_noop("Trial period"),
-     [
-       {gettext_noop("Paid features for free"),
-        [
-          false,
-          gettext_noop("until the end of next month"),
-          gettext_noop("until the end of next month")
-        ]}
-     ]}
   ]
 
   @doc """
@@ -104,13 +49,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
     assigns =
       assigns
       |> assign(:plans, localize_plans(@plans, yearly?))
-      |> assign(:rows, localize_rows(@rows))
-      |> assign(
-        :sections,
-        Enum.map(@sections, fn {title, rows} ->
-          {Gettext.gettext(Firmowid.Gettext, title), localize_rows(rows)}
-        end)
-      )
+      |> assign(:rows, PlanOffer.key_rows())
+      |> assign(:sections, PlanOffer.sections() ++ [trial_section()])
       |> assign(:yearly?, yearly?)
 
     ~H"""
@@ -397,7 +337,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       %{
         key: plan.key,
         name: Gettext.gettext(Firmowid.Gettext, plan.name),
-        audience: Gettext.gettext(Firmowid.Gettext, plan.audience),
+        audience: PlanOffer.audience(plan.plan),
         cta: Gettext.gettext(Firmowid.Gettext, plan.cta),
         featured: plan.key == "przedsiebiorca",
         free?: free?,
@@ -408,26 +348,12 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
     end)
   end
 
-  defp localize_rows(rows) do
-    Enum.map(rows, fn {label, values} ->
-      {Gettext.gettext(Firmowid.Gettext, label), localize_values(values)}
-    end)
-  end
-
-  # A limited thing reads its per-plan limit from the billing catalog.
-  defp localize_values(limited) when is_atom(limited) do
-    Enum.map(@plans, fn plan ->
-      case PlanCatalog.plan!(plan.plan).limits[limited] do
-        :unlimited -> gettext("unlimited")
-        limit -> Integer.to_string(limit)
-      end
-    end)
-  end
-
-  defp localize_values(values) do
-    Enum.map(values, fn
-      value when is_boolean(value) -> value
-      value -> Gettext.gettext(Firmowid.Gettext, value)
-    end)
+  # What the pricing page promises a new company, beside what the plans include.
+  defp trial_section do
+    {gettext("Trial period"),
+     [
+       {gettext("Paid features for free"),
+        [false, gettext("until the end of next month"), gettext("until the end of next month")]}
+     ]}
   end
 end

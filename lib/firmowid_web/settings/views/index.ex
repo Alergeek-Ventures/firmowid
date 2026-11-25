@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Ash.Notifier.Notification
   alias Firmowid.Billing
   alias Firmowid.Billing.Month
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
@@ -32,10 +33,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ksef.Credential
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidUI.Components.Inputs
   alias FirmowidUI.Ksef.Connection
   alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
+  alias FirmowidWeb.Billing.Utilities.PlanOffer
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
   alias FirmowidWeb.Inbox.Components.SidebarNav
@@ -136,6 +139,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:subscription_worksheet, nil)
      |> assign(:active_subscription, nil)
      |> assign(:plan_granted?, false)
+     |> assign(:plan_purchase, nil)
      |> assign(:member_form, form_member_form(current_user.member, scope))
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -392,6 +396,36 @@ defmodule FirmowidWeb.Settings.Views.Index do
         )
 
         {:noreply, socket}
+    end
+  end
+
+  def handle_event("purchase-period", %{"value" => period}, socket) do
+    billing_period = Enum.find(PlanCatalog.billing_periods(), &(Atom.to_string(&1) == period))
+
+    {:noreply, update(socket, :plan_purchase, &%{&1 | billing_period: billing_period})}
+  end
+
+  # Stripe Checkout takes the card; the plan turns on when Stripe reports the subscription.
+  def handle_event("purchase", %{"plan" => plan}, socket) do
+    plan = Enum.find(PlanCatalog.paid_plans(), &(Atom.to_string(&1) == plan))
+
+    case Billing.start_subscription(
+           Map.merge(
+             %{plan: plan, billing_period: socket.assigns.plan_purchase.billing_period},
+             BillingNavigation.checkout_return_urls(Navigation.canonical_path(:subscription))
+           ),
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, url} ->
+        {:noreply, redirect(socket, external: url)}
+
+      # A purchase refused with a reason the owner can act on, such as a plan bought meanwhile.
+      {:error, %Invalid{errors: [%{message: message} = error | _rest]}} ->
+        LiveToast.send_toast(:error, Inputs.translate_error({message, Map.get(error, :vars, [])}))
+        {:noreply, assign_subscription_preview(socket)}
+
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -1110,6 +1144,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             worksheet={@subscription_worksheet}
             subscription={@active_subscription}
             plan_granted?={@plan_granted?}
+            purchase={@plan_purchase}
           />
         <% :account -> %>
           <.account_tab
@@ -1274,15 +1309,35 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       %{plan_granted?: plan_granted?} = Ash.load!(current_org, :plan_granted?, scope: scope)
 
+      # Read from Stripe when the owner opens the tab, so it shows what Stripe reports now.
+      subscription = Billing.get_subscription_details!(scope: scope)
+
       socket
       |> assign(:subscription_worksheet, worksheet)
-      # Read from Stripe when the owner opens the tab, so it shows what Stripe reports now.
-      |> assign(:active_subscription, Billing.get_subscription_details!(scope: scope))
+      |> assign(:active_subscription, subscription)
       |> assign(:plan_granted?, plan_granted?)
+      |> assign(
+        :plan_purchase,
+        plan_purchase(current_org, subscription, plan_granted?, scope)
+      )
     else
       assign(socket, :subscription_worksheet, nil)
     end
   end
+
+  # A company that neither pays nor was granted a plan can buy one, except the one that sells
+  # Firmowid.
+  defp plan_purchase(organization, nil = _subscription, false = _plan_granted?, scope) do
+    if organization.id != Billing.seller_organization_id() do
+      %{
+        billing_period: :monthly,
+        free_month?: Billing.subscription_trial_available?(scope: scope),
+        quotas: PlanOffer.quotas()
+      }
+    end
+  end
+
+  defp plan_purchase(_organization, _subscription, _plan_granted?, _scope), do: nil
 
   defp save_member_form(socket, member_params, section_assign) do
     case AshPhoenix.Form.submit(socket.assigns.member_form, params: member_params) do

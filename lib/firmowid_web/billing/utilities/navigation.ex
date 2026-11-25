@@ -14,14 +14,14 @@ defmodule FirmowidWeb.Billing.Utilities.Navigation do
   @doc """
   Returns the absolute URLs Stripe Checkout sends the buyer back to: after a completed checkout
   Stripe sends the buyer to the checkout return with the session's id; after one left without
-  completing it, back to the plan limit page.
+  completing it, back to `cancel_path`, the page the purchase started on.
   """
-  @spec checkout_return_urls() :: %{success_url: String.t(), cancel_url: String.t()}
-  def checkout_return_urls do
+  @spec checkout_return_urls(String.t()) :: %{success_url: String.t(), cancel_url: String.t()}
+  def checkout_return_urls(cancel_path) do
     %{
       # Stripe replaces the placeholder itself, so it must not be URL-encoded.
       success_url: Endpoint.url() <> ~p"/abonament/powrot" <> "?sesja={CHECKOUT_SESSION_ID}",
-      cancel_url: Endpoint.url() <> plan_limit_path()
+      cancel_url: Endpoint.url() <> cancel_path
     }
   end
 

@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
             >
               <dt class="text-[0.9375rem] text-grey-700">{Worksheet.limited_label(kind)}</dt>
               <dd class="shrink-0 text-right text-[0.9375rem] font-medium text-grey-900">
-                {format_limit(@fitting_rules.limits[kind])}
+                {Worksheet.limit_text(@fitting_rules.limits[kind])}
               </dd>
             </div>
           </dl>
@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
             </fieldset>
 
             <p class="mt-3 text-[0.9375rem]/relaxed text-grey-700">
-              {first_charge_text(@fitting_plan, @billing_period, @free_month?)}
+              {Worksheet.first_charge_text(@fitting_plan, @billing_period, @free_month?)}
             </p>
 
             <.button
@@ -364,7 +364,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
       case Billing.start_subscription(
              Map.merge(
                %{plan: plan, billing_period: billing_period(period)},
-               Navigation.checkout_return_urls()
+               Navigation.checkout_return_urls(Navigation.plan_limit_path())
              ),
              scope: scope
            ) do
@@ -510,9 +510,6 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
 
   defp switched_off_label(:active_projects, count), do: ngettext("%{count} project", "%{count} projects", count)
 
-  defp format_limit(:unlimited), do: gettext("unlimited")
-  defp format_limit(limit), do: Integer.to_string(limit)
-
   defp item_name(:users, member), do: member.display_name
   defp item_name(:bank_institutions, bank), do: bank.name
   defp item_name(:active_projects, project), do: project.name
@@ -537,31 +534,6 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
 
   defp then_text(plan, :yearly) do
     gettext("Then %{amount} gross once a year.",
-      amount: Worksheet.format_money(PlanCatalog.gross_price_pln(plan, :yearly))
-    )
-  end
-
-  # The first purchase starts with a 30-day trial; a returning company pays at once.
-  defp first_charge_text(plan, :monthly, true = _trial?) do
-    gettext("Free for 30 days, then %{amount} gross every month.",
-      amount: Worksheet.format_money(PlanCatalog.gross_price_pln(plan, :monthly))
-    )
-  end
-
-  defp first_charge_text(plan, :yearly, true = _trial?) do
-    gettext("Free for 30 days, then %{amount} gross once a year.",
-      amount: Worksheet.format_money(PlanCatalog.gross_price_pln(plan, :yearly))
-    )
-  end
-
-  defp first_charge_text(plan, :monthly, false = _trial?) do
-    gettext("You pay %{amount} gross now, then every month.",
-      amount: Worksheet.format_money(PlanCatalog.gross_price_pln(plan, :monthly))
-    )
-  end
-
-  defp first_charge_text(plan, :yearly, false = _trial?) do
-    gettext("You pay %{amount} gross now, then once a year.",
       amount: Worksheet.format_money(PlanCatalog.gross_price_pln(plan, :yearly))
     )
   end

@@ -111,8 +111,42 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   defp over_limit(_count, :unlimited), do: 0
   defp over_limit(count, limit), do: max(count - limit, 0)
 
-  defp limit_text(:unlimited), do: gettext("unlimited")
-  defp limit_text(limit), do: Integer.to_string(limit)
+  @doc """
+  Returns what a purchase of a plan charges and when: the first purchase starts with a 30-day
+  trial (`trial?`), a returning company pays at once.
+  """
+  @spec first_charge_text(PlanCatalog.offered_plan(), PlanCatalog.billing_period(), boolean()) ::
+          String.t()
+  def first_charge_text(plan, :monthly, true = _trial?) do
+    gettext("Free for 30 days, then %{amount} gross every month.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly))
+    )
+  end
+
+  def first_charge_text(plan, :yearly, true = _trial?) do
+    gettext("Free for 30 days, then %{amount} gross once a year.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly))
+    )
+  end
+
+  def first_charge_text(plan, :monthly, false = _trial?) do
+    gettext("You pay %{amount} gross now, then every month.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly))
+    )
+  end
+
+  def first_charge_text(plan, :yearly, false = _trial?) do
+    gettext("You pay %{amount} gross now, then once a year.",
+      amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly))
+    )
+  end
+
+  @doc """
+  Returns how many of a limited thing a plan includes, as text.
+  """
+  @spec limit_text(PlanCatalog.limit()) :: String.t()
+  def limit_text(:unlimited), do: gettext("unlimited")
+  def limit_text(limit), do: Integer.to_string(limit)
 
   defp total_text(count, :unlimited), do: Integer.to_string(count)
   defp total_text(count, limit), do: "#{count} / #{limit}"
