@@ -1,23 +1,14 @@
 defmodule Firmowid.Repo.Migrations.BackfillCostInvoiceVatAmounts do
   @moduledoc """
-  Enqueues a one-off job that fills the Polish VAT of KSeF cost invoices imported before the
-  `vat_amount` column existed. Ash cannot express this backfill: the value comes from the invoice
-  XML in S3, so the job reads it, not the migration. A database without KSeF invoices (tests, a
-  fresh development setup) gets no job.
+  Used to enqueue the one-off job that filled the Polish VAT of KSeF cost invoices imported
+  before the `vat_amount` column existed, from their XML in S3. The job ran in production on
+  2026-11-25 and its worker is removed, so the migration now does nothing: enqueuing would leave
+  a job no worker can run.
   """
 
   use Ecto.Migration
 
-  def up do
-    execute("""
-    INSERT INTO oban.oban_jobs (queue, worker, args, max_attempts)
-    SELECT 'cost_invoices', 'Firmowid.Ksef.Workers.BackfillCostInvoiceVatWorker', '{}', 3
-    WHERE EXISTS (
-      SELECT 1 FROM cost_invoices
-      WHERE ksef_number IS NOT NULL AND blob_id IS NOT NULL AND vat_amount IS NULL
-    )
-    """)
-  end
+  def up, do: :ok
 
   def down, do: :ok
 end
