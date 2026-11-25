@@ -694,10 +694,14 @@ msgstr ""
 msgid "1.67% applies to companies reporting fewer than 10 people for insurance. You will find a different rate in the notice from ZUS."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "10 credits / month"
+msgstr ""
+
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
+#, elixir-autogen, elixir-format
+msgid "10 documents"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
@@ -705,9 +709,9 @@ msgstr ""
 msgid "2 years"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
-msgid "50 credits / month"
+msgid "50 documents"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
@@ -2015,6 +2019,7 @@ msgstr ""
 msgid "Bank account number copied"
 msgstr ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Bank accounts"
@@ -2026,7 +2031,6 @@ msgctxt "avatar menu"
 msgid "Bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Bank accounts with transfer matching"
@@ -2042,7 +2046,7 @@ msgstr ""
 msgid "Bank transaction"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Banking and payments"
 msgstr ""
@@ -2116,6 +2120,7 @@ msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Billing period"
 msgstr ""
@@ -2263,7 +2268,7 @@ msgid "Business trip settlement: %{title}"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/views/employee.html.heex
 #: lib/firmowid_web/settings/utilities/navigation.ex
@@ -2277,6 +2282,7 @@ msgid "Business trips in progress"
 msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Buy the %{plan} plan"
 msgstr ""
@@ -2607,7 +2613,7 @@ msgstr ""
 msgid "Changing your password:"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "ChatGPT and integrations"
 msgstr ""
@@ -2942,7 +2948,7 @@ msgstr ""
 msgid "Clear filters"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Clear invoice wizard"
 msgstr ""
@@ -3104,6 +3110,7 @@ msgid "Compare fixed costs from the last three months by category and tell me wh
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Compare plans"
 msgstr ""
@@ -4329,12 +4336,12 @@ msgstr ""
 msgid "Customer NIP"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Customer database with cooperation statistics"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Data and security"
 msgstr ""
@@ -4666,7 +4673,7 @@ msgctxt "transport documents"
 msgid "Do you have an invoice?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Document OCR"
@@ -5102,7 +5109,7 @@ msgstr ""
 msgid "Email address has been confirmed."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Email notifications"
 msgstr ""
@@ -5142,12 +5149,12 @@ msgstr ""
 msgid "Employee PPK rate (%)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Employee and project management"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Employee contracts and documents"
@@ -5437,6 +5444,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Everything in one place: invoices, banking, working hours, leave, and business trips."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/subscription_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Everything in the %{plan} plan, and:"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5797,11 +5809,6 @@ msgstr ""
 msgid "Firmowid hesitates. Which category fits?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "Firmowid in ChatGPT (panel beside the conversation)"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid is %{open_source}"
@@ -5968,7 +5975,7 @@ msgstr ""
 msgid "For every %{hundred} of income, %{amount} went out."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "For everyone who issues invoices in KSeF"
 msgstr ""
@@ -5983,12 +5990,12 @@ msgstr ""
 msgid "For flights, use take-off from Poland and landing back in Poland. Otherwise, use the border crossing times."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "For service companies with 6–20 people"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "For sole traders with several accounts and small teams"
 msgstr ""
@@ -6067,12 +6074,12 @@ msgstr ""
 msgid "Free KSeF invoicing with no invoice limit, automatic bank payment matching and project time tracking. Open source (AGPL-3.0), self-hosting available."
 msgstr ""
 
-#: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "Free for 30 days, then %{amount} gross every month."
 msgstr ""
 
-#: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "Free for 30 days, then %{amount} gross once a year."
 msgstr ""
@@ -6345,7 +6352,7 @@ msgstr ""
 msgid "Guides"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "HR"
@@ -6838,6 +6845,11 @@ msgstr ""
 msgid "Integrate your data"
 msgstr ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
+#, elixir-autogen, elixir-format
+msgid "Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Integration with business accounts, including foreign accounts"
@@ -7081,7 +7093,7 @@ msgstr ""
 msgid "Invoices"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices and KSeF"
@@ -7102,7 +7114,7 @@ msgstr ""
 msgid "Invoices from foreign counterparties as PDF files or their photos (PNG, JPG)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices in 33 currencies"
 msgstr ""
@@ -7555,7 +7567,7 @@ msgid_plural "KSeF: %{count} invoices so far, fetching more"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF: sending invoices and downloading purchases"
 msgstr ""
@@ -7652,7 +7664,7 @@ msgstr ""
 msgid "Leave requests"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Leave requests with approval"
@@ -7887,11 +7899,6 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Lunches"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "MCP (Claude, Cursor and others)"
 msgstr ""
 
 #: lib/firmowid_web/auth/components/mcp_consent.ex
@@ -8357,11 +8364,13 @@ msgid "Next payment on %{date}: %{amount} gross"
 msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Next you enter the card on Stripe's page. Nothing is charged today."
 msgstr ""
 
 #: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Next you pay with a card on Stripe's page."
 msgstr ""
@@ -9460,7 +9469,7 @@ msgstr ""
 msgid "PDF files and images (JPG, JPEG, PNG) are allowed."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "PDF time tracking and payroll report"
 msgstr ""
@@ -10061,7 +10070,7 @@ msgstr ""
 msgid "Project %{project} ended this period at %{amount}: %{income} of income against %{costs} of its own costs, before shared costs. Why is it losing money, and what can I do about it?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Project cost"
 msgstr ""
@@ -10630,7 +10639,7 @@ msgstr ""
 msgid "Reverse charge (odwrotne obciążenie) is a mechanism in which the obligation to account for VAT rests with the buyer of the service; it applies, among other things, to imports of services from the European Union."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Reverse charge for EU customers (automatic)"
 msgstr ""
@@ -10796,7 +10805,7 @@ msgstr ""
 msgid "Sales invoice created"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Sales invoices"
 msgstr ""
@@ -11129,7 +11138,7 @@ msgstr ""
 msgid "Selected currency"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Self-host, open source (AGPL-3.0)"
 msgstr ""
@@ -12103,7 +12112,7 @@ msgctxt "sidebar"
 msgid "Team"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Team and working time"
 msgstr ""
@@ -13494,7 +13503,7 @@ msgctxt "page title"
 msgid "Time tracker"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Time tracking"
@@ -14241,8 +14250,8 @@ msgstr ""
 msgid "User"
 msgstr ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/billing/utilities/worksheet.ex
-#: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Users"
@@ -15151,12 +15160,12 @@ msgstr ""
 msgid "You must log in."
 msgstr ""
 
-#: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "You pay %{amount} gross now, then every month."
 msgstr ""
 
-#: lib/firmowid_web/billing/views/plan_limit.ex
+#: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "You pay %{amount} gross now, then once a year."
 msgstr ""
@@ -15304,7 +15313,7 @@ msgstr ""
 msgid "Youth tax relief"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "ZIP package for your accountant"
 msgstr ""
@@ -16264,9 +16273,8 @@ msgctxt "business trip status"
 msgid "under review"
 msgstr ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/billing/utilities/worksheet.ex
-#: lib/firmowid_web/billing/views/plan_limit.ex
-#: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "unlimited"
@@ -16283,7 +16291,7 @@ msgstr ""
 msgid "until the end of next month"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "up to 3 projects"

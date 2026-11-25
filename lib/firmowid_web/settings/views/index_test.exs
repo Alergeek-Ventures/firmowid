@@ -3,8 +3,10 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
+  import Firmowid.BillingFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Billing.StripeTerms
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Finances.Requisition
@@ -261,6 +263,66 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     rendered = render(view)
     refute rendered =~ "Wybierz certyfikat i klucz prywatny"
     assert rendered =~ "Nie udało się zalogować do KSeF"
+  end
+
+  describe "buying a plan on the subscription tab" do
+    test "the owner of a company on the Free plan compares the plans in the chosen billing period",
+         %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(admin_fixture()) |> live(~p"/ustawienia/abonament")
+
+      assert has_element?(view, "#subscription-plan-przedsiebiorca", "+ VAT / mies.")
+      assert has_element?(view, "#subscription-buy-przedsiebiorca")
+      assert has_element?(view, "#subscription-buy-firma")
+      refute has_element?(view, "#subscription-buy-free")
+
+      # A plan lists what it adds to the cheaper one, not what only a higher plan has.
+      refute has_element?(view, "#subscription-plan-przedsiebiorca", "Delegacje")
+      assert has_element?(view, "#subscription-plan-firma", "Delegacje")
+
+      view |> element("#subscription-plans button[value=yearly]") |> render_click()
+
+      assert has_element?(view, "#subscription-plan-przedsiebiorca", "+ VAT / rok")
+    end
+
+    test "a company whose plan was granted has nothing to buy", %{conn: conn} do
+      admin = admin_fixture()
+
+      admin.member.organization_id
+      |> Core.get_organization!(authorize?: false)
+      |> Ash.Seed.update!(%{billing_plan: :firma})
+
+      {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/ustawienia/abonament")
+
+      refute has_element?(view, "#subscription-plans")
+    end
+
+    # Opens a Checkout Session in the Stripe sandbox.
+    @tag :external
+    test "buying opens Stripe Checkout for the chosen plan and period, and leaving it returns to the tab",
+         %{conn: conn} do
+      admin = admin_fixture()
+      org_id = admin.member.organization_id
+      {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/ustawienia/abonament")
+
+      view |> element("#subscription-plans button[value=yearly]") |> render_click()
+
+      assert {:error, {:redirect, %{to: "https://checkout.stripe.com/" <> _path}}} =
+               view |> element("#subscription-buy-firma") |> render_click()
+
+      %{stripe_customer_id: customer_id} = Core.get_organization!(org_id, authorize?: false)
+      delete_stripe_customer_on_exit(customer_id)
+
+      assert {:ok, %{"data" => [session]}} =
+               StripeTerms.request(:get, "/v1/checkout/sessions", %{
+                 customer: customer_id,
+                 expand: ["data.line_items"]
+               })
+
+      assert %{"data" => [%{"price" => %{"lookup_key" => "firmowid_firma_yearly"}}]} =
+               session["line_items"]
+
+      assert String.ends_with?(session["cancel_url"], ~p"/ustawienia/abonament")
+    end
   end
 
   defp iban_position(html, iban) do

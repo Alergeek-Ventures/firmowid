@@ -6,8 +6,10 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.DesignSystem.Components.Tabs, only: [segmented_control: 1]
 
   alias Firmowid.Billing.PlanCatalog
+  alias FirmowidWeb.Billing.Utilities.PlanOffer
   alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Settings.Components.Helpers
 
@@ -19,6 +21,11 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   attr :subscription, :any, default: nil, doc: "the subscription as Stripe reports it, if any"
   attr :plan_granted?, :boolean, default: false
+
+  attr :purchase, :map,
+    default: nil,
+    doc:
+      "what a purchase would be (billing_period, free_month?) and the quotas the plans differ in, if the company can buy a plan"
 
   def subscription_tab(assigns) do
     ~H"""
@@ -97,6 +104,102 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           >
             {gettext("Your current usage is within the plan limits.")}
           </div>
+        </section>
+
+        <section :if={@purchase} id="subscription-plans" class="space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-base leading-none font-semibold text-grey-900">
+              {gettext("Compare plans")}
+            </h2>
+
+            <.segmented_control label={gettext("Billing period")}>
+              <:option
+                :for={period <- PlanCatalog.billing_periods()}
+                active={period == @purchase.billing_period}
+                phx-click="purchase-period"
+                value={Atom.to_string(period)}
+              >
+                {Worksheet.period_label(period)}
+              </:option>
+            </.segmented_control>
+          </div>
+
+          <%!-- The cards share the rows of one grid, so each quota and the button sit on one line across the plans. --%>
+          <div class="grid gap-x-5 lg:grid-cols-3">
+            <article
+              :for={{plan, index} <- Enum.with_index(PlanOffer.plans())}
+              id={"subscription-plan-#{plan}"}
+              class={[
+                "grid grid-rows-subgrid rounded-2xl border bg-white p-5 max-lg:not-last:mb-4",
+                if(plan == @worksheet.selected_plan, do: "border-grey-900", else: "border-grey-300")
+              ]}
+              style={"grid-row: span #{length(@purchase.quotas) + 3}"}
+            >
+              <div>
+                <div class="flex min-h-7 flex-wrap items-center justify-between gap-2">
+                  <h3 class="text-base leading-none font-semibold text-grey-900">
+                    {Worksheet.plan_label(plan)}
+                  </h3>
+                  <span :if={plan == @worksheet.selected_plan} class={plan_badge_styles(plan)}>
+                    {plan_badge_label(plan)}
+                  </span>
+                </div>
+
+                <p class="mt-3 text-2xl/none font-semibold tracking-tight text-grey-900 tabular-nums">
+                  {price_text(plan, @purchase.billing_period)}
+                </p>
+              </div>
+
+              <dl
+                class="mt-4 grid grid-rows-subgrid text-sm/snug"
+                style={"grid-row: span #{length(@purchase.quotas)}"}
+              >
+                <div
+                  :for={{label, values} <- @purchase.quotas}
+                  class="flex items-baseline justify-between gap-4 border-grey-200 py-2 not-first:border-t"
+                >
+                  <dt class="min-w-0 text-grey-700">{label}</dt>
+                  <dd class="shrink-0 text-right font-semibold text-grey-900">
+                    {Enum.at(values, index)}
+                  </dd>
+                </div>
+              </dl>
+
+              <%!-- The Free plan is the one the company has; only what a paid plan adds is listed. --%>
+              <div>
+                <div :if={plan in PlanCatalog.paid_plans()} class="border-t border-grey-200 pt-4">
+                  <p class="text-sm font-medium text-grey-900">{added_heading(plan)}</p>
+                  <ul class="mt-2 space-y-1.5 text-sm/snug text-grey-700">
+                    <li :for={{label, _value} <- PlanOffer.added(plan)} class="flex gap-2">
+                      <.icon name="hero-check-mini" class="mt-0.5 size-4 shrink-0 text-grey-900" />
+                      <span>{label}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="self-end pt-5">
+                <.button
+                  :if={plan in PlanCatalog.paid_plans()}
+                  id={"subscription-buy-#{plan}"}
+                  type="button"
+                  variant={buy_button_variant(plan)}
+                  class="w-full"
+                  phx-click="purchase"
+                  phx-value-plan={plan}
+                  phx-disable-with={gettext("Opening the payment page...")}
+                >
+                  {gettext("Buy the %{plan} plan", plan: Worksheet.plan_label(plan))}
+                </.button>
+              </div>
+            </article>
+          </div>
+
+          <p class="text-sm text-grey-600">
+            {if @purchase.free_month?,
+              do: gettext("Next you enter the card on Stripe's page. Nothing is charged today."),
+              else: gettext("Next you pay with a card on Stripe's page.")}
+          </p>
         </section>
 
         <section class="space-y-4">
@@ -234,6 +337,22 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   defp payment_line_styles(%{payment_overdue?: true}), do: "text-rust-700"
   defp payment_line_styles(_subscription), do: "text-grey-700"
+
+  # A paid plan lists what it adds to the plan below it.
+  defp added_heading(plan) do
+    cheaper = PlanOffer.plans() |> Enum.take_while(&(&1 != plan)) |> List.last()
+
+    gettext("Everything in the %{plan} plan, and:", plan: Worksheet.plan_label(cheaper))
+  end
+
+  # The plan most companies outgrow the Free one into stands out, as on the pricing page.
+  defp buy_button_variant(:przedsiebiorca), do: "special"
+  defp buy_button_variant(_plan), do: "outline"
+
+  defp price_text(:free, _billing_period), do: Worksheet.format_money(Decimal.new(0))
+
+  defp price_text(plan, billing_period),
+    do: Worksheet.net_price_text(PlanCatalog.net_price_pln(plan, billing_period), billing_period)
 
   defp gross_price(subscription), do: Worksheet.format_money(subscription.amount)
 
