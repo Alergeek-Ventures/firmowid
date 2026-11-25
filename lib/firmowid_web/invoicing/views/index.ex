@@ -103,9 +103,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("sales_invoice:destroyed:#{organization_id}")
       # Ash PubSub — finances
       Endpoint.subscribe("transaction:updated:#{organization_id}")
-
-      if flag_enabled?(:taxes, socket.assigns),
-        do: Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
+      Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
 
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
@@ -133,7 +131,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:projects_loaded_at, nil)
 
     active_months =
-      get_active_months(socket.assigns.ash_scope, flag_enabled?(:taxes, socket.assigns)) ++
+      get_active_months(socket.assigns.ash_scope) ++
         [Date.beginning_of_month(Date.utc_today())]
 
     socket = assign(socket, :active_months, active_months)
@@ -460,7 +458,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   def handle_info(%Broadcast{payload: %Notification{resource: ExpectedTransaction}}, socket) do
     active_months =
-      get_active_months(socket.assigns.ash_scope, flag_enabled?(:taxes, socket.assigns)) ++
+      get_active_months(socket.assigns.ash_scope) ++
         [Date.beginning_of_month(Date.utc_today())]
 
     {:noreply, socket |> assign(:active_months, active_months) |> refetch_invoicing_entries()}
@@ -750,13 +748,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp refetch_invoicing_entries(socket) do
     %{params: %{filter: filter, subfilter: subfilter}} = socket.assigns
     scope = socket.assigns.ash_scope
-    expected? = flag_enabled?(:taxes, socket.assigns)
 
     socket
     |> CostInvoiceUpload.assign_counts()
     |> start_unmatched_count(filter, scope)
     |> start_async(:invoicing_entries, fn ->
-      nil |> fetch_entries(nil, filter, subfilter, scope, expected?) |> with_month_separators()
+      nil |> fetch_entries(nil, filter, subfilter, scope) |> with_month_separators()
     end)
   end
 
@@ -860,13 +857,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp read_newest_entries(socket) do
     %{params: params, active_months: active_months, ash_scope: scope} = socket.assigns
     from = Date.utc_today() |> Date.beginning_of_month() |> Date.shift(month: -1)
-    expected? = flag_enabled?(:taxes, socket.assigns)
 
     if Date.before?(Enum.min(active_months, Date), from) do
       start_async(socket, :newest_entries, fn ->
         entries =
           from
-          |> fetch_entries(nil, params.filter, params.subfilter, scope, expected?)
+          |> fetch_entries(nil, params.filter, params.subfilter, scope)
           |> with_month_separators()
 
         {params, entries}
@@ -979,12 +975,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     "group-#{kind}-#{:erlang.phash2({kind, party, month})}"
   end
 
-  # Unordered: the list orders its entries once they are grouped by party. Expected
-  # transactions are read only when `expected?` (the `:taxes` flag) is on.
-  defp fetch_entries(from, to, filter, subfilter, scope, expected?) do
+  # Unordered: the list orders its entries once they are grouped by party.
+  defp fetch_entries(from, to, filter, subfilter, scope) do
     filter
     |> entry_reads(subfilter)
-    |> Enum.filter(&(expected? or &1 != :expected_transactions))
     |> Enum.flat_map(fn
       {:cost_invoices, args} ->
         list_cost_invoices(from, to, args, scope)
@@ -1075,7 +1069,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp get_active_months(scope, expected?) do
+  defp get_active_months(scope) do
     sales_dates = Invoicing.list_sales_invoices!(query: [select: [:issue_date]], scope: scope)
     cost_dates = Invoicing.list_cost_invoices!(query: [select: [:issue_date]], scope: scope)
 
@@ -1083,13 +1077,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Finances.list_transactions!(query: [select: [:booking_date]], scope: scope)
 
     expected_dates =
-      if expected?,
-        do:
-          Finances.list_expected_transactions!(%{fulfilled: false},
-            query: [select: [:date]],
-            scope: scope
-          ),
-        else: []
+      Finances.list_expected_transactions!(%{fulfilled: false},
+        query: [select: [:date]],
+        scope: scope
+      )
 
     (Enum.map(sales_dates ++ cost_dates, & &1.issue_date) ++
        Enum.map(transaction_dates, & &1.booking_date) ++ Enum.map(expected_dates, & &1.date))

@@ -43,23 +43,16 @@ defmodule Firmowid.Assistant.ToolPolicy do
 
   @doc """
   Returns the assistant's tools the actor may use. AshAi drops tools whose policies forbid every
-  call for the actor's role, the same way it does for MCP; Ash policies authorize each call. The
-  tax tools wait until the company has chosen its legal form.
+  call for the actor's role, the same way it does for MCP; Ash policies authorize each call.
   """
   @spec tools(Scope.t()) :: [%AshAi.Tool{}]
   def tools(scope) do
-    tools =
-      AshAi.exposed_tools(
-        otp_app: :firmowid,
-        tools: AiTools.assistant(),
-        actor: scope.actor,
-        tenant: scope.tenant
-      )
-
-    case Core.get_organization!(scope.tenant, actor: scope.actor) do
-      %{legal_form: nil} -> Enum.reject(tools, &(&1.name in AiTools.taxes()))
-      _organization -> tools
-    end
+    AshAi.exposed_tools(
+      otp_app: :firmowid,
+      tools: AiTools.assistant(),
+      actor: scope.actor,
+      tenant: scope.tenant
+    )
   end
 
   @doc """

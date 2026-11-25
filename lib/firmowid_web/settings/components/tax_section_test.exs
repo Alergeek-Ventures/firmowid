@@ -1,17 +1,11 @@
 defmodule FirmowidWeb.Settings.Components.TaxSectionTest do
-  # Flags are application config in tests, so this module runs alone.
-  use FirmowidWeb.ConnCase, async: false
+  use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Core
   alias Firmowid.Taxes
-
-  setup do
-    Application.put_env(:firmowid, :enabled_feature_flags, [:taxes])
-    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
-  end
 
   test "keeps a partner who left the team selected", %{conn: conn} do
     admin = admin_fixture()

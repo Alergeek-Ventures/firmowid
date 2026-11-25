@@ -41,10 +41,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :organization_users, :list, required: true
   attr :scope, :any, required: true
 
-  attr :taxes?, :boolean,
-    default: false,
-    doc: "whether the `taxes` flag shows the taxes and ZUS card"
-
   attr :section, :atom, required: true, values: [:organization, :ksef, :bank_accounts]
 
   def company_tab(assigns) do
@@ -56,7 +52,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         register={RegisterCheck.status(@current_org)}
       />
 
-      <div :if={@section == :organization and @taxes?}>
+      <div :if={@section == :organization}>
         <.live_component
           module={TaxSection}
           id="tax-section"

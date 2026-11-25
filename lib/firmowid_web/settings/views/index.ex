@@ -508,14 +508,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("set_legal_form", %{"legal_form" => legal_form}, socket) do
     %{current_org: organization, ash_scope: scope} = socket.assigns
 
-    with true <- flag_enabled?(:taxes, socket.assigns),
-         {:ok, updated} <-
-           Core.update_organization(organization, %{legal_form: legal_form}, scope: scope) do
-      send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
-      {:noreply, assign(socket, :current_org, %{organization | legal_form: updated.legal_form})}
-    else
-      false ->
-        {:noreply, socket}
+    case Core.update_organization(organization, %{legal_form: legal_form}, scope: scope) do
+      {:ok, updated} ->
+        send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+        {:noreply, assign(socket, :current_org, %{organization | legal_form: updated.legal_form})}
 
       {:error, _error} ->
         LiveToast.send_toast(
@@ -1108,7 +1104,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_org={@current_org}
             organization_users={@organization_users}
             scope={@ash_scope}
-            taxes?={flag_enabled?(:taxes, assigns)}
           />
         <% :subscription -> %>
           <.subscription_tab

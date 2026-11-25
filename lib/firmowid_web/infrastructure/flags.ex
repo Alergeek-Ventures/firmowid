@@ -32,9 +32,7 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   @flag_keys %{
     accurate_salary_calculation: "accurate_salary_calculation",
     analysis_dashboard: "analysis_dashboard",
-    delegations: "delegations",
-    # Tax settings and the expected transactions they will be forecast from.
-    taxes: "taxes"
+    delegations: "delegations"
   }
 
   @cache :feature_flags
