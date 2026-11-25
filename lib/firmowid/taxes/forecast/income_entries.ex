@@ -30,6 +30,7 @@ defmodule Firmowid.Taxes.Forecast.IncomeEntries do
 
   alias Firmowid.Analysis
   alias Firmowid.Analysis.OwnAccounts
+  alias Firmowid.Core.Organization
   alias Firmowid.Currencies.Converter
   alias Firmowid.Taxes.Forecast.Corrections
   alias Firmowid.Taxes.Forecast.Income
@@ -47,9 +48,7 @@ defmodule Firmowid.Taxes.Forecast.IncomeEntries do
   mapping needs, for an organization with the given legal form and VAT status.
   `categories` holds the analysis category of each classified skipped transaction.
   """
-  @spec build(documents(), %{legal_form: atom(), is_vat_payer: boolean()}, OwnAccounts.t()) :: [
-          Income.entry()
-        ]
+  @spec build(documents(), Organization.t(), OwnAccounts.t()) :: [Income.entry()]
   def build(documents, organization, own_accounts) do
     Enum.flat_map(documents.sales_invoices, &revenue/1) ++
       Enum.flat_map(documents.cost_invoices, &invoice_cost(&1, organization.is_vat_payer)) ++

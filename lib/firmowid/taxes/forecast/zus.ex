@@ -46,10 +46,10 @@ defmodule Firmowid.Taxes.Forecast.Zus do
   @health_flat_tax Decimal.new("4.9")
 
   @type partner :: %{
-          profit_share: Decimal.t(),
-          income_tax: :tax_scale | :flat_tax | :lump_sum,
-          social_insurance: :start_relief | :preferential | :small_plus | :full | :none,
-          voluntary_sickness: boolean()
+          required(:income_tax) => :tax_scale | :flat_tax | :lump_sum,
+          required(:social_insurance) => :start_relief | :preferential | :small_plus | :full | :none,
+          required(:voluntary_sickness) => boolean(),
+          optional(atom()) => any()
         }
 
   @type contribution :: %{
