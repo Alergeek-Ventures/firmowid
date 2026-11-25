@@ -1332,6 +1332,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   calculations do
     EffectiveFields.effective_correction_calculations()
 
+    # The invoice's total as the document states it (P_15): the unrounded item sum rounded to
+    # the grosz. A calculation of its own because Ash 3.38 cannot type `round/2` inside the
+    # `composite_type` map below (`Round.can_return_nil?/1` matches only `round/1`).
+    calculate :rounded_gross_value, :decimal, expr(round(gross_value, 2))
+
     calculate :amount,
               Money,
               expr(
@@ -1341,7 +1346,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                   composite_type(
                     %{
                       currency: currency,
-                      amount: if(is_nil(gross_value), do: 0, else: gross_value)
+                      amount: if(is_nil(gross_value), do: 0, else: rounded_gross_value)
                     },
                     Money
                   )
