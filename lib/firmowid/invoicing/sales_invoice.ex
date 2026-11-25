@@ -236,8 +236,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         constraints one_of: [:pending, :matched, :skipped]
 
         description "Payment matching with bank transactions: pending has no matched payment yet, " <>
-                      "matched is linked to a bank or expected transaction or paid on issue (an advance " <>
-                      "invoice), skipped is excluded from matching."
+                      "matched is linked to a bank transaction or to the expected payment of an invoice " <>
+                      "paid on issue, skipped is excluded from matching."
       end
 
       argument :submission, :atom do
@@ -436,6 +436,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       pipe_through [:prepare_invoice_body, :apply_invoice_body]
       change Changes.RememberCashAccounting
+      change Changes.ExpectPayment
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -550,6 +551,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change {Changes.ValidateCountryCode, field: :buyer_country}
       change Changes.BindInvoiceCounterparty
+      # An advance invoice from other software documents a payment received like one issued here.
+      change Changes.ExpectPayment
       # Last, to compare the saved invoice and its items with the KSeF document.
       change Changes.VerifyImportedDocument
 
@@ -606,6 +609,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change filter(expr(is_draft and not is_correction))
       pipe_through [:prepare_invoice_body, :apply_invoice_body]
       change Changes.RememberCashAccounting
+      change Changes.ExpectPayment
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
@@ -634,6 +638,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change set_attribute(:invoice_number, nil)
       change set_attribute(:locked_at, nil)
       change set_attribute(:ksef_invoice_checksum, nil)
+      change Changes.ExpectPayment
     end
 
     update :attach_suggested_counterparty do
@@ -703,6 +708,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         always_atomic? true
         message "KSeF-submitted invoices cannot be deleted"
       end
+
+      change Changes.ExpectPayment
     end
 
     update :update_internal_note do
@@ -715,9 +722,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       description "Toggle whether this sales invoice is skipped during matching workflows."
       require_atomic? false
       accept []
-
-      # An invoice paid when issued awaits no transaction, so its skip cannot be undone.
-      change filter(expr(not is_paid_on_issue))
 
       change fn changeset, _context ->
         current = Ash.Changeset.get_data(changeset, :skip_invoicing)
@@ -1434,8 +1438,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
               :atom,
               expr(
                 cond do
-                  exists(transactions, true) or exists(expected_transactions, true) or
-                      (is_paid_on_issue and is_confirmed) ->
+                  exists(transactions, true) or exists(expected_transactions, true) ->
                     :matched
 
                   skip_invoicing == true ->
@@ -1445,9 +1448,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                     :pending
                 end
               ) do
-      description "Invoice reconciliation state derived from linked bank or expected transactions, payment on " <>
-                    "issue and the skip flag."
-
+      description "Invoice reconciliation state derived from linked bank or expected transactions and the skip flag."
       constraints one_of: [:pending, :matched, :skipped]
     end
 

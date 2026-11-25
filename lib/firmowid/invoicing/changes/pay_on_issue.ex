@@ -1,48 +1,30 @@
 defmodule Firmowid.Invoicing.Changes.PayOnIssue do
   @moduledoc """
-  Keeps an invoice that is paid when issued (the resource's `is_paid_on_issue`) free of payment
-  expectations: it is due on the payment date, its `sale_date`, which cannot be after its issue
-  date, and awaits no transaction. A draft revised away from such a kind awaits a transaction again.
+  Keeps an invoice that is paid when issued (the resource's `is_paid_on_issue`) free of a payment
+  term: it is due on the payment date, its `sale_date`, which cannot be after its issue date.
+  The payment itself is expected by `ExpectPayment` once the invoice is issued.
 
   Runs after the issue date is set.
   """
   use Ash.Resource.Change
   use Gettext, backend: Firmowid.Gettext
 
-  @doc "Sets the due date and payment matching of an invoice from whether it is paid on issue."
+  @doc "Sets the due date of an invoice paid on issue to its payment date."
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
   def change(changeset, _opts, context) do
-    cond do
-      paid_on_issue?(
-        changeset,
-        Ash.Changeset.get_attribute(changeset, :ksef_invoice_kind),
-        context
-      ) ->
-        pay_on_issue(changeset)
-
-      paid_on_issue?(changeset, changeset.data.ksef_invoice_kind, context) ->
-        Ash.Changeset.force_change_attribute(changeset, :skip_invoicing, false)
-
-      true ->
-        changeset
-    end
-  end
-
-  defp paid_on_issue?(changeset, kind, context) do
+    kind = Ash.Changeset.get_attribute(changeset, :ksef_invoice_kind)
     opts = context |> Ash.Context.to_opts() |> Keyword.put(:refs, %{ksef_invoice_kind: kind})
-    Ash.calculate!(changeset.resource, :is_paid_on_issue, opts)
+
+    if Ash.calculate!(changeset.resource, :is_paid_on_issue, opts),
+      do: pay_on_issue(changeset),
+      else: changeset
   end
 
   defp pay_on_issue(changeset) do
     payment_date = Ash.Changeset.get_attribute(changeset, :sale_date)
     issue_date = Ash.Changeset.get_attribute(changeset, :issue_date)
-
-    changeset =
-      Ash.Changeset.force_change_attributes(changeset,
-        due_date: payment_date,
-        skip_invoicing: true
-      )
+    changeset = Ash.Changeset.force_change_attribute(changeset, :due_date, payment_date)
 
     # The invoice states the payment as made, so it cannot be dated after the invoice itself.
     if payment_date && issue_date && Date.after?(payment_date, issue_date) do
