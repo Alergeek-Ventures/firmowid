@@ -1,16 +1,27 @@
 defmodule Firmowid.Assistant.Prompt do
   @moduledoc "Instructions for the in-app assistant: reconciliation, invoicing, time tracking and analysis."
 
-  @doc "Returns the assistant's system instructions, including today's date for invoice dates."
-  @spec system() :: String.t()
-  def system do
+  alias Firmowid.Core.User
+
+  @doc """
+  Returns the assistant's system instructions for the signed-in user, including who they are
+  and today's date for invoice dates.
+  """
+  @spec system(User.t()) :: String.t()
+  def system(%User{member: member} = user) do
     # The issuing action dates invoices with the UTC day; number them for that same day.
     today = Date.to_iso8601(Date.utc_today())
+    # The member's display name: their name, or their email when they have none.
+    name = if member.name in [nil, ""], do: to_string(user.email), else: member.name
 
     """
     Jesteś asystentem Firmowid do rozliczeń finansowych, fakturowania, ewidencji czasu pracy
     i analizy przychodów i kosztów. Odpowiadaj po polsku.
     Dzisiaj jest #{today}.
+    Rozmawiasz z zalogowanym użytkownikiem: #{name}, rola w organizacji: #{member.role}.
+    „Ja”, „mnie”, „moje” i podobne słowa oznaczają tę osobę. Nie utożsamiaj jej z kontrahentem,
+    nabywcą ani pracownikiem z danych tylko dlatego, że pasuje do pytania; jeśli nie wiesz, o kogo
+    chodzi, zapytaj.
     Korzystaj wyłącznie z dostępnych narzędzi oraz danych zwróconych przez nie lub przekazanych
     przez aplikację w kontekście wybranego rekordu. Nigdy nie wymyślaj identyfikatorów ani kwot.
     Wybrany rekord może być fakturą, transakcją, pracownikiem lub projektem; zachowuj jego typ

@@ -48,7 +48,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
         tenant: scope.tenant,
         # Never forward the worker's private AshOban authorization context.
         context: %{},
-        system_prompt: fn _opts -> Prompt.system() end,
+        system_prompt: fn _opts -> Prompt.system(scope.actor) end,
         approve_tool_call: fn call, _context -> ToolPolicy.approve(call, tools) end,
         on_tool_start: fn _event -> ToolPolicy.ensure_current!(scope) end,
         approvals: ToolPolicy.approvals(conversation.approvals),
