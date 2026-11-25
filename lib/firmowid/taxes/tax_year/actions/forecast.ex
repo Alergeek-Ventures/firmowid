@@ -1,0 +1,217 @@
+defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
+  @moduledoc """
+  Forecasts a year's tax payments from its saved settings and the company's
+  documents, read as the caller: VAT, CIT advances of a limited company, and
+  PIT advances and ZUS contributions of the owners of a sole proprietorship or
+  a civil partnership.
+
+  VAT counts issued sales invoices on their sale date (art. 19a ust. 1 of the
+  VAT Act) and cost invoices on the latest of their sale date, issue date and
+  the day KSeF stored them, which is when they were received (art. 86 ust. 10
+  and 10b). Cash accounting moves both to the days of the linked bank
+  transfers: a sales invoice marked with it (art. 21 ust. 1), and every cost
+  invoice once the company uses it (art. 86 ust. 10e). An invoice in another
+  currency converts at its NBP rate.
+
+  Simplifications:
+
+    * a correction counts the change it makes on its issue date, under cash
+      accounting too, and a sales correction whose invoice Firmowid does not
+      have is left out, as the state before it is unknown;
+    * an invoice read from a document counts as received when issued;
+    * a cash accounting invoice counts only once paid: neither the 180 days
+      after which a sale to a non-taxpayer counts anyway (art. 21 ust. 1
+      pkt 2), nor a payment of an invoice older than the year before, nor the
+      size of a transfer in another currency than the invoice;
+    * input VAT is deducted in full, and sales outside invoices, reverse-charge
+      purchases and bad debt relief are not counted;
+    * a skipped outgoing transfer is a cost only when the analysis put it into
+      a category other than taxes (see `Firmowid.Taxes.Forecast.IncomeEntries`);
+    * a VAT surplus is carried forward and lowered by the refunds from a tax
+      office (incoming skipped transfers titled with VAT), not refunded itself.
+
+  CIT advances (see `Firmowid.Taxes.Forecast.Cit`) are forecast for a limited
+  company whose year has a CIT rate and advance form, from the income entries
+  of `Firmowid.Taxes.Forecast.IncomeEntries`, also when the company is outside
+  VAT. For each partner of a sole proprietorship or a civil partnership the
+  same entries, multiplied by their profit share, give their ZUS contributions
+  (`Firmowid.Taxes.Forecast.Zus`) and PIT advances
+  (`Firmowid.Taxes.Forecast.Pit`), which deduct them. Order: VAT, CIT, PIT, ZUS.
+  The VAT entries are built by `Firmowid.Taxes.Forecast.VatEntries`.
+
+  Documents and transfers are read from the year before as well: cash
+  accounting, the previous month's health contribution base in January and
+  Mały ZUS Plus need them; every calculation ignores entries outside its dates.
+
+  Cost invoices without a VAT amount bring none to VAT and count at their gross
+  amount in CIT costs, so each forecast tells how many its period has.
+  """
+  use Ash.Resource.Actions.Implementation
+
+  alias Firmowid.Analysis
+  alias Firmowid.Analysis.OwnAccounts
+  alias Firmowid.Core
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Scope
+  alias Firmowid.Taxes
+  alias Firmowid.Taxes.Forecast.Cit
+  alias Firmowid.Taxes.Forecast.Income
+  alias Firmowid.Taxes.Forecast.IncomeEntries
+  alias Firmowid.Taxes.Forecast.Pit
+  alias Firmowid.Taxes.Forecast.Vat
+  alias Firmowid.Taxes.Forecast.VatEntries
+  alias Firmowid.Taxes.Forecast.Zus
+
+  @impl true
+  def run(input, _opts, context) do
+    year = input.arguments.year
+    opts = Ash.Context.to_opts(context)
+
+    with {:ok, tax_year} <-
+           Taxes.get_tax_year(
+             year,
+             opts |> Keyword.put(:not_found_error?, false) |> Keyword.put(:load, [:partners])
+           ),
+         {:ok, organization} <- Core.get_organization(context.tenant, opts) do
+      documents = read_documents(year, opts)
+      scope = %Scope{actor: context.actor, tenant: context.tenant}
+
+      {:ok,
+       vat(tax_year, organization, documents) ++
+         cit(tax_year, organization, documents, scope) ++
+         owners(tax_year, organization, documents, scope)}
+    end
+  end
+
+  # Every document set is read once, from the year before too: a cash accounting invoice of it may
+  # be paid in this year, and the owners' health contribution and Mały ZUS Plus look back.
+  defp read_documents(year, opts) do
+    dates = %{
+      date_from: Date.new!(year - 1, 1, 1),
+      date_to: Date.new!(year, 12, 31),
+      date_field: :any
+    }
+
+    two_years = Map.delete(dates, :date_field)
+
+    %{
+      sales_invoices:
+        dates
+        |> Map.put(:submission, :confirmed)
+        |> Invoicing.list_sales_invoices!(
+          Keyword.put(opts, :load, [
+            :vat_value,
+            :net_value,
+            :gross_value,
+            :transactions,
+            corrected_invoice: [:vat_value, :net_value, corrections: [:vat_value, :net_value]]
+          ])
+        ),
+      cost_invoices:
+        Invoicing.list_cost_invoices!(
+          dates,
+          Keyword.put(opts, :load, [:transactions, :original_invoice])
+        ),
+      salaries:
+        %{salary_assigned: true}
+        |> Finances.list_transactions!(opts)
+        |> Enum.filter(&(&1.salary_month in Date.range(two_years.date_from, two_years.date_to))),
+      skipped_transactions:
+        two_years
+        |> Map.merge(%{reconciliation: :skipped, salary_assigned: false})
+        |> Finances.list_transactions!(Keyword.put(opts, :load, [:entity_tags]))
+    }
+  end
+
+  # The categories the analysis resolves for the skipped transfers (the owner's confirmed rules,
+  # certain signals, the classifier), read as the caller, tell which of them are costs.
+  defp income_entries(documents, organization, scope) do
+    categories =
+      %{sales_invoices: [], cost_invoices: [], transactions: documents.skipped_transactions}
+      |> Analysis.categorize_entries(scope)
+      |> Map.new(fn {{:transaction, id}, {_entry, {category, _source}}} -> {id, category} end)
+
+    IncomeEntries.build(
+      Map.put(documents, :categories, categories),
+      organization,
+      OwnAccounts.load(scope)
+    )
+  end
+
+  defp vat(%{vat_period: frequency, year: year}, %{is_vat_payer: true} = organization, documents) when frequency != nil do
+    without_vat = Enum.reject(documents.cost_invoices, & &1.vat_amount)
+
+    documents.sales_invoices
+    |> VatEntries.build(documents.cost_invoices, organization.is_cash_account)
+    |> Kernel.++(VatEntries.refunds(documents.skipped_transactions))
+    |> Vat.forecast(frequency, year)
+    |> Enum.map(fn forecast ->
+      missing =
+        Enum.count(
+          without_vat,
+          &(VatEntries.cost_date(&1) in Date.range(forecast.period_start, forecast.period_end))
+        )
+
+      put_in(forecast.details[:cost_invoices_without_vat], missing)
+    end)
+  end
+
+  defp vat(_tax_year, _organization, _documents), do: []
+
+  defp cit(
+         %{cit_rate: rate, cit_advances: advances, year: year},
+         %{legal_form: :limited_company} = organization,
+         documents,
+         scope
+       )
+       when rate != nil and advances != nil do
+    entries = income_entries(documents, organization, scope)
+
+    without_vat =
+      if organization.is_vat_payer,
+        do:
+          for(
+            %{vat_amount: nil} = invoice <- documents.cost_invoices,
+            do: IncomeEntries.cost_date(invoice)
+          ),
+        else: []
+
+    entries
+    |> Cit.forecast(%{cit_rate: rate, cit_advances: advances}, year)
+    |> Enum.map(fn forecast ->
+      missing =
+        Enum.count(without_vat, &(&1 in Date.range(Date.new!(year, 1, 1), forecast.period_end)))
+
+      put_in(forecast.details[:cost_invoices_without_vat], missing)
+    end)
+  end
+
+  defp cit(_tax_year, _organization, _documents, _scope), do: []
+
+  # The owners' PIT advances and ZUS contributions, all PIT first.
+  defp owners(
+         %{partners: [_ | _] = partners, accident_insurance_rate: accident_rate, year: year},
+         %{legal_form: legal_form} = organization,
+         documents,
+         scope
+       )
+       when legal_form in [:sole_proprietorship, :civil_partnership] do
+    entries = income_entries(documents, organization, scope)
+
+    {pit, zus} =
+      partners
+      |> Enum.map(fn partner ->
+        partner_entries = Income.scale(entries, partner.profit_share)
+        contributions = Zus.contributions(partner_entries, partner, accident_rate, year)
+
+        {Pit.forecast(partner_entries, partner, contributions, partner.member_id, year),
+         Zus.forecast(contributions, partner.member_id)}
+      end)
+      |> Enum.unzip()
+
+    Enum.concat(pit) ++ Enum.concat(zus)
+  end
+
+  defp owners(_tax_year, _organization, _documents, _scope), do: []
+end

@@ -77,6 +77,13 @@ defmodule Firmowid.Seeds.Bytecraft do
   def seed! do
     users = seed_users()
     bytecraft = seed_organization(users.kira)
+
+    Helpers.seed_tax_year!(bytecraft.id, %{
+      vat_period: :monthly,
+      cit_rate: :reduced,
+      cit_advances: :quarterly
+    })
+
     users = seed_org_membership(bytecraft, users)
     counterparties = seed_counterparties(bytecraft)
     projects = seed_projects(bytecraft, users, counterparties)
@@ -143,7 +150,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         billing_plan: :firma,
         nip: "6161525811",
         address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
-        owner_id: kira.id
+        owner_id: kira.id,
+        legal_form: :limited_company
       }
     )
   end

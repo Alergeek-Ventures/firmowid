@@ -26,6 +26,13 @@ defmodule Firmowid.Seeds.Voidstack do
   def seed! do
     dragan = seed_dragan()
     voidstack = seed_organization(dragan)
+
+    Helpers.seed_tax_year!(voidstack.id, %{
+      vat_period: :monthly,
+      cit_rate: :reduced,
+      cit_advances: :quarterly
+    })
+
     member = seed_org_membership(voidstack, dragan)
     seed_project(member, voidstack)
     blob = seed_blob(voidstack)
@@ -54,7 +61,8 @@ defmodule Firmowid.Seeds.Voidstack do
         onboarding_completed_at: DateTime.utc_now(),
         nip: "7871963656",
         address: "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
-        owner_id: dragan.id
+        owner_id: dragan.id,
+        legal_form: :limited_company
       }
     )
   end

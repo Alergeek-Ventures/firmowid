@@ -52,7 +52,8 @@ defmodule Firmowid.AiTools do
     :set_analysis_entry_category,
     :set_analysis_entry_project_tags,
     :list_tax_years,
-    :suggest_tax_settings
+    :suggest_tax_settings,
+    :forecast_taxes
   ]
 
   # The confirmation widget reports the KSeF outcome on MCP; the assistant's invoice card shows it

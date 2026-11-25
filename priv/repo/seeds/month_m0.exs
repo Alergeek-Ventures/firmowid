@@ -26,14 +26,16 @@ defmodule Firmowid.Seeds.MonthM0 do
   """
 
   alias Firmowid.Analysis.EntityTag
+  alias Firmowid.Core.Member
+  alias Firmowid.Core.User
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Core.User{
+  @seed_actor %User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Core.Member{role: :admin}
+    member: %Member{role: :admin}
   }
 
   def seed!(ctx) do
@@ -51,7 +53,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — Unmatched transactions (raw bank feed) —
-
   defp seed_unmatched_transactions(bytecraft, banks) do
     transactions = [
       %{
@@ -153,7 +154,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — THB bank fee —
-
   defp seed_thb_fee(bytecraft, banks) do
     txn =
       Helpers.seed_transaction!(
@@ -179,7 +179,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — Matched: GhostPet partial month —
-
   defp seed_matched_ghostpet(bytecraft, banks, projects, cps, prefix) do
     txn =
       Helpers.seed_transaction!(
@@ -239,7 +238,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — Unmatched cost invoice —
-
   defp seed_unmatched_cost_invoice(bytecraft, prefix) do
     Helpers.get_or_create_cost_invoice("OVH/#{prefix}", bytecraft.id, %{
       seller: "OVH Cloud Sp. z o.o.",
@@ -249,6 +247,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       issue_date: Helpers.date_this_month(5),
       due_date: Helpers.date_this_month(19),
       amount: Helpers.money!("PLN", -2_400.00),
+      vat_amount: Helpers.vat_from_gross(2_400.00),
       description: "Serwery dedykowane — środowisko produkcyjne + staging",
       skip_invoicing: false
     })
@@ -339,7 +338,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — S08 deterministic assistant scenario (current month invoice) —
-
   defp seed_s08_current_month_invoice(bytecraft, prefix) do
     Helpers.get_or_create_sales_invoice("BC/06/#{prefix}", bytecraft.id, %{
       "invoice_type" => "poland",
@@ -369,7 +367,6 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — Counterparty suggestions on management page —
-
   defp seed_counterparty_suggestion_invoices(bytecraft, cps) do
     seed_ghostpet_suggestion_invoices(bytecraft, cps)
     seed_samsung_suggestion_invoices(bytecraft, cps)
@@ -477,9 +474,9 @@ defmodule Firmowid.Seeds.MonthM0 do
   # synthetic admin actor to bypass policies.
   defp seed_scope(bytecraft) do
     %Firmowid.Scope{
-      actor: %Firmowid.Core.User{
+      actor: %User{
         id: "00000000-0000-0000-0000-000000000000",
-        member: %Firmowid.Core.Member{role: :admin, organization_id: bytecraft.id}
+        member: %Member{role: :admin, organization_id: bytecraft.id}
       },
       tenant: bytecraft.id
     }

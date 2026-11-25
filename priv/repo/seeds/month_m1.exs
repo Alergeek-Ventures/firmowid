@@ -411,6 +411,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         issue_date: issue_date,
         due_date: due_date,
         amount: Helpers.money!("PLN", -2_400.00),
+        vat_amount: Helpers.vat_from_gross(2_400.00),
         description: "Serwery dedykowane — środowisko produkcyjne + staging",
         skip_invoicing: false
       })
@@ -424,6 +425,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         issue_date: issue_date,
         due_date: due_date,
         amount: Helpers.money!("EUR", -120.00),
+        vat_amount: Decimal.new(0),
         description: "OpenCode Zen — asystent AI do programowania, plan zespołowy, 5 stanowisk",
         skip_invoicing: false
       })
@@ -437,6 +439,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         issue_date: issue_date,
         due_date: due_date,
         amount: Helpers.money!("PLN", -4_500.00),
+        vat_amount: Helpers.vat_from_gross(4_500.00),
         description: "Wynajem biura — open space + sala konferencyjna",
         skip_invoicing: false
       })
@@ -450,6 +453,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         issue_date: issue_date,
         due_date: due_date,
         amount: Helpers.money!("PLN", -380.00),
+        vat_amount: Helpers.vat_from_gross(380.00),
         description: "Artykuły biurowe: papier A4, tonery HP, materiały eksploatacyjne",
         skip_invoicing: false
       })

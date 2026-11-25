@@ -567,9 +567,16 @@ defmodule Firmowid.Analysis do
     end
   end
 
-  # Every payer has its own ZUS contribution account (60000002026 at digits 3-13)
-  # and tax micro-account (10100071222), so a transfer to one is certain.
-  defp public_levy(%Transaction{creditor_account: account}) do
+  @doc """
+  Returns `:payroll` for a transfer to the payer's ZUS contribution account and
+  `:taxes` for one to its tax micro-account, `nil` for anything else.
+
+  Every payer has its own ZUS account (60000002026 at digits 3-13) and tax
+  micro-account (10100071222), so a transfer to one is certain.
+  """
+  @spec public_levy(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) ::
+          :payroll | :taxes | nil
+  def public_levy(%Transaction{creditor_account: account}) do
     case AccountNumber.key(account) do
       <<_check::binary-size(2), "60000002026", _rest::binary-size(13)>> -> :payroll
       <<_check::binary-size(2), "10100071222", _rest::binary-size(13)>> -> :taxes
@@ -577,7 +584,7 @@ defmodule Firmowid.Analysis do
     end
   end
 
-  defp public_levy(_invoice), do: nil
+  def public_levy(_invoice), do: nil
 
   # Issued invoices without a linked transaction, by sale date; a refund is income.
   defp unpaid_invoices(year, scope) do
