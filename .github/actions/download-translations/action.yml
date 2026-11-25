@@ -1,5 +1,5 @@
 name: Download translations
-description: Download the code commit artifact and validate its selected snapshot SHA
+description: Download the code commit artifact, validate its selected snapshot SHA and make its marker commit-independent
 inputs:
   version:
     description: Full commit SHA whose translation artifact should be downloaded
@@ -29,4 +29,9 @@ runs:
             echo "Downloaded catalog $catalog does not match $ACCENT_VERSION." >&2
             exit 1
           }
+          # The marker names each commit, so a changed marker alone recompiled the Gettext
+          # backend and its 61 compile-time dependents (17–39 s) in every job restoring
+          # another commit's build. Once checked, a constant line keeps unchanged catalogs
+          # byte-identical across commits.
+          sed -i '1s/.*/# Accent version: checked by CI/' "$catalog"
         done
