@@ -71,6 +71,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Invoicing.SalesInvoice.Numbering
   alias Firmowid.Invoicing.SalesInvoice.Preview
   alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
+  alias Firmowid.Invoicing.SalesInvoiceExpectedTransaction
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Invoicing.Signals
@@ -235,8 +236,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         constraints one_of: [:pending, :matched, :skipped]
 
         description "Payment matching with bank transactions: pending has no matched payment yet, " <>
-                      "matched is linked to a transaction or paid on issue (an advance invoice), " <>
-                      "skipped is excluded from matching."
+                      "matched is linked to a bank or expected transaction or paid on issue (an advance " <>
+                      "invoice), skipped is excluded from matching."
       end
 
       argument :submission, :atom do
@@ -312,38 +313,15 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                       effective_payment_method == :transfer and
                       skip_invoicing == false and
                       not exists(transactions, true) and
+                      not exists(expected_transactions, true) and
                       not exists(corrections, exists(transactions, true))
                   )
               ) do
         where present(:overdue_on)
       end
 
-      # :pending — no linked transactions, not skipped
-      prepare build(
-                filter:
-                  expr(
-                    not exists(transactions, true) and
-                      skip_invoicing == false
-                  )
-              ) do
-        where argument_equals(:reconciliation, :pending)
-      end
-
-      # :matched — linked to at least one transaction, or paid on issue once issued
-      prepare build(filter: expr(exists(transactions, true) or (is_paid_on_issue and is_confirmed))) do
-        where argument_equals(:reconciliation, :matched)
-      end
-
-      # :skipped — no linked transactions, skipped, not an issued invoice paid on issue
-      prepare build(
-                filter:
-                  expr(
-                    not exists(transactions, true) and
-                      skip_invoicing == true and
-                      not (is_paid_on_issue and is_confirmed)
-                  )
-              ) do
-        where argument_equals(:reconciliation, :skipped)
+      prepare build(filter: expr(reconciliation_status == ^arg(:reconciliation))) do
+        where present(:reconciliation)
       end
 
       # :draft — no invoice_number assigned yet
@@ -1283,6 +1261,13 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       destination_attribute_on_join_resource :transaction_id
     end
 
+    # The payment an invoice paid on issue documents, until a bank transaction fulfils it.
+    many_to_many :expected_transactions, Firmowid.Finances.ExpectedTransaction do
+      through SalesInvoiceExpectedTransaction
+      source_attribute_on_join_resource :sales_invoice_id
+      destination_attribute_on_join_resource :expected_transaction_id
+    end
+
     has_many :entity_tags, Firmowid.Analysis.EntityTag do
       relationship_context %{data_layer: %{table: "sales_invoice_entity_tags"}}
       source_attribute :id
@@ -1444,7 +1429,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
               :atom,
               expr(
                 cond do
-                  exists(transactions, true) or (is_paid_on_issue and is_confirmed) ->
+                  exists(transactions, true) or exists(expected_transactions, true) or
+                      (is_paid_on_issue and is_confirmed) ->
                     :matched
 
                   skip_invoicing == true ->
@@ -1454,7 +1440,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                     :pending
                 end
               ) do
-      description "Invoice reconciliation state derived from linked transactions, payment on issue and skip flag."
+      description "Invoice reconciliation state derived from linked bank or expected transactions, payment on " <>
+                    "issue and the skip flag."
+
       constraints one_of: [:pending, :matched, :skipped]
     end
 

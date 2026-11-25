@@ -645,7 +645,13 @@ defmodule Firmowid.Analysis do
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date, merge_corrections: true}
       |> Invoicing.list_sales_invoices!(
-        load: [:buyer_display_name_label, :effective_amount, :sales_invoice_items, :transactions],
+        load: [
+          :buyer_display_name_label,
+          :effective_amount,
+          :sales_invoice_items,
+          :transactions,
+          :expected_transactions
+        ],
         scope: analysis_scope
       )
       |> Enum.filter(&analysis_relevant_invoice?(&1, own_accounts))
@@ -723,6 +729,10 @@ defmodule Firmowid.Analysis do
   end
 
   defp analysis_relevant_invoice?(%{skip_invoicing: true}, _own_accounts), do: true
+
+  # Paid on issue: its payment counts once, through the invoice, while the payout that fulfils the
+  # expectation is matched and never counted on its own.
+  defp analysis_relevant_invoice?(%{expected_transactions: [_ | _]}, _own_accounts), do: true
 
   defp analysis_relevant_invoice?(%{transactions: transactions}, own_accounts) when is_list(transactions) do
     Enum.any?(transactions, &(not OwnAccounts.transfer?(&1, own_accounts)))

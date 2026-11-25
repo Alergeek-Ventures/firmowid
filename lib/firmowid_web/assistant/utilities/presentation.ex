@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   @sales_tools ~w(connect_sales_invoice_transactions disconnect_sales_invoice_transactions)
   @invoice_previews ~w(preview_sales_invoice preview_sales_invoice_correction)
   @cost_tools ~w(connect_cost_invoice_transactions disconnect_cost_invoice_transactions)
+  @expected_tools ~w(connect_expected_transaction_transactions disconnect_expected_transaction_transactions)
 
   @doc "Returns the same contextual prompt keys and text for display and submission."
   @spec suggestions(map() | nil) :: [{String.t(), String.t()}]
@@ -527,6 +528,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     {:ok, [{:cost, id} | Enum.map(ids, &{:transaction, &1})]}
   end
 
+  defp references(%{name: name, arguments: %{"id" => id, "input" => %{"transaction_ids" => ids}}})
+       when name in @expected_tools and is_list(ids) do
+    {:ok, [{:expected, id} | Enum.map(ids, &{:transaction, &1})]}
+  end
+
   defp references(%{name: "restore_transaction_for_matching", arguments: %{"id" => id}}), do: {:ok, [{:transaction, id}]}
 
   defp references(%{
@@ -557,6 +563,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
         load: [:display_label]
       )
     )
+  end
+
+  defp read_records(:expected, ids, scope) do
+    query = Ash.Query.filter(Firmowid.Finances.ExpectedTransaction, id in ^ids)
+    found(Finances.list_expected_transactions(%{}, scope: scope, query: query))
   end
 
   defp read_records(:employee, [id], scope) do
@@ -666,6 +677,18 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     }
   end
 
+  defp record(:expected, expected) do
+    %{
+      label: expected.counterparty_name || gettext("Expected transaction"),
+      description: expected.description,
+      amount: expected.amount,
+      amount_tone: if(Money.positive?(expected.amount), do: :income, else: :expense),
+      date: expected.date,
+      path: Navigation.transactions_list_path(),
+      kind: gettext("Expected transaction")
+    }
+  end
+
   defp record(:employee, employee) do
     %{
       label: employee.member.display_name,
@@ -736,6 +759,13 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp tool_label("disconnect_cost_invoice_transactions"), do: gettext("Unlink invoice payments")
 
   defp tool_label("restore_transaction_for_matching"), do: gettext("Restore a skipped transaction")
+
+  defp tool_label("list_expected_transactions"), do: gettext("Search expected transactions")
+
+  defp tool_label("connect_expected_transaction_transactions"), do: gettext("Link payments to an expected transaction")
+
+  defp tool_label("disconnect_expected_transaction_transactions"),
+    do: gettext("Unlink payments from an expected transaction")
 
   defp tool_label("get_ksef_connection_status"), do: gettext("Check the KSeF connection")
   defp tool_label("get_next_sales_invoice_number"), do: gettext("Find the next invoice number")

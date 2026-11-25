@@ -457,6 +457,7 @@ defmodule Firmowid.Invoicing do
     end
 
     resource Firmowid.Invoicing.SalesInvoiceTransaction
+    resource Firmowid.Invoicing.SalesInvoiceExpectedTransaction
     resource Firmowid.Invoicing.CostInvoiceTransaction
     resource Firmowid.Invoicing.SalesInvoiceItem
 

@@ -8,6 +8,7 @@ defmodule Firmowid.Finances do
   use Ash.Domain, extensions: [AshAi]
 
   alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.ExpectedTransaction
   alias Firmowid.Finances.Transaction
   alias Firmowid.Scope
 
@@ -23,8 +24,8 @@ defmodule Firmowid.Finances do
       description "List the organization's synced bank transactions to find payments, answer questions and match " <>
                     "them with invoices or salaries. Amounts are signed: income positive, expenses negative; " <>
                     "direction tells which. reconciliation_status pending means unresolved, matched means linked to " <>
-                    "an invoice or a salary, skipped means excluded from matching. Use after/before keyset cursors " <>
-                    "with the same filters to navigate pages."
+                    "an invoice, a salary or an expected transaction, skipped means excluded from matching. " <>
+                    "Use after/before keyset cursors with the same filters to navigate pages."
 
       action_parameters [:sort, :limit]
 
@@ -82,6 +83,55 @@ defmodule Firmowid.Finances do
 
       select [:id, :booking_date, :amount, :salary_user_id, :salary_month]
       load [:reconciliation_status]
+    end
+
+    tool :list_expected_transactions, ExpectedTransaction, :list do
+      annotations title: "List expected transactions",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "List money the organization expects on or from its bank account, such as a forecast payment " <>
+                    "or the payment of an invoice paid on issue, which then counts as paid already. Amounts are " <>
+                    "signed: income positive, expenses negative. Pass fulfilled: false for the ones still waiting " <>
+                    "for their bank transaction, which connect_expected_transaction_transactions links."
+
+      select [:id, :date, :amount, :description, :counterparty_name]
+      load [:is_fulfilled]
+    end
+
+    tool :connect_expected_transaction_transactions, ExpectedTransaction, :connect_transactions do
+      annotations title: "Fulfil an expected transaction",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Link the bank transactions that brought an expected payment, only after the user approves the " <>
+                    "specific match. A payment gateway pays many orders in one payout, minus its fee: connect that " <>
+                    "payout to each expected transaction it covers (call once per expected transaction), so the " <>
+                    "amounts need not be equal. A transaction already paying an invoice or a salary cannot be linked. " <>
+                    "Existing links are kept. Requires an accountant or administrator."
+
+      select [:id, :date, :amount, :description]
+      load [:transactions]
+    end
+
+    tool :disconnect_expected_transaction_transactions,
+         ExpectedTransaction,
+         :disconnect_transactions do
+      annotations title: "Unlink an expected transaction",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Remove a wrong link between an expected transaction and bank transactions when the user asks. " <>
+                    "Only the link is removed; the bank transactions become pending again. " <>
+                    "Requires an accountant or administrator."
+
+      select [:id, :date, :amount, :description]
+      load [:transactions]
     end
 
     tool :list_monthly_salaries, Transaction, :monthly_salaries do
@@ -149,12 +199,22 @@ defmodule Firmowid.Finances do
   end
 
   resources do
-    resource Firmowid.Finances.ExpectedTransaction do
+    resource ExpectedTransaction do
       define :get_expected_transaction, action: :read, get_by: [:id]
       define :list_expected_transactions, action: :list
       define :create_expected_transaction, action: :create
-      define :connect_expected_transaction, action: :connect_transaction, args: [:transaction_id]
+      define :destroy_expected_transaction, action: :destroy
+
+      define :connect_expected_transaction_transactions,
+        action: :connect_transactions,
+        args: [:transaction_ids]
+
+      define :disconnect_expected_transaction_transactions,
+        action: :disconnect_transactions,
+        args: [:transaction_ids]
     end
+
+    resource ExpectedTransaction.Fulfilment
 
     resource BankAccount do
       define :get_bank_account, action: :read, get_by: [:id]

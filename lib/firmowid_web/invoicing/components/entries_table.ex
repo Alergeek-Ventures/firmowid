@@ -635,7 +635,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class="flex h-6 w-full items-center justify-center rounded-md bg-grey-200 px-2 text-caps-sm font-medium whitespace-nowrap text-grey-700 uppercase">
-        {gettext("Draft")}
+        {gettext("Forecast")}
       </div>
     </div>
     """
@@ -1104,16 +1104,18 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp status_for_entry(%Transaction{reconciliation_status: status}) when status in [:matched, :skipped],
     do: Atom.to_string(status)
 
-  # Paid when issued: complete once issued, with no skip to undo.
-  defp status_for_entry(%SalesInvoice{is_paid_on_issue: true} = invoice), do: sales_invoice_status(invoice, "matched")
+  # A sales invoice is also paid by an expected transaction or on issue, which its status counts.
+  defp status_for_entry(%SalesInvoice{reconciliation_status: :skipped}), do: "skipped"
+
+  defp status_for_entry(%SalesInvoice{reconciliation_status: :matched} = invoice),
+    do: sales_invoice_status(invoice, "matched")
+
+  defp status_for_entry(%SalesInvoice{} = invoice), do: sales_invoice_status(invoice, "unmatched")
 
   defp status_for_entry(%{skip_invoicing: true}), do: "skipped"
 
   defp status_for_entry(%CostInvoice{transactions: []}), do: "unmatched"
   defp status_for_entry(%CostInvoice{}), do: "matched"
-
-  defp status_for_entry(%SalesInvoice{} = invoice),
-    do: sales_invoice_status(invoice, if(invoice.transactions == [], do: "unmatched", else: "matched"))
 
   defp status_for_entry(_), do: "unmatched"
 

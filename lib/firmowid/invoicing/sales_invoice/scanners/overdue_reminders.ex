@@ -89,7 +89,8 @@ defmodule Firmowid.Invoicing.SalesInvoice.Scanners.OverdueReminders do
         due_date < ^today and
         skip_invoicing == false and
         gross_value != 0 and
-        not exists(transactions, true)
+        not exists(transactions, true) and
+        not exists(expected_transactions, true)
     )
   end
 
