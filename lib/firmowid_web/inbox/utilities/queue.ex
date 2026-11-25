@@ -6,8 +6,9 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   Uses policy-scoped domain reads for integration alerts, counterparty EU VAT
   numbers that the periodic check rejected, company details that contradict the
   registers, team approvals, personal signatures and settlements, overdue
-  invoices and sales invoices the KSeF import skipped; usage above the billing
-  plan comes from `Firmowid.Billing.PlanLimits`. Each item links to the page
+  invoices, expected payments that have not arrived and sales invoices the KSeF
+  import skipped; usage above the billing plan comes from
+  `Firmowid.Billing.PlanLimits`. Each item links to the page
   where it is dealt with; pending leave requests also offer inline decisions.
   Items for information only (`:info`) ask nothing of the company and link
   nowhere; they follow the urgent ones, as they are rare and worth noticing.
@@ -76,7 +77,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   def items(:company, %{actor: %{member: %{role: role}}} = scope, organization, today)
       when role in [:admin, :accountant] do
     attention_items(scope, organization) ++
-      overdue_invoice_items(scope, today) ++ skipped_ksef_invoice_items(scope)
+      overdue_invoice_items(scope, today) ++
+      late_expected_payment_items(scope, today) ++ skipped_ksef_invoice_items(scope)
   end
 
   def items(:me, %{actor: %{member: %{id: member_id}}} = scope, _organization, today) do
@@ -549,6 +551,39 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           else: InvoicingNavigation.cost_invoice_show_path(invoice)
         )
     }
+  end
+
+  # A payout can take a few days to reach the account, so an expected payment is late only
+  # after three days without its bank transaction.
+  @expected_payment_grace_days 3
+
+  defp late_expected_payment_items(scope, today) do
+    %{fulfilled: false, date_to: Date.add(today, -@expected_payment_grace_days)}
+    |> Finances.list_expected_transactions!(scope: scope, load: [:sales_invoices])
+    |> Enum.sort_by(& &1.date, Date)
+    |> Enum.map(fn expected ->
+      %{
+        id: "expected-#{expected.id}",
+        tier: :books,
+        # Income waits on the sales side of the books, an expense on the cost side.
+        side: if(Money.positive?(expected.amount), do: :sales, else: :cost),
+        days_late: Date.diff(today, expected.date),
+        icon: "landmark",
+        title:
+          gettext("Expected payment has not arrived: %{description}",
+            description: expected.description
+          ),
+        amount: Money.to_string!(Money.abs(expected.amount), minimum_grouping_digits: 1),
+        context: gettext("expected %{date}", date: Calendar.strftime(expected.date, "%d.%m.%Y")),
+        person: short_legal_forms(expected.counterparty_name),
+        action: gettext("Review"),
+        href:
+          case expected.sales_invoices do
+            [invoice | _] -> InvoicingNavigation.sales_invoice_show_path(invoice)
+            [] -> InvoicingNavigation.transactions_list_path()
+          end
+      }
+    end)
   end
 
   defp counterparty_name(invoice, :sales), do: invoice.buyer_display_name_label

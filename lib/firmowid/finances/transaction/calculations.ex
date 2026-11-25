@@ -10,7 +10,8 @@ defmodule Firmowid.Finances.Transaction.Calculations do
               :atom,
               expr(
                 cond do
-                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? ->
+                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? or
+                      exists(expected_transactions, true) ->
                     :matched
 
                   skip_invoicing == true ->
@@ -23,7 +24,8 @@ defmodule Firmowid.Finances.Transaction.Calculations do
       public? true
       constraints one_of: [:pending, :matched, :skipped]
 
-      description "Transaction reconciliation state derived from invoice or salary links and the skip flag."
+      description "Transaction reconciliation state derived from invoice, salary or expected transaction links " <>
+                    "and the skip flag."
     end
 
     calculate :invoice_matchable?,
@@ -33,6 +35,13 @@ defmodule Firmowid.Finances.Transaction.Calculations do
                   exists(cost_invoices, true) or exists(sales_invoices, true)
               ) do
       description "Allows manual invoice matching of unresolved transactions and existing multi-invoice payments."
+    end
+
+    calculate :expectation_matchable?,
+              :boolean,
+              expr(reconciliation_status != :matched or exists(expected_transactions, true)) do
+      description "Allows fulfilling expectations with unresolved transactions and with payouts that already " <>
+                    "fulfil others."
     end
 
     calculate :has_salary?, :boolean, expr(not is_nil(salary_user_id)) do

@@ -3910,6 +3910,11 @@ msgstr ""
 msgid "Could not link this transaction to a salary."
 msgstr ""
 
+#: lib/firmowid/finances/expected_transaction/changes/validate_transaction_availability.ex
+#, elixir-autogen, elixir-format
+msgid "Could not link this transaction to the expected transaction."
+msgstr ""
+
 #: lib/firmowid/invoicing/changes/validate_transaction_availability.ex
 #: lib/firmowid_web/invoicing/transactions/views/show.ex
 #, elixir-autogen, elixir-format
@@ -4849,7 +4854,6 @@ msgstr ""
 msgid "Downloading…"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Draft"
@@ -5482,6 +5486,12 @@ msgstr ""
 msgid "Existing counterparty"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Expected payment has not arrived: %{description}"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/design_system/components/invoicing_badges.ex
 #, elixir-autogen, elixir-format
 msgid "Expected transaction"
@@ -5991,6 +6001,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "For two years, we patched together three different programs with Excel. Now one person does what three people used to do — and reports are ready at the end of the month, not a week later."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "Forecast"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
@@ -7227,6 +7242,11 @@ msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
+msgid "It will not come back to the inbox, even if the payment still has not arrived."
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
 msgid "It will not come back to the inbox."
 msgstr ""
 
@@ -7711,6 +7731,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Link invoice payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Link payments to an expected transaction"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -10987,6 +11012,11 @@ msgstr ""
 msgid "Search engine"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Search expected transactions"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Search for a counterparty"
@@ -11087,6 +11117,7 @@ msgstr ""
 msgid "Select a country"
 msgstr ""
 
+#: lib/firmowid/finances/expected_transaction.ex
 #: lib/firmowid/invoicing/cost_invoice.ex
 #: lib/firmowid/invoicing/sales_invoice.ex
 #, elixir-autogen, elixir-format
@@ -13969,6 +14000,11 @@ msgstr ""
 msgid "Unlink invoice payments"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Unlink payments from an expected transaction"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Unlink salary"
@@ -15547,6 +15583,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "everyday work"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "expected %{date}"
 msgstr ""
 
 #: lib/firmowid/invoicing/validations/validate_name_fields.ex

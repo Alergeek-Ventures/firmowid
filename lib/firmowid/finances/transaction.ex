@@ -320,6 +320,12 @@ defmodule Firmowid.Finances.Transaction do
       source_attribute_on_join_resource :transaction_id
       destination_attribute_on_join_resource :sales_invoice_id
     end
+
+    many_to_many :expected_transactions, Firmowid.Finances.ExpectedTransaction do
+      through Firmowid.Finances.ExpectedTransaction.Fulfilment
+      source_attribute_on_join_resource :transaction_id
+      destination_attribute_on_join_resource :expected_transaction_id
+    end
   end
 
   aggregates do

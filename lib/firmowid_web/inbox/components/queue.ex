@@ -286,6 +286,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   defp snooze_options, do: [{7, gettext("In a week")}, {30, gettext("In a month")}, {90, gettext("In 3 months")}]
 
+  defp hide_for_good_note(%{id: "expected-" <> _id}),
+    do: gettext("It will not come back to the inbox, even if the payment still has not arrived.")
+
   defp hide_for_good_note(%{days_late: _}),
     do: gettext("It will not come back to the inbox, even if the invoice is still overdue.")
 

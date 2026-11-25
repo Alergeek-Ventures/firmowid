@@ -1,13 +1,26 @@
 defmodule Firmowid.Finances.ExpectedTransaction do
-  @moduledoc "An expected cash movement, fulfilled only by an explicitly linked bank transaction."
+  @moduledoc """
+  An expected cash movement, such as the payment an invoice paid on issue documents, fulfilled
+  only by explicitly linked bank transactions.
+
+  Expectations and bank transactions link many to many, like invoices and transactions: a
+  payment gateway's payout fulfils the expectations of many orders, and an expectation may be
+  paid in parts. A bank transaction that fulfils an expectation is matched, and an invoice whose
+  payment is expected counts as paid.
+  """
   use Ash.Resource,
     domain: Firmowid.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshMoney.Types.Money
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Finances.ExpectedTransaction.Fulfilment
+  alias Firmowid.Invoicing.SalesInvoiceExpectedTransaction
   alias Firmowid.Resource
 
   require Resource
@@ -18,17 +31,20 @@ defmodule Firmowid.Finances.ExpectedTransaction do
 
     references do
       reference :organization, on_delete: :delete
-      # A deleted bank transaction leaves its expectation unfulfilled again.
-      reference :transaction, on_delete: :nilify
     end
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     create :create do
-      description "Record an expected cash movement without creating a bank transaction."
+      description "Record an expected cash movement, optionally the payment of sales invoices, " <>
+                    "without creating a bank transaction."
+
       accept [:date, :amount, :description, :counterparty_name]
+      argument :sales_invoice_ids, {:array, :uuid}, default: []
+
+      change manage_relationship(:sales_invoice_ids, :sales_invoices, type: :append)
     end
 
     read :list do
@@ -45,33 +61,51 @@ defmodule Firmowid.Finances.ExpectedTransaction do
         where present(:date_to)
       end
 
-      prepare build(filter: expr(is_nil(transaction_id))) do
-        where argument_equals(:fulfilled, false)
-      end
-
-      prepare build(filter: expr(not is_nil(transaction_id))) do
-        where argument_equals(:fulfilled, true)
+      prepare build(filter: expr(is_fulfilled == ^arg(:fulfilled))) do
+        where present(:fulfilled)
       end
     end
 
-    update :connect_transaction do
-      description "Fulfil an expectation with one tenant-owned transaction; an existing link cannot be replaced."
-      accept []
-      argument :transaction_id, :uuid, allow_nil?: false
+    update :connect_transactions do
+      description "Fulfil the expectation with bank transactions that are not matched to anything else."
+      primary? true
       require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
-      # The write filter also protects against a competing update using a stale draft.
-      change filter(expr(is_nil(transaction_id) or transaction_id == ^arg(:transaction_id)))
-      change manage_relationship(:transaction_id, :transaction, type: :append_and_remove)
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
+      change __MODULE__.Changes.ValidateTransactionAvailability
+      change manage_relationship(:transaction_ids, :transactions, type: :append)
+    end
+
+    update :disconnect_transactions do
+      description "Remove a wrong fulfilment; the transactions become pending again."
+      require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, allow_nil?: false
+
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
+      change manage_relationship(:transaction_ids, :transactions, type: :remove)
     end
   end
 
   policies do
+    # Issuing an invoice paid on issue records its payment, and returning it to a draft withdraws it.
+    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
+      authorize_if action_type([:read, :create, :destroy])
+    end
+
+    bypass [{SystemActorRole, roles: [:invoice_matcher, :analysis_reader]}, action_type(:read)] do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
       authorize_if {AtLeastRole, role: :invoicing}
     end
 
-    policy action_type([:create, :update]) do
+    policy action_type([:create, :update, :destroy]) do
       authorize_if {AtLeastRole, role: :accountant}
     end
   end
@@ -80,8 +114,9 @@ defmodule Firmowid.Finances.ExpectedTransaction do
     module FirmowidWeb.Core.Endpoint
     prefix "expected_transaction"
 
-    publish :create, ["updated", :_tenant]
-    publish :connect_transaction, ["updated", :_tenant]
+    publish_all :create, ["updated", :_tenant]
+    publish_all :update, ["updated", :_tenant]
+    publish_all :destroy, ["updated", :_tenant]
   end
 
   multitenancy do
@@ -110,12 +145,25 @@ defmodule Firmowid.Finances.ExpectedTransaction do
       allow_nil? false
     end
 
-    belongs_to :transaction, Firmowid.Finances.Transaction do
-      allow_nil? true
+    many_to_many :transactions, Firmowid.Finances.Transaction do
+      public? true
+      through Fulfilment
+      source_attribute_on_join_resource :expected_transaction_id
+      destination_attribute_on_join_resource :transaction_id
+    end
+
+    many_to_many :sales_invoices, Firmowid.Invoicing.SalesInvoice do
+      public? true
+      through SalesInvoiceExpectedTransaction
+      source_attribute_on_join_resource :expected_transaction_id
+      destination_attribute_on_join_resource :sales_invoice_id
     end
   end
 
-  identities do
-    identity :unique_transaction, [:transaction_id]
+  calculations do
+    calculate :is_fulfilled, :boolean, expr(exists(transactions, true)) do
+      public? true
+      description "Whether a bank transaction fulfils the expectation."
+    end
   end
 end

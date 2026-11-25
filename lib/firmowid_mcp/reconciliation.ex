@@ -16,8 +16,11 @@ defmodule FirmowidMcp.Reconciliation do
     A skipped transaction must be returned to pending with restore_transaction_for_matching before connecting it.
     Present the proposed matches and connect only the ones the user approves, with connect_sales_invoice_transactions,
     connect_cost_invoice_transactions or connect_transaction_salary. Several transactions may pay one invoice and
-    one transaction may pay several invoices. Disconnect tools remove only a wrong connection, never the documents
-    or transactions. Connecting invoices requires an accountant or administrator; salary suggestions
+    one transaction may pay several invoices. Expected transactions stand in for money the company expects, as listed
+    by list_expected_transactions with fulfilled: false; when the money arrives, often in a payment gateway's payout
+    for many orders minus its fee, connect that transaction to each expected transaction it covers with
+    connect_expected_transaction_transactions instead of skipping it. Disconnect tools remove only a wrong connection,
+    never the documents or transactions. Connecting invoices requires an accountant or administrator; salary suggestions
     and assignments require an administrator.
     """
   end

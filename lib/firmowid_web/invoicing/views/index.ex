@@ -54,6 +54,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     :sales_invoice_items,
     :buyer_display_name_label,
     :is_paid_on_issue,
+    :reconciliation_status,
     :transactions,
     corrections: :sales_invoice_items,
     latest_correction: :sales_invoice_items
@@ -680,9 +681,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp do_toggle_skip(socket, id, "sales_invoice") do
     scope = socket.assigns.ash_scope
     invoice = SalesInvoice.by_id!(id, scope: scope)
-    new_skip = !invoice.skip_invoicing
-    SalesInvoice.toggle_skip!(invoice, scope: scope)
-    update_entry(socket, id, %{skip_invoicing: new_skip})
+
+    updated_invoice =
+      SalesInvoice.toggle_skip!(invoice, scope: scope, load: [:reconciliation_status])
+
+    update_entry(socket, id, Map.take(updated_invoice, [:skip_invoicing, :reconciliation_status]))
   end
 
   # Until every entry arrives, the newest months show the change; the read in flight may have
@@ -1120,8 +1123,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp entry_date(%ExpectedTransaction{date: date}), do: date
   defp entry_date(%TransactionGroup{date: date}), do: date
 
-  defp entry_matched?(%struct{} = inv) when struct in [SalesInvoice, CostInvoice],
-    do: inv.transactions != [] or inv.skip_invoicing
+  # A sales invoice may be paid by an expected transaction, which its status already counts.
+  defp entry_matched?(%SalesInvoice{} = invoice), do: invoice.reconciliation_status in [:matched, :skipped]
+
+  defp entry_matched?(%CostInvoice{} = invoice), do: invoice.transactions != [] or invoice.skip_invoicing
 
   defp entry_matched?(%Transaction{} = tx), do: tx.reconciliation_status in [:matched, :skipped]
 
