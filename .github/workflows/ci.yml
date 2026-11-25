@@ -484,8 +484,9 @@ jobs:
           # --ignore-gitleaks-allow: inline allow comments would let a PR silence its own finding.
           args: git . --config ${{ steps.scanner-config.outputs.config-path }} --ignore-gitleaks-allow --validation=false --redact --no-banner --no-color
 
-  # Formatting, Credo and the dependency checks need compiled dependencies, but neither
-  # the application nor its translations, so they start without waiting for the catalog.
+  # Formatting and the dependency checks need compiled dependencies, but neither the
+  # application nor its translations, so they start without waiting for the catalog. Credo
+  # compiles the application itself, without translations.
   static:
     name: Format, Credo and dependency checks
     if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
@@ -535,6 +536,12 @@ jobs:
 
       - name: Check for security vulnerabilities in Phoenix project
         run: mix sobelow --config
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      # AshCredo reads the compiled resources. The restored build is the one a cache happens to
+      # hold: in a merge queue run that is main's, without the modules a pull request adds.
+      - name: Compile the application for Credo
+        run: mix compile
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
 
       - name: Check Credo
