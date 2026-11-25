@@ -232,11 +232,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             :for={{problem, index} <- Enum.with_index(@problems, 1)}
             class="lg:row-span-3 lg:grid lg:grid-rows-subgrid lg:gap-y-0"
           >
-            <p class="mb-5 text-base leading-[1.4] font-bold tracking-[0.08em] text-rust-500 uppercase lg:mb-2.5 lg:text-xs">
+            <p class="mb-5 text-base/[1.4] font-bold tracking-[0.08em] text-rust-500 uppercase lg:mb-2.5 lg:text-xs">
               0{index}
             </p>
             <h3>{problem.title}</h3>
-            <p class="text-base leading-[1.4] text-grey-300 lg:text-[15px]">{problem.description}</p>
+            <p class="text-base/[1.4] text-grey-300 lg:text-[15px]">{problem.description}</p>
           </article>
         </div>
       </div>
@@ -664,7 +664,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       data-landing-dark-surface
       class="bg-[#0f0f0f] py-18 text-white lg:py-25 [&_article_p]:text-grey-300"
     >
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(110)] lg:gap-20 [&_article_:is(h2,h3)]:mb-5 [&_article_:is(h2,h3)]:text-xl/[1.3] [&_article_:is(h2,h3)]:font-semibold [&_article_:is(h2,h3)]:tracking-[-0.01em] lg:[&_article_:is(h2,h3)]:text-h5 [&_article_p]:text-base [&_article_p]:leading-[1.4] lg:[&_article_p]:text-[15px]/5.5">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(110)] lg:gap-20 [&_article_:is(h2,h3)]:mb-5 [&_article_:is(h2,h3)]:text-xl/[1.3] [&_article_:is(h2,h3)]:font-semibold [&_article_:is(h2,h3)]:tracking-[-0.01em] lg:[&_article_:is(h2,h3)]:text-h5 [&_article_p]:text-base/[1.4] lg:[&_article_p]:text-[15px]/5.5">
         <div class="max-w-180 max-lg:relative lg:max-w-284.75 lg:self-center">
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-rust-500 uppercase lg:mb-4.5">
             {gettext("Open source")}
