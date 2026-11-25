@@ -644,7 +644,10 @@ details p{padding:0 32px 18px 2px;font-size:15px;color:var(--g700);line-height:1
 .consent a:hover{color:var(--r300)}
 .consent__btns{display:flex;flex:none;gap:10px}
 .consent .btn{min-height:40px;padding:0 18px;font-size:14px}
+/* on a phone the banner takes at most a fifth of the screen, so the first view stays readable */
 @media (max-width:720px){
-  .consent{flex-direction:column;align-items:stretch;gap:14px}
-  .consent .btn{flex:1}
+  .consent{bottom:6px;flex-direction:column;align-items:stretch;gap:6px;width:calc(100% - 12px);max-height:calc(20vh - 6px);max-height:calc(20svh - 6px);padding:8px 10px;font-size:12px;line-height:1.4}
+  .consent p{min-height:0;margin:0;overflow-y:auto}
+  .consent__always{display:none}
+  .consent .btn{flex:1;min-height:36px}
 }
