@@ -305,11 +305,12 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   def title(assigns) do
     ~H"""
     <%!-- On phones the title stays on one line beside its buttons: a long one ("Wszystko
-         załatwione") shrinks from 40px until it fits (`.FitTitle`). --%>
+         załatwione") shrinks from 40px until it fits (`.FitTitle`),
+         centred in the 52px line a 40px title takes, as in Figma. --%>
     <h1
       id="inbox-title"
       phx-hook=".FitTitle"
-      class="flex flex-wrap items-baseline gap-x-1 text-3xl/[normal] font-bold max-md:min-w-0 max-md:flex-nowrap max-md:whitespace-nowrap"
+      class="flex flex-wrap items-baseline gap-x-1 text-3xl/[normal] font-bold max-md:h-13 max-md:min-w-0 max-md:flex-nowrap max-md:items-center max-md:whitespace-nowrap"
     >
       <.button
         id="inbox-title-queue"
@@ -317,13 +318,16 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         variant="unstyled"
         phx-click="show_queue"
         disabled={!@showing_put_aside}
-        class={[
-          "transition-colors duration-300 ease-out disabled:cursor-default motion-reduce:transition-none",
-          if(@showing_put_aside,
-            do: "cursor-pointer text-grey-400 hover:text-grey-500",
-            else: "text-black"
-          )
-        ]}
+        class={
+          [
+            "transition-colors duration-300 ease-out disabled:cursor-default motion-reduce:transition-none",
+            # On phones the put-aside button shows which list is open, so the title stays black.
+            if(@showing_put_aside,
+              do: "cursor-pointer text-grey-400 hover:text-grey-500 max-md:text-black",
+              else: "text-black"
+            )
+          ]
+        }
       >
         {@greeting}
       </.button>
@@ -763,8 +767,20 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   def all_done(assigns) do
     ~H"""
-    <.empty_state size="small" title={gettext("Nothing is waiting for your decision.")} class={@class}>
-      <:icon><Lucideicons.circle_check_big class="text-moss-700" aria-hidden="true" /></:icon>
+    <%!-- On phones (Figma "Pusta skrzynka") a 222px card, its content centred: the Figma set's check,
+         16px above two 20px lines, 2px apart, the first grey-900. --%>
+    <.empty_state
+      size="small"
+      title={gettext("Nothing is waiting for your decision.")}
+      class={[
+        "max-md:h-55.5 max-md:flex-none max-md:justify-center max-md:gap-4 max-md:px-6 max-md:py-10 max-md:**:leading-5 max-md:[&>div:nth-child(2)>p]:text-grey-900",
+        @class
+      ]}
+    >
+      <:icon>
+        <Lucideicons.circle_check_big class="text-moss-700 max-md:hidden" aria-hidden="true" />
+        <.figma_icon name="circle_check" class="size-6 text-grey-900 md:hidden" />
+      </:icon>
       {gettext("New items will show up here on their own.")}
     </.empty_state>
     """

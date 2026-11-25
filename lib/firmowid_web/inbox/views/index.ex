@@ -542,10 +542,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
            (Figma "Podgląd 390") the date and the title sit beside 48px buttons for the items
            put aside and the search, level with the title's foot and 4px from the edge; the assistant waits in
            the bar at the bottom. --%>
-      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4 max-md:relative max-md:-mr-3 max-md:flex-nowrap max-md:items-end max-md:gap-0">
+      <header class="flex flex-wrap items-center justify-between gap-x-10 gap-y-4 max-md:relative max-md:-mr-3 max-md:flex-nowrap max-md:items-end max-md:gap-2">
         <div class="flex min-w-0 flex-col max-md:flex-1 max-md:gap-0.5 md:shrink-0">
           <p class="truncate text-sm/[1.35] text-grey-600 max-md:leading-[1.4]">
-            {@current_org.name} ·
+            {short_company_name(@current_org.name)} ·
             <span class="max-md:hidden">{TimeFormatter.format_date(@today, "EEEE, d MMMM y")}</span>
             <%!-- On phones the short weekday, without its dot, and no year: "śr, 11 listopada". --%>
             <span class="md:hidden">{phone_date(@today)}</span>
@@ -960,6 +960,10 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     </div>
     """
   end
+
+  # The legal form written out ("Biuro Cyfrowe spółka z ograniczoną odpowiedzialnością") takes the
+  # line; the header shows its usual short form, "sp. z o.o.".
+  defp short_company_name(name), do: String.replace(name, ~r/\bspółka z ograniczoną odpowiedzialnością\b/iu, "sp. z o.o.")
 
   defp phone_date(date) do
     weekday = date |> TimeFormatter.format_date("EEE") |> String.trim_trailing(".")
