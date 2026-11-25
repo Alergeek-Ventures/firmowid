@@ -324,7 +324,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   test "employee detail page shows projects and hours without the accurate payout feature", %{
     conn: conn
   } do
-    admin = admin_fixture()
+    admin = admin_fixture(%{plan: :firma})
 
     employee =
       user_in_org_fixture(admin.member.organization_id, %{role: :employee, name: "Jan Kowalski"})

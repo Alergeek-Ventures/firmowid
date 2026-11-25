@@ -55,6 +55,8 @@ defmodule Firmowid.AccountsFixtures do
     - `:name` — the member's name; defaults to the email for an organization owner
       (creating an organization requires it) and to none otherwise
     - `:organization_id` — when provided, joins that org instead of creating a new one
+    - `:plan` — the billing plan of the created organization, granted by hand;
+      defaults to the Free plan every new organization starts on
   """
   @spec user_fixture(map()) :: User.t()
   def user_fixture(attrs \\ %{}) do
@@ -74,10 +76,13 @@ defmodule Firmowid.AccountsFixtures do
         nil ->
           # Creating the organization assigns it to the owner as an admin; keep the
           # registered struct, which carries the sign-in token metadata.
-          Core.create_organization!(
-            %{nip: unique_nip(), name: "Test Organization", owner_name: attrs[:name] || email},
-            actor: Core.load_member(user)
-          )
+          organization =
+            Core.create_organization!(
+              %{nip: unique_nip(), name: "Test Organization", owner_name: attrs[:name] || email},
+              actor: Core.load_member(user)
+            )
+
+          if attrs[:plan], do: Ash.Seed.update!(organization, %{billing_plan: attrs[:plan]})
 
           user
 
@@ -93,13 +98,13 @@ defmodule Firmowid.AccountsFixtures do
     if user.member.role == role do
       user
     else
-      member =
-        Core.update_member_role!(user.member, %{role: role},
-          authorize?: false,
-          tenant: user.member.organization_id
-        )
+      Core.update_member_role!(user.member, %{role: role},
+        authorize?: false,
+        tenant: user.member.organization_id
+      )
 
-      %{user | member: member}
+      # Reloaded as the app loads the actor: with the member's organization and its plan.
+      Core.load_member(user, user.member.organization_id)
     end
   end
 

@@ -80,6 +80,28 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   @spec format_money(Decimal.t()) :: String.t()
   def format_money(amount), do: :PLN |> Money.new(amount) |> Money.to_string!(no_fraction_if_integer: true)
 
+  @doc """
+  Returns the row of the documents the organization sent to OCR this month, in
+  the shape of a usage row. The month's count is not frozen in a snapshot, so
+  the row stands beside the worksheet's rows.
+  """
+  @spec ocr_documents_row(%{used: non_neg_integer(), limit: PlanCatalog.limit()}) :: map()
+  def ocr_documents_row(%{used: used, limit: limit}) do
+    over_limit = over_limit(used, limit)
+
+    %{
+      key: :ocr_documents,
+      label: gettext("Document OCR"),
+      context: gettext("Documents sent to OCR this month."),
+      count: used,
+      limit_text: limit_text(limit),
+      over_limit: over_limit,
+      total_text: total_text(used, limit),
+      usage_text: usage_text(used, limit, over_limit),
+      bar_width: bar_width(used, limit)
+    }
+  end
+
   defp usage_row(limited, count, limit) do
     over_limit = over_limit(count, limit)
 

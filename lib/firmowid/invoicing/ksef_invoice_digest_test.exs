@@ -307,8 +307,32 @@ defmodule Firmowid.Invoicing.KsefInvoiceDigestTest do
     assert [] == list_digests(without_credentials_org_id)
   end
 
-  test "dedicated send worker delivers a persisted digest after creation" do
+  test "the Free plan gets the digest without the email" do
     admin = admin_fixture()
+    organization_id = admin.member.organization_id
+
+    seed_ksef_credential!(organization_id)
+    drain_swoosh_email_messages()
+
+    insert_cost_invoice!(organization_id, %{
+      invoice_identifier: "CI-KSEF-FREE",
+      ksef_number: "KSEF-#{System.unique_integer([:positive])}",
+      inserted_at: DateTime.shift(DateTime.utc_now(), minute: -5)
+    })
+
+    assert {:ok, 1} =
+             KsefInvoiceDigest.create_scheduled_digests(
+               %{organization_ids: [organization_id], enqueue_send?: true},
+               actor: digest_actor(organization_id)
+             )
+
+    # Jobs run inline in tests, so a queued email would have been delivered by now.
+    assert latest_digest!(organization_id).delivered_at == nil
+    refute_email_sent()
+  end
+
+  test "dedicated send worker delivers a persisted digest after creation" do
+    admin = admin_fixture(%{plan: :przedsiebiorca})
     organization_id = admin.member.organization_id
 
     seed_ksef_credential!(organization_id)
@@ -333,6 +357,8 @@ defmodule Firmowid.Invoicing.KsefInvoiceDigestTest do
              )
 
     digest = latest_digest!(organization_id)
+    # Jobs run inline in tests: the queued email is already delivered.
+    assert %DateTime{} = digest.delivered_at
 
     assert :ok =
              perform_job(SendKsefInvoiceDigestWorker, %{

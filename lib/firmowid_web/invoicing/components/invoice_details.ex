@@ -388,6 +388,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   attr :is_cost_invoice, :boolean, required: true
   attr :transactions, :list, required: true
+  attr :assistant?, :boolean, default: false, doc: "whether the plan offers the assistant"
   slot :status_action, required: true
 
   def transaction_match(assigns) do
@@ -467,7 +468,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </div>
       </div>
 
-      <div class="space-y-6">
+      <div :if={@assistant?} class="space-y-6">
         <h3 class="leading-tight font-medium">{gettext("What else can you do?")}</h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
@@ -590,6 +591,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :is_cost_invoice, :boolean, required: true
   attr :potential_transactions, :list, required: true
   attr :can_write, :boolean, default: true
+  attr :assistant?, :boolean, default: false, doc: "whether the plan offers the assistant"
 
   def potential_transactions(assigns) do
     assigns = assign(assigns, :not_found, Enum.empty?(assigns.potential_transactions))
@@ -608,6 +610,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           </div>
 
           <MatchingComponents.assistant_button
+            :if={@assistant?}
             id="invoice-assistant-empty"
             subject={MatchingComponents.subject(@invoice)}
             class="mbs-2"
@@ -628,7 +631,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           {gettext("What else can you do?")}
         </h3>
         <.skip_invoicing
-          show_assistant={not @not_found}
+          show_assistant={not @not_found and @assistant?}
           show_bank_transfer_modal={@is_cost_invoice and Money.negative?(@invoice.effective_amount)}
           invoice={@invoice}
           can_write={@can_write}

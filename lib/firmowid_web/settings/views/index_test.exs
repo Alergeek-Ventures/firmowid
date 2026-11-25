@@ -13,6 +13,35 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
 
+  test "a plan without leave requests locks the request button", %{conn: conn} do
+    free_owner = user_fixture()
+    {:ok, view, _html} = conn |> log_in_user(free_owner) |> live(~p"/ustawienia/nieobecnosci")
+
+    refute has_element?(view, "#leave-request-form")
+    assert has_element?(view, "#leave-request-plan-locked button[disabled]")
+
+    paid_owner = user_fixture(%{plan: :przedsiebiorca})
+    {:ok, view, _html} = conn |> log_in_user(paid_owner) |> live(~p"/ustawienia/nieobecnosci")
+
+    assert has_element?(view, "#leave-request-form")
+    refute has_element?(view, "#leave-request-plan-locked")
+  end
+
+  test "a plan changed under an open page sends the next event back to the inbox", %{conn: conn} do
+    owner = user_fixture(%{plan: :przedsiebiorca})
+    {:ok, view, _html} = conn |> log_in_user(owner) |> live(~p"/ustawienia/nieobecnosci")
+
+    owner.member.organization_id
+    |> Core.get_organization!(authorize?: false)
+    |> Ash.Seed.update!(%{billing_plan: :free})
+
+    view
+    |> element("form[phx-submit=search_leave_requests]")
+    |> render_submit(%{szukaj: "urlop"})
+
+    assert_redirect(view, ~p"/skrzynka")
+  end
+
   test "bank accounts are sorted by IBAN and keep order after rename", %{conn: conn} do
     admin = admin_fixture()
     scope = %Scope{actor: admin, tenant: admin.member.organization_id}

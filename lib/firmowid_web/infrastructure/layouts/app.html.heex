@@ -55,6 +55,7 @@
   `hide_floating_assistant`.
 --%>
 <%= if app_navigation?(assigns) and match?(%{member: %{role: role}} when role != :employee, @current_user) and
+       FirmowidWeb.Assistant.Utilities.Navigation.available?(@current_user.member.organization) and
        @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() and
        !assigns[:hide_floating_assistant] do %>
   {Phoenix.Component.live_render(

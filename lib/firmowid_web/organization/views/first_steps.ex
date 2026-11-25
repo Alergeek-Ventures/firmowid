@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Invoicing.CostInvoice
@@ -403,12 +404,14 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   # The Free plan as the pricing page offers it.
   defp free_plan_limits do
+    %{limits: limits, monthly_ocr_documents: ocr_documents} = PlanCatalog.plan!(:free)
+
     [
       {gettext("Invoices and KSeF"), gettext("unlimited")},
-      {gettext("Users"), "2"},
-      {gettext("Bank accounts with transfer matching"), "1"},
+      {gettext("Users"), Integer.to_string(limits.users)},
+      {gettext("Bank accounts with transfer matching"), Integer.to_string(limits.bank_institutions)},
       {gettext("Time tracking"), gettext("up to 3 projects")},
-      {gettext("Document OCR"), gettext("10 credits / month")}
+      {gettext("Document OCR"), ngettext("%{count} document", "%{count} documents", ocr_documents)}
     ]
   end
 

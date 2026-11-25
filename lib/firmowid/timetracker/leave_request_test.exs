@@ -3,12 +3,13 @@ defmodule Firmowid.Timetracker.LeaveRequestTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Firmowid.Scope
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.LeaveRequest
 
   setup do
-    user = user_fixture()
+    user = user_fixture(%{plan: :przedsiebiorca})
     admin = admin_fixture(%{organization_id: user.member.organization_id})
 
     employee_scope = %Scope{actor: user, tenant: user.member.organization_id}
@@ -188,6 +189,38 @@ defmodule Firmowid.Timetracker.LeaveRequestTest do
 
       assert request.member_id == user.member.id
       assert request.blob_id
+    end
+  end
+
+  describe "plan gate" do
+    test "a plan without leave requests refuses everyone, admins included, and a plan with them does not" do
+      free_admin = admin_fixture()
+      free_scope = %Scope{actor: free_admin, tenant: free_admin.member.organization_id}
+      free_employee = user_in_org_fixture(free_admin.member.organization_id)
+
+      free_employee_scope = %Scope{
+        actor: free_employee,
+        tenant: free_admin.member.organization_id
+      }
+
+      attrs = %{starts_on: days_from_today(10), ends_on: days_from_today(11), reason: :rest}
+
+      assert {:error, %Forbidden{}} = Timetracker.create_leave_request(attrs, scope: free_scope)
+
+      assert {:error, %Forbidden{}} =
+               Timetracker.create_leave_request(attrs, scope: free_employee_scope)
+
+      paid_admin = admin_fixture(%{plan: :przedsiebiorca})
+      paid_scope = %Scope{actor: paid_admin, tenant: paid_admin.member.organization_id}
+      assert {:ok, _request} = Timetracker.create_leave_request(attrs, scope: paid_scope)
+
+      # A user of another organization gets no access through this organization's plan.
+      outsider = user_fixture(%{plan: :przedsiebiorca})
+
+      assert {:error, %Forbidden{}} =
+               Timetracker.create_leave_request(attrs,
+                 scope: %Scope{actor: outsider, tenant: paid_admin.member.organization_id}
+               )
     end
   end
 

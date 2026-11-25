@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceUpload do
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
+  alias FirmowidWeb.Billing.Utilities.OcrLimit
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.LiveView
@@ -84,6 +85,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceUpload do
           Blobs.create_or_retry_cost_invoice_blob(path, entry.client_type, entry.client_name, scope: scope)
 
         toast(result)
+        with {:error, error} <- result, do: OcrLimit.toast_refusal(error, entry.client_name)
         {:ok, result}
       end)
     end

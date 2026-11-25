@@ -25,4 +25,23 @@ defmodule Firmowid.Billing.Month do
   """
   @spec normalize(Date.t()) :: Date.t()
   def normalize(%Date{} = date), do: Date.beginning_of_month(date)
+
+  @doc """
+  Returns the UTC instants a billing month starts and ends at: the first one is
+  inside the month, the second one starts the next month.
+  """
+  @spec utc_bounds(Date.t()) :: {DateTime.t(), DateTime.t()}
+  def utc_bounds(%Date{} = month) do
+    local_start =
+      month |> NaiveDateTime.new!(~T[00:00:00]) |> DateTime.from_naive!(@warsaw_timezone)
+
+    local_end =
+      month
+      |> Date.end_of_month()
+      |> Date.add(1)
+      |> NaiveDateTime.new!(~T[00:00:00])
+      |> DateTime.from_naive!(@warsaw_timezone)
+
+    {DateTime.shift_zone!(local_start, "Etc/UTC"), DateTime.shift_zone!(local_end, "Etc/UTC")}
+  end
 end

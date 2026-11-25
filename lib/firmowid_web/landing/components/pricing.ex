@@ -286,7 +286,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         </div>
 
         <p class="mt-10 text-center text-base font-medium">
-          {gettext("Paid features free until the end of next month. No card required.")}
+          {gettext("Paid plans are free for the first 30 days.")}
         </p>
       </div>
     </section>
@@ -352,8 +352,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   defp trial_section do
     {gettext("Trial period"),
      [
-       {gettext("Paid features for free"),
-        [false, gettext("until the end of next month"), gettext("until the end of next month")]}
+       {gettext("Paid features for free"), [false, gettext("for 30 days"), gettext("for 30 days")]}
      ]}
   end
 end

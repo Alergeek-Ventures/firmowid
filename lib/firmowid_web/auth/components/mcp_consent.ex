@@ -12,11 +12,17 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Auth.Components.ClientLogo, only: [connection_logos: 1]
+  import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core.Member
   alias Firmowid.Core.Organization
   alias FirmowidWeb.Auth.Components.ClientLogo
+  alias FirmowidWeb.Billing.Utilities.Worksheet
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
+  alias Phoenix.HTML.Safe
 
   @context_key {__MODULE__, :context}
 
@@ -45,14 +51,132 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   end
 
   @doc """
-  Render the consent screen as HTML iodata for ConsentRouter.
+  Render the consent screen as HTML iodata for ConsentRouter, or, as `:unavailable`,
+  the statement that the account's companies have no plan with AI clients (rendered
+  by `ConsentOrganization` itself, so no code is issued).
   """
-  @spec render(:consent, map()) :: iodata()
+  @spec render(:consent | :unavailable, map()) :: iodata()
+  def render(:unavailable, assigns) do
+    assigns = Map.put(assigns, :plan, :ai |> PlanCatalog.plan_with() |> Worksheet.plan_label())
+
+    Safe.to_iodata(~H"""
+    <.document app={@app}>
+      <h1 class="text-center text-2xl font-bold text-balance text-grey-900">
+        {gettext("Connecting AI clients is available in the %{plan} plan.", plan: @plan)}
+      </h1>
+      <p class="mbs-3 text-center text-sm text-grey-600">
+        {gettext("Company")}
+        <span class="font-medium text-grey-900">{@organization.display_name}</span>
+      </p>
+      <p :if={!@owner?} class="mbs-7 text-center text-sm text-grey-900">
+        {gettext("Ask the company owner to change the plan.")}
+      </p>
+      <div :if={@owner?} class="mbs-8 grid gap-3">
+        <.link
+          kind="button"
+          variant="special"
+          redirect={SettingsNavigation.canonical_path(:subscription)}
+          class="w-full"
+        >
+          {gettext("See the subscription")}
+        </.link>
+      </div>
+    </.document>
+    """)
+  end
+
   def render(:consent, assigns) do
     context = Process.delete(@context_key) || %{organizations: [], selected_id: nil, app: :mcp}
     assigns = Map.merge(assigns, context)
 
-    Phoenix.HTML.Safe.to_iodata(~H"""
+    Safe.to_iodata(~H"""
+    <.document app={@app}>
+      <h1 class="text-center text-2xl font-bold text-balance wrap-break-word text-grey-900">
+        {gettext("Connect %{client} to Firmowid?", client: @client_name)}
+      </h1>
+      <form method="POST" action={@action_path}>
+        <input type="hidden" name="_csrf_token" value={@csrf_token} />
+        <input type="hidden" name="consent_request" value={@consent_request} />
+        <.company
+          client_name={@client_name}
+          organizations={@organizations}
+          selected_id={@selected_id}
+        />
+        <%!-- What the MCP tools (Firmowid.AiTools.mcp/0) can do, in plain words. --%>
+        <ul class="mbs-7 grid gap-3.5 text-sm text-grey-900">
+          <.permission text={
+            gettext(
+              "Reads the company's invoices, clients, transfers, salaries, working time and leave"
+            )
+          }>
+            <Lucideicons.eye class="size-4.5" />
+          </.permission>
+          <.permission text={
+            gettext(
+              "Records working time and leave, adds notes and categories, and matches transfers with invoices and salaries"
+            )
+          }>
+            <Lucideicons.pencil_line class="size-4.5" />
+          </.permission>
+          <.permission text={gettext("Changes your profile, including the bank account for your pay")}>
+            <Lucideicons.user_round_pen class="size-4.5" />
+          </.permission>
+          <.permission text={
+            gettext("Saves invoice drafts, which go to KSeF only after you confirm them")
+          }>
+            <Lucideicons.file_check class="size-4.5" />
+          </.permission>
+          <.permission
+            text={gettext("Never gets your KSeF or bank login details")}
+            class="border-bs border-grey-200 pbs-3.5"
+          >
+            <Lucideicons.lock class="size-4.5" />
+          </.permission>
+        </ul>
+        <div class="mbs-8 grid gap-3">
+          <.button variant="special" type="submit" name="action" value="approve" class="w-full">
+            {gettext("Allow")}
+          </.button>
+          <.button variant="outline" type="submit" name="action" value="deny" class="w-full">
+            {gettext("Deny")}
+          </.button>
+        </div>
+      </form>
+      <p class="mbs-5 text-center text-xs text-grey-600">
+        {gettext("After your decision you will return to %{host}.",
+          host: redirect_host(@redirect_uri)
+        )}
+      </p>
+      <%!-- The request as the OAuth server sees it, for those who compare addresses. --%>
+      <details class="mbs-2 text-center text-xs text-grey-600">
+        <summary class="cursor-pointer underline underline-offset-4">
+          {gettext("Technical details")}
+        </summary>
+        <dl class="mbs-3 grid gap-2 text-start [&_dd]:font-mono [&_dd]:break-all [&_dt]:font-medium [&_dt]:text-grey-900">
+          <div>
+            <dt>{gettext("Scope")}</dt>
+            <dd>{@scope}</dd>
+          </div>
+          <div>
+            <dt>{gettext("Resource")}</dt>
+            <dd>{@resource}</dd>
+          </div>
+          <div>
+            <dt>{gettext("Redirect")}</dt>
+            <dd>{@redirect_uri}</dd>
+          </div>
+        </dl>
+      </details>
+    </.document>
+    """)
+  end
+
+  attr :app, :atom, required: true
+  slot :inner_block, required: true
+
+  # The page every screen of the connection shares: the head, and the card with both logos.
+  defp document(assigns) do
+    ~H"""
     <!DOCTYPE html>
     <html class="h-full" lang={Gettext.get_locale(Firmowid.Gettext)}>
       <head>
@@ -85,89 +209,12 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
           />
           <div class="z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-grey-200">
             <.connection_logos app={@app} class="mbe-5" />
-            <h1 class="text-center text-2xl font-bold text-balance wrap-break-word text-grey-900">
-              {gettext("Connect %{client} to Firmowid?", client: @client_name)}
-            </h1>
-            <form method="POST" action={@action_path}>
-              <input type="hidden" name="_csrf_token" value={@csrf_token} />
-              <input type="hidden" name="consent_request" value={@consent_request} />
-              <.company
-                client_name={@client_name}
-                organizations={@organizations}
-                selected_id={@selected_id}
-              />
-              <%!-- What the MCP tools (Firmowid.AiTools.mcp/0) can do, in plain words. --%>
-              <ul class="mbs-7 grid gap-3.5 text-sm text-grey-900">
-                <.permission text={
-                  gettext(
-                    "Reads the company's invoices, clients, transfers, salaries, working time and leave"
-                  )
-                }>
-                  <Lucideicons.eye class="size-4.5" />
-                </.permission>
-                <.permission text={
-                  gettext(
-                    "Records working time and leave, adds notes and categories, and matches transfers with invoices and salaries"
-                  )
-                }>
-                  <Lucideicons.pencil_line class="size-4.5" />
-                </.permission>
-                <.permission text={
-                  gettext("Changes your profile, including the bank account for your pay")
-                }>
-                  <Lucideicons.user_round_pen class="size-4.5" />
-                </.permission>
-                <.permission text={
-                  gettext("Saves invoice drafts, which go to KSeF only after you confirm them")
-                }>
-                  <Lucideicons.file_check class="size-4.5" />
-                </.permission>
-                <.permission
-                  text={gettext("Never gets your KSeF or bank login details")}
-                  class="border-bs border-grey-200 pbs-3.5"
-                >
-                  <Lucideicons.lock class="size-4.5" />
-                </.permission>
-              </ul>
-              <div class="mbs-8 grid gap-3">
-                <.button variant="special" type="submit" name="action" value="approve" class="w-full">
-                  {gettext("Allow")}
-                </.button>
-                <.button variant="outline" type="submit" name="action" value="deny" class="w-full">
-                  {gettext("Deny")}
-                </.button>
-              </div>
-            </form>
-            <p class="mbs-5 text-center text-xs text-grey-600">
-              {gettext("After your decision you will return to %{host}.",
-                host: redirect_host(@redirect_uri)
-              )}
-            </p>
-            <%!-- The request as the OAuth server sees it, for those who compare addresses. --%>
-            <details class="mbs-2 text-center text-xs text-grey-600">
-              <summary class="cursor-pointer underline underline-offset-4">
-                {gettext("Technical details")}
-              </summary>
-              <dl class="mbs-3 grid gap-2 text-start [&_dd]:font-mono [&_dd]:break-all [&_dt]:font-medium [&_dt]:text-grey-900">
-                <div>
-                  <dt>{gettext("Scope")}</dt>
-                  <dd>{@scope}</dd>
-                </div>
-                <div>
-                  <dt>{gettext("Resource")}</dt>
-                  <dd>{@resource}</dd>
-                </div>
-                <div>
-                  <dt>{gettext("Redirect")}</dt>
-                  <dd>{@redirect_uri}</dd>
-                </div>
-              </dl>
-            </details>
+            {render_slot(@inner_block)}
           </div>
         </div>
       </body>
     </html>
-    """)
+    """
   end
 
   attr :client_name, :string, required: true

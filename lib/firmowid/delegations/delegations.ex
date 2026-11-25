@@ -10,6 +10,7 @@ defmodule Firmowid.Delegations do
     extensions: [Ash.Policy.Authorizer]
 
   alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.PlanIncludes
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpenseRelatedBlob
@@ -71,6 +72,13 @@ defmodule Firmowid.Delegations do
   end
 
   policies do
+    # Declared before the admin bypass so it binds admins too: the plan gates
+    # starting a new delegation, not continuing one.
+    policy [resource(Delegation), action(:create)] do
+      forbid_unless {PlanIncludes, feature: :delegations}
+      authorize_if always()
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end

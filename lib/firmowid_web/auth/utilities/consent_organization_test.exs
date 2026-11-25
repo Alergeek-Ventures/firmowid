@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
 
   setup do
     # The user works in the admin's organization and owns a second one, the default.
-    admin = admin_fixture()
+    admin = admin_fixture(%{plan: :przedsiebiorca})
     first_id = admin.member.organization_id
     user = user_in_org_fixture(first_id)
 
@@ -24,6 +24,8 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
       Core.create_organization!(%{nip: unique_nip(), name: "Druga firma", owner_name: "Druga"},
         actor: user
       )
+
+    Ash.Seed.update!(second, %{billing_plan: :przedsiebiorca})
 
     {:ok, client, _response} =
       Register.register(Oauth2Server, %{
@@ -150,6 +152,42 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
              })
 
     assert mcp_tenant(refresh(refreshed["refresh_token"], context)["access_token"]) == first_id
+  end
+
+  test "a company on the Free plan gets the statement and no code, also after an earlier consent",
+       %{client: client} do
+    owner = admin_fixture()
+    organization_id = owner.member.organization_id
+    conn = log_in_user(build_conn(), owner)
+    verifier = verifier()
+
+    query =
+      URI.encode_query(%{
+        "client_id" => client.id,
+        "response_type" => "code",
+        "redirect_uri" => @redirect_uri,
+        "code_challenge" => PKCE.challenge(verifier),
+        "code_challenge_method" => "S256",
+        "scope" => "mcp"
+      })
+
+    html = conn |> get("/oauth/authorize?" <> query) |> html_response(200)
+    assert html =~ "/ustawienia/abonament"
+    refute html =~ "consent_request"
+
+    Authorize.grant_consent!(Oauth2Server, owner, client, "mcp", tenant: organization_id)
+
+    html =
+      build_conn()
+      |> log_in_user(owner)
+      |> get("/oauth/authorize?" <> query)
+      |> html_response(200)
+
+    # The statement again, not a redirect with a code.
+    assert html =~ "/ustawienia/abonament"
+    refute html =~ "consent_request"
+
+    assert Core.OauthAuthorizationCode.list!(%{user_id: owner.id}, authorize?: false) == []
   end
 
   defp grant(context, organization_id) do

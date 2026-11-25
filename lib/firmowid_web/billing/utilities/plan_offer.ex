@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
   plans: who a plan is for, the rows that set the plans apart and every feature by section.
 
   A row is its label and one value per plan, in the order of `plans/0`. A value is the text shown
-  for the plan, or whether the plan includes the feature. The limits come from
-  `Firmowid.Billing.PlanCatalog`.
+  for the plan, or whether the plan includes the feature. The limits and the features that only
+  some plans include come from `Firmowid.Billing.PlanCatalog`, which the app enforces.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
     {gettext_noop("Bank accounts"), :bank_institutions},
     {gettext_noop("Time tracking"),
      [gettext_noop("up to 3 projects"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-    {gettext_noop("Leave requests with approval"), [false, true, true]}
+    {gettext_noop("Leave requests with approval"), :leave_requests}
   ]
 
   @sections [
@@ -43,28 +43,23 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
        {gettext_noop("Invoices in 33 currencies"), [true, true, true]},
        {gettext_noop("Reverse charge for EU customers (automatic)"), [true, true, true]},
        {gettext_noop("ZIP package for your accountant"), [true, true, true]},
-       {gettext_noop("Document OCR"),
-        [
-          gettext_noop("10 documents"),
-          gettext_noop("50 documents"),
-          gettext_noop("unlimited")
-        ]}
+       {gettext_noop("Document OCR"), :monthly_ocr_documents}
      ]},
-    {gettext_noop("Banking and payments"), [{gettext_noop("Email notifications"), [false, true, true]}]},
+    {gettext_noop("Banking and payments"), [{gettext_noop("Email notifications"), :ksef_invoice_emails}]},
     {gettext_noop("Team and working time"),
      [
        {gettext_noop("Project cost"), [true, true, true]},
-       {gettext_noop("Employee and project management"), [false, true, true]},
-       {gettext_noop("PDF time tracking and payroll report"), [false, false, true]}
+       {gettext_noop("PDF time tracking and payroll report"), [true, true, true]}
      ]},
     {gettext_noop("HR"),
      [
-       {gettext_noop("Employee contracts and documents"), [false, true, true]},
-       {gettext_noop("Business trips"), [false, false, true]}
+       {gettext_noop("Employee contracts and documents"), :employee_contracts},
+       {gettext_noop("Business trips"), :delegations}
      ]},
     {gettext_noop("ChatGPT and integrations"),
      [
-       {gettext_noop("Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"), [false, true, true]}
+       {gettext_noop("Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"), :ai},
+       {gettext_noop("Assistant in the app"), :ai}
      ]},
     {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true]}]}
   ]
@@ -121,15 +116,8 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
     end)
   end
 
-  # A limited thing reads its per-plan limit from the billing catalog.
-  defp values(limited) when is_atom(limited) do
-    Enum.map(@plans, fn plan ->
-      case PlanCatalog.plan!(plan).limits[limited] do
-        :unlimited -> gettext("unlimited")
-        limit -> Integer.to_string(limit)
-      end
-    end)
-  end
+  # A limit or a feature reads its per-plan value from the billing catalog.
+  defp values(key) when is_atom(key), do: Enum.map(@plans, &catalog_value(PlanCatalog.plan!(&1), key))
 
   defp values(values) do
     Enum.map(values, fn
@@ -137,4 +125,18 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
       value -> Gettext.gettext(Firmowid.Gettext, value)
     end)
   end
+
+  defp catalog_value(%{monthly_ocr_documents: :unlimited}, :monthly_ocr_documents), do: gettext("unlimited")
+
+  defp catalog_value(%{monthly_ocr_documents: limit}, :monthly_ocr_documents),
+    do: ngettext("%{count} document", "%{count} documents", limit)
+
+  defp catalog_value(%{limits: limits}, limited) when is_map_key(limits, limited) do
+    case limits[limited] do
+      :unlimited -> gettext("unlimited")
+      limit -> Integer.to_string(limit)
+    end
+  end
+
+  defp catalog_value(%{features: features}, feature), do: feature in features
 end

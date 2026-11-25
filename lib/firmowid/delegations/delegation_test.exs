@@ -22,7 +22,7 @@ defmodule Firmowid.Delegations.DelegationTest do
   @trip_times %{trip_started_at: ~N[2026-09-10 07:00:00], trip_ended_at: ~N[2026-09-11 20:00:00]}
 
   setup do
-    employee = user_fixture(%{name: "Kira Voss"})
+    employee = user_fixture(%{name: "Kira Voss", plan: :firma})
     admin = admin_fixture(%{organization_id: employee.member.organization_id})
 
     %{
@@ -152,6 +152,33 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert Delegations.get_delegation!(pending.id, scope: admin_scope).purpose == pending.purpose
   end
 
+  test "a plan without delegations refuses a new one, admins included, but not on a paid plan" do
+    free_admin = admin_fixture()
+    free_scope = %Scope{actor: free_admin, tenant: free_admin.member.organization_id}
+    free_employee = user_in_org_fixture(free_admin.member.organization_id)
+    free_employee_scope = %Scope{actor: free_employee, tenant: free_admin.member.organization_id}
+
+    assert {:error, %Forbidden{}} =
+             Delegations.create_delegation(delegation_attrs(), scope: free_scope)
+
+    assert {:error, %Forbidden{}} =
+             Delegations.create_delegation(delegation_attrs(), scope: free_employee_scope)
+
+    paid_admin = admin_fixture(%{plan: :firma})
+    paid_scope = %Scope{actor: paid_admin, tenant: paid_admin.member.organization_id}
+
+    assert {:ok, _delegation} =
+             Delegations.create_delegation(delegation_attrs(), scope: paid_scope)
+
+    # A user of another organization gets no access through this organization's plan.
+    outsider = user_fixture(%{plan: :firma})
+
+    assert {:error, %Forbidden{}} =
+             Delegations.create_delegation(delegation_attrs(),
+               scope: %Scope{actor: outsider, tenant: paid_admin.member.organization_id}
+             )
+  end
+
   test "rejects a negative expected cost", %{employee_scope: employee_scope} do
     assert {:error, _error} =
              Delegations.create_delegation(
@@ -196,7 +223,7 @@ defmodule Firmowid.Delegations.DelegationTest do
   test "uses the same reference namespace independently in each organization", %{
     employee_scope: employee_scope
   } do
-    other_employee = user_fixture(%{name: "Kira Voss"})
+    other_employee = user_fixture(%{name: "Kira Voss", plan: :firma})
 
     other_scope = %Scope{actor: other_employee, tenant: other_employee.member.organization_id}
 

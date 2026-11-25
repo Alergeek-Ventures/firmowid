@@ -1,9 +1,14 @@
 defmodule Firmowid.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
   @moduledoc """
   Builds KSeF invoice digests for all currently eligible undigested invoices.
+
+  The email about a digest belongs to the plans with `:ksef_invoice_emails`. Other
+  organizations still get the digest, unsent, so buying a plan later does not
+  email them every invoice received until then.
   """
   use Ash.Resource.Actions.Implementation
 
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.ErrorKind
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.KsefInvoiceDigest
@@ -38,7 +43,8 @@ defmodule Firmowid.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
         case create_digest_for_organization(
                organization,
                run_started_at,
-               enqueue_send?
+               enqueue_send? and
+                 PlanCatalog.includes?(organization.billing_plan, :ksef_invoice_emails)
              ) do
           :created -> acc + 1
           :skipped -> acc

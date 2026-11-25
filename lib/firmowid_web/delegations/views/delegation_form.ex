@@ -4,12 +4,14 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   use FirmowidWeb, :live_view
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.Billing.Components.PlanNotice
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core
   alias Firmowid.Delegations
   alias Firmowid.Delegations.Delegation
@@ -41,6 +43,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   end
 
   def mount(_params, _session, socket), do: {:ok, setup_form(socket, nil, %{})}
+
+  # The plan gates planning a new business trip, not editing an existing one.
+  defp plan_locked?(organization, nil), do: not PlanCatalog.includes?(organization.billing_plan, :delegations)
+
+  defp plan_locked?(_organization, _delegation), do: false
 
   defp setup_form(socket, delegation, params) do
     scope = socket.assigns.ash_scope
@@ -84,6 +91,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     socket
     |> assign(:member, member)
     |> assign(:delegation, delegation)
+    |> assign(:plan_locked?, plan_locked?(socket.assigns.current_org, delegation))
     |> assign(:back_path, back_path)
     |> assign(
       :page_title,
@@ -113,12 +121,23 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
       </div>
       <main class="px-0 pb-12 sm:px-32">
         <h1 class="text-2xl/tight font-normal">{@page_title}</h1>
-        <p :if={!@delegation} class="mt-6 max-w-3xl text-base text-balance text-grey-700">
+        <.plan_notice
+          :if={@plan_locked?}
+          feature={:delegations}
+          current_org={@current_org}
+          current_user={@current_user}
+          class="mt-10"
+        />
+        <p
+          :if={!@delegation and !@plan_locked?}
+          class="mt-6 max-w-3xl text-base text-balance text-grey-700"
+        >
           {gettext(
             "Fill in the request below. After you send it, it will be forwarded to your employer. Once it is approved, you will receive a confirmation email."
           )}
         </p>
         <.form
+          :if={!@plan_locked?}
           for={@form}
           id="delegation-form"
           phx-change="validate"

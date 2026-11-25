@@ -1,7 +1,7 @@
 defmodule Firmowid.Billing.PlanCatalog do
   @moduledoc """
-  Shared source of truth for billing plan rules: the price of each plan and the
-  limits it includes, as the pricing page offers them.
+  Shared source of truth for billing plan rules: the price of each plan, the
+  limits and the features it includes, as the pricing page offers them.
 
   `:no_plan` is not an offer. It marks an organization whose access is blocked
   (see the `:access_block` calculation on `Firmowid.Core.User`).
@@ -14,11 +14,21 @@ defmodule Firmowid.Billing.PlanCatalog do
   @type limited :: :users | :bank_institutions | :active_projects
   @type limit :: non_neg_integer() | :unlimited
 
+  @typedoc """
+  What only some plans include. `:ai` is the MCP server (ChatGPT, Claude and other
+  clients) and the in-app assistant; `:ksef_invoice_emails` the emails about new
+  purchase invoices in KSeF.
+  """
+  @type feature ::
+          :ai | :leave_requests | :ksef_invoice_emails | :employee_contracts | :delegations
+
   @type plan_rules :: %{
           plan: plan(),
           monthly_price_pln: money_amount(),
           yearly_price_pln: money_amount(),
-          limits: %{required(limited()) => limit()}
+          limits: %{required(limited()) => limit()},
+          features: [feature()],
+          monthly_ocr_documents: limit()
         }
 
   @typedoc """
@@ -37,6 +47,8 @@ defmodule Firmowid.Billing.PlanCatalog do
   @offered_plans [:free, :przedsiebiorca, :firma]
 
   @limited [:users, :bank_institutions, :active_projects]
+
+  @przedsiebiorca_features [:ai, :leave_requests, :ksef_invoice_emails, :employee_contracts]
 
   @vat_percent 23
 
@@ -68,7 +80,9 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :no_plan,
       monthly_price_pln: decimal("0"),
       yearly_price_pln: decimal("0"),
-      limits: %{users: 0, bank_institutions: 0, active_projects: 0}
+      limits: %{users: 0, bank_institutions: 0, active_projects: 0},
+      features: [],
+      monthly_ocr_documents: 0
     }
   end
 
@@ -77,7 +91,9 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :free,
       monthly_price_pln: decimal("0"),
       yearly_price_pln: decimal("0"),
-      limits: %{users: 2, bank_institutions: 1, active_projects: 3}
+      limits: %{users: 2, bank_institutions: 1, active_projects: 3},
+      features: [],
+      monthly_ocr_documents: 10
     }
   end
 
@@ -86,7 +102,9 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :przedsiebiorca,
       monthly_price_pln: decimal("29"),
       yearly_price_pln: decimal("276"),
-      limits: %{users: 5, bank_institutions: 3, active_projects: :unlimited}
+      limits: %{users: 5, bank_institutions: 3, active_projects: :unlimited},
+      features: @przedsiebiorca_features,
+      monthly_ocr_documents: 50
     }
   end
 
@@ -95,7 +113,9 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :firma,
       monthly_price_pln: decimal("149"),
       yearly_price_pln: decimal("1428"),
-      limits: %{users: :unlimited, bank_institutions: :unlimited, active_projects: :unlimited}
+      limits: %{users: :unlimited, bank_institutions: :unlimited, active_projects: :unlimited},
+      features: [:delegations | @przedsiebiorca_features],
+      monthly_ocr_documents: :unlimited
     }
   end
 
@@ -139,6 +159,14 @@ defmodule Firmowid.Billing.PlanCatalog do
   """
   @spec limited() :: [limited()]
   def limited, do: @limited
+
+  @doc "Whether the plan includes the feature."
+  @spec includes?(plan(), feature()) :: boolean()
+  def includes?(plan, feature), do: feature in plan!(plan).features
+
+  @doc "Returns the cheapest offered plan that includes the feature."
+  @spec plan_with(feature()) :: offered_plan()
+  def plan_with(feature), do: Enum.find(@offered_plans, &includes?(&1, feature))
 
   @doc """
   Maps the usage facts of a billing snapshot to the things the plans limit.

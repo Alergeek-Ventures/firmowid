@@ -23,6 +23,7 @@ defmodule Firmowid.Blobs do
   resources do
     resource Blob do
       define :list_blobs, action: :list
+      define :list_ocr_documents, action: :ocr_documents
       define :get_blob, action: :read, get_by: [:id]
 
       define :create_blob, args: [:upload_path, :content_type, :original_filename]
@@ -224,6 +225,24 @@ defmodule Firmowid.Blobs do
   defp blob_checksum_conflict_error?(%InvalidChanges{fields: fields}) when is_list(fields), do: :blob_checksum in fields
 
   defp blob_checksum_conflict_error?(_), do: false
+
+  @doc """
+  Counts the documents the organization sent to OCR this month (Europe/Warsaw),
+  which its plan limits. Takes the options of an Ash call: a `scope`, or an
+  `actor` and a `tenant`.
+  """
+  @spec count_ocr_documents(keyword()) :: non_neg_integer()
+  def count_ocr_documents(opts) do
+    opts |> query_to_list_ocr_documents() |> Ash.count!(opts)
+  end
+
+  @doc """
+  Whether an error of `create_blob` says the plan has no documents left this month.
+  """
+  @spec ocr_limit_error?(term()) :: boolean()
+  def ocr_limit_error?(%Invalid{errors: errors}), do: Enum.any?(errors, &ocr_limit_error?/1)
+  def ocr_limit_error?(%InvalidAttribute{field: :processing_target}), do: true
+  def ocr_limit_error?(_error), do: false
 
   def get_processing_blobs_count(processing_target, scope) do
     processing_target

@@ -82,7 +82,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   end
 
   test "renders an in-progress delegation with union-backed expense details", %{conn: conn} do
-    user = user_fixture()
+    user = user_fixture(%{plan: :firma})
     admin = admin_fixture(%{organization_id: user.member.organization_id})
     scope = %Scope{actor: user, tenant: user.member.organization_id}
     signed_command_path = Briefly.create!(extname: ".pdf")
@@ -1062,7 +1062,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   end
 
   defp approved_delegation do
-    user = user_fixture()
+    user = user_fixture(%{plan: :firma})
     admin = admin_fixture(%{organization_id: user.member.organization_id})
     scope = %Scope{actor: user, tenant: user.member.organization_id}
     signed_command_path = Briefly.create!(extname: ".pdf")

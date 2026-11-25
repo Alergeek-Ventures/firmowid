@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   alias Firmowid.SystemActor
 
   test "renders and validates a delegation", %{conn: conn} do
-    employee = user_fixture()
+    employee = user_fixture(%{plan: :firma})
     create_employment_contract(employee)
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
 
   for transport_type <- ["railway", "airplane", "bus", "public_transport", "other"] do
     test "submits a delegation with #{transport_type}", %{conn: conn} do
-      employee = user_fixture()
+      employee = user_fixture(%{plan: :firma})
       scope = %Scope{actor: employee, tenant: employee.member.organization_id}
       {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   end
 
   test "edits the existing pending order and preserves unedited data", %{conn: conn} do
-    employee = user_fixture()
+    employee = user_fixture(%{plan: :firma})
     scope = %Scope{actor: employee, tenant: employee.member.organization_id}
 
     delegation =
@@ -114,8 +114,16 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     assert stored.billing_month == delegation.billing_month
   end
 
+  test "a plan without delegations shows the notice instead of the form", %{conn: conn} do
+    owner = user_fixture()
+    {:ok, view, _html} = conn |> log_in_user(owner) |> live(~p"/delegacje/dodaj")
+
+    refute has_element?(view, "#delegation-form")
+    assert has_element?(view, ~s(main a[href="/ustawienia/abonament"]))
+  end
+
   test "keeps the form live when the billing month is malformed", %{conn: conn} do
-    employee = user_fixture()
+    employee = user_fixture(%{plan: :firma})
     {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
     assert render_hook(view, "change-month", %{"month" => "not-a-date"}) =~
@@ -125,7 +133,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   end
 
   test "renders without an employment contract", %{conn: conn} do
-    employee = user_fixture()
+    employee = user_fixture(%{plan: :firma})
     {:ok, _view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
     assert html =~ "Stanowisko"
@@ -133,7 +141,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   end
 
   test "adds and removes transport type selects", %{conn: conn} do
-    employee = user_fixture()
+    employee = user_fixture(%{plan: :firma})
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
     assert html =~ "Miejsce podróży"

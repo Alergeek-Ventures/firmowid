@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidUI.Components.UploadErrors
+  import FirmowidWeb.Billing.Components.PlanNotice
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization,
@@ -12,12 +13,14 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.ErrorKind
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
+  alias FirmowidWeb.Billing.Utilities.OcrLimit
 
   require Logger
 
@@ -42,7 +45,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   end
 
   def update(assigns, socket) do
-    can_upload? = admin_actor?(assigns.scope)
+    # Starting an employment contract upload is a feature of some plans.
+    contracts_included? =
+      PlanCatalog.includes?(assigns.current_org.billing_plan, :employee_contracts)
+
+    can_upload? = admin_actor?(assigns.scope) and contracts_included?
 
     socket =
       socket
@@ -52,6 +59,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       |> assign_new(:current_contract_id, fn -> nil end)
       |> assign_new(:feature_flags, fn -> %{} end)
       |> assign(:can_upload?, can_upload?)
+      |> assign(:plan_locked?, admin_actor?(assigns.scope) and not contracts_included?)
       |> maybe_allow_document_upload(can_upload?)
       |> refetch_documents()
       |> refetch_upload_counts()
@@ -126,6 +134,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                 document_upload={@document_upload}
                 currently_uploading_count={@currently_uploading_count}
                 processing_blobs_count={@processing_blobs_count}
+                plan_locked?={@plan_locked?}
               />
             </div>
           <% else %>
@@ -142,6 +151,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                   document_upload={@document_upload}
                   currently_uploading_count={@currently_uploading_count}
                   processing_blobs_count={@processing_blobs_count}
+                  plan_locked?={@plan_locked?}
                 />
               </div>
             </h3>
@@ -165,6 +175,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   attr :document_upload, :map, default: nil
   attr :currently_uploading_count, :integer, required: true
   attr :processing_blobs_count, :integer, required: true
+  attr :plan_locked?, :boolean, required: true
 
   defp toolbar(assigns) do
     ~H"""
@@ -202,6 +213,15 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           </.button>
         </div>
       </form>
+      <.plan_locked_button
+        :if={@plan_locked?}
+        id={"#{@id}-plan-locked"}
+        feature={:employee_contracts}
+        class="py-1.75"
+      >
+        <.icon name="hero-plus" class="size-4" />
+        <.add_document_label feature_flags={@feature_flags} />
+      </.plan_locked_button>
       <form
         :if={@can_upload? && @document_upload}
         class="relative"
@@ -229,11 +249,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             processing_blobs_count={@processing_blobs_count}
           />
           <.icon name="hero-plus" class="size-4" />
-          <%= if flag_enabled?(:accurate_salary_calculation, assigns) do %>
-            {gettext("Add employee document")}
-          <% else %>
-            {gettext("Add contract")}
-          <% end %>
+          <.add_document_label feature_flags={@feature_flags} />
         </.button>
         <.upload_error_messages
           upload={@document_upload}
@@ -242,6 +258,18 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         />
       </form>
     </div>
+    """
+  end
+
+  attr :feature_flags, :map, required: true
+
+  defp add_document_label(assigns) do
+    ~H"""
+    <%= if flag_enabled?(:accurate_salary_calculation, assigns) do %>
+      {gettext("Add employee document")}
+    <% else %>
+      {gettext("Add contract")}
+    <% end %>
     """
   end
 
@@ -606,8 +634,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           LiveToast.send_toast(:success, gettext("The file was uploaded."))
 
         {:error, err} ->
-          Logger.warning("Upload failed", error_kind: ErrorKind.classify(err))
-          LiveToast.send_toast(:error, gettext("An error occurred while uploading the file."))
+          if Blobs.ocr_limit_error?(err) do
+            OcrLimit.toast_refusal(err, entry.client_name)
+          else
+            Logger.warning("Upload failed", error_kind: ErrorKind.classify(err))
+            LiveToast.send_toast(:error, gettext("An error occurred while uploading the file."))
+          end
       end
     end)
 

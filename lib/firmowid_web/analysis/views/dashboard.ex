@@ -30,6 +30,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias FirmowidWeb.Analysis.Components.ProjectSwitcher
   alias FirmowidWeb.Analysis.Utilities.Navigation
   alias FirmowidWeb.Analysis.Utilities.Periods
+  alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
   alias FirmowidWeb.Core.Toast
 
   @impl true
@@ -575,6 +576,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             {pgettext("main navigation", "Analysis")}
           </h1>
           <AskAssistant.button
+            :if={AssistantNavigation.available?(@current_org)}
             id="analysis-ask-assistant"
             context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
           />
@@ -649,7 +651,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         }
         industry={@review && @review.industry}
         can_edit={can_tag?(assigns)}
-        assistant={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
+        assistant={
+          if AssistantNavigation.available?(@current_org),
+            do: assistant_context(@params, @summary, @tag_filters, @tag_definitions)
+        }
       />
       <FirstReview.review
         :if={first_review_shown?(assigns)}
@@ -664,6 +669,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           tag_filters={@tag_filters}
         />
         <AskAssistant.tiles
+          :if={AssistantNavigation.available?(@current_org)}
           id="analysis-trends-questions"
           context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
           questions={AskAssistant.trends(@summary.months, projects(@summary, @tag_filters))}

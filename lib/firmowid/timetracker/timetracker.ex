@@ -10,6 +10,7 @@ defmodule Firmowid.Timetracker do
     extensions: [AshJsonApi.Domain, Ash.Policy.Authorizer, AshAi]
 
   alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.PlanIncludes
   alias Firmowid.Timetracker.LeaveRequest
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
@@ -177,6 +178,13 @@ defmodule Firmowid.Timetracker do
   end
 
   policies do
+    # Declared before the admin bypass so it binds admins too: the plan gates
+    # starting a new leave request, not handling existing ones.
+    policy [resource(LeaveRequest), action([:create, :create_with_upload])] do
+      forbid_unless {PlanIncludes, feature: :leave_requests}
+      authorize_if always()
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
