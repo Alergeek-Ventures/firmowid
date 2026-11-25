@@ -16,6 +16,7 @@ defmodule Firmowid.Taxes.TaxYear do
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Resource
+  alias Firmowid.Taxes.TaxYear.Actions.Forecast
   alias Firmowid.Taxes.TaxYear.Actions.SuggestSettings
   alias Firmowid.Taxes.TaxYear.Changes.FitLegalForm
 
@@ -108,6 +109,35 @@ defmodule Firmowid.Taxes.TaxYear do
       argument :year, :integer, allow_nil?: false, constraints: [min: 2020, max: 2100]
 
       run SuggestSettings
+    end
+
+    action :forecast, {:array, :map} do
+      description "Forecast the tax payments of the year's periods from its settings and the company's invoices: " <>
+                    "VAT for a VAT payer with a saved VAT period, and CIT advances for a limited company with a saved " <>
+                    "CIT rate and advance form, and for each partner of a sole proprietorship or a civil partnership " <>
+                    "their PIT advances and ZUS contributions (the forecast's member_id is the partner). Saves nothing."
+
+      constraints items: [
+                    fields: [
+                      kind: [
+                        type: :atom,
+                        allow_nil?: false,
+                        constraints: [one_of: [:vat, :cit, :pit, :zus]]
+                      ],
+                      period: [type: :string, allow_nil?: false],
+                      period_start: [type: :date, allow_nil?: false],
+                      period_end: [type: :date, allow_nil?: false],
+                      amount: [type: :decimal, allow_nil?: false],
+                      due_date: [type: :date, allow_nil?: false],
+                      description: [type: :string, allow_nil?: false],
+                      member_id: [type: :uuid_v7],
+                      details: [type: :map, allow_nil?: false]
+                    ]
+                  ]
+
+      argument :year, :integer, allow_nil?: false, constraints: [min: 2020, max: 2100]
+
+      run Forecast
     end
   end
 

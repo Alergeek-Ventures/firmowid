@@ -83,7 +83,23 @@ defmodule Firmowid.Seeds.Cafe do
         )
 
       org = seed_organization(kira)
-      Helpers.seed_member!(kira.id, org.id, :admin, %{name: "Kinga Nowak"})
+      admin = Helpers.seed_member!(kira.id, org.id, :admin, %{name: "Kinga Nowak"})
+
+      Helpers.seed_tax_year!(
+        org.id,
+        %{vat_period: :quarterly},
+        [
+          %{
+            member_id: admin.id,
+            profit_share: Decimal.new(100),
+            income_tax: :tax_scale,
+            pit_advances: :monthly,
+            social_insurance: :full,
+            voluntary_sickness: true
+          }
+        ]
+      )
+
       bank = seed_bank_account(org)
       ctx = %{org_id: org.id, bank_id: bank.id}
 
@@ -115,7 +131,8 @@ defmodule Firmowid.Seeds.Cafe do
         nip: @nip,
         address: @address,
         owner_id: kira.id,
-        is_vat_payer: true
+        is_vat_payer: true,
+        legal_form: :sole_proprietorship
       }
     )
   end
@@ -306,6 +323,7 @@ defmodule Firmowid.Seeds.Cafe do
         issue_date: issue_date,
         due_date: Date.add(issue_date, 14),
         amount: Helpers.money!("PLN", Decimal.negate(gross)),
+        vat_amount: vat,
         description: spec.description,
         items_list: spec.items,
         skip_invoicing: false

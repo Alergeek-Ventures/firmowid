@@ -4,10 +4,10 @@ defmodule Firmowid.Seeds.SalaryMatching do
   alias Firmowid.Core.User
   alias Firmowid.Payroll.UserSalary
   alias Firmowid.Scope
+  alias Firmowid.Seeds.Helpers
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
-  alias Firmowid.Seeds.Helpers
 
   @doc "Adds demo employees and unmatched transfers without clearing existing assignments."
   @spec seed!(map()) :: [map()]
@@ -96,6 +96,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
         description: "Prototyp: faktura lub wynagrodzenie dla przelewu 1250 zł",
         account_number: "PL00123456789012345678901234",
         amount: Money.new!(:PLN, -1250),
+        vat_amount: Helpers.vat_from_gross(1250),
         sale_date: booking_date,
         issue_date: booking_date,
         due_date: Date.add(booking_date, 14),
@@ -113,6 +114,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
           description: "Prototyp: faktura #{index} lub wynagrodzenie dla przelewu 300 zł",
           account_number: "PL00123456789012345678901234",
           amount: Money.new!(:PLN, -amount),
+          vat_amount: Helpers.vat_from_gross(amount),
           sale_date: booking_date,
           issue_date: booking_date,
           due_date: Date.add(booking_date, 14),

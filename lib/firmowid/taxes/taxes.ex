@@ -39,6 +39,39 @@ defmodule Firmowid.Taxes do
                     "whose owner pays from the company account. Not binding: say they are based on the transactions; " <>
                     "an admin confirms them by saving the year in the company settings. Changes nothing."
     end
+
+    tool :forecast_taxes, TaxYear, :forecast do
+      annotations title: "Forecast taxes and ZUS",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Forecast a year's tax and ZUS payments from the saved tax settings and the invoices and bank " <>
+                    "transactions Firmowid has. An estimate to plan cash, not a tax return: say so. One item per " <>
+                    "period: kind, period, period_start, period_end, amount in PLN, due_date, description, " <>
+                    "member_id and details, the figures the amount comes from; use details to explain an amount. " <>
+                    "vat: for a VAT payer with a saved vat_period; details output_vat, input_vat, carried_over, " <>
+                    "refunded. carried_over is the surplus input VAT from earlier periods, deducted first, " <>
+                    "already lowered by refunded: the VAT refunds from a tax office (incoming transfers from " <>
+                    "Urząd Skarbowy titled with VAT) booked in the period. A period with more input than " <>
+                    "output VAT pays 0 and carries the surplus forward. " <>
+                    "cit: advances of a limited company with a saved CIT rate and advance form (none for " <>
+                    "simplified advances); cumulative from 1 January: details revenue, costs, income, tax " <>
+                    "(on the whole income so far), advances_before, rate in percent. " <>
+                    "pit and zus: per partner of a sole proprietorship or civil partnership, member_id is the " <>
+                    "partner (see list_tax_years); pit details revenue, costs, income (the partner's share, " <>
+                    "cumulative), social_deducted, health_deducted, tax_base, tax, advances_before, income_tax, " <>
+                    "rate (nil on the tax scale), rates_year; zus is monthly, details pension, disability, " <>
+                    "accident, sickness, labour_fund, health, social_base, health_base, rates_year. " <>
+                    "vat and cit details also have cost_invoices_without_vat, the cost invoices up to the period " <>
+                    "without a VAT amount: they bring no input VAT and count at their gross amount in CIT costs. " <>
+                    "Simplifications: sales outside invoices are not counted; costs are cost invoices net of VAT, " <>
+                    "salary transfers and skipped outgoing transfers that the analysis put into a cost " <>
+                    "category (not taxes, ZUS of owners or transfers between own accounts; unclassified " <>
+                    "transfers are not costs); no depreciation, reliefs or losses of earlier years; " <>
+                    "contributions use the rates_year figures and count in the month they are for; VAT " <>
+                    "surplus is carried forward and lowered by refunds, not refunded itself. Changes nothing."
+    end
   end
 
   resources do
@@ -48,6 +81,7 @@ defmodule Firmowid.Taxes do
       define :create_tax_year, action: :create
       define :update_tax_year, action: :update
       define :suggest_tax_settings, action: :suggest_settings, args: [:year]
+      define :forecast_taxes, action: :forecast, args: [:year]
     end
 
     resource Firmowid.Taxes.Partner

@@ -4,9 +4,13 @@ defmodule Firmowid.TaxesTest do
   import Firmowid.AccountsFixtures
   import Firmowid.FinancesFixtures
 
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
+  alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Core
   alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.InvoicingFixtures
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Partner
   alias Firmowid.Taxes.TaxYear
@@ -47,7 +51,7 @@ defmodule Firmowid.TaxesTest do
       accountant = user_in_org_fixture(org_id, %{role: :accountant})
       accountant_scope = %Firmowid.Scope{actor: accountant, tenant: org_id}
 
-      assert {:error, %Ash.Error.Forbidden{}} =
+      assert {:error, %Forbidden{}} =
                Taxes.create_tax_year(
                  %{year: 2026, vat_period: :monthly, partners: [partner(admin.member.id, 100)]},
                  scope: accountant_scope
@@ -189,6 +193,269 @@ defmodule Firmowid.TaxesTest do
 
       assert [%{setting: :cit_advances, value: :quarterly, year: 2025, transfers: 1}] =
                Taxes.suggest_tax_settings!(2025, scope: scope)
+    end
+  end
+
+  describe "forecast_taxes/2" do
+    defp seed_sales(scope, attrs, unit_price) do
+      InvoicingFixtures.seed_sales_invoice!(
+        Map.merge(
+          %{
+            invoice_type: :poland,
+            invoice_number: "FV/#{System.unique_integer([:positive])}",
+            sale_date: ~D[2026-01-10],
+            issue_date: ~D[2026-01-10],
+            due_date: ~D[2026-01-24],
+            payment_method: :transfer,
+            currency: "PLN",
+            seller_nip: "1234567890",
+            seller_display_name: "Acme Sp. z o.o.",
+            seller_address: "ul. Testowa 1, 00-001 Warszawa",
+            buyer_type: :company,
+            buyer_id: "1234567890",
+            buyer_full_name: "Buyer Sp. z o.o.",
+            buyer_address: "ul. Testowa 2, 00-002 Warszawa",
+            buyer_country: "PL",
+            ksef_invoice_kind: :vat,
+            sales_invoice_items: [
+              %{
+                name: "Programming service",
+                quantity: Decimal.new(1),
+                unit: "szt.",
+                unit_price: unit_price
+              }
+            ]
+          },
+          attrs
+        ),
+        scope: scope
+      )
+    end
+
+    defp create_company_tax_year(scope) do
+      set_legal_form(scope, :limited_company)
+
+      Taxes.create_tax_year!(
+        %{
+          year: 2026,
+          vat_period: :monthly,
+          cit_rate: :reduced,
+          cit_advances: :quarterly,
+          partners: []
+        },
+        scope: scope
+      )
+    end
+
+    test "counts invoices, corrections and cost invoices in their months, per organization", %{
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+
+      invoice = seed_sales(scope, %{}, Decimal.new("1000"))
+
+      seed_sales(
+        scope,
+        %{
+          ksef_invoice_kind: :kor,
+          corrected_invoice_id: invoice.id,
+          sale_date: ~D[2026-02-10],
+          issue_date: ~D[2026-02-10]
+        },
+        Decimal.new("600")
+      )
+
+      Ash.Seed.seed!(
+        CostInvoice,
+        %{
+          seller: "Supplier Sp. z o.o.",
+          seller_display_name: "Supplier Sp. z o.o.",
+          sale_date: ~D[2026-01-12],
+          issue_date: ~D[2026-01-12],
+          due_date: ~D[2026-01-26],
+          amount: Money.new!(:PLN, "-123.00"),
+          vat_amount: Decimal.new("23"),
+          description: "Services",
+          invoice_identifier: "FV/1/2026",
+          organization_id: scope.tenant
+        },
+        tenant: scope.tenant
+      )
+
+      # Another organization's invoice must not change this forecast.
+      other = admin_fixture()
+      other_scope = %Firmowid.Scope{actor: other, tenant: other.member.organization_id}
+      seed_sales(other_scope, %{}, Decimal.new("5000"))
+
+      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      vat = Enum.filter(forecasts, &(&1.kind == :vat))
+      assert length(vat) == 12
+
+      [january, february | _] = vat
+
+      # 1000 net at 23% less 23 of input VAT.
+      assert %{kind: :vat, period: "2026-01", due_date: ~D[2026-02-25]} = january
+      assert Decimal.equal?(january.amount, 207)
+      assert Decimal.equal?(january.details.output_vat, 230)
+      assert Decimal.equal?(january.details.input_vat, 23)
+
+      # The correction lowers the VAT from 230 to 138 in the month it is issued: 92 less.
+      assert %{kind: :vat, period: "2026-02", due_date: ~D[2026-03-25]} = february
+      assert Decimal.equal?(february.amount, 0)
+      assert Decimal.equal?(february.details.output_vat, -92)
+      assert Decimal.equal?(february.details.input_vat, 0)
+    end
+
+    test "forecasts the CIT advance of a limited company from net revenue and costs", %{
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+
+      seed_sales(scope, %{}, Decimal.new("10000"))
+
+      Ash.Seed.seed!(
+        CostInvoice,
+        %{
+          seller: "Supplier Sp. z o.o.",
+          seller_display_name: "Supplier Sp. z o.o.",
+          sale_date: ~D[2026-01-12],
+          issue_date: ~D[2026-01-12],
+          due_date: ~D[2026-01-26],
+          amount: Money.new!(:PLN, "-1230.00"),
+          vat_amount: Decimal.new("230"),
+          description: "Services",
+          invoice_identifier: "FV/2/2026",
+          organization_id: scope.tenant
+        },
+        tenant: scope.tenant
+      )
+
+      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      assert [first_quarter | _] = cit = Enum.filter(forecasts, &(&1.kind == :cit))
+      assert length(cit) == 4
+
+      # 10 000 of revenue less 1 000 of costs is taxed at 9%.
+      assert %{period: "2026-Q1", due_date: ~D[2026-04-20]} = first_quarter
+      assert Decimal.equal?(first_quarter.amount, 810)
+      assert Decimal.equal?(first_quarter.details.income, 9000)
+      assert first_quarter.details.cost_invoices_without_vat == 0
+    end
+
+    test "counts a skipped outgoing transfer as a CIT cost only when the analysis categorized it",
+         %{
+           org_id: org_id,
+           scope: scope
+         } do
+      create_company_tax_year(scope)
+      seed_sales(scope, %{}, Decimal.new("10000"))
+      bank_account = bank_account_fixture_for_organization!(org_id)
+
+      transfer = fn name ->
+        Ash.Seed.seed!(Transaction, %{
+          organization_id: org_id,
+          bank_account_id: bank_account.id,
+          creditor_name: name,
+          remittance_information_unstructured: "Payment",
+          amount: Money.new!(:PLN, "-1000"),
+          booking_date: ~D[2026-01-15],
+          value_date: ~D[2026-01-15],
+          skip_invoicing: true
+        })
+      end
+
+      first_quarter = fn ->
+        {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+        Enum.find(forecasts, &(&1.kind == :cit and &1.period == "2026-Q1"))
+      end
+
+      classified = transfer.("Acme Hosting")
+      transfer.("Acme Exchange")
+
+      # Neither transfer is classified: no costs.
+      assert Decimal.equal?(first_quarter.().details.costs, 0)
+
+      Ash.Seed.seed!(
+        EntryCategory,
+        %{
+          organization_id: org_id,
+          entity_type: :transaction,
+          resource_id: classified.id,
+          category: :software,
+          probability: 0.9,
+          probabilities: %{"software" => 0.9}
+        },
+        tenant: org_id
+      )
+
+      # Only the classified one lowers the income: 9% of 9 000.
+      forecast = first_quarter.()
+      assert Decimal.equal?(forecast.details.costs, 1000)
+      assert Decimal.equal?(forecast.amount, 810)
+    end
+
+    test "forecasts the owner's PIT advances and ZUS, and nothing of the kind for a limited company",
+         %{
+           admin: admin,
+           scope: scope
+         } do
+      set_legal_form(scope, :sole_proprietorship)
+
+      Taxes.create_tax_year!(
+        %{
+          year: 2026,
+          vat_period: :monthly,
+          partners: [
+            Map.put(
+              %{partner(admin.member.id, 100) | income_tax: :tax_scale},
+              :voluntary_sickness,
+              true
+            )
+          ]
+        },
+        scope: scope
+      )
+
+      seed_sales(scope, %{}, Decimal.new("1000"))
+
+      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      assert [:vat, :pit, :zus] = forecasts |> Enum.map(& &1.kind) |> Enum.uniq()
+
+      pit = Enum.filter(forecasts, &(&1.kind == :pit))
+      zus = Enum.filter(forecasts, &(&1.kind == :zus))
+      assert length(pit) == 12
+      assert length(zus) == 12
+      assert Enum.all?(pit ++ zus, &(&1.member_id == admin.member.id))
+
+      # 1 926,76 of social contributions with sickness and the Labour Fund, and the January minimum
+      # of health, as December had no income.
+      assert %{period: "2026-01", due_date: ~D[2026-02-20]} = january = hd(zus)
+      assert Decimal.equal?(january.amount, "2241.72")
+
+      # The contributions exceed the income, so no tax is due.
+      assert Decimal.equal?(hd(pit).details.revenue, 1000)
+      assert Decimal.equal?(hd(pit).amount, 0)
+
+      other = admin_fixture()
+      other_scope = %Firmowid.Scope{actor: other, tenant: other.member.organization_id}
+      create_company_tax_year(other_scope)
+
+      assert {:ok, company_forecasts} = Taxes.forecast_taxes(2026, scope: other_scope)
+      assert Enum.all?(company_forecasts, &(&1.kind in [:vat, :cit]))
+    end
+
+    test "is for accountants and above, and empty for a year that was not saved", %{
+      org_id: org_id,
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+      invoicing = user_in_org_fixture(org_id, %{role: :invoicing})
+
+      assert {:error, %Forbidden{}} =
+               Taxes.forecast_taxes(2026,
+                 scope: %Firmowid.Scope{actor: invoicing, tenant: org_id}
+               )
+
+      assert {:ok, []} = Taxes.forecast_taxes(2025, scope: scope)
     end
   end
 

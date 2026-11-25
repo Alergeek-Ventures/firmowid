@@ -19,12 +19,14 @@ defmodule Firmowid.Seeds.Helpers do
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.SalesInvoiceTransaction
   alias Firmowid.S3Client
+  alias Firmowid.Taxes.Partner
+  alias Firmowid.Taxes.TaxYear
 
   require Ash.Query
 
   @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Core.Member{role: :admin}
+    member: %CoreMember{role: :admin}
   }
 
   @string_key_to_atom %{
@@ -122,6 +124,50 @@ defmodule Firmowid.Seeds.Helpers do
       member ->
         Ash.Seed.update!(member, attrs)
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Tax seed helpers — Ash.Seed (bypasses actions, goes to data layer)
+  # ---------------------------------------------------------------------------
+
+  # Creates the organization's tax year for the current calendar year together
+  # with its partners, unless the year is already saved (past years keep theirs).
+  def seed_tax_year!(org_id, attrs, partners \\ []) do
+    year = today().year
+    query = Ash.Query.filter(TaxYear, year == ^year)
+
+    case Ash.read_one!(query, tenant: org_id, actor: @seed_actor, authorize?: false) do
+      nil ->
+        tax_year =
+          Ash.Seed.seed!(
+            TaxYear,
+            Map.merge(attrs, %{year: year, organization_id: org_id}),
+            tenant: org_id
+          )
+
+        Enum.each(partners, fn partner ->
+          Ash.Seed.seed!(
+            Partner,
+            Map.merge(partner, %{tax_year_id: tax_year.id, organization_id: org_id}),
+            tenant: org_id
+          )
+        end)
+
+        tax_year
+
+      tax_year ->
+        tax_year
+    end
+  end
+
+  # The 23% VAT contained in a gross amount, rounded to grosz.
+  def vat_from_gross(gross) do
+    gross
+    |> normalize_decimal()
+    |> Decimal.abs()
+    |> Decimal.mult(Decimal.new(23))
+    |> Decimal.div(Decimal.new(123))
+    |> Decimal.round(2)
   end
 
   # ---------------------------------------------------------------------------

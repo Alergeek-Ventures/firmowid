@@ -2334,6 +2334,11 @@ msgstr ""
 msgid "CEO · Alergeek Ventures"
 msgstr ""
 
+#: lib/firmowid/taxes/forecast/cit.ex
+#, elixir-autogen, elixir-format
+msgid "CIT advance for %{period}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "COO · Alergeek Ventures"
@@ -9494,6 +9499,11 @@ msgstr ""
 msgid "PESEL (optional)"
 msgstr ""
 
+#: lib/firmowid/taxes/forecast/pit.ex
+#, elixir-autogen, elixir-format
+msgid "PIT advance for %{period}"
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "PIT-0 exemptions other than youth relief are recorded but not calculated."
@@ -14291,6 +14301,11 @@ msgstr ""
 msgid "VAT exemption"
 msgstr ""
 
+#: lib/firmowid/taxes/forecast/vat.ex
+#, elixir-autogen, elixir-format
+msgid "VAT for %{period}"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #, elixir-autogen, elixir-format
 msgid "VAT invoice"
@@ -15318,6 +15333,11 @@ msgstr ""
 msgid "ZIP package for your accountant"
 msgstr ""
 
+#: lib/firmowid/taxes/forecast/zus.ex
+#, elixir-autogen, elixir-format
+msgid "ZUS for %{period}"
+msgstr ""
+
 #: lib/firmowid/invoicing/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "a counterparty with this PESEL number already exists"
@@ -16052,6 +16072,11 @@ msgid "put aside"
 msgid_plural "put aside"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/firmowid/taxes/forecast/period.ex
+#, elixir-autogen, elixir-format
+msgid "quarter %{quarter} of %{year}"
+msgstr ""
 
 #: lib/firmowid_web/documents/components/documents_section.ex
 #, elixir-autogen, elixir-format
