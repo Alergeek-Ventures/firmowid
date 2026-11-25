@@ -47,9 +47,10 @@ defmodule Firmowid.Taxes.Forecast.Pit do
   @scale_first_tax Decimal.new(10_800)
 
   @type partner :: %{
-          income_tax: :tax_scale | :flat_tax | :lump_sum,
-          lump_sum_rate: Decimal.t() | nil,
-          pit_advances: Period.frequency()
+          required(:income_tax) => :tax_scale | :flat_tax | :lump_sum,
+          required(:lump_sum_rate) => Decimal.t() | nil,
+          required(:pit_advances) => Period.frequency(),
+          optional(atom()) => any()
         }
 
   @doc "Returns one forecast for each period of `year`, from entries of any year."
