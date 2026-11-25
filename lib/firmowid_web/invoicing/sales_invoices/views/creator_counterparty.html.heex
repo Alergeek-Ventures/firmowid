@@ -24,6 +24,105 @@
       </div>
     </div>
 
+    <%!-- A copy starts here: the counterparty it brought, to confirm or replace from the list below. --%>
+    <section
+      :if={@copied_invoice}
+      aria-labelledby="copied-counterparty-heading"
+      class="flex flex-col gap-6 border-b border-grey-200 pb-10"
+    >
+      <h2 id="copied-counterparty-heading" class="text-lg/snug font-medium text-grey-900">
+        <%= if @copied_invoice.number do %>
+          {gettext("Counterparty from invoice %{number}", number: @copied_invoice.number)}
+        <% else %>
+          {gettext("Counterparty from the copied invoice")}
+        <% end %>
+      </h2>
+
+      <form
+        id="copied-counterparty-form"
+        phx-submit="confirm_copied_counterparty"
+        class="flex flex-col gap-6"
+      >
+        <dl class="grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-x-6 gap-y-3">
+          <dt class="text-sm/snug text-grey-600">{gettext("Name")}</dt>
+          <dd class="text-base/snug text-grey-900">{@invoice.buyer_display_name_label}</dd>
+
+          <%= if identifier = buyer_identifier(@invoice) do %>
+            <dt class="text-sm/snug text-grey-600">{elem(identifier, 0)}</dt>
+            <dd class="text-base/snug text-grey-900">{elem(identifier, 1)}</dd>
+          <% end %>
+
+          <dt id="copied-counterparty-address" class="text-sm/snug text-grey-600">
+            {gettext("Address")}
+          </dt>
+          <dd
+            :if={is_nil(@copied_invoice.address_choice)}
+            class="text-base/snug text-grey-900"
+          >
+            <span class="whitespace-pre-line">{@invoice.buyer_address}</span>
+          </dd>
+          <dd :if={choice = @copied_invoice.address_choice} class="flex flex-col gap-4">
+            <p
+              id="copied-counterparty-address-hint"
+              class="flex flex-row items-center gap-1.5 text-sm/snug text-grey-700"
+            >
+              <Lucideicons.info class="size-4 shrink-0 text-grey-500" aria-hidden="true" />
+              {gettext("The counterparty's address has changed since the copied invoice.")}
+            </p>
+            <div
+              role="radiogroup"
+              aria-labelledby="copied-counterparty-address"
+              aria-describedby="copied-counterparty-address-hint"
+              class="flex flex-row flex-wrap gap-x-12 gap-y-4"
+            >
+              <label
+                :for={
+                  {source, address, title} <- [
+                    {"counterparty", choice.counterparty,
+                     gettext("Current, from the counterparty")},
+                    {"invoice", choice.invoice, gettext("From the copied invoice")}
+                  ]
+                }
+                class="flex max-w-80 cursor-pointer flex-row items-start gap-3"
+              >
+                <input
+                  type="radio"
+                  name="source"
+                  id={"copied-counterparty-address-#{source}"}
+                  value={source}
+                  checked={
+                    if @draft.buyer_address == choice.invoice,
+                      do: source == "invoice",
+                      else: source == "counterparty"
+                  }
+                  class="peer sr-only"
+                />
+                <span class="mt-0.75 size-4.5 shrink-0 rounded-full border-[1.5px] border-grey-400 peer-checked:border-[5px] peer-checked:border-black peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--focus-ring)"></span>
+                <span class="flex flex-col gap-0.5">
+                  <span class="text-sm/snug text-grey-600">{title}</span>
+                  <span class="text-base/snug whitespace-pre-line text-grey-900">{address}</span>
+                </span>
+              </label>
+            </div>
+          </dd>
+        </dl>
+
+        <.button
+          type="submit"
+          phx-disable-with={gettext("Processing...")}
+          class="h-11 w-full max-w-44 self-end"
+          variant="primary"
+          accent="teal"
+        >
+          {pgettext("sales invoice creator", "Next")}
+        </.button>
+      </form>
+    </section>
+
+    <h2 :if={@copied_invoice} class="mb-4 text-lg/snug font-medium text-grey-900">
+      {gettext("Or choose another counterparty")}
+    </h2>
+
     <div class="flex flex-1 flex-col-reverse items-center gap-5 md:flex-row md:items-start">
       <div
         :if={@counterparties_zero_state?}
