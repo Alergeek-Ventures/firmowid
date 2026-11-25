@@ -86,12 +86,19 @@ jobs:
             priv/gettext/uk/LC_MESSAGES/default.po
           if-no-files-found: error
 
+  # ExUnit partitions the test files between the shards; each shard has its own runner and
+  # services. "Build and test" below reports their combined result as the required check.
   build:
-    name: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 'Coverage ABBA benchmark' || 'Build and test' }}
+    name: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 'Coverage ABBA benchmark' || format('Test partition {0} of {1}', matrix.partition, strategy.job-total) }}
     # One shared runner/setup/service definition keeps both benchmark arms identical.
     if: >-
       ${{ !cancelled() &&
           (inputs.catalog-version != '' || needs.translations.result == 'success' || needs.benchmark-translations.result == 'success') }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && '[1]' || '[1, 2]') }}
 
     runs-on: selenge
     timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 120 || 360 }}
@@ -189,14 +196,19 @@ jobs:
 
       - name: Create and migrate database
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
+        env:
+          MIX_TEST_PARTITION: ${{ matrix.partition }}
         run: mix ash.setup
 
       - name: Run tests with LCOV coverage report
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
         id: tests
+        env:
+          MIX_TEST_PARTITION: ${{ matrix.partition }}
+          PARTITIONS: ${{ strategy.job-total }}
         run: |
           set -o pipefail
-          mix coveralls.lcov 2>&1 | tee coveralls.log
+          mix coveralls.lcov --partitions "$PARTITIONS" 2>&1 | tee coveralls.log
 
       - name: Run paired coverage benchmark on this runner
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark }}
@@ -223,7 +235,7 @@ jobs:
         if: ${{ always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: excoveralls-test-log
+          name: excoveralls-test-log-${{ matrix.partition }}
           path: coveralls.log
           if-no-files-found: warn
 
@@ -231,9 +243,24 @@ jobs:
         if: ${{ always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: excoveralls-lcov-report
+          name: excoveralls-lcov-report-${{ matrix.partition }}
           path: cover/lcov.info
           if-no-files-found: ${{ steps.tests.outcome == 'success' && 'error' || 'warn' }}
+
+  result:
+    name: Build and test
+    if: ${{ !cancelled() && needs.build.result != 'skipped' && !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
+    runs-on: selenge-small
+    needs: build
+    steps:
+      - name: Require every test partition to pass
+        env:
+          RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$RESULT" != success ]; then
+            echo "::error::A test partition finished with: $RESULT"
+            exit 1
+          fi
 
   coverage-report:
     name: Publish coverage summary and PR comment
@@ -251,10 +278,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Download coverage LCOV report
+      # Each partition's report lands in cover/<artifact name>/; octocov merges the paths listed in .octocov.yml.
+      - name: Download coverage LCOV reports
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: excoveralls-lcov-report
+          pattern: excoveralls-lcov-report-*
           path: cover
 
       - name: Publish coverage summary and PR comment

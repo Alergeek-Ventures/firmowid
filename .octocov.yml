@@ -1,6 +1,8 @@
 coverage:
+  # One partial report per test partition of elixir-build-and-test.yml; octocov merges them.
   paths:
-    - cover/lcov.info
+    - cover/excoveralls-lcov-report-1/lcov.info
+    - cover/excoveralls-lcov-report-2/lcov.info
 
 summary:
   if: true
