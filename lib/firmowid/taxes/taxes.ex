@@ -68,15 +68,20 @@ defmodule Firmowid.Taxes do
                     "output VAT pays 0 and carries the surplus forward. " <>
                     "cit: advances of a limited company with a saved CIT rate and advance form (none for " <>
                     "simplified advances); cumulative from 1 January: details revenue, costs, income, tax " <>
-                    "(on the whole income so far), advances_before, rate in percent. " <>
+                    "(on the whole income so far), advances_before, rate in percent; revenue includes transfer_revenue. " <>
                     "pit and zus: per partner of a sole proprietorship or civil partnership, member_id is the " <>
-                    "partner (see list_tax_years); pit details revenue, costs, income (the partner's share, " <>
+                    "partner (see list_tax_years); pit details revenue, transfer_revenue (the part of revenue " <>
+                    "from incoming transfers without an invoice), costs, income (the partner's share, " <>
                     "cumulative), social_deducted, health_deducted, tax_base, tax, advances_before, income_tax, " <>
                     "rate (nil on the tax scale), rates_year; zus is monthly, details pension, disability, " <>
                     "accident, sickness, labour_fund, health, social_base, health_base, rates_year. " <>
                     "vat and cit details also have cost_invoices_without_vat, the cost invoices up to the period " <>
                     "without a VAT amount: they bring no input VAT and count at their gross amount in CIT costs. " <>
-                    "Simplifications: sales outside invoices are not counted; costs are cost invoices net of VAT, " <>
+                    "Simplifications: revenue is issued invoices net of VAT plus incoming transfers without an invoice " <>
+                    "that the analysis put into a revenue category (not from a tax office or ZUS, between own " <>
+                    "accounts, unclassified or other_income), at their gross amount: a VAT payer's revenue " <>
+                    "is overstated by the VAT in them, and the VAT of such sales is not forecast; " <>
+                    "costs are cost invoices net of VAT, " <>
                     "salary transfers and skipped outgoing transfers that the analysis put into a cost " <>
                     "category (not taxes, ZUS of owners or transfers between own accounts; unclassified " <>
                     "transfers are not costs); no depreciation, reliefs or losses of earlier years; " <>

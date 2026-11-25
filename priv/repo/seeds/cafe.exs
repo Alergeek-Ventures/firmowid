@@ -14,6 +14,7 @@ defmodule Firmowid.Seeds.Cafe do
   café organization already exists.
   """
 
+  alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Core.Organization, as: CoreOrganization
   alias Firmowid.Core.User, as: CoreUser
   alias Firmowid.Seeds.Helpers
@@ -166,9 +167,12 @@ defmodule Firmowid.Seeds.Cafe do
       week_end = Date.add(date, -2)
       amount = 13_500 * season(date) * jitter({:card, date}, 0.12)
 
-      incoming!(ctx, "card_#{date}", date, amount, "Fiserv Polska S.A.",
-        remittance: "Rozliczenie transakcji kartowych #{week_start}..#{range_end(week_start, week_end)}"
-      )
+      transaction =
+        incoming!(ctx, "card_#{date}", date, amount, "Fiserv Polska S.A.",
+          remittance: "Rozliczenie transakcji kartowych #{week_start}..#{range_end(week_start, week_end)}"
+        )
+
+      categorize!(transaction, :on_site, ctx)
     end
   end
 
@@ -178,25 +182,31 @@ defmodule Firmowid.Seeds.Cafe do
       period = "#{Date.beginning_of_month(previous)}..#{Date.end_of_month(previous)}"
 
       with_date(first, 9, fn date ->
-        incoming!(
-          ctx,
-          "pyszne_#{date}",
-          date,
-          6_400 * f * jitter({:pyszne, date}, 0.1),
-          "Takeaway.com Polska Sp. z o.o.",
-          remittance: "Wypłata Pyszne.pl za zamówienia #{period}"
-        )
+        transaction =
+          incoming!(
+            ctx,
+            "pyszne_#{date}",
+            date,
+            6_400 * f * jitter({:pyszne, date}, 0.1),
+            "Takeaway.com Polska Sp. z o.o.",
+            remittance: "Wypłata Pyszne.pl za zamówienia #{period}"
+          )
+
+        categorize!(transaction, :delivery, ctx)
       end)
 
       with_date(first, 12, fn date ->
-        incoming!(
-          ctx,
-          "glovo_#{date}",
-          date,
-          4_300 * f * jitter({:glovo, date}, 0.1),
-          "Glovoapp Poland Sp. z o.o.",
-          remittance: "Rozliczenie Glovo za okres #{period}"
-        )
+        transaction =
+          incoming!(
+            ctx,
+            "glovo_#{date}",
+            date,
+            4_300 * f * jitter({:glovo, date}, 0.1),
+            "Glovoapp Poland Sp. z o.o.",
+            remittance: "Rozliczenie Glovo za okres #{period}"
+          )
+
+        categorize!(transaction, :delivery, ctx)
       end)
     end)
   end
@@ -573,6 +583,33 @@ defmodule Firmowid.Seeds.Cafe do
       Decimal.negate(to_decimal(amount)),
       Keyword.merge([counterparty: creditor, skip_invoicing: true], opts)
     )
+  end
+
+  # The analysis counts an incoming skipped transfer as revenue only when it has
+  # a revenue category, so each payout carries the category of its sales channel.
+  defp categorize!(transaction, category, ctx) do
+    query =
+      Ash.Query.filter(
+        EntryCategory,
+        entity_type == :transaction and resource_id == ^transaction.id
+      )
+
+    if !Ash.exists?(query, tenant: ctx.org_id, authorize?: false) do
+      Ash.Seed.seed!(
+        EntryCategory,
+        %{
+          organization_id: ctx.org_id,
+          entity_type: :transaction,
+          resource_id: transaction.id,
+          category: category,
+          probability: 1.0,
+          probabilities: %{Atom.to_string(category) => 1.0}
+        },
+        tenant: ctx.org_id
+      )
+    end
+
+    :ok
   end
 
   # Positive amount: incoming from `counterparty`; negative: outgoing to it.

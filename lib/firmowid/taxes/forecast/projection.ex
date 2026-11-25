@@ -45,7 +45,8 @@ defmodule Firmowid.Taxes.Forecast.Projection do
           required(:side) => atom(),
           required(:amount) => Decimal.t(),
           required(:date) => Date.t(),
-          optional(:projected?) => boolean()
+          optional(:projected?) => boolean(),
+          optional(atom()) => any()
         }
 
   @doc """
