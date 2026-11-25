@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   end
 
   defp load_status(socket) do
-    %{scope: scope, organization: organization, taxes_enabled: taxes?} = socket.assigns
+    %{scope: scope, organization: organization} = socket.assigns
 
     assign_async(socket, :status, fn ->
       {:ok, session} = Session.get_current(scope: scope)
@@ -63,7 +63,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         # Items the company put aside wait without being counted.
         company:
           scope
-          |> Queue.attention_items(organization, taxes?: taxes?)
+          |> Queue.attention_items(organization)
           |> Queue.split_put_aside(scope)
           |> elem(0)
           |> length(),

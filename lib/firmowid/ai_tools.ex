@@ -47,17 +47,14 @@ defmodule Firmowid.AiTools do
     :list_analysis_entries,
     :list_analysis_tags,
     :set_analysis_entry_category,
-    :set_analysis_entry_project_tags
+    :set_analysis_entry_project_tags,
+    :list_tax_years,
+    :suggest_tax_settings
   ]
 
   # The confirmation widget reports the KSeF outcome on MCP; the assistant's invoice card shows it
   # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
   @assistant_only [:wait_for_ksef_submissions]
-
-  # The app hides tax settings behind the `taxes` flag, so the assistant offers these tools only
-  # once the company has chosen its legal form there (`Firmowid.Assistant.ToolPolicy.tools/1`);
-  # MCP gets them when the feature is public.
-  @taxes [:list_tax_years, :suggest_tax_settings]
 
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
@@ -65,9 +62,5 @@ defmodule Firmowid.AiTools do
 
   @doc "Returns the tools exposed to the in-app assistant."
   @spec assistant() :: [atom()]
-  def assistant, do: @shared ++ @assistant_only ++ @taxes
-
-  @doc "Returns the tax settings tools, which the assistant offers once the legal form is chosen."
-  @spec taxes() :: [atom()]
-  def taxes, do: @taxes
+  def assistant, do: @shared ++ @assistant_only
 end

@@ -35,7 +35,6 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   attr :current_uri, URI, required: true
   attr :analysis_enabled, :boolean, required: true
   attr :delegations_enabled, :boolean, required: true
-  attr :taxes_enabled, :boolean, required: true
   attr :scope, Firmowid.Scope, required: true
 
   @doc "Renders the sidebar and, on phones, the top bar that opens it."
@@ -140,7 +139,6 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         id={SidebarNav.id()}
         scope={@scope}
         organization={@current_org}
-        taxes_enabled={@taxes_enabled}
         layer={@layer}
         layered?={@layered?}
         current_id={@current_id}

@@ -27,7 +27,6 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Inbox.Components.Queue
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import Phoenix.Component, except: [link: 1]
 
@@ -205,7 +204,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
     {items, put_aside} =
       layer
-      |> Queue.items(scope, organization, today, taxes?: flag_enabled?(:taxes, socket.assigns))
+      |> Queue.items(scope, organization, today)
       |> Queue.split_put_aside(scope)
 
     # Items hidden for good are not listed anywhere.
