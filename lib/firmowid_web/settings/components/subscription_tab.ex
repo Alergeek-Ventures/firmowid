@@ -19,6 +19,10 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   @spec subscription_tab(map()) :: Phoenix.LiveView.Rendered.t()
   attr :worksheet, :any, required: true
 
+  attr :ocr_documents_row, :any,
+    default: nil,
+    doc: "the month's documents sent to OCR, as a usage row"
+
   attr :subscription, :any, default: nil, doc: "the subscription as Stripe reports it, if any"
   attr :plan_granted?, :boolean, default: false
 
@@ -214,7 +218,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div class="rounded-lg bg-grey-50 p-4">
             <div class="divide-y divide-grey-200">
-              <%= for row <- @worksheet.usage_rows do %>
+              <%= for row <- @worksheet.usage_rows ++ List.wrap(@ocr_documents_row) do %>
                 <div class="space-y-2 py-4 first:pt-0 last:pb-0">
                   <div class="flex items-start justify-between gap-4 text-sm/snug">
                     <div class="min-w-0">

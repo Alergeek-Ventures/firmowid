@@ -22,12 +22,26 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
 
   @moduletag capture_log: true
 
+  test "a company on the Free plan cannot start a conversation and sees the notice instead of the assistant",
+       %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    assert {:error, %Ash.Error.Forbidden{}} =
+             Assistant.start_conversation(%{text: "Hello"}, scope: scope)
+
+    {:ok, view, _html} = conn |> log_in_user(owner) |> live(~p"/asystent")
+    assert render(view) =~ "Przedsiębiorca"
+    refute has_element?(view, "#firmowid-assistant")
+    refute has_element?(view, "#assistant-launcher")
+  end
+
   test "a queued confirmation of the rendered old plan cannot approve a newer plan or unlink its payment",
        %{
          conn: conn
        } do
     Oban.Testing.with_testing_mode(:manual, fn ->
-      owner = admin_fixture()
+      owner = admin_fixture(%{plan: :przedsiebiorca})
       scope = Scope.new!(owner, owner.member.organization_id)
       account = bank_account_fixture!(owner)
 
@@ -212,7 +226,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   test "a malformed pending plan stays rejectable and cannot be approved",
        %{conn: conn} do
     Oban.Testing.with_testing_mode(:manual, fn ->
-      owner = admin_fixture()
+      owner = admin_fixture(%{plan: :przedsiebiorca})
       scope = Scope.new!(owner, owner.member.organization_id)
 
       # AshAI may ask for approval before validating tool names and arguments.
@@ -281,7 +295,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft update card shows the buyer's tax ID and address it changes", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
 
     draft = seed_draft(scope)
@@ -322,7 +336,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "an add sessions card shows which sessions are remote work", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
     project = Ash.Seed.seed!(Project, %{organization_id: scope.tenant, name: "Projekt testowy"})
 
@@ -368,7 +382,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a profile card shows a bank account number the member does not have yet", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
 
     plan =
       open_plan(conn, owner, "update_profile", %{
@@ -382,7 +396,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "an add sessions card reads remote work the way the action casts it", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
 
     project =
       Ash.Seed.seed!(Project, %{
@@ -410,7 +424,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft card shows the outer value an inner null leaves in place", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
     # The action keeps the outer true: a null on a field with a default means "left out".
@@ -425,7 +439,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft card ignores a null on a field with a default, as the action does", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
     draft = seed_draft(scope, %{is_reverse_charge: true})
 
@@ -444,7 +458,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   test "a profile card shows the correspondence address the same-address flag clears", %{
     conn: conn
   } do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
 
     Ash.Seed.update!(owner.member, %{correspondence_address: "ul. Stara 1, 00-001 Warszawa"})
 
@@ -462,7 +476,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft card whose inner input is not a map stays rejectable", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
     # The action decodes a JSON string into the map it applies; the card does not.
@@ -477,7 +491,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a note card whose note is not text stays rejectable", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
     plan =
@@ -491,7 +505,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft card shows the counterparty a revision unlinks", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
 
     counterparty =
@@ -520,7 +534,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   test "a draft card shows the buyer type, PESEL, cash accounting, GTU code and mail country", %{
     conn: conn
   } do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
     plan =
@@ -563,7 +577,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "the card of a new advance invoice draft can be approved", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
 
     scope.tenant
@@ -604,7 +618,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   end
 
   test "a draft card shows the invoice type it changes", %{conn: conn} do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
 
     plan =
@@ -628,7 +642,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   test "a draft card that changes only a field it has no row for cannot be approved", %{
     conn: conn
   } do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     scope = Scope.new!(owner, owner.member.organization_id)
 
     # The revision refreshes the seller's address from the organization; the card has no row for it.
@@ -645,9 +659,9 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   test "a draft card linking a counterparty of another organization cannot be approved", %{
     conn: conn
   } do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))
-    stranger = admin_fixture()
+    stranger = admin_fixture(%{plan: :przedsiebiorca})
 
     counterparty =
       Ash.Seed.seed!(Counterparty, %{

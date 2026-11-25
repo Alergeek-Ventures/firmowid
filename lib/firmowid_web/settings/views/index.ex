@@ -38,7 +38,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
+  alias FirmowidWeb.Billing.Utilities.OcrLimit
   alias FirmowidWeb.Billing.Utilities.PlanOffer
+  alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
   alias FirmowidWeb.Inbox.Components.SidebarNav
@@ -137,6 +139,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_credentials, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
+     |> assign(:ocr_documents_row, nil)
      |> assign(:active_subscription, nil)
      |> assign(:plan_granted?, false)
      |> assign(:plan_purchase, nil)
@@ -336,8 +339,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:success, gettext("The file has been sent."))
 
       {:error, err} ->
-        Logger.warning("Employment contract upload failed", error_kind: ErrorKind.classify(err))
-        LiveToast.send_toast(:error, gettext("An error occurred while sending the file."))
+        if Blobs.ocr_limit_error?(err) do
+          OcrLimit.toast_refusal(err, entry.client_name)
+        else
+          Logger.warning("Employment contract upload failed", error_kind: ErrorKind.classify(err))
+          LiveToast.send_toast(:error, gettext("An error occurred while sending the file."))
+        end
     end
 
     {:noreply, socket}
@@ -1104,7 +1111,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     ~H"""
     <.settings_page title={@page_title}>
       <:actions :if={@settings_tab == :delegations}>
-        <.plan_business_trip_link />
+        <.plan_business_trip_link current_org={@current_org} />
       </:actions>
       <.settings_avatar
         :if={@settings_tab == :organization}
@@ -1142,6 +1149,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :subscription -> %>
           <.subscription_tab
             worksheet={@subscription_worksheet}
+            ocr_documents_row={@ocr_documents_row}
             subscription={@active_subscription}
             plan_granted?={@plan_granted?}
             purchase={@plan_purchase}
@@ -1162,6 +1170,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           <.delegations_list delegations={@delegations} />
         <% :leaves -> %>
           <.leave_section
+            current_org={@current_org}
             leave_requests={@leave_requests}
             leave_request_form={@leave_request_form}
             leave_request_upload={@uploads.leave_request_attachment}
@@ -1172,6 +1181,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           <.live_component
             module={DocumentsSection}
             id="profile-documents"
+            current_org={@current_org}
             user={@current_user}
             scope={@ash_scope}
             feature_flags={@feature_flags}
@@ -1181,6 +1191,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :profile -> %>
           <.profile_tab
             current_user={@current_user}
+            current_org={@current_org}
             ash_scope={@ash_scope}
             member_form={@member_form}
             contract_form={@contract_form}
@@ -1314,6 +1325,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       socket
       |> assign(:subscription_worksheet, worksheet)
+      |> assign(
+        :ocr_documents_row,
+        Worksheet.ocr_documents_row(OcrLimit.usage(scope, current_org))
+      )
       |> assign(:active_subscription, subscription)
       |> assign(:plan_granted?, plan_granted?)
       |> assign(

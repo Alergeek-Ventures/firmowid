@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Inbox.Views.IndexTest do
   end
 
   test "a pending leave request leads the admin to the employee's leaves", %{conn: conn} do
-    admin = admin_fixture()
+    admin = admin_fixture(%{plan: :przedsiebiorca})
     employee = user_in_org_fixture(admin.member.organization_id, %{name: "Jan Kowalski"})
 
     request =

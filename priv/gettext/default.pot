@@ -224,6 +224,14 @@ msgid_plural "%{count} days late"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
+#: lib/firmowid_web/organization/views/first_steps.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} document"
+msgid_plural "%{count} documents"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} invoice so far, the number grows live"
@@ -694,24 +702,9 @@ msgstr ""
 msgid "1.67% applies to companies reporting fewer than 10 people for insurance. You will find a different rate in the notice from ZUS."
 msgstr ""
 
-#: lib/firmowid_web/organization/views/first_steps.ex
-#, elixir-autogen, elixir-format
-msgid "10 credits / month"
-msgstr ""
-
-#: lib/firmowid_web/billing/utilities/plan_offer.ex
-#, elixir-autogen, elixir-format
-msgid "10 documents"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "2 years"
-msgstr ""
-
-#: lib/firmowid_web/billing/utilities/plan_offer.ex
-#, elixir-autogen, elixir-format
-msgid "50 documents"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
@@ -848,6 +841,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Absence request"
+msgstr ""
+
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "Absence requests are available in the %{plan} plan."
 msgstr ""
 
 #: lib/firmowid_web/settings/utilities/navigation.ex
@@ -1184,6 +1182,11 @@ msgstr ""
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Add your first project and assign yourself to it to start tracking time"
+msgstr ""
+
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "Adding employee contracts is available in the %{plan} plan."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -1774,6 +1777,12 @@ msgstr ""
 msgid "Ask the assistant"
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "Ask the company owner to change the plan."
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Assign projects in the analysis"
@@ -1798,6 +1807,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Assistant in Firmowid, ChatGPT and Claude"
+msgstr ""
+
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
+#, elixir-autogen, elixir-format
+msgid "Assistant in the app"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -2274,6 +2288,11 @@ msgstr ""
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Business trips"
+msgstr ""
+
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "Business trips are available in the %{plan} plan."
 msgstr ""
 
 #: lib/firmowid_web/management/components/delegations_tab.ex
@@ -3332,6 +3351,11 @@ msgstr ""
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Connected to KSeF."
+msgstr ""
+
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#, elixir-autogen, elixir-format
+msgid "Connecting AI clients is available in the %{plan} plan."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -4674,6 +4698,7 @@ msgid "Do you have an invoice?"
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/plan_offer.ex
+#: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Document OCR"
@@ -4714,6 +4739,11 @@ msgstr ""
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Documents"
+msgstr ""
+
+#: lib/firmowid_web/billing/utilities/worksheet.ex
+#, elixir-autogen, elixir-format
+msgid "Documents sent to OCR this month."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex
@@ -5147,11 +5177,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Employee PPK rate (%)"
-msgstr ""
-
-#: lib/firmowid_web/billing/utilities/plan_offer.ex
-#, elixir-autogen, elixir-format
-msgid "Employee and project management"
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/plan_offer.ex
@@ -9563,14 +9588,14 @@ msgstr ""
 msgid "Paid features for free"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "Paid features free until the end of next month. No card required."
-msgstr ""
-
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #, elixir-autogen, elixir-format
 msgid "Paid in advance: in the next step you enter the date the payment was received, with no due date."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/pricing.ex
+#, elixir-autogen, elixir-format
+msgid "Paid plans are free for the first 30 days."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -11098,6 +11123,12 @@ msgstr ""
 msgid "See in analysis."
 msgstr ""
 
+#: lib/firmowid_web/auth/components/mcp_consent.ex
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "See the subscription"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "See what the Free plan includes"
@@ -12289,6 +12320,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "The annual request not to withhold advances is recorded but not calculated."
+msgstr ""
+
+#: lib/firmowid_web/billing/components/plan_notice.ex
+#, elixir-autogen, elixir-format
+msgid "The assistant is available in the %{plan} plan."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -15286,6 +15322,11 @@ msgstr ""
 msgid "Your plan has changed. Check what stays switched on again."
 msgstr ""
 
+#: lib/firmowid/blobs/changes/enforce_ocr_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Your plan's monthly limit of documents for OCR is used up."
+msgstr ""
+
 #: lib/firmowid_web/development/views/modals.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #, elixir-autogen, elixir-format
@@ -15612,6 +15653,11 @@ msgstr ""
 #: lib/firmowid_web/timetracker/components/overlap.ex
 #, elixir-autogen, elixir-format
 msgid "fits entirely in this session"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/pricing.ex
+#, elixir-autogen, elixir-format
+msgid "for 30 days"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -16284,11 +16330,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "invoice payment status"
 msgid "unpaid"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "until the end of next month"
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/plan_offer.ex

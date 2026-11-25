@@ -22,7 +22,7 @@ defmodule Firmowid.AssistantTest do
   @moduletag capture_log: true
 
   setup do
-    owner = admin_fixture()
+    owner = admin_fixture(%{plan: :przedsiebiorca})
     %{owner: owner, scope: Scope.new!(owner, owner.member.organization_id)}
   end
 
@@ -380,7 +380,7 @@ defmodule Firmowid.AssistantTest do
     Oban.Testing.with_testing_mode(:manual, fn ->
       conversation = pending_conversation(scope)
       colleague = admin_fixture(%{organization_id: scope.tenant})
-      outsider = admin_fixture()
+      outsider = admin_fixture(%{plan: :przedsiebiorca})
 
       foreign_tenant =
         Ash.Seed.seed!(Conversation, %{

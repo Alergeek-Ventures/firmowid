@@ -56,7 +56,9 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     default: false,
     doc: "whether the member may confirm counterparty categories"
 
-  attr :assistant, :map, required: true, doc: "the assistant context of `AskAssistant.button/1`"
+  attr :assistant, :map,
+    default: nil,
+    doc: "the assistant context of `AskAssistant.button/1`; nil when the plan has no assistant"
 
   @doc "Renders what is left of the period's income and its costs and income by category."
   @spec details(map()) :: Phoenix.LiveView.Rendered.t()
@@ -144,7 +146,12 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         </p>
         <.story :if={@story} story={@story} comparisons={@comparisons} />
       </div>
-      <AskAssistant.tiles id="analysis-period-questions" context={@assistant} questions={@questions} />
+      <AskAssistant.tiles
+        :if={@assistant}
+        id="analysis-period-questions"
+        context={@assistant}
+        questions={@questions}
+      />
       <div
         :if={@months != []}
         class="grid grid-cols-[minmax(0,1fr)] gap-8 pt-4 @5xl:grid-cols-2"

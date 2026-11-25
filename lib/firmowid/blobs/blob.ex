@@ -165,6 +165,11 @@ defmodule Firmowid.Blobs.Blob do
               )
     end
 
+    read :ocr_documents do
+      description "The documents sent to OCR this month, which the plan's monthly limit counts."
+      prepare Firmowid.Blobs.Preparations.OcrDocumentsThisMonth
+    end
+
     create :create_blob do
       description "Upload a file to S3 and create a blob record."
 
@@ -178,6 +183,7 @@ defmodule Firmowid.Blobs.Blob do
 
       argument :processing_metadata, :map, default: %{}
 
+      change Firmowid.Blobs.Changes.EnforceOcrLimit
       change UploadToS3
       change Firmowid.Blobs.Changes.SetProcessingDefaults
 

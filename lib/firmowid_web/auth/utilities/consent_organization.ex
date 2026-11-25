@@ -14,6 +14,11 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   company creates or joins one, and an admin finishes the company's setup. Signed
   out, the OAuth server sends the person to sign in or sign up; the client is
   remembered so the pages can name it.
+
+  Only organizations whose billing plan includes AI clients are offered and
+  accepted. When the account has none, this plug answers the GET itself with a
+  statement instead of the consent, so no code is issued, not even for an earlier
+  consent. Tokens already issued are not touched (see `FirmowidMcp.PlanGate`).
   """
 
   @behaviour Plug
@@ -22,10 +27,19 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   import Phoenix.Controller, only: [current_path: 1, redirect: 2]
 
   import Plug.Conn,
-    only: [fetch_query_params: 1, get_session: 2, halt: 1, register_before_send: 2]
+    only: [
+      fetch_query_params: 1,
+      get_session: 2,
+      halt: 1,
+      put_resp_content_type: 2,
+      put_resp_header: 3,
+      register_before_send: 2,
+      send_resp: 3
+    ]
 
   alias AshAuthentication.Oauth2Server.Authorize
   alias AshAuthentication.Phoenix.Oauth2Server.Errors
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core
   alias Firmowid.Core.User
   alias FirmowidWeb.Auth.Components.ClientLogo
@@ -68,7 +82,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
       Core.select_member(user, members, get_session(conn, UserAuth.organization_session_key()))
 
     case setup_path(selected) do
-      nil -> consent(conn, members, selected.member)
+      nil -> consent_or_unavailable(conn, selected, members)
       path -> continue_after_setup(conn, path)
     end
   end
@@ -121,6 +135,52 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     end
   end
 
+  # Only organizations whose plan includes AI clients can be connected; with none, the
+  # statement replaces the consent, so the OAuth server issues no code, not even for an
+  # earlier consent.
+  defp consent_or_unavailable(conn, selected, members) do
+    case Enum.filter(members, &connectable?/1) do
+      [] -> unavailable(conn, selected)
+      connectable -> consent(conn, connectable, preselected(connectable, selected.member))
+    end
+  end
+
+  defp connectable?(member), do: PlanCatalog.includes?(member.organization.billing_plan, :ai)
+
+  defp preselected(connectable, member) do
+    Enum.find(
+      connectable,
+      List.first(connectable),
+      &(&1.organization_id == member.organization_id)
+    )
+  end
+
+  defp unavailable(conn, %User{id: user_id, member: member}) do
+    case client(conn) do
+      {:ok, _client} ->
+        body =
+          McpConsent.render(:unavailable, %{
+            app: consent_app(conn),
+            organization: member.organization,
+            owner?: member.organization.owner_id == user_id
+          })
+
+        conn
+        |> PendingAuthorization.delete()
+        |> put_resp_content_type("text/html")
+        |> put_resp_header("x-frame-options", "DENY")
+        |> put_resp_header("content-security-policy", "frame-ancestors 'none'")
+        |> send_unavailable(body)
+
+      :invalid ->
+        conn
+    end
+  end
+
+  # sobelow_skip ["XSS.SendResp"]
+  # The page is rendered by HEEx, which escapes the company name; no request value is in it.
+  defp send_unavailable(conn, body), do: conn |> send_resp(200, body) |> halt()
+
   defp consent(conn, members, selected) do
     McpConsent.put_context(Enum.map(members, & &1.organization), selected, consent_app(conn))
 
@@ -161,7 +221,16 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
         )
 
       member ->
-        set_tenant(conn, member.organization_id)
+        if connectable?(member) do
+          set_tenant(conn, member.organization_id)
+        else
+          Errors.send_oauth_error(
+            conn,
+            400,
+            "invalid_request",
+            "the plan of the organization does not include AI clients"
+          )
+        end
     end
   end
 

@@ -11,7 +11,7 @@ defmodule FirmowidMcp.Timetracker.AddSessionsTest do
   alias FirmowidMcp.Router
 
   setup do
-    user = user_fixture()
+    user = user_fixture(%{plan: :przedsiebiorca})
     organization_id = user.member.organization_id
     project = project_fixture(%{organization_id: organization_id})
     user_project_fixture(user.id, project.id, organization_id)

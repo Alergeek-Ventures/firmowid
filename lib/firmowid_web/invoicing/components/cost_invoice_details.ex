@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Ksef
+  alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
@@ -272,6 +273,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               />
             <% not Enum.empty?(@invoice.transactions) -> %>
               <InvoiceDetails.transaction_match
+                assistant?={AssistantNavigation.available?(@current_user.member.organization)}
                 is_cost_invoice={@is_cost_invoice}
                 transactions={@invoice.transactions}
               >
@@ -285,6 +287,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               </InvoiceDetails.transaction_match>
             <% true -> %>
               <InvoiceDetails.potential_transactions
+                assistant?={AssistantNavigation.available?(@current_user.member.organization)}
                 potential_transactions={@potential_transactions}
                 is_cost_invoice={@is_cost_invoice}
                 invoice={@invoice}

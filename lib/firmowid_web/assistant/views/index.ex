@@ -6,6 +6,9 @@ defmodule FirmowidWeb.Assistant.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Billing.Components.PlanNotice, only: [plan_notice: 1]
+
+  alias FirmowidWeb.Assistant.Utilities.Navigation
   alias FirmowidWeb.Assistant.Views.Floating
 
   @impl true
@@ -20,11 +23,18 @@ defmodule FirmowidWeb.Assistant.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    {live_render(@socket, Floating,
-      id: "assistant-page",
-      container: {:div, class: "flex flex-1 flex-col"},
-      session: %{"organization_id" => @current_org.id, "page" => true}
-    )}
+    <%= if Navigation.available?(@current_org) do %>
+      {live_render(@socket, Floating,
+        id: "assistant-page",
+        container: {:div, class: "flex flex-1 flex-col"},
+        session: %{"organization_id" => @current_org.id, "page" => true}
+      )}
+    <% else %>
+      <div class="flex w-full flex-col gap-6 px-4 py-6 md:px-10 md:pt-8 md:pb-12">
+        <h1 class="text-3xl/[1.3] font-bold text-grey-900">{@page_title}</h1>
+        <.plan_notice feature={:ai} current_org={@current_org} current_user={@current_user} />
+      </div>
+    <% end %>
     """
   end
 end

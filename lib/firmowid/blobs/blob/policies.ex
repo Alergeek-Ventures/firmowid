@@ -6,6 +6,7 @@ defmodule Firmowid.Blobs.Blob.Policies do
   alias Firmowid.Blobs.Checks.CanReadHolder
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.PlanIncludes
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Delegations.DelegationExpense
@@ -18,6 +19,17 @@ defmodule Firmowid.Blobs.Blob.Policies do
   alias Firmowid.Timetracker.LeaveRequest
 
   policies do
+    # Declared before the admin bypass so it binds admins too. The plan limits
+    # starting an employment contract upload; the processor that turns an upload
+    # into a contract is a system actor and passes.
+    policy [
+      action(:create_blob),
+      changing_attributes(processing_target: [to: :employment_contract])
+    ] do
+      forbid_unless {PlanIncludes, feature: :employee_contracts}
+      authorize_if always()
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
@@ -68,6 +80,11 @@ defmodule Firmowid.Blobs.Blob.Policies do
     # Other system actors: no access
     policy Firmowid.Checks.IsSystemActor do
       forbid_if always()
+    end
+
+    policy action(:ocr_documents) do
+      description "Any member sees how many documents the organization has sent to OCR this month."
+      authorize_if always()
     end
 
     policy action(:list) do

@@ -101,11 +101,26 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   end
 
   defp ensure_organization_access(socket, %{actor: user, tenant: tenant}) do
-    %{id: member_id, role: role} = user.member
+    %{id: member_id, role: role, organization: %{billing_plan: plan}} = user.member
 
     case Core.load_member(user, tenant) do
-      %{member: %{id: ^member_id, role: ^role, organization_id: ^tenant}} ->
+      %{
+        member: %{
+          id: ^member_id,
+          role: ^role,
+          organization_id: ^tenant,
+          organization: %{billing_plan: ^plan}
+        }
+      } ->
         {:cont, socket}
+
+      # The plan changed under an open page, whose actor still carries the old one:
+      # start again from the inbox with what the plan includes now. The plan limit
+      # page notices the change itself and tells the admin.
+      %{member: %{id: ^member_id, role: ^role, organization_id: ^tenant}} ->
+        if socket.view == PlanLimit,
+          do: {:cont, socket},
+          else: {:halt, redirect(socket, to: ~p"/skrzynka")}
 
       _ ->
         {:halt, redirect(socket, to: OrganizationNavigation.onboarding_path())}

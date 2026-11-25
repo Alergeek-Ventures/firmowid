@@ -41,7 +41,7 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
   end
 
   test "legacy batches redact invoice results even when a ping has the same id" do
-    user = user_fixture(%{role: :invoicing})
+    user = user_fixture(%{role: :invoicing, plan: :przedsiebiorca})
 
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -82,7 +82,7 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
   end
 
   defp assert_private_arguments(arguments, error? \\ true) do
-    user = user_fixture(%{role: :invoicing})
+    user = user_fixture(%{role: :invoicing, plan: :przedsiebiorca})
 
     {:ok, token, claims} =
       AshAuthentication.Oauth2Server.Jwt.mint(Firmowid.Oauth2Server,

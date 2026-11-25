@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Payroll
+  alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
@@ -111,12 +112,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 Ash.can?({Transaction, :set_skip_invoicing}, @current_user)
               } />
             <% @transaction.reconciliation_status == :matched -> %>
-              <ShowComponents.linked_state transaction={@transaction} return_to={@return_to} />
+              <ShowComponents.linked_state
+                assistant?={AssistantNavigation.available?(@current_org)}
+                transaction={@transaction}
+                return_to={@return_to}
+              />
             <% true -> %>
               <div class="flex flex-col gap-18">
                 <ShowComponents.invoice_suggestions suggestions={@invoice_suggestions} />
                 <SalaryComponents.suggestions suggestions={@salary_suggestions} />
                 <ShowComponents.empty_state
+                  assistant?={AssistantNavigation.available?(@current_org)}
                   transaction={@transaction}
                   can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
                   show_no_recommendations={@invoice_suggestions == [] and @salary_suggestions == []}

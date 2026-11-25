@@ -27,7 +27,7 @@ defmodule Firmowid.Billing.SnapshotCalculator do
   def build_snapshot_attrs!(%Organization{} = organization, month) do
     month = normalize_month(month)
     scope = org_scope(organization.id)
-    {inserted_from, inserted_to} = warsaw_month_utc_bounds(month)
+    {inserted_from, inserted_to} = Month.utc_bounds(month)
 
     %{
       month: month,
@@ -136,18 +136,4 @@ defmodule Firmowid.Billing.SnapshotCalculator do
   end
 
   defp normalize_month(month), do: Month.normalize(month)
-
-  defp warsaw_month_utc_bounds(month) do
-    local_start =
-      month |> NaiveDateTime.new!(~T[00:00:00]) |> DateTime.from_naive!(@warsaw_timezone)
-
-    local_end =
-      month
-      |> Date.end_of_month()
-      |> Date.add(1)
-      |> NaiveDateTime.new!(~T[00:00:00])
-      |> DateTime.from_naive!(@warsaw_timezone)
-
-    {DateTime.shift_zone!(local_start, "Etc/UTC"), DateTime.shift_zone!(local_end, "Etc/UTC")}
-  end
 end

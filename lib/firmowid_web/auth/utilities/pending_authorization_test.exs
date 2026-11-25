@@ -77,8 +77,10 @@ defmodule FirmowidWeb.Auth.Utilities.PendingAuthorizationTest do
     assert {:error, {:redirect, %{to: ^authorize_path}}} =
              first_steps |> form("#finish-form") |> render_submit()
 
-    organization_id =
-      Core.load_member(Core.get_user_by_email!(context.email, authorize?: false)).member.organization_id
+    # The company starts on the Free plan, which has no AI clients.
+    member = Core.load_member(Core.get_user_by_email!(context.email, authorize?: false)).member
+    Ash.Seed.update!(member.organization, %{billing_plan: :przedsiebiorca})
+    organization_id = member.organization_id
 
     token = approve_and_exchange(recycle(conn), context, organization_id)
     assert_no_ksef_setup_in_mcp(token)

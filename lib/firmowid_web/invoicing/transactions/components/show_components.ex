@@ -119,6 +119,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   attr :transaction, Transaction, required: true
   attr :return_to, :string, default: nil
+  attr :assistant?, :boolean, default: false, doc: "whether the plan offers the assistant"
 
   def linked_state(assigns) do
     assigns =
@@ -136,7 +137,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         <.linked_invoice_card :for={card <- @cards} card={card} />
       </div>
 
-      <div class="space-y-6">
+      <div :if={@assistant?} class="space-y-6">
         <h3 class="leading-tight font-medium">{gettext("What else can you do?")}</h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
@@ -211,6 +212,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   attr :transaction, Transaction, required: true
   attr :can_write, :boolean, default: true
   attr :show_no_recommendations, :boolean, default: true
+  attr :assistant?, :boolean, default: false, doc: "whether the plan offers the assistant"
 
   def empty_state(assigns) do
     ~H"""
@@ -228,6 +230,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </div>
 
         <MatchingComponents.assistant_button
+          :if={@assistant?}
           id="transaction-assistant-empty"
           subject={MatchingComponents.subject(@transaction)}
           class="mbs-2"
@@ -244,7 +247,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
           <div
-            :if={not @show_no_recommendations}
+            :if={not @show_no_recommendations and @assistant?}
             class="col-span-full grid grid-cols-subgrid items-center"
           >
             <p class="text-sm/snug text-balance text-grey-700">

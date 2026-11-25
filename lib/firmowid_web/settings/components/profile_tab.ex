@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidUI.Components.UploadErrors
+  import FirmowidWeb.Billing.Components.PlanNotice
   import FirmowidWeb.DesignSystem.Components.CoreComponents
 
   import FirmowidWeb.Settings.Components.Helpers,
@@ -16,6 +17,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidWeb.Timetracker.Components.Leave
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
@@ -26,6 +28,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   """
   @spec profile_tab(map()) :: Rendered.t()
   attr :current_user, :map, required: true
+  attr :current_org, :map, required: true
   attr :ash_scope, :map, required: true
   attr :member_form, :map, required: true
   attr :contract_form, :map, default: nil
@@ -47,6 +50,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="space-y-14">
         <.employment_section
           current_user={@current_user}
+          current_org={@current_org}
           contract_form={@contract_form}
           editing_profile_employment={@editing_profile_employment}
           pending_contract={@pending_contract}
@@ -71,22 +75,39 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   @doc """
-  Opens the form for a new business trip, next to the title of the business trips page.
+  Opens the form for a new business trip, next to the title of the business trips
+  page; locked when the organization's plan has no business trips.
   """
   @spec plan_business_trip_link(map()) :: Rendered.t()
+  attr :current_org, :map, required: true
+
   def plan_business_trip_link(assigns) do
     ~H"""
-    <.link kind="button" navigate={~p"/delegacje/dodaj"} variant="tertiary" size="small">
-      <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
-    </.link>
+    <%= if PlanCatalog.includes?(@current_org.billing_plan, :delegations) do %>
+      <.link kind="button" navigate={~p"/delegacje/dodaj"} variant="tertiary" size="small">
+        <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
+      </.link>
+    <% else %>
+      <.plan_locked_button id="business-trip-plan-locked" feature={:delegations}>
+        <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
+      </.plan_locked_button>
+    <% end %>
     """
   end
 
   attr :current_contract, :map, required: true
   attr :current_user, :map, required: true
+  attr :current_org, :map, required: true
   attr :document_upload, :map, default: nil
 
   defp contract_document_row(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :contracts_included?,
+        PlanCatalog.includes?(assigns.current_org.billing_plan, :employee_contracts)
+      )
+
     ~H"""
     <.detail_row label={gettext("Contract")}>
       <div class="flex w-full min-w-0 items-center gap-2">
@@ -104,7 +125,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <span class="shrink-0 font-medium">_{@current_contract.starts_at}.pdf</span>
           </span>
         </.link>
-        <form :if={@document_upload} phx-submit="upload" phx-change="upload">
+        <form :if={@document_upload && @contracts_included?} phx-submit="upload" phx-change="upload">
           <.live_file_input
             upload={@document_upload}
             class="sr-only"
@@ -123,6 +144,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <.icon name="hero-cloud-arrow-up" class="size-4" />
           </.button>
         </form>
+        <.plan_locked_button
+          :if={@document_upload && not @contracts_included?}
+          id="profile-contract-plan-locked"
+          feature={:employee_contracts}
+          class="h-7.5 w-8"
+        >
+          <.icon name="hero-cloud-arrow-up" class="size-4" />
+        </.plan_locked_button>
       </div>
       <.upload_error_messages
         :if={@document_upload}
@@ -134,6 +163,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   attr :current_user, :map, required: true
+  attr :current_org, :map, required: true
   attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
   attr :pending_contract, :map, default: nil
@@ -330,6 +360,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             :if={@current_contract}
             current_contract={@current_contract}
             current_user={@current_user}
+            current_org={@current_org}
             document_upload={@document_upload}
           />
 
@@ -387,6 +418,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             :if={@current_contract}
             current_contract={@current_contract}
             current_user={@current_user}
+            current_org={@current_org}
             document_upload={@document_upload}
           />
           <.detail_row label={gettext("Position")}>
@@ -541,6 +573,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     """
   end
 
+  attr :current_org, :map, required: true
   attr :leave_requests, :list, required: true
   attr :leave_request_form, :map, required: true
   attr :leave_request_upload, :map, required: true
@@ -553,10 +586,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   @spec leave_section(map()) :: Rendered.t()
   def leave_section(assigns) do
     assigns =
-      assign(
-        assigns,
+      assigns
+      |> assign(
         :filtered_leave_requests,
         LeavePresentation.filter_by_search(assigns.leave_requests, assigns.leave_search)
+      )
+      |> assign(
+        :can_request_leave?,
+        PlanCatalog.includes?(assigns.current_org.billing_plan, :leave_requests)
       )
 
     ~H"""
@@ -598,6 +635,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             </div>
           </form>
           <.button
+            :if={@can_request_leave?}
             type="button"
             variant="tertiary"
             size="small"
@@ -606,11 +644,19 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           >
             <.icon name="hero-paper-airplane" class="size-4" /> {gettext("Submit a request")}
           </.button>
+          <.plan_locked_button
+            :if={not @can_request_leave?}
+            id="leave-request-plan-locked"
+            feature={:leave_requests}
+            class="py-1.75 max-md:h-10 max-md:flex-1 max-md:text-base"
+          >
+            <.icon name="hero-paper-airplane" class="size-4" /> {gettext("Submit a request")}
+          </.plan_locked_button>
         </div>
       </div>
       <.leave_requests_table requests={@filtered_leave_requests} />
 
-      <.modal id="leave-request-modal" class="max-w-xl">
+      <.modal :if={@can_request_leave?} id="leave-request-modal" class="max-w-xl">
         <:header>
           <h2 class="text-xl font-medium">
             {gettext("Absence request")}

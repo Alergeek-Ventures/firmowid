@@ -14,6 +14,7 @@ defmodule Firmowid.Assistant.Conversation do
   alias Firmowid.Assistant.Changes.SetSubject
   alias Firmowid.Assistant.Transcript
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.PlanIncludes
 
   postgres do
     table "assistant_conversations"
@@ -249,6 +250,13 @@ defmodule Firmowid.Assistant.Conversation do
   end
 
   policies do
+    # Starting or continuing a conversation belongs to the plans with AI; reading earlier
+    # ones and the jobs finishing a started turn stay open.
+    policy action([:start, :for_subject, :for_analysis, :send_message, :respond_to_plan]) do
+      forbid_unless {PlanIncludes, feature: :ai}
+      authorize_if always()
+    end
+
     # Only the assistant's storage/lifecycle actions accept AshOban's context.
     # This context is deliberately NOT passed to any financial tool.
     policy action([:read_for_job, :respond, :append_response, :await_approval, :complete, :fail]) do
