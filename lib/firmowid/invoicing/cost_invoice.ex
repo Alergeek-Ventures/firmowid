@@ -389,7 +389,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
         :invoice_type,
         :original_invoice_ksef_number,
         :payment_method,
-        :internal_note
+        :internal_note,
+        :vat_amount
       ]
 
       validate present([
@@ -448,7 +449,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
         :invoice_type,
         :original_invoice_ksef_number,
         :payment_method,
-        :internal_note
+        :internal_note,
+        :vat_amount
       ]
 
       validate present([
@@ -721,6 +723,12 @@ defmodule Firmowid.Invoicing.CostInvoice do
     attribute :due_date, :date, public?: true
 
     attribute :amount, MoneyType, public?: true, allow_nil?: false
+
+    attribute :vat_amount, :decimal,
+      public?: true,
+      description:
+        "The Polish VAT the document states, in PLN: positive on an invoice, the change on a correction. " <>
+          "Nil when it was not read from the document."
 
     attribute :description, :string,
       public?: true,
