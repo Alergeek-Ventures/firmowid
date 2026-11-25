@@ -15,6 +15,7 @@ defmodule Firmowid.Taxes.Partner do
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Validations.MemberInOrganization
   alias Firmowid.Resource
 
@@ -77,6 +78,10 @@ defmodule Firmowid.Taxes.Partner do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:tax_forecaster]}, action_type(:read)] do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
       authorize_if {AtLeastRole, role: :accountant}
     end

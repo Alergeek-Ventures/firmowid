@@ -21,6 +21,10 @@ defmodule Firmowid.Taxes.Forecast.Zus do
   social contributions, not below the minimum of the month. On the lump sum it
   is a fixed amount chosen by the revenue from 1 January to the end of the month.
 
+  Projected entries (`Firmowid.Taxes.Forecast.Projection`) count like the rest, so the
+  lump-sum health contribution of the running month sees the typical rest of its revenue;
+  the other health contribution reads the previous month, which is complete.
+
   Simplifications: contributions count in the month they are for, not when paid;
   the health contribution uses each month's own income instead of the cumulative
   method and has no yearly settlement; Mały ZUS Plus assumes the whole previous

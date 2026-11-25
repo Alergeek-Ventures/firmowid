@@ -44,14 +44,29 @@ defmodule Firmowid.Finances.ExpectedTransaction do
       accept [:date, :amount, :description, :counterparty_name]
       argument :sales_invoice_ids, {:array, :uuid}, default: []
 
+      # Only the tax forecast marks an expectation as its own; a person cannot pass it.
+      argument :forecast_key, :string, public?: false
+
       change manage_relationship(:sales_invoice_ids, :sales_invoices, type: :append)
+
+      change set_attribute(:forecast_key, arg(:forecast_key)) do
+        where present(:forecast_key)
+      end
+    end
+
+    update :update_forecast do
+      description "Recalculate an expectation kept by the tax forecast: its date, amount and description."
+      accept [:date, :amount, :description]
     end
 
     read :list do
-      description "List expectations with optional date and fulfilment filters."
+      description "List expectations with optional date, fulfilment and tax forecast filters."
       argument :date_from, :date
       argument :date_to, :date
       argument :fulfilled, :boolean
+
+      argument :forecast, :boolean,
+        description: "true for the expectations kept by the tax forecast, false for all the others."
 
       prepare build(filter: expr(date >= ^arg(:date_from))) do
         where present(:date_from)
@@ -63,6 +78,10 @@ defmodule Firmowid.Finances.ExpectedTransaction do
 
       prepare build(filter: expr(is_fulfilled == ^arg(:fulfilled))) do
         where present(:fulfilled)
+      end
+
+      prepare build(filter: expr(is_nil(forecast_key) != ^arg(:forecast))) do
+        where present(:forecast)
       end
     end
 
@@ -97,8 +116,26 @@ defmodule Firmowid.Finances.ExpectedTransaction do
       authorize_if action_type([:read, :create, :destroy])
     end
 
-    bypass [{SystemActorRole, roles: [:invoice_matcher, :analysis_reader]}, action_type(:read)] do
+    bypass [
+      {SystemActorRole, roles: [:invoice_matcher, :analysis_reader, :tax_forecaster]},
+      action_type(:read)
+    ] do
       authorize_if always()
+    end
+
+    # The daily tax forecast adds, recalculates and removes only its own expectations that no bank
+    # transaction fulfils.
+    bypass [{SystemActorRole, roles: [:tax_forecaster]}, action(:create)] do
+      authorize_if always()
+    end
+
+    bypass [{SystemActorRole, roles: [:tax_forecaster]}, action([:update_forecast, :destroy])] do
+      authorize_if expr(not is_nil(forecast_key) and not is_fulfilled)
+    end
+
+    # Only the tax forecast recalculates its expectations.
+    policy action(:update_forecast) do
+      forbid_if always()
     end
 
     policy action_type(:read) do
@@ -137,6 +174,13 @@ defmodule Firmowid.Finances.ExpectedTransaction do
     attribute :description, :string, allow_nil?: false, public?: true
     attribute :counterparty_name, :string, public?: true
 
+    attribute :forecast_key, :string do
+      public? true
+
+      description "Marks an expectation kept by the tax forecast, such as `vat:2026-11` or " <>
+                    "`zus:2026-11:<member id>`: the forecast recalculates it until a bank transaction fulfils it."
+    end
+
     Resource.firmowid_timestamps()
   end
 
@@ -165,5 +209,9 @@ defmodule Firmowid.Finances.ExpectedTransaction do
       public? true
       description "Whether a bank transaction fulfils the expectation."
     end
+  end
+
+  identities do
+    identity :unique_forecast_key, [:forecast_key]
   end
 end

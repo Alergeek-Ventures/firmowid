@@ -23,6 +23,10 @@ defmodule Firmowid.Taxes.Forecast.Pit do
       social contributions and half of the health ones is taxed at the chosen
       rate; costs do not count.
 
+  The entries may include projected ones (`Firmowid.Taxes.Forecast.Projection`)
+  that count like the rest; `details` tells how much of the cumulative revenue
+  and costs they make (`projected_revenue`, `projected_costs`).
+
   The social contributions deducted are pension, disability, sickness and
   accident, not the Labour Fund.
 
@@ -60,7 +64,7 @@ defmodule Firmowid.Taxes.Forecast.Pit do
       year
       |> Period.of_year(partner.pit_advances)
       |> Enum.map_reduce(Decimal.new(0), fn period, advances_before ->
-        %{revenue: revenue, costs: costs} = Income.between(entries, january, period.last)
+        %{revenue: revenue, costs: costs} = sums = Income.between(entries, january, period.last)
         income = Decimal.sub(revenue, costs)
         counted = Enum.filter(contributions, &(Date.compare(&1.period.last, period.last) != :gt))
         social = total(counted, :social_deductible)
@@ -81,6 +85,8 @@ defmodule Firmowid.Taxes.Forecast.Pit do
           details: %{
             revenue: Decimal.round(revenue, 2),
             costs: Decimal.round(costs, 2),
+            projected_revenue: Decimal.round(sums.projected_revenue, 2),
+            projected_costs: Decimal.round(sums.projected_costs, 2),
             income: Decimal.round(income, 2),
             social_deducted: social,
             health_deducted: deducted_health,

@@ -66,7 +66,10 @@ defmodule Firmowid.Analysis.CounterpartyCategory do
 
   policies do
     # Confirmed categories decide the review and steer the classifier.
-    bypass [{SystemActorRole, roles: [:analysis_classifier]}, action_type(:read)] do
+    bypass [
+      {SystemActorRole, roles: [:analysis_classifier, :tax_forecaster]},
+      action_type(:read)
+    ] do
       authorize_if always()
     end
 

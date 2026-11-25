@@ -10,6 +10,10 @@ defmodule Firmowid.Taxes.Forecast.Cit do
   the later advances. It is due on the 20th of the month after the period, so
   20 January of the next year for the last one (art. 25 ust. 1a and 1c).
 
+  The entries may include projected ones (`Firmowid.Taxes.Forecast.Projection`)
+  that count like the rest; `details` tells how much of the cumulative revenue
+  and costs they make (`projected_revenue`, `projected_costs`).
+
   The `:simplified` form pays a fixed monthly amount taken from an earlier tax
   return, which Firmowid does not have, so it forecasts nothing.
 
@@ -39,7 +43,7 @@ defmodule Firmowid.Taxes.Forecast.Cit do
       year
       |> Period.of_year(frequency)
       |> Enum.map_reduce(Decimal.new(0), fn period, advances_before ->
-        %{revenue: revenue, costs: costs} = Income.between(entries, january, period.last)
+        %{revenue: revenue, costs: costs} = sums = Income.between(entries, january, period.last)
         income = Decimal.sub(revenue, costs)
 
         tax =
@@ -64,6 +68,8 @@ defmodule Firmowid.Taxes.Forecast.Cit do
           details: %{
             revenue: Decimal.round(revenue, 2),
             costs: Decimal.round(costs, 2),
+            projected_revenue: Decimal.round(sums.projected_revenue, 2),
+            projected_costs: Decimal.round(sums.projected_costs, 2),
             income: Decimal.round(income, 2),
             tax: tax,
             advances_before: advances_before,

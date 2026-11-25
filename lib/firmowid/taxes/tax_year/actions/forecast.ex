@@ -45,6 +45,20 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
 
   Cost invoices without a VAT amount bring none to VAT and count at their gross
   amount in CIT costs, so each forecast tells how many its period has.
+
+  In the year that contains today the period that is still running would count
+  only the documents dated so far, so the entries get the typical rest of that
+  period from the three months before (`Firmowid.Taxes.Forecast.Projection`):
+  until the end of the VAT period, and for CIT and PIT until the end of the
+  advance period. An owner's entries are projected before they are multiplied
+  by the profit share, and ZUS only until the end of the month, which the
+  lump-sum health contribution needs. Periods that ended count the booked
+  documents only. The cumulative figures of the periods after the running one
+  build on the running one, so they include its projection. `details` tells how
+  much of each figure is projected: `projected_output_vat` and
+  `projected_input_vat` of VAT, `projected_revenue` and `projected_costs` of CIT
+  and PIT, zero where nothing is. "Today" is a private argument, the day in
+  Poland unless a caller passes it.
   """
   use Ash.Resource.Actions.Implementation
 
@@ -58,7 +72,9 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   alias Firmowid.Taxes.Forecast.Cit
   alias Firmowid.Taxes.Forecast.Income
   alias Firmowid.Taxes.Forecast.IncomeEntries
+  alias Firmowid.Taxes.Forecast.Period
   alias Firmowid.Taxes.Forecast.Pit
+  alias Firmowid.Taxes.Forecast.Projection
   alias Firmowid.Taxes.Forecast.Vat
   alias Firmowid.Taxes.Forecast.VatEntries
   alias Firmowid.Taxes.Forecast.Zus
@@ -66,6 +82,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   @impl true
   def run(input, _opts, context) do
     year = input.arguments.year
+    today = input.arguments.today
     opts = Ash.Context.to_opts(context)
 
     with {:ok, tax_year} <-
@@ -78,9 +95,9 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
       scope = %Scope{actor: context.actor, tenant: context.tenant}
 
       {:ok,
-       vat(tax_year, organization, documents) ++
-         cit(tax_year, organization, documents, scope) ++
-         owners(tax_year, organization, documents, scope)}
+       vat(tax_year, organization, documents, today) ++
+         cit(tax_year, organization, documents, scope, today) ++
+         owners(tax_year, organization, documents, scope, today)}
     end
   end
 
@@ -139,12 +156,19 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     )
   end
 
-  defp vat(%{vat_period: frequency, year: year}, %{is_vat_payer: true} = organization, documents) when frequency != nil do
+  # Only the year that contains today has a running period; the entries get the typical rest of it.
+  defp project(entries, year, today, until) do
+    if year == today.year, do: entries ++ Projection.project(entries, today, until), else: entries
+  end
+
+  defp vat(%{vat_period: frequency, year: year}, %{is_vat_payer: true} = organization, documents, today)
+       when frequency != nil do
     without_vat = Enum.reject(documents.cost_invoices, & &1.vat_amount)
 
     documents.sales_invoices
     |> VatEntries.build(documents.cost_invoices, organization.is_cash_account)
     |> Kernel.++(VatEntries.refunds(documents.skipped_transactions))
+    |> project(year, today, Period.last_day(frequency, today))
     |> Vat.forecast(frequency, year)
     |> Enum.map(fn forecast ->
       missing =
@@ -157,16 +181,23 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     end)
   end
 
-  defp vat(_tax_year, _organization, _documents), do: []
+  defp vat(_tax_year, _organization, _documents, _today), do: []
+
+  # The simplified form pays a fixed amount that Firmowid does not know.
+  defp cit(%{cit_advances: :simplified}, _organization, _documents, _scope, _today), do: []
 
   defp cit(
          %{cit_rate: rate, cit_advances: advances, year: year},
          %{legal_form: :limited_company} = organization,
          documents,
-         scope
+         scope,
+         today
        )
        when rate != nil and advances != nil do
-    entries = income_entries(documents, organization, scope)
+    entries =
+      documents
+      |> income_entries(organization, scope)
+      |> project(year, today, Period.last_day(advances, today))
 
     without_vat =
       if organization.is_vat_payer,
@@ -187,14 +218,17 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     end)
   end
 
-  defp cit(_tax_year, _organization, _documents, _scope), do: []
+  defp cit(_tax_year, _organization, _documents, _scope, _today), do: []
 
-  # The owners' PIT advances and ZUS contributions, all PIT first.
+  # The owners' PIT advances and ZUS contributions, all PIT first. The company's entries are
+  # projected before the owner's share is taken; ZUS only to the end of the month, as the PIT
+  # advance period may be a quarter.
   defp owners(
          %{partners: [_ | _] = partners, accident_insurance_rate: accident_rate, year: year},
          %{legal_form: legal_form} = organization,
          documents,
-         scope
+         scope,
+         today
        )
        when legal_form in [:sole_proprietorship, :civil_partnership] do
     entries = income_entries(documents, organization, scope)
@@ -202,10 +236,19 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     {pit, zus} =
       partners
       |> Enum.map(fn partner ->
-        partner_entries = Income.scale(entries, partner.profit_share)
-        contributions = Zus.contributions(partner_entries, partner, accident_rate, year)
+        zus_entries =
+          entries
+          |> project(year, today, Date.end_of_month(today))
+          |> Income.scale(partner.profit_share)
 
-        {Pit.forecast(partner_entries, partner, contributions, partner.member_id, year),
+        pit_entries =
+          entries
+          |> project(year, today, Period.last_day(partner.pit_advances, today))
+          |> Income.scale(partner.profit_share)
+
+        contributions = Zus.contributions(zus_entries, partner, accident_rate, year)
+
+        {Pit.forecast(pit_entries, partner, contributions, partner.member_id, year),
          Zus.forecast(contributions, partner.member_id)}
       end)
       |> Enum.unzip()
@@ -213,5 +256,5 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     Enum.concat(pit) ++ Enum.concat(zus)
   end
 
-  defp owners(_tax_year, _organization, _documents, _scope), do: []
+  defp owners(_tax_year, _organization, _documents, _scope, _today), do: []
 end

@@ -38,7 +38,7 @@ defmodule Firmowid.Finances.ExpectedTransaction.Fulfilment do
 
   policies do
     bypass [
-      {SystemActorRole, roles: [:invoice_matcher, :analysis_reader, :sales_invoice_processor]},
+      {SystemActorRole, roles: [:invoice_matcher, :analysis_reader, :sales_invoice_processor, :tax_forecaster]},
       action_type(:read)
     ] do
       authorize_if always()

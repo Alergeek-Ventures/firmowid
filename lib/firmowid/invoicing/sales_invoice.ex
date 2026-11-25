@@ -1049,7 +1049,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                      ])
       end
 
-      policy {SystemActorRole, roles: [:analysis_reader, :analysis_classifier]} do
+      policy {SystemActorRole, roles: [:analysis_reader, :analysis_classifier, :tax_forecaster]} do
         authorize_if action_type(:read)
       end
 

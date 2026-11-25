@@ -8,6 +8,10 @@ defmodule Firmowid.Taxes.Forecast.Vat do
   the Tax Ordinance), due on the 25th of the month after it (art. 103 ust. 1 of
   the VAT Act).
 
+  Entries may include projected ones (`Firmowid.Taxes.Forecast.Projection`): they count
+  like the rest, and `details` tells how much of each figure they make
+  (`projected_output_vat`, `projected_input_vat`, zero for a period without any).
+
   Assumptions: a period with more input than output VAT pays nothing and
   carries the surplus to the next one, and the year starts without a surplus
   from the year before. A refund from the tax office (`:refund` entries) lowers
@@ -16,8 +20,14 @@ defmodule Firmowid.Taxes.Forecast.Vat do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Taxes.Forecast.Period
+  alias Firmowid.Taxes.Forecast.Projection
 
-  @type entry :: %{side: :output | :input | :refund, amount: Decimal.t(), date: Date.t()}
+  @type entry :: %{
+          required(:side) => :output | :input | :refund,
+          required(:amount) => Decimal.t(),
+          required(:date) => Date.t(),
+          optional(:projected?) => boolean()
+        }
 
   @doc "Returns one forecast for each period of `year`; entries of other years are left out."
   @spec forecast([entry()], Period.frequency(), integer()) :: [map()]
@@ -29,6 +39,7 @@ defmodule Firmowid.Taxes.Forecast.Vat do
         output_vat = total(entries, :output, period)
         input_vat = total(entries, :input, period)
         refunded = total(entries, :refund, period)
+        projected = Enum.filter(entries, &Projection.projected?/1)
         carried_over = surplus |> Decimal.sub(refunded) |> Decimal.max(0)
         balance = output_vat |> Decimal.sub(input_vat) |> Decimal.sub(carried_over)
 
@@ -44,6 +55,8 @@ defmodule Firmowid.Taxes.Forecast.Vat do
           details: %{
             output_vat: output_vat,
             input_vat: input_vat,
+            projected_output_vat: total(projected, :output, period),
+            projected_input_vat: total(projected, :input, period),
             carried_over: carried_over,
             refunded: refunded
           }

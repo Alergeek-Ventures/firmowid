@@ -657,7 +657,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
               :invoice_matcher,
               :analysis_reader,
               :ksef_digest,
-              :billing_snapshotter
+              :billing_snapshotter,
+              :tax_forecaster
             ]} do
       authorize_if action_type(:read)
     end

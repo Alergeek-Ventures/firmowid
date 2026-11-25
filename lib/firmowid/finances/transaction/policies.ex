@@ -16,7 +16,7 @@ defmodule Firmowid.Finances.Transaction.Policies do
       authorize_if action_type(:read)
     end
 
-    bypass {SystemActorRole, roles: [:analysis_reader, :ksef_digest]} do
+    bypass {SystemActorRole, roles: [:analysis_reader, :ksef_digest, :tax_forecaster]} do
       authorize_if action_type(:read)
     end
 

@@ -203,6 +203,7 @@ defmodule Firmowid.Finances do
       define :get_expected_transaction, action: :read, get_by: [:id]
       define :list_expected_transactions, action: :list
       define :create_expected_transaction, action: :create
+      define :update_expected_transaction_forecast, action: :update_forecast
       define :destroy_expected_transaction, action: :destroy
 
       define :connect_expected_transaction_transactions,

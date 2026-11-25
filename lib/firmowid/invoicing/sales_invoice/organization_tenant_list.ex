@@ -1,6 +1,7 @@
 defmodule Firmowid.Invoicing.SalesInvoice.OrganizationTenantList do
   @moduledoc """
-  Lists organization IDs for sales invoice AshOban scheduled actions that run per tenant.
+  Lists organization IDs for the AshOban scheduled actions that run per tenant: sales invoice
+  reminders and the tax forecast of `Firmowid.Taxes.TaxYear`.
   """
 
   @behaviour AshOban.ListTenants

@@ -4,14 +4,35 @@ defmodule Firmowid.Taxes.Forecast.Income do
   VAT, in PLN, each on the day it counts. Income taxes build on it.
   """
 
-  @type entry :: %{side: :revenue | :cost, amount: Decimal.t(), date: Date.t()}
+  alias Firmowid.Taxes.Forecast.Projection
 
-  @doc "Returns the revenue and the costs of the entries dated from `first` to `last`, both inclusive."
-  @spec between([entry()], Date.t(), Date.t()) :: %{revenue: Decimal.t(), costs: Decimal.t()}
+  @type entry :: %{
+          required(:side) => :revenue | :cost,
+          required(:amount) => Decimal.t(),
+          required(:date) => Date.t(),
+          optional(:projected?) => boolean()
+        }
+
+  @doc """
+  Returns the revenue and the costs of the entries dated from `first` to `last`, both inclusive,
+  and the part of each that comes from projected entries (see `Firmowid.Taxes.Forecast.Projection`).
+  """
+  @spec between([entry()], Date.t(), Date.t()) :: %{
+          revenue: Decimal.t(),
+          costs: Decimal.t(),
+          projected_revenue: Decimal.t(),
+          projected_costs: Decimal.t()
+        }
   def between(entries, first, last) do
     in_range = Enum.filter(entries, &(&1.date in Date.range(first, last)))
+    projected = Enum.filter(in_range, &Projection.projected?/1)
 
-    %{revenue: total(in_range, :revenue), costs: total(in_range, :cost)}
+    %{
+      revenue: total(in_range, :revenue),
+      costs: total(in_range, :cost),
+      projected_revenue: total(projected, :revenue),
+      projected_costs: total(projected, :cost)
+    }
   end
 
   @doc """

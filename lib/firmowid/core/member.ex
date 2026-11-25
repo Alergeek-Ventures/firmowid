@@ -84,7 +84,7 @@ defmodule Firmowid.Core.Member do
       authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
-      authorize_if {SystemActorRole, roles: [:presence_reader | @personal_field_readers]}
+      authorize_if {SystemActorRole, roles: [:presence_reader, :tax_forecaster | @personal_field_readers]}
     end
 
     field_policy :* do
@@ -261,6 +261,7 @@ defmodule Firmowid.Core.Member do
       authorize_if {SystemActorRole,
                     roles: [
                       :analysis_reader,
+                      :tax_forecaster,
                       :ksef_digest,
                       :billing_snapshotter,
                       :plan_limits,
