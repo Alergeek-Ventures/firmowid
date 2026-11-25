@@ -934,11 +934,26 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  Invoicing.issue_sales_invoice(%{input: input}, scope: scope)
                end)
 
-      assert %{ksef_invoice_kind: :advance, skip_invoicing: true, due_date: ^payment_date} =
+      assert %{ksef_invoice_kind: :advance, skip_invoicing: false, due_date: ^payment_date} =
                invoice
 
-      # Paid, so it is listed with the matched invoices rather than the skipped ones.
+      # Its payment is expected until the bank transaction arrives, so it is matched already.
       invoice_id = invoice.id
+
+      invoice =
+        Ash.load!(invoice, [:amount, expected_transactions: [:sales_invoices]], scope: scope)
+
+      assert [
+               %{
+                 date: ^payment_date,
+                 amount: amount,
+                 description: number,
+                 sales_invoices: [%{id: ^invoice_id}]
+               }
+             ] = invoice.expected_transactions
+
+      assert Money.equal?(amount, invoice.amount)
+      assert number == invoice.invoice_number
 
       assert [%{id: ^invoice_id, reconciliation_status: :matched}] =
                Invoicing.list_sales_invoices!(%{reconciliation: :matched},
@@ -946,28 +961,20 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  scope: scope
                )
 
-      assert [] = Invoicing.list_sales_invoices!(%{reconciliation: :skipped}, scope: scope)
-
-      # An unnumbered advance draft is not issued yet, so it stays skipped and out of the matched ones.
+      # An unnumbered advance draft is not issued yet, so it expects no payment.
       draft =
         Invoicing.draft_sales_invoice!(
           %{input: Map.put(issue_input(), :ksef_invoice_kind, :advance)},
           scope: scope
         )
 
-      assert [%{id: ^invoice_id}] =
-               Invoicing.list_sales_invoices!(%{reconciliation: :matched}, scope: scope)
-
-      assert [%{id: draft_id, reconciliation_status: :skipped}] =
-               Invoicing.list_sales_invoices!(%{reconciliation: :skipped},
+      assert [%{id: draft_id, reconciliation_status: :pending}] =
+               Invoicing.list_sales_invoices!(%{reconciliation: :pending},
                  load: [:reconciliation_status],
                  scope: scope
                )
 
       assert draft_id == draft.id
-
-      # Nothing is due, so it cannot be put back among the invoices awaiting a transaction.
-      assert {:error, _stale} = Invoicing.toggle_sales_invoice_skip(invoice, scope: scope)
 
       assert_enqueued(
         worker: SubmissionWorker,
@@ -977,6 +984,10 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
           "sales_invoice_id" => invoice.id
         }
       )
+
+      # Deleted before KSeF has it, the invoice takes its expected payment along.
+      :ok = Invoicing.destroy_sales_invoice(invoice, scope: scope)
+      assert [] = Firmowid.Finances.list_expected_transactions!(scope: scope)
     end
 
     test "points to organization settings when seller details are missing" do
@@ -1172,22 +1183,6 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       assert {:error, %Invalid{errors: [%InvalidAttribute{field: :sale_date}]}} =
                Invoicing.issue_sales_invoice(%{input: input}, scope: scope_for(user))
-    end
-
-    test "a draft revised from an advance to a VAT invoice awaits a transaction again" do
-      user = invoicing_admin_fixture()
-      scope = scope_for(user)
-
-      draft =
-        Invoicing.draft_sales_invoice!(
-          %{input: Map.put(issue_input(), :ksef_invoice_kind, :advance)},
-          scope: scope
-        )
-
-      assert draft.skip_invoicing
-
-      assert %{ksef_invoice_kind: :vat, skip_invoicing: false} =
-               Invoicing.revise_sales_invoice_draft!(draft, %{input: %{ksef_invoice_kind: :vat}}, scope: scope)
     end
   end
 
