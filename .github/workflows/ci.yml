@@ -651,10 +651,12 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
-          # Updating a PLT built for another lock takes as long as rebuilding it
-          # from the core PLT (~10 min), so only reuse PLTs of the same lock.
+          # After a mix.lock change, updating the newest PLT of another lock took 162 s,
+          # building one from the core PLT 378 s (ash and db_connection bump, 2026-11-25);
+          # under load, parallel builds took 15–19 min. So any lock's PLT is a fallback.
           restore-keys: |
             plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
+            plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
           path: |
             _build/test/*.plt
             _build/test/*.plt.hash
