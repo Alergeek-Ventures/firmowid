@@ -23,6 +23,9 @@ inputs:
     description: Whether to install rebar
 
 outputs:
+  build-cache-identity:
+    description: "What a build in the runner's build cache must have been made with to be reused"
+    value: ${{ steps.runner-cache.outputs.identity }}
   otp-version:
     description: "Exact OTP version devenv provides"
     value: ${{ steps.beam.outputs.otp-version }}
@@ -86,11 +89,34 @@ runs:
         printf '%s\n' 'DB_PORT=5432' 'S3_PORT=8333' >> "$GITHUB_ENV"
       shell: sh
 
+    # Selenge runners get /cache/firmowid, a copy-on-write clone of the deps and _build that
+    # main's last push left there (infrastructure: av.ci_runners build caches). A reflink
+    # copy takes seconds instead of downloading both from the GitHub cache; Mix then
+    # recompiles what differs. Other runners, other toolchains and the isolated coverage
+    # benchmark (its own cache-key) use the GitHub cache below.
+    - name: Restore the runner's build cache
+      id: runner-cache
+      shell: bash
+      env:
+        IDENTITY: ${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}
+        CACHE_KEY: ${{ inputs.cache-key }}
+      run: |
+        set -euo pipefail
+        echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
+        dir=/cache/firmowid
+        if [ "$CACHE_KEY" = v2 ] && [ -f "$dir/IDENTITY" ] && [ "$(cat "$dir/IDENTITY")" = "$IDENTITY" ]; then
+          cp -a --reflink=auto "$dir/deps" "$dir/_build" .
+          rm -rf ~/.hex && cp -a --reflink=auto "$dir/hex" ~/.hex
+          echo "hit=true" >> "$GITHUB_OUTPUT"
+          echo "Restored deps and _build of main $(cat "$dir/COMMIT") from the runner's build cache."
+        fi
+
     # The last fallbacks ignore config and lock changes; Mix recompiles only the
     # dependencies whose lock entry or compile-time config changed.
     - name: Get deps cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: deps-cache
+      if: steps.runner-cache.outputs.hit != 'true'
       with:
         path: deps/
         key: deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}
@@ -101,6 +127,7 @@ runs:
     - name: Get build cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: build-cache
+      if: steps.runner-cache.outputs.hit != 'true'
       with:
         # Keep PLTs out of the revision cache; they have their own lifecycle.
         path: |
@@ -115,7 +142,7 @@ runs:
     - name: Get Hex cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: hex-cache
-      if: steps.deps-cache.outputs.cache-hit != 'true'
+      if: steps.runner-cache.outputs.hit != 'true' && steps.deps-cache.outputs.cache-hit != 'true'
       with:
         path: ~/.hex
         key: hex-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
@@ -160,21 +187,21 @@ runs:
     # saves nothing: its caches are scoped to a temporary queue branch no later run can read.
     - name: Save Hex cache
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: github.event_name != 'merge_group' && steps.hex-cache.outcome == 'success' && steps.hex-cache.outputs.cache-hit != 'true'
+      if: github.event_name != 'merge_group' && steps.runner-cache.outputs.hit != 'true' && steps.hex-cache.outcome == 'success' && steps.hex-cache.outputs.cache-hit != 'true'
       with:
         path: ~/.hex
         key: ${{ steps.hex-cache.outputs.cache-primary-key }}
 
     - name: Save deps cache
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: github.event_name != 'merge_group' && steps.deps-cache.outputs.cache-hit != 'true'
+      if: github.event_name != 'merge_group' && steps.runner-cache.outputs.hit != 'true' && steps.deps-cache.outputs.cache-hit != 'true'
       with:
         path: deps/
         key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
     - name: Save build cache
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: github.event_name != 'merge_group' && inputs.build-app == 'true' && steps.build-cache.outputs.cache-hit != 'true'
+      if: github.event_name != 'merge_group' && steps.runner-cache.outputs.hit != 'true' && inputs.build-app == 'true' && steps.build-cache.outputs.cache-hit != 'true'
       with:
         path: |
           _build/${{ env.MIX_ENV || 'dev' }}/lib

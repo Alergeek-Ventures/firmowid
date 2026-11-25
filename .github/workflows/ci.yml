@@ -620,6 +620,10 @@ jobs:
     if: needs.translations.outputs.content-only != 'true'
     needs: translations
     runs-on: selenge
+    permissions:
+      contents: read
+      # Proves to the runner host that a build cache comes from a push to main.
+      id-token: write
     env:
       MIX_ENV: test
     steps:
@@ -695,6 +699,30 @@ jobs:
         # --format github is helpful to print the warnings in a way that GitHub understands and can place on the /files page of a PR
         # --format dialyxir allows the raw GitHub actions logs to be useful because they have the full warning printed
         run: mix dialyzer --format github --format dialyxir
+
+      # Leaves main's deps, _build and Hex in this runner's clone of the build cache. When
+      # the runner is gone, the host makes the clone the cache every later job restores,
+      # but only after checking the OIDC token: GitHub signs it for a push to main of this
+      # repository, which pull requests and the merge queue cannot obtain.
+      - name: Commit main's build to the runner's build cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          IDENTITY: ${{ steps.setup.outputs.build-cache-identity }}
+        run: |
+          set -euo pipefail
+          dir=/cache/firmowid
+          if [ ! -w "$dir" ]; then
+            echo "This runner has no build cache."
+            exit 0
+          fi
+          rm -rf "$dir/deps" "$dir/_build" "$dir/hex"
+          cp -a --reflink=auto deps _build "$dir/"
+          cp -a --reflink=auto ~/.hex "$dir/hex"
+          printf '%s\n' "$IDENTITY" > "$dir/IDENTITY"
+          printf '%s\n' "$GITHUB_SHA" > "$dir/COMMIT"
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=selenge-ci-cache" | jq -er .value > "$dir/.commit-request"
+          echo "Committed main $GITHUB_SHA ($(du -sh "$dir" | cut -f1))."
 
   # On main this build also exports the layer cache. Pull requests changing only guides and
   # static files skip it: those files cannot break the image build.
