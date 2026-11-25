@@ -27,7 +27,7 @@ defmodule Firmowid.Invoicing do
                   open_world_hint: false
 
       description "List sales invoices as data for questions, summaries, analysis and tables in the conversation." <>
-                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. effective_amount is the gross amount after corrections; with merge_corrections sum it instead of gross_value. Use after/before keyset cursors with the same filters to navigate pages."
+                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. amount is the gross total stated on the invoice and effective_amount the same after corrections; with merge_corrections sum effective_amount instead of amount. Use after/before keyset cursors with the same filters to navigate pages."
 
       action_parameters [:limit]
 
@@ -49,7 +49,7 @@ defmodule Firmowid.Invoicing do
         :corrected_invoice_id
       ]
 
-      load [:gross_value, :effective_amount, :ksef_submission_status]
+      load [:amount, :effective_amount, :ksef_submission_status]
     end
 
     tool :list_cost_invoices, CostInvoice, :list do
