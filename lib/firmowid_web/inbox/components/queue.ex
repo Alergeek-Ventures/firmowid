@@ -175,7 +175,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   end
 
   # Figma "Decyzja": on phones the actions share the row equally, as Mobile (48px) buttons.
-  defp phone_action_styles, do: [ButtonStyles.phone_size_classes(), "max-md:min-w-0 max-md:flex-1"]
+  defp phone_size_styles, do: ButtonStyles.phone_size_classes()
+
+  defp phone_action_styles, do: [phone_size_styles(), "max-md:min-w-0 max-md:flex-1"]
 
   attr :item, :map, required: true
 
@@ -216,8 +218,8 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       </span>
       <span :if={@item.person} class="shrink-0" aria-hidden="true">·</span>
       <span class={[
-        if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate"),
-        "max-md:whitespace-normal"
+        "max-md:whitespace-normal",
+        if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate")
       ]}>
         {@item.context}
       </span>
@@ -436,12 +438,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       phx-hook=".FoldingSearch"
       class={
         [
-          "group/search relative w-8 min-w-8 shrink transition-[width] duration-200 ease-out focus-within:w-60 has-[input:not(:placeholder-shown)]:w-60 motion-reduce:transition-none",
           # On phones a 48px magnifier that, open, covers the whole header band in the page's grey,
           # edge to edge, with a way out on the right.
-          "max-md:size-12 max-md:min-w-12",
-          "max-md:focus-within:absolute max-md:focus-within:inset-y-0 max-md:focus-within:-right-1 max-md:focus-within:-left-4 max-md:focus-within:z-10 max-md:focus-within:flex max-md:focus-within:size-auto max-md:focus-within:items-end max-md:focus-within:gap-1 max-md:focus-within:bg-grey-100 max-md:focus-within:pr-1 max-md:focus-within:pl-4",
-          "max-md:has-[input:not(:placeholder-shown)]:absolute max-md:has-[input:not(:placeholder-shown)]:inset-y-0 max-md:has-[input:not(:placeholder-shown)]:-right-1 max-md:has-[input:not(:placeholder-shown)]:-left-4 max-md:has-[input:not(:placeholder-shown)]:z-10 max-md:has-[input:not(:placeholder-shown)]:flex max-md:has-[input:not(:placeholder-shown)]:size-auto max-md:has-[input:not(:placeholder-shown)]:items-end max-md:has-[input:not(:placeholder-shown)]:gap-1 max-md:has-[input:not(:placeholder-shown)]:bg-grey-100 max-md:has-[input:not(:placeholder-shown)]:pr-1 max-md:has-[input:not(:placeholder-shown)]:pl-4"
+          "group/search relative w-8 min-w-8 shrink transition-[width] duration-200 ease-out focus-within:w-60 has-[input:not(:placeholder-shown)]:w-60 motion-reduce:transition-none max-md:size-12 max-md:min-w-12 max-md:focus-within:absolute max-md:focus-within:inset-y-0 max-md:focus-within:-right-1 max-md:focus-within:-left-4 max-md:focus-within:z-10 max-md:focus-within:flex max-md:focus-within:size-auto max-md:focus-within:items-end max-md:focus-within:gap-1 max-md:focus-within:bg-grey-100 max-md:focus-within:pr-1 max-md:focus-within:pl-4 max-md:has-[input:not(:placeholder-shown)]:absolute max-md:has-[input:not(:placeholder-shown)]:inset-y-0 max-md:has-[input:not(:placeholder-shown)]:-right-1 max-md:has-[input:not(:placeholder-shown)]:-left-4 max-md:has-[input:not(:placeholder-shown)]:z-10 max-md:has-[input:not(:placeholder-shown)]:flex max-md:has-[input:not(:placeholder-shown)]:size-auto max-md:has-[input:not(:placeholder-shown)]:items-end max-md:has-[input:not(:placeholder-shown)]:gap-1 max-md:has-[input:not(:placeholder-shown)]:bg-grey-100 max-md:has-[input:not(:placeholder-shown)]:pr-1 max-md:has-[input:not(:placeholder-shown)]:pl-4"
         ]
       }
     >
@@ -465,14 +464,15 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
         />
       </div>
       <%!-- Phones only: clears the search and folds it back to the magnifier. --%>
-      <button
+      <.button
         type="button"
+        variant="unstyled"
         data-search-close
         aria-label={gettext("Close")}
         class="hidden size-12 shrink-0 cursor-pointer items-center justify-center rounded-sm text-black max-md:group-focus-within/search:flex max-md:group-has-[input:not(:placeholder-shown)]/search:flex"
       >
         <.figma_icon name="close" class="size-6" />
-      </button>
+      </.button>
     </form>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".FoldingSearch">
       // The close button clears the query, telling the server, and gives up the focus, which folds the
@@ -561,7 +561,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               id={"put-aside-#{item.id}-remove"}
               label={gettext("Remove notification")}
               variant="destructive"
-              class={["w-8 max-md:w-12", ButtonStyles.phone_size_classes()]}
+              class={["w-8 max-md:w-12", phone_size_styles()]}
               phx-click="remove_item"
               phx-value-id={item.id}
             >
@@ -811,7 +811,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
               variant="outline"
               class={[
                 "relative has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus-ring)",
-                ButtonStyles.phone_size_classes()
+                phone_size_styles()
               ]}
             >
               <.live_file_input upload={@upload} class="sr-only" />
@@ -830,7 +830,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             navigate={elem(shortcut.target, 1)}
             size="small"
             variant="outline"
-            class={ButtonStyles.phone_size_classes()}
+            class={phone_size_styles()}
           >
             <Lucideicons.render! name={shortcut.icon} aria-hidden="true" />{shortcut.label}
           </.link>

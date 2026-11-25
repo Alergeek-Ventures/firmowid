@@ -609,9 +609,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             id="inbox-queue-view"
             phx-hook=".SwipeRows"
             class={[
-              "flex flex-1 flex-col",
+              "flex flex-1 flex-col max-md:gap-6",
               if(@layer == :me, do: "gap-4", else: "gap-8"),
-              "max-md:gap-6",
               @swapped && "motion-safe:animate-dissolve"
             ]}
           >
