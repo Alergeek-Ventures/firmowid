@@ -103,24 +103,24 @@
     }
   ],
   "dependencies": {
-    "@formatjs/intl-durationformat": "0.12.4",
+    "@formatjs/intl-durationformat": "0.13.0",
     "@raycast/api": "2.12.1",
     "@raycast/utils": "2.3.3",
-    "@tanstack/query-async-storage-persister": "5.107.1",
-    "@tanstack/react-query": "5.107.1",
-    "@tanstack/react-query-persist-client": "5.107.1",
+    "@tanstack/query-async-storage-persister": "5.108.0",
+    "@tanstack/react-query": "5.108.0",
+    "@tanstack/react-query-persist-client": "5.108.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.2.0",
     "@raycast/eslint-plugin": "2.2.0",
-    "@tanstack/eslint-plugin-query": "5.107.1",
+    "@tanstack/eslint-plugin-query": "5.108.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.3.0",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3",
-    "ultracite": "^8.2.1",
-    "vite-plus": "1.6.0"
+    "ultracite": "^8.3.0",
+    "vite-plus": "1.7.0"
   },
   "scripts": {
     "dev": "ray develop",
