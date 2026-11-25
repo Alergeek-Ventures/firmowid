@@ -36,6 +36,11 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
         sale_date: tns_xpath(~x"/Faktura/Fa/P_6/text()"os),
         invoice_identifier: tns_xpath(~x"/Faktura/Fa/P_2/text()"s),
         total_amount: tns_xpath(~x"/Faktura/Fa/P_15/text()"s),
+        vat: [
+          tns_xpath(~x"/Faktura/Fa"),
+          amounts: tns_xpath(~x"./P_14_1/text() | ./P_14_2/text() | ./P_14_3/text() | ./P_14_4/text()"ls),
+          amounts_pln: tns_xpath(~x"./P_14_1W/text() | ./P_14_2W/text() | ./P_14_3W/text() | ./P_14_4W/text()"ls)
+        ],
         charges: [
           tns_xpath(~x"/Faktura/Fa/Rozliczenie/Obciazenia"l),
           amount: tns_xpath(~x"./Kwota/text()"s)
@@ -77,6 +82,7 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
         date -> date
       end)
       |> put_due_date()
+      |> put_vat_amount()
       |> put_amount()
       |> put_order_items()
 
@@ -102,6 +108,19 @@ defmodule Firmowid.Ksef.Services.InvoiceParser do
     do: %{attrs | due_date: attrs.issue_date}
 
   defp put_due_date(attrs), do: attrs
+
+  # Polish VAT is P_14_1 to P_14_4, which a foreign-currency invoice also states in PLN (P_14_xW);
+  # P_14_5 is the VAT of another EU country (OSS). A correction states the change. No field, no VAT.
+  defp put_vat_amount(%{vat: vat, currency: currency} = attrs) do
+    amounts = if currency == "PLN", do: vat.amounts, else: vat.amounts_pln
+
+    attrs
+    |> Map.delete(:vat)
+    |> Map.put(
+      :vat_amount,
+      Enum.reduce(amounts, Decimal.new(0), &Decimal.add(Decimal.new(String.trim(&1)), &2))
+    )
+  end
 
   # The amount due is P_15 plus charges (such as a bottle deposit) and minus deductions (Rozliczenie).
   defp put_amount(%{currency: currency, total_amount: total_amount} = attrs) do

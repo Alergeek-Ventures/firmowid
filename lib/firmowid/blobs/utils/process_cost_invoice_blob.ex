@@ -18,6 +18,9 @@ defmodule Firmowid.Blobs.Utils.ProcessCostInvoiceBlob do
   - If present, extract the seller tax identifier (for Polish invoices usually NIP)
   - Total amount should be the amount due ("Do zapłaty"): the gross/brutto amount (including VAT/tax)
     plus charges outside it, such as a bottle deposit ("kaucja"), minus deductions
+  - VAT amount should be the document's total Polish VAT in PLN ("Kwota VAT", "Podatek VAT"); a foreign-currency
+    invoice states it converted to PLN. Use 0 when the document charges no Polish VAT (exempt, reverse charge,
+    a foreign seller) and leave it out when the VAT cannot be read
   - If the document is not an invoice, receipt, or bill (e.g., it's a contract, report, or unrelated document), set document_type to "invalid"
   """
 
@@ -33,6 +36,7 @@ defmodule Firmowid.Blobs.Utils.ProcessCostInvoiceBlob do
       seller_address: %{type: "string"},
       ksef_number: %{type: "string"},
       total_amount: %{type: "number"},
+      vat_amount: %{type: "number"},
       currency: %{type: "string"},
       invoice_identifier: %{type: "string"},
       account_number: %{type: "string"},
