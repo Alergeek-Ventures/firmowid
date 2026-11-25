@@ -226,7 +226,7 @@
     ["<h2>Prowadź firmę z&nbsp;lżejszą głową.</h2>", "<h2>Run your company with a lighter head.</h2>"],
     ["Sprawdź, ile zostaje w&nbsp;Twojej firmie.", "See how much stays in your company."],
     ["aria-label=\"Zgoda na cookies\"", "aria-label=\"Cookie consent\""],
-    ["Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność usługi. Po akceptacji możemy dodatkowo zapisywać cookies analityczne, uruchomić nagrywanie sesji diagnostycznych i powiązać dane z zalogowanym użytkownikiem. Szczegóły w naszej <a href=\"/polityka-prywatnosci\">Polityce Prywatności</a>.", "We always monitor application errors to keep the service reliable. After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user. Details are available in our <a href=\"/polityka-prywatnosci\">Privacy Policy</a>."],
+    ["<span class=\"consent__always\">Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność usługi. </span>Po akceptacji możemy dodatkowo zapisywać cookies analityczne, uruchomić nagrywanie sesji diagnostycznych i powiązać dane z zalogowanym użytkownikiem. Szczegóły w naszej <a href=\"/polityka-prywatnosci\">Polityce Prywatności</a>.", "<span class=\"consent__always\">We always monitor application errors to keep the service reliable. </span>After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user. Details are available in our <a href=\"/polityka-prywatnosci\">Privacy Policy</a>."],
     ["data-consent=\"rejected\">Odrzuć</button>", "data-consent=\"rejected\">Reject</button>"],
     ["data-consent=\"accepted\">Akceptuję</button>", "data-consent=\"accepted\">Accept</button>"]
   ],
