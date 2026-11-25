@@ -76,7 +76,9 @@ defmodule Firmowid.Billing.SubscriptionTest do
                  ]
                },
                # Nothing is due on the day of the purchase: the trial.
-               "amount_total" => 0
+               "amount_total" => 0,
+               "currency" => "pln",
+               "adaptive_pricing" => %{"enabled" => false}
              } = checkout_session(organization.stripe_customer_id)
     end
 
