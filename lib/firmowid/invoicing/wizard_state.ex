@@ -41,6 +41,7 @@ defmodule Firmowid.Invoicing.WizardState do
   code_interface do
     define :create, action: :create
     define :update_counterparty, action: :update_counterparty
+    define :update_buyer_address, action: :update_buyer_address
     define :update_items, action: :update_items
     define :update_payment, action: :update_payment
     define :update_notes, action: :update_notes
@@ -136,6 +137,18 @@ defmodule Firmowid.Invoicing.WizardState do
       validate present([:buyer_country]), message: gettext_noop("Country is required")
       validate present([:buyer_address]), message: gettext_noop("Address is required")
       validate Validations.ValidateEuVatNumber
+    end
+
+    # Unlike `update_counterparty`, keeps the currency, reverse charge and bank account a
+    # copied invoice brought, which that action derives anew from the buyer's country.
+    update :update_buyer_address do
+      description "Set the buyer's address chosen for a copied invoice and move the wizard to the items step."
+      require_atomic? false
+
+      accept [:buyer_address]
+      change set_attribute(:step, :items)
+
+      validate present([:buyer_address]), message: gettext_noop("Address is required")
     end
 
     update :update_items do

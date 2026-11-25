@@ -4163,6 +4163,16 @@ msgctxt "counterparty suggestions"
 msgid "Counterparty details"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "Counterparty from invoice %{number}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "Counterparty from the copied invoice"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparties.ex
 #, elixir-autogen, elixir-format
 msgid "Counterparty management"
@@ -4281,6 +4291,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "session overlap"
 msgid "Current session"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "Current, from the counterparty"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
@@ -6022,6 +6037,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "time range column"
 msgid "From"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "From the copied invoice"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
@@ -8251,6 +8271,7 @@ msgid "New transactions suggest different settings than the saved ones."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex
 #, elixir-autogen, elixir-format
@@ -9125,6 +9146,11 @@ msgstr ""
 msgid "Optional, but it helps us a lot."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "Or choose another counterparty"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "Or maybe no invoice fits this transaction? Skip searching for it. Firmowid will mark it as settled outside the system."
@@ -9899,6 +9925,7 @@ msgstr ""
 msgid "Private key password"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex
 #, elixir-autogen, elixir-format
@@ -12351,6 +12378,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "The counterparty was archived on %{date}. The data remains available historically, but the counterparty will not appear in new selections."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
+#, elixir-autogen, elixir-format
+msgid "The counterparty's address has changed since the copied invoice."
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/prepare_invoice_seller.ex

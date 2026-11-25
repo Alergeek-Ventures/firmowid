@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Changes.StaleRecord
   alias Firmowid.Core
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
@@ -95,6 +96,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
+      |> assign(:copied_invoice, nil)
       |> assign(:country_options, CountryCodes.country_options())
       |> assign(:page_title, gettext("Invoice wizard"))
       |> assign(
@@ -144,6 +146,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     case WizardState.create(%{organization_id: org_id}, scope: scope) do
       {:ok, draft} ->
+        # A restart after a copy starts blank, without the copied counterparty.
+        socket = assign(socket, :copied_invoice, nil)
+
         {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
 
       {:error, _error} ->
@@ -160,7 +165,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     item_calcs = [:net_value, :vat_value, :gross_value]
 
     case SalesInvoice.by_id(invoice_id,
-           load: [:is_paid_on_issue, sales_invoice_items: item_calcs],
+           load: [:is_paid_on_issue, :counterparty, sales_invoice_items: item_calcs],
            scope: scope
          ) do
       {:error, _} ->
@@ -177,10 +182,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp create_and_populate_draft_from_copy(socket, scope, org_id, base_invoice) do
     case WizardState.create(%{organization_id: org_id}, scope: scope) do
       {:ok, draft} ->
+        choice = buyer_address_choice(base_invoice)
+
         handle_populate_draft_result(
           socket,
           org_id,
-          populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope)
+          base_invoice,
+          choice,
+          populate_draft_from_invoice(
+            draft,
+            base_invoice,
+            choice,
+            socket.assigns.bank_accounts,
+            scope
+          )
         )
 
       {:error, _error} ->
@@ -191,19 +206,53 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp handle_populate_draft_result(socket, org_id, {:ok, draft}) do
+  defp handle_populate_draft_result(socket, org_id, base_invoice, choice, {:ok, draft}) do
     invoice = load_draft_with_calcs(draft, socket.assigns.ash_scope)
-    socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
-    {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items), replace: true)}
+
+    socket =
+      assign(socket,
+        invoice: invoice,
+        creator_draft_id: draft.id,
+        org_id: org_id,
+        copied_invoice: copied_invoice(base_invoice, choice)
+      )
+
+    {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
   end
 
-  defp handle_populate_draft_result(socket, org_id, {:partial, draft, changeset}) do
+  # The counterparty form shows the address, so the choice is not offered.
+  defp handle_populate_draft_result(socket, org_id, _base_invoice, _choice, {:partial, draft, changeset}) do
     invoice = load_draft_with_calcs(draft, socket.assigns.ash_scope)
     socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
     {:noreply, setup_partial_copy(socket, changeset, draft.id)}
   end
 
-  defp populate_draft_from_invoice(draft, base_invoice, bank_accounts, scope) do
+  # The counterparty's address can have changed since the copied invoice. The copy then
+  # takes the current address and lets the user switch back to the invoice's.
+  defp buyer_address_choice(%{counterparty: %Counterparty{address: address}} = base_invoice) when is_binary(address) do
+    current = comparable_address(address)
+    copied = comparable_address(base_invoice.buyer_address)
+
+    if "" not in [current, copied] and current != copied,
+      do: %{counterparty: address, invoice: base_invoice.buyer_address}
+  end
+
+  defp buyer_address_choice(_base_invoice), do: nil
+
+  # A copy starts at the counterparty step, which shows the copied buyer to confirm or replace.
+  defp copied_invoice(base_invoice, address_choice) do
+    %{number: base_invoice.invoice_number, address_choice: address_choice}
+  end
+
+  # Invoices read from KSeF join the address lines with ", " where a counterparty keeps
+  # a line break, so line breaks, commas and spacing do not count as a change.
+  defp comparable_address(address) do
+    (address || "")
+    |> String.split(~r/[\s,]+/u, trim: true)
+    |> Enum.join(" ")
+  end
+
+  defp populate_draft_from_invoice(draft, base_invoice, address_choice, bank_accounts, scope) do
     default_bank_account =
       InvoicePayment.find_selected_bank_account(bank_accounts, nil, base_invoice.currency)
 
@@ -228,7 +277,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       buyer_surname: base_invoice.buyer_surname,
       buyer_pesel: base_invoice.buyer_pesel,
       buyer_display_name: base_invoice.buyer_display_name,
-      buyer_address: base_invoice.buyer_address,
+      buyer_address: if(address_choice, do: address_choice.counterparty, else: base_invoice.buyer_address),
       buyer_country: base_invoice.buyer_country,
       buyer_email: base_invoice.buyer_email,
       buyer_phone: base_invoice.buyer_phone,
@@ -796,13 +845,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     base_invoice =
       SalesInvoice.by_id!(invoice_id,
-        load: [:is_paid_on_issue, :sales_invoice_items],
+        load: [:is_paid_on_issue, :counterparty, :sales_invoice_items],
         scope: scope
       )
 
     draft = socket.assigns.draft
+    choice = buyer_address_choice(base_invoice)
 
-    case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
+    case populate_draft_from_invoice(
+           draft,
+           base_invoice,
+           choice,
+           socket.assigns.bank_accounts,
+           scope
+         ) do
       {:ok, updated_draft} ->
         invoice = load_draft_with_calcs(updated_draft, scope)
 
@@ -810,8 +866,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           socket
           |> assign(:invoice, invoice)
           |> assign(:draft, updated_draft)
+          |> assign(:copied_invoice, copied_invoice(base_invoice, choice))
 
-        {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items))}
+        {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty))}
 
       {:partial, updated_draft, changeset} ->
         invoice = load_draft_with_calcs(updated_draft, scope)
@@ -820,12 +877,24 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           socket
           |> assign(:invoice, invoice)
           |> assign(:draft, updated_draft)
+          |> assign(:copied_invoice, nil)
 
         {:noreply, setup_partial_copy(socket, changeset, draft.id)}
 
       # Another tab issued or discarded this draft.
-      {:error, %{errors: [%Ash.Error.Changes.StaleRecord{}]}} ->
+      {:error, %{errors: [%StaleRecord{}]}} ->
         {:noreply, restart_wizard(socket)}
+    end
+  end
+
+  def handle_event("confirm_copied_counterparty", params, socket) do
+    case socket.assigns.copied_invoice.address_choice do
+      nil ->
+        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
+
+      choice ->
+        address = if params["source"] == "invoice", do: choice.invoice, else: choice.counterparty
+        save_buyer_address(socket, address)
     end
   end
 
@@ -882,6 +951,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           |> assign(:draft, updated_draft)
           |> assign(:invoice, invoice)
           |> assign(:open_counterparty_modal, false)
+          |> assign(:copied_invoice, nil)
 
         {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
 
@@ -1067,6 +1137,24 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, assign(socket, :should_send_emails, params["should_send_emails"] == "true")}
   end
 
+  defp save_buyer_address(socket, address) do
+    scope = socket.assigns.ash_scope
+
+    case WizardState.update_buyer_address(socket.assigns.draft, %{buyer_address: address}, scope: scope) do
+      {:ok, updated_draft} ->
+        socket =
+          socket
+          |> assign(:draft, updated_draft)
+          |> assign(:invoice, load_draft_with_calcs(updated_draft, scope))
+
+        {:noreply, push_patch(socket, to: creator_draft_url(updated_draft.id, :items))}
+
+      # Another tab issued or discarded this draft.
+      {:error, %{errors: [%StaleRecord{}]}} ->
+        {:noreply, restart_wizard(socket)}
+    end
+  end
+
   defp assign_invoice_number(socket, invoice_number) do
     preview_invoice = socket.assigns.preview_invoice
     scope = socket.assigns.ash_scope
@@ -1110,6 +1198,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
               socket
               |> assign(:draft, updated_draft)
               |> assign(:invoice, invoice)
+              |> assign(:copied_invoice, nil)
 
             {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
 
@@ -1216,7 +1305,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def render_header(assigns) do
     buyer_name = assigns[:invoice] && assigns.invoice.buyer_display_name_label
-    assigns = assign(assigns, :buyer_name, buyer_name)
+
+    assigns =
+      assign(assigns,
+        buyer_name: buyer_name,
+        buyer_identifier: buyer_name && buyer_identifier(assigns.invoice)
+      )
 
     ~H"""
     <div class="flex flex-col gap-4">
@@ -1239,21 +1333,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           <p class="ml-auto">
             {gettext("Counterparty")} <span class="text-grey-700">{@buyer_name}</span>
           </p>
-          <p>
-            <%= case @invoice.buyer_id_type do %>
-              <% :nip -> %>
-                NIP <span class="text-grey-700">{@invoice.buyer_id}</span>
-              <% :eu_vat -> %>
-                VAT-EU <span class="text-grey-700">{@invoice.buyer_id}</span>
-              <% :other_id -> %>
-                ID <span class="text-grey-700">{@invoice.buyer_id}</span>
-              <% :optional_id -> %>
-                <%= if @invoice.buyer_id && @invoice.buyer_id != "" do %>
-                  ID <span class="text-grey-700">{@invoice.buyer_id}</span>
-                <% end %>
-              <% :no_id -> %>
-                PESEL <span class="text-grey-700">{@invoice.buyer_pesel}</span>
-            <% end %>
+          <p :if={@buyer_identifier}>
+            {elem(@buyer_identifier, 0)}
+            <span class="text-grey-700">{elem(@buyer_identifier, 1)}</span>
           </p>
         <% end %>
       </div>
@@ -1263,6 +1345,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     </div>
     """
   end
+
+  # The buyer's identifier as `{label, value}`, nil when an optional one is missing.
+  defp buyer_identifier(%{buyer_id_type: :nip, buyer_id: id}), do: {"NIP", id}
+  defp buyer_identifier(%{buyer_id_type: :eu_vat, buyer_id: id}), do: {"VAT-EU", id}
+  defp buyer_identifier(%{buyer_id_type: :other_id, buyer_id: id}), do: {"ID", id}
+
+  defp buyer_identifier(%{buyer_id_type: :optional_id, buyer_id: id}) when id not in [nil, ""], do: {"ID", id}
+
+  defp buyer_identifier(%{buyer_id_type: :optional_id}), do: nil
+  defp buyer_identifier(%{buyer_id_type: :no_id, buyer_pesel: pesel}), do: {"PESEL", pesel}
 
   defp can_manage_counterparties?(user) do
     Ash.can_do_all?([{Counterparty, :create}, {Counterparty, :update}], user)
