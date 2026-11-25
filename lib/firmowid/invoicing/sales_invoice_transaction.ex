@@ -44,7 +44,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTransaction do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:analysis_reader]} do
+    bypass {SystemActorRole, roles: [:analysis_reader, :tax_forecaster]} do
       authorize_if action_type(:read)
     end
 

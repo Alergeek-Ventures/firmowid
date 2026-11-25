@@ -60,6 +60,11 @@ defmodule Firmowid.Analysis.EntryCategory do
       authorize_if always()
     end
 
+    # The tax forecast categorizes skipped transfers to tell which of them are costs.
+    bypass [{SystemActorRole, roles: [:tax_forecaster]}, action_type(:read)] do
+      authorize_if always()
+    end
+
     policy Firmowid.Checks.IsSystemActor do
       forbid_if always()
     end

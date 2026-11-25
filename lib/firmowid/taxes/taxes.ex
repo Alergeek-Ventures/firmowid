@@ -50,6 +50,11 @@ defmodule Firmowid.Taxes do
                     "transactions Firmowid has. An estimate to plan cash, not a tax return: say so. One item per " <>
                     "period: kind, period, period_start, period_end, amount in PLN, due_date, description, " <>
                     "member_id and details, the figures the amount comes from; use details to explain an amount. " <>
+                    "The period that is still running includes the typical rest of the period, taken from the " <>
+                    "previous three months, so its amount is for the whole period and not only for the " <>
+                    "documents dated so far; details projected_output_vat and projected_input_vat (vat) and " <>
+                    "projected_revenue and projected_costs (cit, pit) say how much of the figure is that " <>
+                    "expectation (zero for a period without any). " <>
                     "vat: for a VAT payer with a saved vat_period; details output_vat, input_vat, carried_over, " <>
                     "refunded. carried_over is the surplus input VAT from earlier periods, deducted first, " <>
                     "already lowered by refunded: the VAT refunds from a tax office (incoming transfers from " <>
@@ -82,6 +87,7 @@ defmodule Firmowid.Taxes do
       define :update_tax_year, action: :update
       define :suggest_tax_settings, action: :suggest_settings, args: [:year]
       define :forecast_taxes, action: :forecast, args: [:year]
+      define :save_tax_forecasts, action: :save_forecasts
     end
 
     resource Firmowid.Taxes.Partner

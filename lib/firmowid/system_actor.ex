@@ -125,6 +125,13 @@ defmodule Firmowid.SystemActor do
     them, and switches members, projects and bank accounts above the limit off
     and back on.
 
+  - `:tax_forecaster` — keeps an organization's upcoming tax and ZUS payments as
+    expected transactions (see `Firmowid.Taxes.TaxYear`, action `:save_forecasts`).
+    Bound to `org_id`, it reads what the forecast reads (tax years and partners, the
+    organization, invoices, transactions, bank accounts, analysis categories and
+    tags, and the member names), and adds, recalculates and removes only the
+    expected transactions that carry a forecast key and no bank transaction fulfils.
+
   - `:billing` — keeps an organization's plan in step with Stripe. Bound to
     `org_id`, it links the organization's Stripe customer and makes its plan
     follow its Stripe subscription. It also records the payments whose invoices
@@ -162,6 +169,7 @@ defmodule Firmowid.SystemActor do
           | :actor_member_loader
           | :sign_in_recorder
           | :plan_limits
+          | :tax_forecaster
           | :billing
 
   @enforce_keys [:org_id, :role]

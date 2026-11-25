@@ -263,7 +263,8 @@ defmodule Firmowid.Core.Organization do
          :analysis_classifier,
          :billing_snapshotter,
          :ksef_session,
-         :sales_invoice_processor
+         :sales_invoice_processor,
+         :tax_forecaster
        ]},
       action_type(:read)
     ] do

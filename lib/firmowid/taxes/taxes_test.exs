@@ -8,9 +8,11 @@ defmodule Firmowid.TaxesTest do
   alias Ash.Error.Invalid
   alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Core
+  alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.SystemActor
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Partner
   alias Firmowid.Taxes.TaxYear
@@ -247,6 +249,29 @@ defmodule Firmowid.TaxesTest do
       )
     end
 
+    # The forecast as of a day after the year, which has no running period, unless a test says otherwise.
+    defp forecast(scope, year \\ 2026, today \\ ~D[2027-01-01]),
+      do: Taxes.forecast_taxes(year, scope: scope, private_arguments: %{today: today})
+
+    defp seed_cost_invoice(scope, date, gross, vat) do
+      Ash.Seed.seed!(
+        CostInvoice,
+        %{
+          seller: "Supplier Sp. z o.o.",
+          seller_display_name: "Supplier Sp. z o.o.",
+          sale_date: date,
+          issue_date: date,
+          due_date: Date.add(date, 14),
+          amount: Money.new!(:PLN, "-#{gross}"),
+          vat_amount: Decimal.new(vat),
+          description: "Services",
+          invoice_identifier: "FV/#{System.unique_integer([:positive])}",
+          organization_id: scope.tenant
+        },
+        tenant: scope.tenant
+      )
+    end
+
     test "counts invoices, corrections and cost invoices in their months, per organization", %{
       scope: scope
     } do
@@ -287,7 +312,7 @@ defmodule Firmowid.TaxesTest do
       other_scope = %Firmowid.Scope{actor: other, tenant: other.member.organization_id}
       seed_sales(other_scope, %{}, Decimal.new("5000"))
 
-      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      assert {:ok, forecasts} = forecast(scope)
       vat = Enum.filter(forecasts, &(&1.kind == :vat))
       assert length(vat) == 12
 
@@ -304,6 +329,50 @@ defmodule Firmowid.TaxesTest do
       assert Decimal.equal?(february.amount, 0)
       assert Decimal.equal?(february.details.output_vat, -92)
       assert Decimal.equal?(february.details.input_vat, 0)
+    end
+
+    test "adds the typical rest of the running month from the three months before it", %{
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+
+      # Invoices at the end of the month, 230 of output VAT each, and an invoice of 460 booked in
+      # November before the 10th. The cost invoices bring 23 of input VAT, after the 10th too.
+      for date <- [~D[2026-08-28], ~D[2026-09-29], ~D[2026-10-30]],
+          do: seed_sales(scope, %{sale_date: date, issue_date: date}, Decimal.new("1000"))
+
+      seed_sales(
+        scope,
+        %{sale_date: ~D[2026-11-05], issue_date: ~D[2026-11-05]},
+        Decimal.new("2000")
+      )
+
+      seed_cost_invoice(scope, ~D[2026-09-15], "123.00", "23")
+      seed_cost_invoice(scope, ~D[2026-10-20], "123.00", "23")
+
+      {:ok, forecasts} = forecast(scope, 2026, ~D[2026-11-10])
+
+      [october, november, december] =
+        Enum.filter(forecasts, &(&1.kind == :vat and &1.period >= "2026-10"))
+
+      # Booked 460 and the typical rest, 3 × 230 over 3 months; input VAT: 2 × 23 over 3, rounded.
+      assert Decimal.equal?(november.details.output_vat, 690)
+      assert Decimal.equal?(november.details.projected_output_vat, 230)
+      assert Decimal.equal?(november.details.input_vat, 15)
+      assert Decimal.equal?(november.details.projected_input_vat, 15)
+      assert Decimal.equal?(november.amount, 675)
+
+      # A month that ended and one that has not started count the documents only.
+      assert Decimal.equal?(october.amount, 207)
+      assert Decimal.equal?(october.details.projected_output_vat, 0)
+      assert Decimal.equal?(december.amount, 0)
+      assert Decimal.equal?(december.details.projected_output_vat, 0)
+
+      {:ok, later} = forecast(scope)
+      assert Enum.find(later, &(&1.kind == :vat and &1.period == "2026-10")) == october
+      later_november = Enum.find(later, &(&1.kind == :vat and &1.period == "2026-11"))
+      assert Decimal.equal?(later_november.details.projected_output_vat, 0)
+      assert Decimal.equal?(later_november.amount, 460)
     end
 
     test "forecasts the CIT advance of a limited company from net revenue and costs", %{
@@ -330,7 +399,7 @@ defmodule Firmowid.TaxesTest do
         tenant: scope.tenant
       )
 
-      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      assert {:ok, forecasts} = forecast(scope)
       assert [first_quarter | _] = cit = Enum.filter(forecasts, &(&1.kind == :cit))
       assert length(cit) == 4
 
@@ -364,7 +433,7 @@ defmodule Firmowid.TaxesTest do
       end
 
       first_quarter = fn ->
-        {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+        {:ok, forecasts} = forecast(scope)
         Enum.find(forecasts, &(&1.kind == :cit and &1.period == "2026-Q1"))
       end
 
@@ -417,7 +486,7 @@ defmodule Firmowid.TaxesTest do
 
       seed_sales(scope, %{}, Decimal.new("1000"))
 
-      assert {:ok, forecasts} = Taxes.forecast_taxes(2026, scope: scope)
+      assert {:ok, forecasts} = forecast(scope)
       assert [:vat, :pit, :zus] = forecasts |> Enum.map(& &1.kind) |> Enum.uniq()
 
       pit = Enum.filter(forecasts, &(&1.kind == :pit))
@@ -439,7 +508,7 @@ defmodule Firmowid.TaxesTest do
       other_scope = %Firmowid.Scope{actor: other, tenant: other.member.organization_id}
       create_company_tax_year(other_scope)
 
-      assert {:ok, company_forecasts} = Taxes.forecast_taxes(2026, scope: other_scope)
+      assert {:ok, company_forecasts} = forecast(other_scope)
       assert Enum.all?(company_forecasts, &(&1.kind in [:vat, :cit]))
     end
 
@@ -455,7 +524,127 @@ defmodule Firmowid.TaxesTest do
                  scope: %Firmowid.Scope{actor: invoicing, tenant: org_id}
                )
 
-      assert {:ok, []} = Taxes.forecast_taxes(2025, scope: scope)
+      assert {:ok, []} = forecast(scope, 2025)
+    end
+  end
+
+  describe "save_tax_forecasts/2" do
+    @today ~D[2026-02-05]
+
+    defp forecaster(org_id),
+      do: %Firmowid.Scope{actor: %SystemActor{org_id: org_id, role: :tax_forecaster}, tenant: org_id}
+
+    defp save_forecasts(org_id),
+      do: Taxes.save_tax_forecasts(%{}, scope: forecaster(org_id), private_arguments: %{today: @today})
+
+    defp saved(scope) do
+      %{forecast: true}
+      |> Finances.list_expected_transactions!(scope: scope, load: [:is_fulfilled])
+      |> Map.new(&{&1.forecast_key, &1})
+    end
+
+    test "keeps one expectation per payment that is due, for its organization only", %{
+      org_id: org_id,
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+      seed_sales(scope, %{}, Decimal.new("10000"))
+
+      other = admin_fixture()
+      other_id = other.member.organization_id
+      other_scope = %Firmowid.Scope{actor: other, tenant: other_id}
+
+      Finances.create_expected_transaction!(
+        %{
+          date: ~D[2026-02-25],
+          amount: Money.new!(:PLN, "-1"),
+          description: "Other company's VAT"
+        },
+        scope: forecaster(other_id),
+        private_arguments: %{forecast_key: "vat:2026-01"}
+      )
+
+      assert {:ok, 3} = save_forecasts(org_id)
+
+      # January's VAT is due soon, the running February's VAT is its typical rest (the one
+      # invoice of January comes after the 5th too) and the first quarter's CIT advance later.
+      assert %{"vat:2026-01" => vat, "vat:2026-02" => february, "cit:2026-Q1" => cit} =
+               expected = saved(scope)
+
+      assert map_size(expected) == 3
+
+      assert vat.date == ~D[2026-02-25]
+      assert Money.equal?(vat.amount, Money.new!(:PLN, "-2300"))
+      assert vat.counterparty_name == "Urząd Skarbowy"
+      assert vat.description =~ "01/2026"
+      assert february.date == ~D[2026-03-25]
+      assert Money.equal?(february.amount, Money.new!(:PLN, "-2300"))
+      assert cit.date == ~D[2026-04-20]
+
+      # 10 000 booked, and the same for the rest of February and for March: 9% of 30 000.
+      assert Money.equal?(cit.amount, Money.new!(:PLN, "-2700"))
+
+      # Running it again changes nothing.
+      assert {:ok, 0} = save_forecasts(org_id)
+      assert saved(scope) == expected
+
+      # The other organization's expectation is not recalculated or removed.
+      assert [%{amount: amount, description: "Other company's VAT"}] =
+               Finances.list_expected_transactions!(%{}, scope: other_scope)
+
+      assert Money.equal?(amount, Money.new!(:PLN, "-1"))
+
+      # Nobody runs it by hand, and the job of one organization cannot be pointed at another.
+      assert {:error, %Forbidden{}} = Taxes.save_tax_forecasts(%{}, scope: scope)
+
+      assert {:error, %Forbidden{}} =
+               Taxes.save_tax_forecasts(%{}, scope: %{forecaster(other_id) | tenant: org_id})
+    end
+
+    test "recalculates an expectation until a bank transaction fulfils it", %{
+      org_id: org_id,
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+      seed_sales(scope, %{}, Decimal.new("10000"))
+      assert {:ok, 3} = save_forecasts(org_id)
+
+      %{"vat:2026-01" => vat, "cit:2026-Q1" => cit} = saved(scope)
+
+      payment =
+        Ash.Seed.seed!(Transaction, %{
+          organization_id: org_id,
+          bank_account_id: bank_account_fixture_for_organization!(org_id).id,
+          creditor_name: "Urząd Skarbowy",
+          amount: Money.new!(:PLN, "-2300"),
+          booking_date: ~D[2026-02-03],
+          value_date: ~D[2026-02-03]
+        })
+
+      Finances.connect_expected_transaction_transactions!(vat, [payment.id], scope: scope)
+
+      seed_sales(
+        scope,
+        %{sale_date: ~D[2026-01-20], issue_date: ~D[2026-01-20]},
+        Decimal.new("5000")
+      )
+
+      # The running February's VAT and the CIT advance follow the new invoice.
+      assert {:ok, 2} = save_forecasts(org_id)
+
+      # The fulfilled expectation keeps its amount, the others follow the forecast.
+      assert %{"vat:2026-01" => fulfilled, "vat:2026-02" => february, "cit:2026-Q1" => followed} =
+               saved(scope)
+
+      assert fulfilled.id == vat.id
+      assert Money.equal?(fulfilled.amount, Money.new!(:PLN, "-2300"))
+      assert Money.equal?(february.amount, Money.new!(:PLN, "-3450"))
+      assert followed.id == cit.id
+      assert Money.equal?(followed.amount, Money.new!(:PLN, "-4050"))
+
+      # The job cannot remove what a bank transaction fulfils.
+      assert {:error, %Forbidden{}} =
+               Finances.destroy_expected_transaction(vat, scope: forecaster(org_id))
     end
   end
 

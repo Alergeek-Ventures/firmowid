@@ -35,6 +35,12 @@ defmodule Firmowid.Taxes.Forecast.Period do
     end
   end
 
+  @doc "Returns the last day of the month or the quarter of `frequency` that contains `date`."
+  @spec last_day(frequency(), Date.t()) :: Date.t()
+  def last_day(:monthly, date), do: Date.end_of_month(date)
+
+  def last_day(:quarterly, date), do: Date.end_of_month(Date.new!(date.year, div(date.month - 1, 3) * 3 + 3, 1))
+
   @doc "Returns the period's name for a description, such as `10/2026`."
   @spec name(t()) :: String.t()
   def name(%{first: %Date{month: month, year: year}, last: %Date{month: month}}),

@@ -11,12 +11,17 @@ defmodule Firmowid.Taxes.TaxYear do
   use Ash.Resource,
     domain: Firmowid.Taxes,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshOban]
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.LocalDate
   alias Firmowid.Resource
   alias Firmowid.Taxes.TaxYear.Actions.Forecast
+  alias Firmowid.Taxes.TaxYear.Actions.SaveForecasts
   alias Firmowid.Taxes.TaxYear.Actions.SuggestSettings
   alias Firmowid.Taxes.TaxYear.Changes.FitLegalForm
 
@@ -30,6 +35,18 @@ defmodule Firmowid.Taxes.TaxYear do
 
     references do
       reference :organization, on_delete: :delete
+    end
+  end
+
+  oban do
+    scheduled_actions do
+      schedule :save_forecasts, "10 5 * * *" do
+        action :save_forecasts
+        queue :default
+        list_tenants {Firmowid.Invoicing.SalesInvoice.OrganizationTenantList, []}
+
+        worker_module_name Firmowid.Taxes.TaxYear.Worker.SaveForecasts
+      end
     end
   end
 
@@ -137,11 +154,43 @@ defmodule Firmowid.Taxes.TaxYear do
 
       argument :year, :integer, allow_nil?: false, constraints: [min: 2020, max: 2100]
 
+      # Today in Poland; the running period of this day's year is projected. A test passes a fixed date.
+      argument :today, :date, allow_nil?: false, public?: false, default: &LocalDate.today/0
+
       run Forecast
+    end
+
+    action :save_forecasts, :integer do
+      description "Keep the organization's upcoming tax and ZUS payments as expected transactions: recalculate " <>
+                    "the forecasts of this year and the last one, add the payments that are due and not saved yet, " <>
+                    "update the unfulfilled ones and remove those that are no longer due. Returns the number " <>
+                    "of changes. Run daily for every organization by the scheduler."
+
+      # All changes or none, so a failure leaves the expectations as they were for the next run.
+      transaction? true
+
+      # Today in Poland; a test passes a fixed date.
+      argument :today, :date, allow_nil?: false, public?: false, default: &LocalDate.today/0
+
+      run SaveForecasts
     end
   end
 
   policies do
+    bypass AshObanInteraction do
+      authorize_if action(:save_forecasts)
+    end
+
+    bypass {SystemActorRole, roles: [:tax_forecaster]} do
+      authorize_if action_type(:read)
+      authorize_if action([:forecast, :save_forecasts])
+    end
+
+    # Only the daily job saves the forecasts; nobody runs it by hand.
+    policy action(:save_forecasts) do
+      forbid_if always()
+    end
+
     policy action_type([:read, :action]) do
       authorize_if {AtLeastRole, role: :accountant}
     end
