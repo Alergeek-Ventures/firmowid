@@ -1,11 +1,16 @@
 defmodule Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility do
   @moduledoc """
-  Checks if counterparty connected to SalesInvoice has valid email for invoice email delivery.
+  Finds the address a sales invoice is e-mailed to and checks that it is valid.
+
+  An invoice goes to its counterparty's address. Without a counterparty, such as an invoice
+  issued over the API, or when the counterparty has no valid address, it goes to the buyer
+  address on the invoice.
   """
 
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Invoicing.Counterparty
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
 
   @no_counterparty gettext_noop("The invoice has no counterparty assigned.")
@@ -14,6 +19,22 @@ defmodule Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility do
   @email_regex ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   @type result :: {:ok, String.t()} | {:error, String.t(), String.t() | nil}
+
+  @doc """
+  Fetches a valid, trimmed recipient for an invoice: its counterparty's address, or else the
+  buyer address on the invoice.
+  """
+  @spec fetch_valid_recipient_email(SalesInvoice.t(), Scope.t()) :: result()
+  def fetch_valid_recipient_email(%SalesInvoice{} = invoice, scope) do
+    case fetch_valid_counterparty_email(invoice.counterparty_id, scope) do
+      {:ok, email} -> {:ok, email}
+      {:error, _reason, _email} = error -> buyer_email(invoice.buyer_email, error)
+    end
+  end
+
+  defp buyer_email(email, _counterparty_error) when is_binary(email) and email != "", do: validate_email(email)
+
+  defp buyer_email(_email, counterparty_error), do: counterparty_error
 
   @doc """
   Fetches a valid, trimmed email recipient for a counterparty ID.
