@@ -2,8 +2,11 @@ defmodule Firmowid.Invoicing do
   @moduledoc """
   Ash domain for invoicing — counterparties, sales invoices, cost invoices,
   and supporting resources.
+
+  Its `json_api` routes are the sales invoice part of the public API (see
+  `FirmowidWeb.Invoicing.Api`), reached with an organization API key.
   """
-  use Ash.Domain, extensions: [AshAi]
+  use Ash.Domain, extensions: [AshAi, AshJsonApi.Domain]
 
   alias Firmowid.Blobs
   alias Firmowid.Core
@@ -359,6 +362,16 @@ defmodule Firmowid.Invoicing do
     end
   end
 
+  json_api do
+    routes do
+      base_route "/sales-invoices", SalesInvoice do
+        post(:issue_from_api)
+        get(:by_external_id, route: "/external-id/:external_id")
+        get(:by_id)
+      end
+    end
+  end
+
   resources do
     resource Firmowid.Invoicing.CounterpartyProposal do
       define :list_counterparty_proposals, action: :by_group_keys, args: [:group_keys]
@@ -416,6 +429,7 @@ defmodule Firmowid.Invoicing do
     resource SalesInvoice do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
+      define :get_sales_invoice_by_external_id, action: :by_external_id, args: [:external_id]
       define :draft_sales_invoice, action: :draft
       define :issue_sales_invoice, action: :issue
       define :correct_sales_invoice, action: :correct

@@ -194,6 +194,12 @@ defmodule FirmowidWeb.Core.Router do
     forward "/", FirmowidWeb.Timetracker.Api
   end
 
+  scope "/api/v1" do
+    pipe_through :api_key
+
+    forward "/", FirmowidWeb.Invoicing.Api
+  end
+
   scope "/mcp" do
     pipe_through :mcp
 
