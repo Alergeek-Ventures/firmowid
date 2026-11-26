@@ -48,11 +48,13 @@ defmodule Firmowid.Ksef.Actions.ConnectionStatus do
     }
   end
 
-  defp connection_status(%{status: status, expires_on: expires_on}) when status in [:working, :refreshing] do
+  @doc "Projects a credential's stored status and expiration date, never secrets, into a connection status."
+  @spec connection_status(Credential.t()) :: :connected | :connecting | :expired
+  def connection_status(%{status: status, expires_on: expires_on}) when status in [:working, :refreshing] do
     if expires_on && Date.before?(expires_on, Date.utc_today()), do: :expired, else: :connected
   end
 
-  defp connection_status(%{status: status})
-       when status in [:authenticating, :authenticating_epuap, :preparing_enrollment, :wait_for_certificate],
-       do: :connecting
+  def connection_status(%{status: status})
+      when status in [:authenticating, :authenticating_epuap, :preparing_enrollment, :wait_for_certificate],
+      do: :connecting
 end

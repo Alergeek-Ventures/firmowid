@@ -18,6 +18,7 @@ defmodule Firmowid.Ksef do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef.Actions.ConnectionStatus
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.CredentialMetadata
   alias Firmowid.Ksef.Services.ApiClient
@@ -106,6 +107,25 @@ defmodule Firmowid.Ksef do
   """
   @spec connected?(Scope.t()) :: boolean()
   def connected?(scope), do: connection_status!(scope: scope).status == :connected
+
+  @doc """
+  Returns the projected KSeF connection status of every given organization that has a
+  stored credential, keyed by organization id; organizations without one are absent.
+
+  The statuses project like `Firmowid.Ksef.Actions.ConnectionStatus.connection_status/1`
+  (connected, connecting or expired) and the cross_tenant_reader actor reads only
+  connection metadata, never credential secrets.
+  """
+  @spec connection_statuses([Ash.UUID.t()]) :: %{
+          Ash.UUID.t() => :connected | :connecting | :expired
+        }
+  def connection_statuses(organization_ids) do
+    scope = %Scope{actor: %SystemActor{org_id: nil, role: :cross_tenant_reader}, tenant: nil}
+
+    organization_ids
+    |> Credential.connection_statuses!(scope: scope)
+    |> Map.new(&{&1.organization_id, ConnectionStatus.connection_status(&1)})
+  end
 
   @doc """
   Disconnects the given organization from KSeF.

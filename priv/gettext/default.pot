@@ -3363,6 +3363,7 @@ msgid "Connect with Google"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_web/admin/views/organizations.ex
 #, elixir-autogen, elixir-format
 msgid "Connected to KSeF"
 msgstr ""
@@ -3380,6 +3381,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Connecting continues in the background"
+msgstr ""
+
+#: lib/firmowid_web/admin/views/organizations.ex
+#, elixir-autogen, elixir-format
+msgid "Connecting to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -8485,6 +8491,7 @@ msgid "No category of this period waits for your check."
 msgstr ""
 
 #: lib/firmowid/ksef/submission_info.ex
+#: lib/firmowid_web/admin/views/organizations.ex
 #, elixir-autogen, elixir-format
 msgid "No connection to KSeF"
 msgstr ""
@@ -12218,6 +12225,7 @@ msgstr ""
 msgid "The KSeF certificate limit has been reached."
 msgstr ""
 
+#: lib/firmowid_web/admin/views/organizations.ex
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format

@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Billing.SnapshotCalculator
   alias Firmowid.Core
+  alias Firmowid.Ksef
   alias FirmowidWeb.Admin.Components.SettlementComponents
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
@@ -49,7 +50,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         plan_filter: plan_filter
       )
 
-    rows = build_rows(page.results, current_month, only_over_limit?)
+    rows = build_rows(page.results, current_month, only_over_limit?, ksef_statuses(page.results))
 
     socket =
       socket
@@ -109,7 +110,13 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         keyset: socket.assigns.keyset
       )
 
-    rows = build_rows(page.results, socket.assigns.current_month, socket.assigns.only_over_limit?)
+    rows =
+      build_rows(
+        page.results,
+        socket.assigns.current_month,
+        socket.assigns.only_over_limit?,
+        ksef_statuses(page.results)
+      )
 
     {:noreply,
      socket
@@ -200,6 +207,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
                   class="text-base/snug font-medium hover:underline"
                 >{short_org_name(row.org.name)}</.link>
                 <SettlementComponents.billing_status_badge :if={row.org.on_trial?} status={:trial} />
+                <.ksef_status_badge status={row.ksef_status} />
               </div>
               <p class="text-sm/snug text-grey-500">NIP: {row.org.nip}</p>
             </div>
@@ -283,13 +291,13 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp filter_over_limit(rows, false), do: rows
   defp filter_over_limit(rows, true), do: Enum.filter(rows, & &1.over_limit?)
 
-  defp build_rows(organizations, current_month, only_over_limit?) do
+  defp build_rows(organizations, current_month, only_over_limit?, ksef_statuses) do
     organizations
-    |> Enum.map(&build_row(&1, current_month))
+    |> Enum.map(&build_row(&1, current_month, ksef_statuses))
     |> filter_over_limit(only_over_limit?)
   end
 
-  defp build_row(org, current_month) do
+  defp build_row(org, current_month, ksef_statuses) do
     usage_source = SnapshotCalculator.build_snapshot_attrs!(org, current_month)
     worksheet = Worksheet.build(usage_source)
     started_on = DateTime.to_date(org.inserted_at)
@@ -299,9 +307,12 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       worksheet: worksheet,
       started_on: started_on,
       age_days: max(Date.diff(Date.utc_today(), started_on), 0),
-      over_limit?: worksheet.over_limit?
+      over_limit?: worksheet.over_limit?,
+      ksef_status: Map.get(ksef_statuses, org.id, :not_connected)
     }
   end
+
+  defp ksef_statuses(organizations), do: Ksef.connection_statuses(Enum.map(organizations, & &1.id))
 
   defp usage_value_styles(%{over_limit: over_limit}) when over_limit > 0, do: "font-medium text-rust-700"
 
@@ -316,6 +327,36 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
 
   defp over_limit_prefix(%{over_limit: over_limit}) when over_limit > 0, do: "(+#{over_limit}) "
   defp over_limit_prefix(_usage), do: ""
+
+  # The connected and broken-off states call for attention; without a credential the
+  # row keeps plain text, because that is the default state of new organizations.
+  attr :status, :atom, required: true, values: [:connected, :connecting, :expired, :not_connected]
+
+  def ksef_status_badge(assigns) do
+    ~H"""
+    <span class={ksef_status_badge_styles(@status)}>{ksef_status_badge_label(@status)}</span>
+    """
+  end
+
+  # The exact msgids are the connections feature's own labels: one concept, one term.
+  defp ksef_status_badge_label(:connected), do: gettext("Connected to KSeF")
+  defp ksef_status_badge_label(:connecting), do: gettext("Connecting to KSeF")
+  defp ksef_status_badge_label(:expired), do: gettext("The KSeF connection has expired")
+  defp ksef_status_badge_label(:not_connected), do: gettext("No connection to KSeF")
+
+  defp ksef_status_badge_styles(:connected) do
+    "inline-flex items-center rounded-full bg-teal-100 px-3 py-1 text-sm/tight text-teal-700"
+  end
+
+  defp ksef_status_badge_styles(:connecting) do
+    "inline-flex items-center rounded-full bg-grey-200 px-3 py-1 text-sm/tight text-grey-900"
+  end
+
+  defp ksef_status_badge_styles(:expired) do
+    "inline-flex items-center rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
+  end
+
+  defp ksef_status_badge_styles(:not_connected), do: "text-sm/snug text-grey-500"
 
   defp short_org_name(name) do
     Enum.reduce(@legal_form_abbreviations, name, fn {full, short}, acc ->
