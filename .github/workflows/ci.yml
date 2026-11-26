@@ -661,16 +661,16 @@ jobs:
         id: plt_cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          key: plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
+          key: plt-v5-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
           # After a mix.lock change, updating the newest PLT of another lock took 162 s,
           # building one from the core PLT 378 s (ash and db_connection bump, 2026-11-25);
           # under load, parallel builds took 15–19 min. So any lock's PLT is a fallback.
           restore-keys: |
-            plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
-            plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
+            plt-v5-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
+            plt-v5-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
           path: |
-            _build/test/*.plt
-            _build/test/*.plt.hash
+            _build/plts/local/*.plt
+            _build/plts/local/*.plt.hash
 
       # Dialyxir validates the lock/app selection; locked dependencies need no forced recheck.
       - name: Create or update PLTs
@@ -697,8 +697,8 @@ jobs:
         with:
           key: ${{ steps.plt_cache.outputs.cache-primary-key }}
           path: |
-            _build/test/*.plt
-            _build/test/*.plt.hash
+            _build/plts/local/*.plt
+            _build/plts/local/*.plt.hash
 
       - name: Run dialyzer
         if: github.event_name != 'push' || github.actor != 'github-merge-queue[bot]'
@@ -707,8 +707,9 @@ jobs:
         # --format dialyxir allows the raw GitHub actions logs to be useful because they have the full warning printed
         run: mix dialyzer --format github --format dialyxir
 
-      # Leaves main's deps, _build and Hex in this runner's clone of the build cache. When
-      # the runner is gone, the host makes the clone the cache every later job restores,
+      # Leaves main's deps, _build and Hex in this runner's clone of the build cache; a job
+      # that started from the cache built them there already. When the runner is gone,
+      # the host makes the clone the cache every later job restores,
       # but only after checking the OIDC token: GitHub signs it for a push to main of this
       # repository, which pull requests and the merge queue cannot obtain.
       - name: Commit main's build to the runner's build cache
@@ -722,9 +723,11 @@ jobs:
             echo "This runner has no build cache."
             exit 0
           fi
-          rm -rf "$dir/deps" "$dir/_build" "$dir/hex"
-          cp -a --reflink=auto deps _build "$dir/"
-          cp -a --reflink=auto ~/.hex "$dir/hex"
+          if [ "${MIX_BUILD_ROOT:-}" != "$dir/_build" ]; then
+            rm -rf "$dir/deps" "$dir/_build" "$dir/hex"
+            cp -a --reflink=auto deps _build "$dir/"
+            cp -a --reflink=auto ~/.hex "$dir/hex"
+          fi
           printf '%s\n' "$IDENTITY" > "$dir/IDENTITY"
           printf '%s\n' "$GITHUB_SHA" > "$dir/COMMIT"
           curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
