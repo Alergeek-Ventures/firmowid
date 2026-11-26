@@ -119,7 +119,7 @@ W opisach programów, które sprawdziliśmy, analiza liczy się z wystawionych d
 |---|---|---|---|---|
 | Firmowid | opłacone faktury i przelewy z banku | 12, proponuje AI | tak, z kosztów przypisanych do projektu | 0 zł, plan Darmowy |
 | Fakturownia | wystawione dokumenty | nadawane ręcznie | nie opisano | Start, 12,49 zł netto |
-| inFakt | dokumenty, z podatkami i ZUS | księgowe, AI w planie Plus | nie opisano | Mini, 9,99 zł netto, koszty tylko z KSeF |
+| inFakt | dokumenty, z podatkami i ZUS | księgowe, AI w planie Plus | nie opisano | Mini, 9,90 zł netto, koszty tylko z KSeF |
 | wFirma | dokumenty | nie opisano | nie opisano | pakiet niepodany, cennik od 25 zł netto |
 | iFirma | księga przychodów i rozchodów | 6 stałych | tak, dokumenty podpinane ręcznie | wymaga księgowości w serwisie |
 | Fakturoza | pulpit z przychodami, kosztami i wynikiem | nadawane ręcznie | nie opisano | 0 zł z limitem 5 kosztów miesięcznie |
