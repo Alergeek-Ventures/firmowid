@@ -244,7 +244,7 @@ defmodule FirmowidWeb.Management.Components.Roles do
       />
       <div>
         <span class="font-medium capitalize">{UserRole.label(@role)}</span>
-        <p class="text-sm">{role_desc(@role)}</p>
+        <p class="text-sm">{UserRole.description(@role)}</p>
       </div>
     </.label>
     """
@@ -252,26 +252,6 @@ defmodule FirmowidWeb.Management.Components.Roles do
 
   defp invite_issuer(%{issued_by: %{email: email}}) when not is_nil(email), do: to_string(email)
   defp invite_issuer(_invite), do: gettext("administrator")
-
-  defp role_desc(:admin) do
-    gettext(
-      "Full access to the \"Management\" tab, including managing employees, counterparties and projects. This role also gives full access to invoices and to uploading invoices from outside KSeF."
-    )
-  end
-
-  defp role_desc(:employee) do
-    gettext(
-      "Basic access to the organization, including the Time Tracker (working time tracking). The ability to submit leave requests and upload documents."
-    )
-  end
-
-  defp role_desc(:invoicing) do
-    gettext("Invoicing access in view-only mode, without the ability to add or edit.")
-  end
-
-  defp role_desc(:accountant) do
-    gettext("Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF.")
-  end
 
   # The Team table: the wider the access, the stronger the color (admin, accountant, invoicing,
   # then the employee in the palest grey).

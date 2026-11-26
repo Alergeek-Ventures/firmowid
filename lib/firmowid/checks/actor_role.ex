@@ -1,7 +1,7 @@
 defmodule Firmowid.Checks.ActorRole do
   @moduledoc """
   Policy check that returns true when the actor is a `User` whose organization
-  member has exactly the specified role.
+  member has exactly the specified role, or a `ServiceAccount` with that role.
 
   A `User` actor must have its active `member` loaded (see `Firmowid.Core.load_member/2`);
   a user without one has no role. The role counts only inside the member's
@@ -10,7 +10,8 @@ defmodule Firmowid.Checks.ActorRole do
   `:allow_global` action or global resource called without a tenant). A
   tenantless check of a tenant-bound action, such as an `Ash.can?/3` before the
   call, counts. A superuser keeps their role everywhere: the superuser worksheet
-  reads other organizations with it.
+  reads other organizations with it. A `ServiceAccount` (a company API key) has its role
+  only inside its organization, by the same tenant rule.
 
   ## Options
 
@@ -26,6 +27,7 @@ defmodule Firmowid.Checks.ActorRole do
 
   alias Ash.Resource.Info
   alias Firmowid.Core.Member
+  alias Firmowid.Core.ServiceAccount
   alias Firmowid.Core.User
 
   @impl true
@@ -34,8 +36,12 @@ defmodule Firmowid.Checks.ActorRole do
   @impl true
   def match?(actor, context, opts), do: {:ok, role(actor, context) == Keyword.fetch!(opts, :role)}
 
-  @doc "Returns the role of the actor's `member/2`, or `nil` without one."
+  @doc "Returns the role of the actor's `member/2` or service account, or `nil` without one."
   @spec role(term(), map()) :: Firmowid.Core.UserRole.t() | nil
+  def role(%{organization_id: organization_id, role: role} = actor, context) when is_struct(actor, ServiceAccount) do
+    if in_organization?(context, organization_id), do: role
+  end
+
   def role(actor, context) do
     case member(actor, context) do
       %{role: role} -> role

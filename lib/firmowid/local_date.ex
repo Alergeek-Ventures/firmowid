@@ -14,4 +14,8 @@ defmodule Firmowid.LocalDate do
   @doc "Returns the date in Poland at a moment in time."
   @spec of(DateTime.t()) :: Date.t()
   def of(%DateTime{} = moment), do: moment |> DateTime.shift_zone!(@timezone) |> DateTime.to_date()
+
+  @doc "Returns the moment the date ends in Poland: midnight of the next day."
+  @spec end_of(Date.t()) :: DateTime.t()
+  def end_of(%Date{} = date), do: date |> Date.add(1) |> DateTime.new!(~T[00:00:00], @timezone)
 end
