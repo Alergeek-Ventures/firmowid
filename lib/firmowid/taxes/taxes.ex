@@ -141,9 +141,15 @@ defmodule Firmowid.Taxes do
   defp same_value?(%Decimal{} = saved, %Decimal{} = suggested), do: Decimal.eq?(saved, suggested)
   defp same_value?(saved, suggested), do: saved == suggested
 
-  defp saved_value(tax_year, setting) when setting in [:vat_period, :cit_advances], do: Map.fetch!(tax_year, setting)
+  @doc """
+  The value the year has saved for a setting that `suggest_tax_settings/2` can
+  suggest, nil when it has none. The owner's settings need the year's partners
+  loaded, and exist only while the year has one owner.
+  """
+  @spec saved_value(TaxYear.t(), atom()) :: term()
+  def saved_value(tax_year, setting) when setting in [:vat_period, :cit_advances], do: Map.fetch!(tax_year, setting)
 
   # A year saved under another legal form has no owner yet.
-  defp saved_value(%TaxYear{partners: [owner]}, setting), do: Map.fetch!(owner, setting)
-  defp saved_value(%TaxYear{partners: _partners}, _setting), do: nil
+  def saved_value(%TaxYear{partners: [owner]}, setting), do: Map.fetch!(owner, setting)
+  def saved_value(%TaxYear{partners: _partners}, _setting), do: nil
 end

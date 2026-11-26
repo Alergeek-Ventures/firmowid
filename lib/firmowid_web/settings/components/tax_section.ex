@@ -10,21 +10,25 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   form for the new form's partners. Only admins reach the company settings.
 
   Settings that the transfers to the tax office suggest and the year still lacks
-  or contradicts (`Taxes.pending_suggestions/3`) are preselected and marked as
-  based on the transactions; saving the year confirms them.
+  or contradicts (`Taxes.pending_suggestions/3`) are preselected; saving the year
+  confirms them. A prefilled setting the year lacks is marked quietly as based on
+  the transactions; one that contradicts the saved value says what is saved under the
+  field, and a line under the description lists every difference. The submit button
+  then reads "Confirm".
   """
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
 
-  alias Firmowid.Cldr.Number
   alias Firmowid.Core
   alias Firmowid.LocalDate
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Partner
   alias Firmowid.Taxes.TaxYear
   alias FirmowidWeb.Inbox.Components.SidebarNav
+  alias FirmowidWeb.Settings.Components.TaxDifferences
+  alias FirmowidWeb.Settings.Utilities.TaxSettings
   alias Phoenix.HTML.Form
   alias Phoenix.HTML.FormField
 
@@ -133,7 +137,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   end
 
   defp assign_form(%{assigns: %{organization: %{legal_form: nil}}} = socket),
-    do: assign(socket, form: nil, suggested: %{})
+    do: assign(socket, form: nil, suggested: %{}, saved: %{}, differences: [])
 
   defp assign_form(socket) do
     %{tax_year: tax_year, year: year, organization: organization, scope: scope} = socket.assigns
@@ -155,9 +159,13 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           AshPhoenix.Form.for_update(tax_year, :update, [params: params] ++ opts)
       end
 
+    differences = TaxSettings.differences(suggestions, tax_year)
+
     socket
     |> assign(:form, to_form(form))
     |> assign(:suggested, Map.new(suggestions, &{&1.setting, &1.value}))
+    |> assign(:saved, Map.new(differences, &{&1.setting, &1.saved}))
+    |> assign(:differences, differences)
   end
 
   defp put_suggestion(params, %{setting: setting, value: value}) when setting in [:vat_period, :cit_advances],
@@ -233,11 +241,25 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           </.button>
         </div>
       </div>
-      <p class="-mt-4 text-sm/snug text-grey-600">
-        {gettext(
-          "We use these settings to work out how much you pay and when: ZUS and income tax advances by the 20th, VAT by the 25th of the month."
-        )}
-      </p>
+      <div class="-mt-4 flex flex-col gap-2 text-sm/snug text-grey-600">
+        <p>
+          {gettext(
+            "We use these settings to work out how much you pay and when: ZUS and income tax advances by the 20th, VAT by the 25th of the month."
+          )}
+        </p>
+        <%!-- Only for a year that has saved values the payments contradict. --%>
+        <p :if={@form && @differences != []} id="tax-recommendation-summary">
+          <TaxDifferences.list
+            differences={@differences}
+            lead={gettext("The transfers indicate different settings than the saved ones –")}
+            highlight
+            end_with="."
+          />
+          <span :if={holds_indicated?(@form, @differences)}>
+            {gettext("The fields already hold the values from the transfers, confirm to save them.")}
+          </span>
+        </p>
+      </div>
 
       <div class="grid grid-cols-[2.25rem_minmax(0,1fr)] items-baseline gap-y-8 sm:grid-cols-[2.25rem_11rem_minmax(0,1fr)]">
         <.rubric_label number={1} id="tax-legal-form-label">{gettext("Legal form")}</.rubric_label>
@@ -274,6 +296,8 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           organization={@organization}
           members={@members ++ @former_partners}
           suggested={@suggested}
+          saved={@saved}
+          confirm?={@differences != []}
           myself={@myself}
         />
       </div>
@@ -288,6 +312,14 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   attr :suggested, :map,
     required: true,
     doc: "the preselected settings that the transfers suggest"
+
+  attr :saved, :map,
+    required: true,
+    doc: "what the year has saved for the suggested settings that it contradicts"
+
+  attr :confirm?, :boolean,
+    required: true,
+    doc: "whether saving confirms values that contradict the saved ones"
 
   attr :myself, :any, required: true
 
@@ -316,8 +348,17 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
 
       <.rubric_label number={2} id="tax-vat-label">{gettext("VAT settlement")}</.rubric_label>
       <div :if={@organization.is_vat_payer} class={answer_styles()}>
-        <.choice field={@form[:vat_period]} options={period_options()} labelledby="tax-vat-label" />
-        <.suggested field={@form[:vat_period]} value={@suggested[:vat_period]} />
+        <.choice
+          field={@form[:vat_period]}
+          options={TaxSettings.period_options()}
+          labelledby="tax-vat-label"
+        />
+        <.suggested
+          field={@form[:vat_period]}
+          setting={:vat_period}
+          suggested={@suggested}
+          saved={@saved}
+        />
       </div>
       <div :if={!@organization.is_vat_payer} class={answer_styles()}>
         <input type="hidden" name={@form[:vat_period].name} value="" />
@@ -331,10 +372,15 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           <div>
             <.choice
               field={@form[:cit_advances]}
-              options={cit_advances_options()}
+              options={TaxSettings.cit_advances_options()}
               labelledby="tax-cit-label"
             />
-            <.suggested field={@form[:cit_advances]} value={@suggested[:cit_advances]} />
+            <.suggested
+              field={@form[:cit_advances]}
+              setting={:cit_advances}
+              suggested={@suggested}
+              saved={@saved}
+            />
           </div>
         </div>
       <% else %>
@@ -369,6 +415,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
                 <.partner_row
                   partner={partner}
                   suggested={@suggested}
+                  saved={@saved}
                   submitted?={@form.source.submitted_once?}
                   legal_form={@legal_form}
                   member_options={@member_options}
@@ -423,7 +470,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           size="small"
           phx-disable-with={pgettext("settings", "Saving...")}
         >
-          {gettext("Save")}
+          {if @confirm?, do: gettext("Confirm"), else: gettext("Save")}
         </.button>
       </div>
     </.form>
@@ -432,6 +479,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
 
   attr :partner, Form, required: true
   attr :suggested, :map, required: true
+  attr :saved, :map, required: true
   attr :submitted?, :boolean, required: true
   attr :legal_form, :atom, required: true
   attr :member_options, :list, required: true
@@ -475,27 +523,37 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
         <.input
           type="select"
           field={@partner[:income_tax]}
-          options={select_options(income_tax_options())}
+          options={select_options(TaxSettings.income_tax_options())}
           prompt={gettext("Choose")}
           aria-label={gettext("Income tax")}
           input_class="min-w-36"
           show_error={false}
         />
         <.field_errors field={@partner[:income_tax]} submitted?={@submitted?} />
-        <.suggested field={@partner[:income_tax]} value={@suggested[:income_tax]} />
+        <.suggested
+          field={@partner[:income_tax]}
+          setting={:income_tax}
+          suggested={@suggested}
+          saved={@saved}
+        />
       </div>
       <div :if={to_string(@partner[:income_tax].value) == "lump_sum"}>
         <.input
           type="select"
           field={@partner[:lump_sum_rate]}
-          options={lump_sum_rate_options()}
+          options={TaxSettings.lump_sum_rate_options()}
           prompt={gettext("Choose")}
           aria-label={gettext("Lump sum rate")}
           input_class="min-w-36"
           show_error={false}
         />
         <.field_errors field={@partner[:lump_sum_rate]} submitted?={@submitted?} />
-        <.suggested field={@partner[:lump_sum_rate]} value={@suggested[:lump_sum_rate]} />
+        <.suggested
+          field={@partner[:lump_sum_rate]}
+          setting={:lump_sum_rate}
+          suggested={@suggested}
+          saved={@saved}
+        />
       </div>
       <%!-- A saved partner is updated with what the form sends; without the rate's select the
            previous rate would stay. --%>
@@ -510,27 +568,37 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
       <.input
         type="select"
         field={@partner[:pit_advances]}
-        options={select_options(period_options())}
+        options={select_options(TaxSettings.period_options())}
         prompt={gettext("Choose")}
         aria-label={pgettext("tax", "Advances")}
         input_class="min-w-[8.5rem]"
         show_error={false}
       />
       <.field_errors field={@partner[:pit_advances]} submitted?={@submitted?} />
-      <.suggested field={@partner[:pit_advances]} value={@suggested[:pit_advances]} />
+      <.suggested
+        field={@partner[:pit_advances]}
+        setting={:pit_advances}
+        suggested={@suggested}
+        saved={@saved}
+      />
     </div>
     <div>
       <.input
         type="select"
         field={@partner[:social_insurance]}
-        options={select_options(social_insurance_options())}
+        options={select_options(TaxSettings.social_insurance_options())}
         prompt={gettext("Choose")}
         aria-label="ZUS"
         input_class="min-w-44"
         show_error={false}
       />
       <.field_errors field={@partner[:social_insurance]} submitted?={@submitted?} />
-      <.suggested field={@partner[:social_insurance]} value={@suggested[:social_insurance]} />
+      <.suggested
+        field={@partner[:social_insurance]}
+        setting={:social_insurance}
+        suggested={@suggested}
+        saved={@saved}
+      />
     </div>
     <div>
       <div class="flex h-9 flex-col justify-center">
@@ -555,7 +623,10 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
       <.suggested
         :if={!without_sickness?(@partner[:social_insurance].value)}
         field={@partner[:voluntary_sickness]}
-        value={@suggested[:voluntary_sickness]}
+        setting={:voluntary_sickness}
+        suggested={@suggested}
+        saved={@saved}
+        nowrap
       />
     </div>
     <div :if={@legal_form == :civil_partnership} class="flex h-9 items-center">
@@ -604,19 +675,92 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   end
 
   attr :field, FormField, required: true
-  attr :value, :any, default: nil, doc: "an atom, a boolean or a decimal"
+  attr :setting, :atom, required: true
+  attr :suggested, :map, required: true
+  attr :saved, :map, required: true
 
-  # Marks a preselected value while it is still the one the transfers suggest.
+  attr :nowrap, :boolean,
+    default: false,
+    doc: "for the last column, which may run on to the right"
+
+  # What the transfers suggest for a setting. A value the year lacks is prefilled quietly. One that
+  # contradicts the saved value says what is saved while the field holds the value from the
+  # transfers; once the person picks another, only a reminder of what the transfers indicate
+  # stays, so that a different choice is a decision rather than an oversight. The text stays
+  # inside its column (`w-0 min-w-full`), as it must not shift the owner's row; only the last
+  # column (`nowrap`) takes the room its single line needs.
   defp suggested(assigns) do
+    %{field: field, setting: setting, suggested: suggested, saved: saved} = assigns
+
+    assigns =
+      assigns
+      |> assign(
+        :mode,
+        suggestion_mode(suggested[setting], field.value, Map.has_key?(saved, setting))
+      )
+      |> assign(
+        :indicated,
+        suggested[setting] != nil && TaxSettings.value_label(setting, suggested[setting])
+      )
+      |> assign(
+        :saved_label,
+        saved[setting] != nil && TaxSettings.value_label(setting, saved[setting])
+      )
+
     ~H"""
     <p
-      :if={!is_nil(@value) && to_string(@field.value) == to_string(@value)}
-      class="mt-1.5 flex items-center gap-1 text-xs text-grey-500"
+      :if={@mode}
+      class={[
+        "mt-1.5 flex items-start gap-1 text-sm/snug text-grey-600",
+        if(@nowrap, do: "whitespace-nowrap", else: "w-0 min-w-full")
+      ]}
     >
-      <Lucideicons.history class="size-3.5 shrink-0" aria-hidden="true" />
-      {gettext("Based on the transactions")}
+      <Lucideicons.history
+        class={["mt-0.5 size-3.5 shrink-0", @mode != :prefilled && "text-moss-700"]}
+        aria-hidden="true"
+      />
+      <%= case @mode do %>
+        <% :prefilled -> %>
+          {gettext("Based on the transactions")}
+        <% :contradicts -> %>
+          {gettext("Saved: %{value}", value: @saved_label)}
+        <% :reminder -> %>
+          {gettext("According to the transfers: %{value}", value: @indicated)}
+      <% end %>
     </p>
     """
+  end
+
+  # Whether every field still holds the value the transfers indicate; once the person picks another,
+  # the form no longer is what the summary promises.
+  defp holds_indicated?(form, differences) do
+    Enum.all?(differences, fn %{setting: setting, indicated: indicated} ->
+      to_string(form_value(form.source, setting)) == to_string(indicated)
+    end)
+  end
+
+  defp form_value(source, setting) when setting in [:vat_period, :cit_advances],
+    do: AshPhoenix.Form.value(source, setting)
+
+  # The owner's settings are suggested only for the one owner of a sole proprietorship.
+  defp form_value(%{forms: %{partners: [owner]}}, setting), do: AshPhoenix.Form.value(owner, setting)
+
+  defp form_value(_source, _setting), do: nil
+
+  # How a setting's suggestion shows: nothing without one; against a saved value it contradicts
+  # while the field holds the suggestion and is a reminder once it does not; otherwise it is a
+  # prefill, shown only while the field holds it.
+  defp suggestion_mode(nil, _current, _saved?), do: nil
+
+  defp suggestion_mode(value, current, saved?) do
+    held? = to_string(current) == to_string(value)
+
+    cond do
+      saved? and held? -> :contradicts
+      saved? -> :reminder
+      held? -> :prefilled
+      true -> nil
+    end
   end
 
   attr :field, FormField, required: true
@@ -686,45 +830,13 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
     ]
   end
 
-  defp period_options, do: [monthly: pgettext("tax period", "Monthly"), quarterly: pgettext("tax period", "Quarterly")]
-
   defp cit_rate_options, do: [reduced: gettext("9% – small taxpayer"), standard: "19%"]
-
-  defp cit_advances_options do
-    [
-      monthly: pgettext("CIT advances", "Monthly advances"),
-      quarterly: pgettext("tax period", "Quarterly"),
-      simplified: pgettext("CIT advances", "Simplified")
-    ]
-  end
-
-  defp income_tax_options do
-    [
-      tax_scale: pgettext("income tax", "Tax scale"),
-      flat_tax: gettext("Flat tax 19%"),
-      lump_sum: pgettext("income tax", "Lump sum")
-    ]
-  end
-
-  defp social_insurance_options do
-    [
-      start_relief: gettext("Start relief"),
-      preferential: pgettext("ZUS", "Preferential"),
-      small_plus: "Mały ZUS Plus",
-      full: pgettext("ZUS", "Full"),
-      none: gettext("No social contributions")
-    ]
-  end
-
-  defp lump_sum_rate_options, do: Enum.map(Partner.lump_sum_rates(), &{percent(&1), Decimal.to_string(&1)})
 
   # The option lists are `value: label`; `options_for_select/2` takes `{label, value}`.
   defp select_options(options), do: Enum.map(options, fn {value, label} -> {label, value} end)
 
   # Without own social contributions there is no voluntary sickness insurance to join.
   defp without_sickness?(social_insurance), do: to_string(social_insurance) in ["start_relief", "none"]
-
-  defp percent(value), do: Number.to_string!(value) <> "%"
 
   defp member_options(users), do: Enum.map(users, &{&1.member.name || &1.email, &1.member.id})
 end

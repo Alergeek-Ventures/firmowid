@@ -43,6 +43,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
   alias FirmowidWeb.Settings.Utilities.RegisterCheck
+  alias FirmowidWeb.Settings.Utilities.TaxSettings
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
   @type tier :: :urgent | :people | :personal | :books | :info
@@ -58,6 +59,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           optional(:date_range) => String.t(),
           optional(:days_late) => pos_integer(),
           optional(:amount) => String.t(),
+          optional(:wrap_context?) => boolean(),
+          optional(:differences) => [TaxSettings.difference()],
           optional(:action) => String.t(),
           optional(:href) => String.t(),
           id: String.t(),
@@ -228,16 +231,16 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
           )
         ]
 
-      year
-      |> Taxes.suggest_tax_settings!(scope: scope)
-      |> Taxes.pending_suggestions(tax_year, organization)
-      |> Enum.any?() ->
+      suggestions = pending_tax_suggestions(year, tax_year, organization, scope) ->
+        differences = TaxSettings.differences(suggestions, tax_year)
+
         [
           tax_profile_item(
             "tax-profile-#{year}-suggestions",
             gettext("Confirm taxes and ZUS for %{year}", year: year),
-            gettext("New transactions suggest different settings than the saved ones."),
-            gettext("Check")
+            suggestions_context(differences),
+            gettext("Check"),
+            differences
           )
         ]
 
@@ -246,7 +249,26 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
     end
   end
 
-  defp tax_profile_item(id, title, context, action) do
+  defp pending_tax_suggestions(year, tax_year, organization, scope) do
+    suggestions =
+      year
+      |> Taxes.suggest_tax_settings!(scope: scope)
+      |> Taxes.pending_suggestions(tax_year, organization)
+
+    if suggestions != [], do: suggestions
+  end
+
+  # Names what the transfers indicate against what is saved; settings the year lacks, which the
+  # card only prefills, give the general sentence. The row shows the `differences` themselves;
+  # the sentence is what the search reads.
+  defp suggestions_context([]), do: gettext("New transactions suggest settings that are not saved yet.")
+
+  defp suggestions_context(differences) do
+    gettext("New transactions suggest different settings than the saved ones.") <>
+      " " <> TaxSettings.summary(differences)
+  end
+
+  defp tax_profile_item(id, title, context, action, differences \\ []) do
     %{
       id: id,
       tier: :urgent,
@@ -255,6 +277,9 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       context: context,
       person: nil,
       action: action,
+      # The settings and values it names must not end in an ellipsis.
+      wrap_context?: true,
+      differences: differences,
       href: SettingsNavigation.canonical_path(:organization) <> "#podatki"
     }
   end
