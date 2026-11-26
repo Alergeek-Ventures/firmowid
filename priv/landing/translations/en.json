@@ -188,6 +188,8 @@
     ["<h3>Przedsiębiorca</h3>", "<h3>Entrepreneur</h3>"],
     ["</b> zł <span>/ mies. netto</span>", "</b> PLN <span>/ mo. net</span>"],
     ["oszczędzasz 72 zł rocznie", "you save 72 PLN a year"],
+    ["oszczędzasz 24 zł rocznie", "you save 24 PLN a year"],
+    ["<ul><li>2 banki, 3 użytkowników</li><li>Czas pracy do 10 projektów</li><li>Powiadomienia mailowe</li><li>OCR 25 dokumentów miesięcznie</li></ul>", "<ul><li>2 banks, 3 users</li><li>Time tracking for up to 10 projects</li><li>Email notifications</li><li>OCR for 25 documents a month</li></ul>"],
     ["oszczędzasz 360 zł rocznie", "you save 360 PLN a year"],
     ["<ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>", "<ul><li>3 banks, 5 users</li><li>Unlimited projects</li><li>Team leave and documents</li><li>Firmowid in ChatGPT and Claude</li></ul>"],
     [">Wypróbuj za darmo</a>", ">Try it for free</a>"],

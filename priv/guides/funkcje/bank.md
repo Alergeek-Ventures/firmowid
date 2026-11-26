@@ -2,7 +2,7 @@
 title: "Program do faktur z integracją bankową i dopasowaniem przelewów"
 description: "Firmowid pobiera przelewy z banku i sam przypina je do faktur. Jak to wygląda u nas na co dzień, co obsługuje i czego nie robi."
 published: 2026-11-18
-updated: 2026-11-19
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Bank"
   note: "przelew sam trafia do faktury"
@@ -92,6 +92,7 @@ Na liście faktur widać, co masz zapłacić i kto ma zapłacić Tobie. O nowej 
 | Plan | Banki z pobieraniem przelewów | Cena |
 |---|---|---|
 | Darmowy | 1 | 0 zł |
+| Mini | 2 | 9 zł netto miesięcznie |
 | Przedsiębiorca | 3 | 29 zł netto miesięcznie |
 | Firma | bez limitu | 149 zł netto miesięcznie |
 
@@ -144,7 +145,7 @@ Nie. Logujesz się na stronie banku.
 W Skrzynce pojawia się „synchronizacja wstrzymana” z przyciskiem „Odnów zgodę”. Historia i dopasowania zostają.
 
 ### Ile kosztuje połączenie z bankiem?
-Jeden bank jest w planie za 0 zł. Trzy banki obejmuje plan Przedsiębiorca za 29 zł netto miesięcznie, a plan Firma za 149 zł netto nie ma limitu.
+Jeden bank jest w planie za 0 zł. Dwa banki obejmuje plan Mini za 9 zł netto miesięcznie, trzy plan Przedsiębiorca za 29 zł, a plan Firma za 149 zł netto nie ma limitu.
 
 ### Czy obsługujecie mój bank?
 Firmowid łączy się z 29 bankami i fintechami, w tym z PKO Bankiem Polskim, Pekao, mBankiem, ING, Revolutem i Wise. Listę znajdziesz w sekcji [Banki i waluty](#banki-i-waluty).

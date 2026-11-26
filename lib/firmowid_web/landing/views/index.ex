@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
     [
       page_title: gettext("Firmowid pricing: choose your plan"),
       meta_description:
-        gettext("Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges.")
+        gettext("Compare the Free, Mini, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges.")
     ]
   end
 

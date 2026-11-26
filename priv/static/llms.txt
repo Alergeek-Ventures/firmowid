@@ -8,7 +8,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 
 - [Strona główna](https://firmowid.pl/): przegląd funkcji, asystent AI i najczęstsze pytania
 - [Funkcje](https://firmowid.pl/funkcje): faktury, parowanie transakcji, czas pracy, urlopy i delegacje w jednym miejscu
-- [Cennik](https://firmowid.pl/cennik): plany Darmowy, Przedsiębiorca i Firma, rozliczenie miesięczne lub roczne
+- [Cennik](https://firmowid.pl/cennik): plany Darmowy, Mini, Przedsiębiorca i Firma, rozliczenie miesięczne lub roczne
 - [FAQ](https://firmowid.pl/faq): odpowiedzi na pytania o KSeF, integracje bankowe, bezpieczeństwo danych, migrację i plany
 - [Open source](https://firmowid.pl/open-source): kod na licencji AGPL-3.0 i uruchamianie Firmowida na własnym serwerze
 - [Program do faktur KSeF](https://firmowid.pl/ksef): plan Darmowy z wysyłką faktur do KSeF bez limitu, pobieraniem kosztów i porównaniem cen z innymi programami

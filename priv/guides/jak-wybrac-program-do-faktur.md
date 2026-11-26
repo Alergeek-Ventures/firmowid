@@ -2,7 +2,7 @@
 title: "Jak wybrać program do faktur? 9 rzeczy, które warto sprawdzić przed rejestracją"
 description: "Wybór programu do faktur z KSeF: limit dokumentów, koszty, bank, waluty, użytkownicy, czas pracy, eksport dla biura księgowego i cena po okresie próbnym."
 published: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-27
 category: wybor-programu
 ---
 
@@ -113,7 +113,7 @@ Jeśli chcesz porównać tylko plany za 0 zł, zobacz nasz poradnik [Darmowe pro
 
 ## Gdzie w tej liście jest Firmowid
 
-Firmowid łączy faktury z KSeF, konto bankowe z dopasowaniem przelewów i ewidencję czasu pracy w projektach. Plan Darmowy kosztuje 0 zł bez limitu czasu i nie wymaga karty. Faktury sprzedaży i KSeF są bez limitu w każdym planie. Plany płatne to Przedsiębiorca (29 zł netto/mies.) i Firma (149 zł netto/mies.). Szczegóły są w [cenniku](/cennik).
+Firmowid łączy faktury z KSeF, konto bankowe z dopasowaniem przelewów i ewidencję czasu pracy w projektach. Plan Darmowy kosztuje 0 zł bez limitu czasu i nie wymaga karty. Faktury sprzedaży i KSeF są bez limitu w każdym planie. Plany płatne to Mini (9 zł netto/mies.), Przedsiębiorca (29 zł netto/mies.) i Firma (149 zł netto/mies.). Szczegóły są w [cenniku](/cennik).
 
 Jeśli z listy powyżej najważniejsze są dla Ciebie punkty 3 i 6 (bank i czas pracy), Firmowid jest wart testu. Nie pasuje, jeśli:
 

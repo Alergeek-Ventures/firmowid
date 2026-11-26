@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           </div>
 
           <%!-- The cards share the rows of one grid, so each quota and the button sit on one line across the plans. --%>
-          <div class="grid gap-x-5 lg:grid-cols-3">
+          <div class="grid gap-x-5 lg:grid-cols-4">
             <article
               :for={{plan, index} <- Enum.with_index(PlanOffer.plans())}
               id={"subscription-plan-#{plan}"}

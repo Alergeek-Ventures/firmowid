@@ -169,7 +169,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         question: gettext_noop("Does Firmowid charge extra for invoices or KSeF?"),
         answer: [
           gettext_noop(
-            "No. Invoices and KSeF are unlimited in every plan, including Free. Your plan sets the number of banks (1, 3 or unlimited) and users (2, 5 or unlimited)."
+            "No. Invoices and KSeF are unlimited in every plan, including Free. Your plan sets the number of banks (1, 2, 3 or unlimited) and users (2, 3, 5 or unlimited)."
           )
         ]
       },

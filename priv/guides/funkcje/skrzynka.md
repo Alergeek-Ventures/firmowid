@@ -2,7 +2,7 @@
 title: "Skrzynka: wszystko, co czeka na Ciebie, na jednej liście"
 description: "Skrzynka to pierwszy ekran Firmowida: faktury po terminie, wnioski urlopowe, delegacje i pilne sprawy z KSeF i banku na jednej liście. Jest w każdym planie."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Skrzynka"
   note: "wszystko na jednej liście"
@@ -86,6 +86,7 @@ Skrzynka jest w każdym planie. Od planu zależy tylko to, jakie sprawy zespołu
 | Plan | Cena netto za miesiąc | Osoby | Co trafia do Skrzynki |
 |---|---|---|---|
 | Darmowy | 0 zł | 2 | KSeF, bank, kontrahenci i faktury po terminie |
+| Mini | 9 zł | 3 | to samo co w planie Darmowym |
 | Przedsiębiorca | 29 zł | 5 | do tego wnioski urlopowe i umowy |
 | Firma | 149 zł | bez limitu | do tego delegacje i ewidencje godzin |
 

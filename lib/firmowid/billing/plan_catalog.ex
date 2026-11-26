@@ -7,8 +7,8 @@ defmodule Firmowid.Billing.PlanCatalog do
   (see the `:access_block` calculation on `Firmowid.Core.User`).
   """
 
-  @type plan :: :no_plan | :free | :przedsiebiorca | :firma
-  @type offered_plan :: :free | :przedsiebiorca | :firma
+  @type plan :: :no_plan | :free | :mini | :przedsiebiorca | :firma
+  @type offered_plan :: :free | :mini | :przedsiebiorca | :firma
   @type money_amount :: Decimal.t()
   @type billing_period :: :monthly | :yearly
   @type limited :: :users | :bank_institutions | :active_projects
@@ -46,20 +46,16 @@ defmodule Firmowid.Billing.PlanCatalog do
           active_projects: non_neg_integer() | nil
         }
 
-  @plans [:no_plan, :free, :przedsiebiorca, :firma]
+  @plans [:no_plan, :free, :mini, :przedsiebiorca, :firma]
 
   # Cheapest first, so the first plan that covers the usage is the cheapest one.
-  @offered_plans [:free, :przedsiebiorca, :firma]
+  @offered_plans [:free, :mini, :przedsiebiorca, :firma]
 
   @limited [:users, :bank_institutions, :active_projects]
 
-  @przedsiebiorca_features [
-    :mcp,
-    :assistant,
-    :leave_requests,
-    :ksef_invoice_emails,
-    :employee_contracts
-  ]
+  @mini_features [:mcp, :ksef_invoice_emails]
+
+  @przedsiebiorca_features [:assistant, :leave_requests, :employee_contracts | @mini_features]
 
   @vat_percent 23
 
@@ -105,6 +101,17 @@ defmodule Firmowid.Billing.PlanCatalog do
       limits: %{users: 2, bank_institutions: 1, active_projects: 3},
       features: [:mcp],
       monthly_ocr_documents: 10
+    }
+  end
+
+  def plan!(:mini) do
+    %{
+      plan: :mini,
+      monthly_price_pln: decimal("9"),
+      yearly_price_pln: decimal("84"),
+      limits: %{users: 3, bank_institutions: 2, active_projects: 10},
+      features: @mini_features,
+      monthly_ocr_documents: 25
     }
   end
 

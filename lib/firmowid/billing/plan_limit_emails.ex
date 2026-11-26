@@ -172,6 +172,7 @@ defmodule Firmowid.Billing.PlanLimitEmails do
   defp label(:active_projects), do: "Projekty"
 
   defp plan_name(:free), do: "Darmowy"
+  defp plan_name(:mini), do: "Mini"
   defp plan_name(:przedsiebiorca), do: "Przedsiębiorca"
   defp plan_name(:firma), do: "Firma"
 

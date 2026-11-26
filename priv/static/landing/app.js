@@ -41,7 +41,7 @@
         ['Wynik w Excelu', 'Analiza: ile zostaje ze 100 zł'],
         ['Urlopy w mailach', 'Wnioski z akceptacją'],
       ],
-      plans: ['Darmowy', 'Przedsiębiorca', 'Firma'],
+      plans: ['Darmowy', 'Mini', 'Przedsiębiorca', 'Firma'],
       perYear: ' / rok', perHour: ' za godzinę', weekly: ' tygodniowo', say: 'Z Firmowidem oszczędzasz rocznie ',
     },
     en: {
@@ -69,7 +69,7 @@
         ['Result in Excel', 'Analysis: what’s left of every 100 PLN'],
         ['Leave by email', 'Requests with approval'],
       ],
-      plans: ['Free', 'Entrepreneur', 'Company'],
+      plans: ['Free', 'Mini', 'Entrepreneur', 'Company'],
       perYear: ' / year', perHour: ' an hour', weekly: ' a week', say: 'With Firmowid you save per year ',
     },
     uk: {
@@ -97,7 +97,7 @@
         ['Результат в Excel', 'Аналіз: скільки залишається зі 100 зл'],
         ['Відпустки в листах', 'Заявки з погодженням'],
       ],
-      plans: ['Безкоштовний', 'Підприємець', 'Компанія'],
+      plans: ['Безкоштовний', 'Міні', 'Підприємець', 'Компанія'],
       perYear: ' / рік', perHour: ' за годину', weekly: ' на тиждень', say: 'З Firmowid ви заощаджуєте за рік ',
     },
   };
@@ -307,7 +307,9 @@
     const calc = () => {
       const team = v('q-team'), h = v('q-h'), r = v('q-r'), share = 0.5; // half of the time comes back; Bonobo got back 9 of 10 hours
       // plan from the public price list, yearly billing
-      const plan = team <= 2 && !on('q-leave') ? [T.plans[0], 0] : team <= 5 ? [T.plans[1], 276] : [T.plans[2], 1428];
+      const plan = team <= 2 && !on('q-leave') ? [T.plans[0], 0]
+        : team <= 3 && !on('q-leave') ? [T.plans[1], 84]
+        : team <= 5 ? [T.plans[2], 276] : [T.plans[3], 1428];
       const now = ((on('q-inv') ? v('q-inv-p') : 0) + (on('q-time') ? v('q-time-p') : 0)) * 12;
       const hours = h * 52 * share, time = hours * r, total = now - plan[1] + time;
       $('#q-team-out').textContent = people(team);

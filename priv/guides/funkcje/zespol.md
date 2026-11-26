@@ -75,6 +75,7 @@ Wyjazd służbowy przechodzi w Firmowidzie pięć kroków: wniosek pracownika, p
 | Plan | Osoby | Co dochodzi dla zespołu | Cena |
 |---|---|---|---|
 | Darmowy | 2 | role i czas pracy do 3 projektów | 0 zł |
+| Mini | 3 | role i czas pracy do 10 projektów | 9 zł netto miesięcznie |
 | Przedsiębiorca | 5 | wnioski urlopowe, umowy i dokumenty pracowników | 29 zł netto miesięcznie |
 | Firma | bez limitu | delegacje | 149 zł netto miesięcznie |
 

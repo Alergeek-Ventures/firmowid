@@ -95,6 +95,7 @@ Na liście zespołu masz godziny każdej osoby w wybranym miesiącu i znaczek, c
 | Plan | Cena netto za miesiąc | Osoby | Projekty z mierzeniem czasu |
 |---|---|---|---|
 | Darmowy | 0 zł | 2 | 3 |
+| Mini | 9 zł | 3 | 10 |
 | Przedsiębiorca | 29 zł | 5 | bez limitu |
 | Firma | 149 zł | bez limitu | bez limitu |
 
@@ -135,7 +136,7 @@ Zobacz też: [Faktura za godziny pracy](/poradnik/fakturowanie-za-godziny-czas-p
 Dwie osoby i trzy projekty są w planie za 0 zł. Pięć osób bez limitu projektów obejmuje plan Przedsiębiorca za 29 zł netto miesięcznie. Tabela planów jest w sekcji [Ile to kosztuje](#ile-to-kosztuje).
 
 ### Czy płacę za każdą osobę w zespole?
-Nie. Plan ma jedną cenę dla całej firmy i limit osób: 2, 5 albo bez limitu.
+Nie. Plan ma jedną cenę dla całej firmy i limit osób: 2, 3, 5 albo bez limitu.
 
 ### Czy pracownik widzi finanse firmy?
 Nie. Widzi swój czas, swoją ewidencję i swoje dokumenty. Szczegóły są w sekcji [Zespół](#zespol).

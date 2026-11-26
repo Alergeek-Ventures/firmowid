@@ -472,7 +472,8 @@ a.case:hover .case__go{color:var(--r700)}a.case:hover .case__go i{translate:4px 
 .toggle button{padding:9px 18px;border-radius:4px;font-size:14px;font-weight:500;transition:.2s}
 .toggle button.on{background:#fff}
 .toggle em{font-style:normal;color:var(--r700)}
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left}
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:left}
+@media (max-width:1180px){.plans{grid-template-columns:repeat(2,1fr);row-gap:24px}}
 .plan{position:relative;display:flex;flex-direction:column;padding:28px 26px;background:#fff;border:1px solid var(--g200);border-radius:4px}
 .plan--top{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 .plan__badge{position:absolute;top:-13px;left:26px;padding:5px 10px;background:var(--r500);color:var(--ink);font-size:12px;font-weight:600;border-radius:3px}
