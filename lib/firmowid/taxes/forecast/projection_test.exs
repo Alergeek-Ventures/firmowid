@@ -13,7 +13,7 @@ defmodule Firmowid.Taxes.Forecast.ProjectionTest do
       assert entry.projected?
       {entry.side, Decimal.to_string(entry.amount, :normal), entry.date}
     end)
-    |> Enum.sort()
+    |> Enum.sort_by(fn {side, _amount, date} -> {side, Date.to_erl(date)} end)
   end
 
   test "the rest of the month is what the three months before booked after the same day" do
@@ -58,20 +58,32 @@ defmodule Firmowid.Taxes.Forecast.ProjectionTest do
       entry(:revenue, "900", ~D[2026-09-25])
     ]
 
-    # The rest of October is what came after the 10th: August's 600 and September's 900, over 3 months.
-    # November and December get the average month, 1800 / 3.
+    # The rest of October is what came after the 10th: nothing in July, 600 in August and 900 in
+    # September, so the median is 600. November and December get the median month of 300, 600, 900.
     assert [
-             {:revenue, "500.00", ~D[2026-10-31]},
+             {:revenue, "600.00", ~D[2026-10-31]},
              {:revenue, "600.00", ~D[2026-11-30]},
              {:revenue, "600.00", ~D[2026-12-31]}
            ] = projected(entries, ~D[2026-10-10], ~D[2026-12-31])
 
     # Only the whole months up to `until` are projected.
-    assert [{:revenue, "500.00", ~D[2026-10-31]}, {:revenue, "600.00", ~D[2026-11-30]}] =
+    assert [{:revenue, "600.00", ~D[2026-10-31]}, {:revenue, "600.00", ~D[2026-11-30]}] =
              projected(entries, ~D[2026-10-10], ~D[2026-11-30])
   end
 
-  test "averages over the months that exist when there are fewer than three" do
+  test "one unusual month does not move the projection of steady months" do
+    # Invoices on the last day of every month, the middle month higher.
+    entries = [
+      entry(:output, "1000", ~D[2026-08-31]),
+      entry(:output, "1200", ~D[2026-09-30]),
+      entry(:output, "1000", ~D[2026-10-31])
+    ]
+
+    assert [{:output, "1000.00", ~D[2026-11-30]}, {:output, "1000.00", ~D[2026-12-31]}] =
+             projected(entries, ~D[2026-11-10], ~D[2026-12-31])
+  end
+
+  test "uses the months that exist when there are fewer than three" do
     entries = [entry(:output, "100", ~D[2026-10-20]), entry(:output, "300", ~D[2026-10-25])]
 
     # Only October exists before November: its whole 400 after the 10th is the rest, not 400 / 3.
@@ -126,7 +138,7 @@ defmodule Firmowid.Taxes.Forecast.ProjectionTest do
              projected(entries, ~D[2026-03-30], ~D[2026-03-31])
   end
 
-  test "negative amounts take part in the averages" do
+  test "negative amounts take part in the sums" do
     entries = [entry(:output, "300", ~D[2026-09-20]), entry(:output, "-90", ~D[2026-10-20])]
 
     assert [{:output, "105.00", ~D[2026-11-30]}] =
