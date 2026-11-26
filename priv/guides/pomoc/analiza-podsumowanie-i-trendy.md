@@ -2,7 +2,7 @@
 title: "Analiza: jak czytać Podsumowanie i Trendy"
 description: "Co znaczą liczby w Analizie Firmowida: przychody, koszty, wynik, miesiąc domknięty, pasek 100 zł i nieopłacone faktury poza sumą."
 published: 2026-11-18
-updated: 2026-11-18
+updated: 2026-11-26
 category: analiza
 ---
 
@@ -73,7 +73,7 @@ Przełącznik „Pokaż:” w „Trendach” zawęża liczby do jednego projektu
 
 ## Czego Analiza nie robi
 
-Nie liczy podatków i nie odejmuje VAT. Nie ma eksportu do pliku. Kosztów wspólnych firmy nie rozkłada na projekty.
+Nie liczy podatków i nie odejmuje VAT. Nie ma eksportu do pliku.
 
 ## Powiązane
 
