@@ -922,6 +922,16 @@ msgstr ""
 msgid "Accommodation"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
+#, elixir-autogen, elixir-format
+msgid "According to the transfers –"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/tax_section.ex
+#, elixir-autogen, elixir-format
+msgid "According to the transfers: %{value}"
+msgstr ""
+
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
@@ -3245,6 +3255,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
+#: lib/firmowid_web/settings/components/tax_section.ex
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
@@ -6058,7 +6069,7 @@ msgstr ""
 msgid "Fits the plan"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Flat tax 19%"
 msgstr ""
@@ -6251,7 +6262,7 @@ msgstr ""
 msgid "Frozen %{date}"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "ZUS"
 msgid "Full"
@@ -6859,6 +6870,7 @@ msgid "Income"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Income tax"
 msgstr ""
@@ -6866,6 +6878,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Income tax advance"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
+#, elixir-autogen, elixir-format
+msgid "Income tax advances"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/first_review.ex
@@ -7976,7 +7993,7 @@ msgctxt "avatar menu"
 msgid "Logged in as"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "income tax"
 msgid "Lump sum"
@@ -7998,6 +8015,7 @@ msgid "Lump sum for station and airport transfers"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Lump sum rate"
 msgstr ""
@@ -8185,7 +8203,7 @@ msgctxt "billing period"
 msgid "Monthly"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "tax period"
 msgid "Monthly"
@@ -8202,7 +8220,7 @@ msgstr ""
 msgid "Monthly ZIP package for your accounting office"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "CIT advances"
 msgid "Monthly advances"
@@ -8476,6 +8494,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "New transactions suggest different settings than the saved ones."
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "New transactions suggest settings that are not saved yet."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -8894,7 +8917,7 @@ msgstr ""
 msgid "No sessions this month"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "No social contributions"
 msgstr ""
@@ -9155,10 +9178,22 @@ msgstr ""
 msgid "Of every 100 zł of income, %{kept} stays in the company. Each złoty more of every 100 would be %{amount} in this period. How can I keep more?"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
+#, elixir-autogen, elixir-format
+msgctxt "sickness insurance"
+msgid "Off"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Omitted"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
+#, elixir-autogen, elixir-format
+msgctxt "sickness insurance"
+msgid "On"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
@@ -10081,7 +10116,7 @@ msgstr ""
 msgid "Preference cookie (cookie_consent)"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "ZUS"
 msgid "Preferential"
@@ -10348,7 +10383,7 @@ msgstr ""
 msgid "Quantity must be greater than zero."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "tax period"
 msgid "Quarterly"
@@ -11085,6 +11120,11 @@ msgstr ""
 msgid "Saved: %{category}. Future entries of this counterparty go there too."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/tax_section.ex
+#, elixir-autogen, elixir-format
+msgid "Saved: %{value}"
+msgstr ""
+
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
 msgid "Saves invoice drafts, which go to KSeF only after you confirm them"
@@ -11673,6 +11713,7 @@ msgid "Sick leave"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Sickness insurance"
 msgstr ""
@@ -11762,7 +11803,7 @@ msgstr ""
 msgid "Signing in..."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "CIT advances"
 msgid "Simplified"
@@ -11958,7 +11999,7 @@ msgstr ""
 msgid "Start of time abroad"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Start relief"
 msgstr ""
@@ -12229,7 +12270,7 @@ msgstr ""
 msgid "Tax residency"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgctxt "income tax"
 msgid "Tax scale"
@@ -12785,6 +12826,11 @@ msgstr ""
 msgid "The expense must be related to the business trip. For example, insurance can be settled when it covers the business trip."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/tax_section.ex
+#, elixir-autogen, elixir-format
+msgid "The fields already hold the values from the transfers, confirm to save them."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/cost_invoice_upload.ex
 #, elixir-autogen, elixir-format
 msgid "The file %{filename} does not contain the required data. Make sure you are uploading an invoice, receipt or bill."
@@ -13333,6 +13379,11 @@ msgstr ""
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/tax_section.ex
+#, elixir-autogen, elixir-format
+msgid "The transfers indicate different settings than the saved ones –"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -14550,6 +14601,7 @@ msgid "VAT per unit"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
+#: lib/firmowid_web/settings/utilities/tax_settings.ex
 #, elixir-autogen, elixir-format
 msgid "VAT settlement"
 msgstr ""
@@ -15748,6 +15800,12 @@ msgstr ""
 #: lib/firmowid/invoicing/validations/validate_buyer_id_required.ex
 #, elixir-autogen, elixir-format
 msgid "cannot be empty"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/tax_differences.ex
+#, elixir-autogen, elixir-format
+msgctxt "saved value to indicated value"
+msgid "change to"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex

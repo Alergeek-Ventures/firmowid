@@ -13,6 +13,8 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   alias FirmowidUI.Utilities.ButtonStyles
   alias FirmowidWeb.Inbox.Utilities.Queue
   alias FirmowidWeb.Invoicing.Components.CostInvoiceUpload
+  alias FirmowidWeb.Settings.Components.TaxDifferences
+  alias FirmowidWeb.Settings.Utilities.TaxSettings
 
   @doc """
   A queue item, a row of its group's card: the tile coloured by its kind, the title
@@ -202,10 +204,17 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
 
   # One line under the title that never wraps: the person or counterparty, then
   # the context. Next to an amount the name gives way and the due date stays;
-  # elsewhere the context is what ends with an ellipsis.
+  # elsewhere the context is what ends with an ellipsis. An item whose context
+  # is what the person must read in full (`wrap_context?`) wraps instead.
   defp meta_line(assigns) do
     ~H"""
-    <p class="flex min-w-0 gap-x-1.5 text-sm/[1.35] whitespace-nowrap text-grey-600 max-md:block max-md:leading-[1.4] max-md:whitespace-normal">
+    <p class={[
+      "text-sm/[1.35] text-grey-600 max-md:block max-md:leading-[1.4] max-md:whitespace-normal",
+      if(Map.get(@item, :wrap_context?),
+        do: "block",
+        else: "flex min-w-0 gap-x-1.5 whitespace-nowrap"
+      )
+    ]}>
       <span
         :if={@item.person}
         class={[
@@ -219,9 +228,17 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       <span :if={@item.person} class="shrink-0" aria-hidden="true">·</span>
       <span class={[
         "max-md:whitespace-normal",
-        if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate")
+        !Map.get(@item, :wrap_context?) &&
+          if(Map.has_key?(@item, :amount), do: "shrink-0", else: "min-w-0 truncate")
       ]}>
-        {@item.context}
+        <TaxDifferences.list
+          :if={Map.get(@item, :differences, []) != []}
+          differences={@item.differences}
+          lead={TaxSettings.inbox_lead()}
+        />
+        <%= if Map.get(@item, :differences, []) == [] do %>
+          {@item.context}
+        <% end %>
       </span>
     </p>
     """
