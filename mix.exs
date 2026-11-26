@@ -35,6 +35,8 @@ defmodule Firmowid.MixProject do
       dialyzer: [
         flags: [:no_opaque],
         plt_core_path: "_build/plts/core",
+        # Outside the build path, which CI moves into the runner's build cache.
+        plt_local_path: "_build/plts/local",
         plt_add_apps: [:mix, :ex_unit, :esc]
       ],
       usage_rules: usage_rules(),

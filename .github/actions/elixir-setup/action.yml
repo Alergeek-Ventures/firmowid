@@ -89,11 +89,16 @@ runs:
         printf '%s\n' 'DB_PORT=5432' 'S3_PORT=8333' >> "$GITHUB_ENV"
       shell: sh
 
-    # Selenge runners get /cache/firmowid, a copy-on-write clone of the deps and _build that
-    # main's last push left there (infrastructure: av.ci_runners build caches). A reflink
-    # copy takes seconds instead of downloading both from the GitHub cache; Mix then
-    # recompiles what differs. Other runners, other toolchains and the isolated coverage
-    # benchmark (its own cache-key) use the GitHub cache below.
+    # Selenge runners get /cache/firmowid, a copy-on-write clone of the deps, _build and Hex
+    # cache that main's last push left there (infrastructure: av.ci_runners build caches).
+    # The job builds in the clone itself, and Mix recompiles what differs. Copying its
+    # ~22,000 files into the job instead left reflinked extents in every runner's container
+    # that made deleting it slow on the host's btrfs, until deletions backed up and stalled
+    # all containers (2026-11-26). _build cannot be a symlink: Mix links each app's priv by
+    # a relative path that would resolve from the clone; MIX_BUILD_ROOT makes Mix compute it
+    # from there. deps can, and keeps the path assets/package.json reaches with ../deps.
+    # Other runners, other toolchains and the isolated coverage benchmark (its own
+    # cache-key) use the GitHub cache below.
     - name: Restore the runner's build cache
       id: runner-cache
       shell: bash
@@ -105,10 +110,10 @@ runs:
         echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
         dir=/cache/firmowid
         if [ "$CACHE_KEY" = v2 ] && [ -f "$dir/IDENTITY" ] && [ "$(cat "$dir/IDENTITY")" = "$IDENTITY" ]; then
-          cp -a --reflink=auto "$dir/deps" "$dir/_build" .
-          rm -rf ~/.hex && cp -a --reflink=auto "$dir/hex" ~/.hex
+          ln -s "$dir/deps" deps
+          printf '%s\n' "MIX_BUILD_ROOT=$dir/_build" "HEX_HOME=$dir/hex" >> "$GITHUB_ENV"
           echo "hit=true" >> "$GITHUB_OUTPUT"
-          echo "Restored deps and _build of main $(cat "$dir/COMMIT") from the runner's build cache."
+          echo "Building on deps and _build of main $(cat "$dir/COMMIT") in the runner's build cache."
         fi
 
     # The last fallbacks ignore config and lock changes; Mix recompiles only the
