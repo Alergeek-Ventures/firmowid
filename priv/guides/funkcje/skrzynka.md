@@ -15,7 +15,7 @@ landing:
       value: "na tydzień, miesiąc, 3 miesiące albo na stałe"
 ---
 
-Widzę przede wszystkim faktury, które jeszcze zostały, i rzeczy, które musimy zapłacić. Do tego wnioski o urlop, delegacje i rozliczenia, wszystko na rzut oka. Przedsiębiorca ma to po prostu podane na tacy i widzi wszystkie kolejne sprawy do załatwienia.
+Widzę przede wszystkim faktury, które jeszcze zostały, i rzeczy, które musimy zapłacić. Do tego wnioski o urlop, delegacje i rozliczenia, wszystko na pierwszy rzut oka. Przedsiębiorca ma to po prostu podane na tacy i widzi wszystkie kolejne sprawy do załatwienia.
 
 ![Skrzynka: sprawy pilne z KSeF i banku, wniosek urlopowy do akceptacji i faktura po terminie](/images/guides/funkcje/skrzynka.webp)
 
