@@ -137,7 +137,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
-      {:posthog, "~> 2.22.1"},
+      {:posthog, "~> 2.23.2"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.13.1"},
       {:mdex, "~> 0.7"},
@@ -151,7 +151,7 @@ defmodule Firmowid.MixProject do
       # Ash already requires it in every environment, so `only: :test` would diverge.
       {:stream_data, "~> 1.4"},
       {:openai_ex, "~> 0.10.0"},
-      {:req_llm, "~> 1.30.0"},
+      {:req_llm, "~> 1.31.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
