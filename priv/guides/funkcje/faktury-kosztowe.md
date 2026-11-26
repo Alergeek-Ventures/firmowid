@@ -68,7 +68,7 @@ Pobieranie kosztów z KSeF mają dziś wszystkie programy z tej tabeli. Różni�
 | Program | Koszty z KSeF | Odczyt z pliku (OCR) | Paczka dla biura księgowego | Najtańszy plan z OCR |
 |---|---|---|---|---|
 | Firmowid | automatycznie, co 2 godziny | tak | ZIP za miesiąc, z komentarzami | 0 zł, 10 odczytów miesięcznie |
-| Fakturownia | automatycznie, częstotliwość niepodana | 3 do 10 skanów miesięcznie, więcej w paczkach | eksport do Raks i Optima w planie Pro | Start, 9,99 zł netto |
+| Fakturownia | automatycznie, częstotliwość niepodana | 3 do 10 skanów miesięcznie, więcej w paczkach | eksport do Raks i Optima w planie Pro | Start, 12,49 zł netto |
 | wFirma | raz na dobę, nocą | Magic Box, bez limitu w Księgowości | panel biura | Księgowość, 60 zł netto |
 | inFakt | automatycznie | AI w aplikacji i w inFakt Plus | bez danych | inFakt Plus od 59,90 zł netto |
 | Faktura.pl | sprzeczne informacje na stronie | 20 dokumentów w OPTIMUM | paczka dokumentów, JPK | OPTIMUM od 24,99 zł netto |
