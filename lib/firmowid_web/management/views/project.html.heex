@@ -154,6 +154,7 @@
 
           <.button
             :if={!@project.archived_at}
+            id={"project-report-download-#{Date.to_iso8601(@selected_date)}"}
             disabled={Enum.empty?(@project.members)}
             type="button"
             variant="ghost"
