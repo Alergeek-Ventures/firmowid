@@ -115,6 +115,8 @@ defmodule Firmowid.Analysis do
 
   # A month whose invoices mostly still wait for payment would show a misleading result.
   @unpaid_invoices_in_closed_month 2
+  @payroll_account "60000002026"
+  @tax_account "10100071222"
 
   @doc "Lists custom categories and tags of projects active in the selected month."
   @spec list_available_categories(Date.t(), Scope.t()) :: [TagDefinition.t()]
@@ -578,13 +580,21 @@ defmodule Firmowid.Analysis do
           :payroll | :taxes | nil
   def public_levy(%Transaction{creditor_account: account}) do
     case AccountNumber.key(account) do
-      <<_check::binary-size(2), "60000002026", _rest::binary-size(13)>> -> :payroll
-      <<_check::binary-size(2), "10100071222", _rest::binary-size(13)>> -> :taxes
+      <<_check::binary-size(2), @payroll_account, _rest::binary-size(13)>> -> :payroll
+      <<_check::binary-size(2), @tax_account, _rest::binary-size(13)>> -> :taxes
       _other -> nil
     end
   end
 
   def public_levy(_invoice), do: nil
+
+  @doc """
+  Returns the NBP part (digits 3-13) that the accounts of `public_levy/1`'s kind
+  hold, to narrow a query before the recognition.
+  """
+  @spec public_levy_account(:payroll | :taxes) :: String.t()
+  def public_levy_account(:payroll), do: @payroll_account
+  def public_levy_account(:taxes), do: @tax_account
 
   # Issued invoices without a linked transaction, by sale date; a refund is income.
   defp unpaid_invoices(year, scope) do

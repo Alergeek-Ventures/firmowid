@@ -62,14 +62,11 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   """
   use Ash.Resource.Actions.Implementation
 
-  alias Firmowid.Analysis
-  alias Firmowid.Analysis.OwnAccounts
   alias Firmowid.Core
-  alias Firmowid.Finances
-  alias Firmowid.Invoicing
   alias Firmowid.Scope
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Forecast.Cit
+  alias Firmowid.Taxes.Forecast.Documents
   alias Firmowid.Taxes.Forecast.Income
   alias Firmowid.Taxes.Forecast.IncomeEntries
   alias Firmowid.Taxes.Forecast.Period
@@ -91,7 +88,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
              opts |> Keyword.put(:not_found_error?, false) |> Keyword.put(:load, [:partners])
            ),
          {:ok, organization} <- Core.get_organization(context.tenant, opts) do
-      documents = read_documents(year, opts)
+      documents = Documents.read(year, opts)
       scope = %Scope{actor: context.actor, tenant: context.tenant}
 
       {:ok,
@@ -99,61 +96,6 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
          cit(tax_year, organization, documents, scope, today) ++
          owners(tax_year, organization, documents, scope, today)}
     end
-  end
-
-  # Every document set is read once, from the year before too: a cash accounting invoice of it may
-  # be paid in this year, and the owners' health contribution and Mały ZUS Plus look back.
-  defp read_documents(year, opts) do
-    dates = %{
-      date_from: Date.new!(year - 1, 1, 1),
-      date_to: Date.new!(year, 12, 31),
-      date_field: :any
-    }
-
-    two_years = Map.delete(dates, :date_field)
-
-    %{
-      sales_invoices:
-        dates
-        |> Map.put(:submission, :confirmed)
-        |> Invoicing.list_sales_invoices!(
-          Keyword.put(opts, :load, [
-            :vat_value,
-            :net_value,
-            :gross_value,
-            :transactions,
-            corrected_invoice: [:vat_value, :net_value, corrections: [:vat_value, :net_value]]
-          ])
-        ),
-      cost_invoices:
-        Invoicing.list_cost_invoices!(
-          dates,
-          Keyword.put(opts, :load, [:transactions, :original_invoice])
-        ),
-      salaries:
-        %{salary_assigned: true}
-        |> Finances.list_transactions!(opts)
-        |> Enum.filter(&(&1.salary_month in Date.range(two_years.date_from, two_years.date_to))),
-      skipped_transactions:
-        two_years
-        |> Map.merge(%{reconciliation: :skipped, salary_assigned: false})
-        |> Finances.list_transactions!(Keyword.put(opts, :load, [:entity_tags]))
-    }
-  end
-
-  # The categories the analysis resolves for the skipped transfers (the owner's confirmed rules,
-  # certain signals, the classifier), read as the caller, tell which of them are costs.
-  defp income_entries(documents, organization, scope) do
-    categories =
-      %{sales_invoices: [], cost_invoices: [], transactions: documents.skipped_transactions}
-      |> Analysis.categorize_entries(scope)
-      |> Map.new(fn {{:transaction, id}, {_entry, {category, _source}}} -> {id, category} end)
-
-    IncomeEntries.build(
-      Map.put(documents, :categories, categories),
-      organization,
-      OwnAccounts.load(scope)
-    )
   end
 
   # Only the year that contains today has a running period; the entries get the typical rest of it.
@@ -196,7 +138,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
        when rate != nil and advances != nil do
     entries =
       documents
-      |> income_entries(organization, scope)
+      |> Documents.income_entries(organization, scope)
       |> project(year, today, Period.last_day(advances, today))
 
     without_vat =
@@ -231,7 +173,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
          today
        )
        when legal_form in [:sole_proprietorship, :civil_partnership] do
-    entries = income_entries(documents, organization, scope)
+    entries = Documents.income_entries(documents, organization, scope)
 
     {pit, zus} =
       partners

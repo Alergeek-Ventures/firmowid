@@ -109,7 +109,9 @@ defmodule Firmowid.Taxes.TaxYear do
 
     action :suggest_settings, {:array, :map} do
       description "Suggest the year's VAT period, income tax form and advances from the transfers to the tax " <>
-                    "micro-account. Not binding: an admin confirms them by saving the year. Saves nothing."
+                    "micro-account, and for a sole proprietorship's saved owner the ZUS social insurance, voluntary " <>
+                    "sickness and lump sum rate that the payments equal to the grosz or the złoty. Not binding: an " <>
+                    "admin confirms them by saving the year. Saves nothing."
 
       constraints items: [
                     fields: [
@@ -117,10 +119,20 @@ defmodule Firmowid.Taxes.TaxYear do
                         type: :atom,
                         allow_nil?: false,
                         constraints: [
-                          one_of: [:vat_period, :cit_advances, :income_tax, :pit_advances]
+                          one_of: [
+                            :vat_period,
+                            :cit_advances,
+                            :income_tax,
+                            :pit_advances,
+                            :social_insurance,
+                            :voluntary_sickness,
+                            :lump_sum_rate
+                          ]
                         ]
                       ],
-                      value: [type: :atom, allow_nil?: false],
+                      # An atom, a boolean (voluntary_sickness) or a decimal (lump_sum_rate, in percent);
+                      # a generic action's result is not cast, so `:term` only says that it varies.
+                      value: [type: :term, allow_nil?: false],
                       year: [type: :integer, allow_nil?: false],
                       transfers: [type: :integer, allow_nil?: false],
                       latest_transfer_at: [type: :utc_datetime, allow_nil?: false]
