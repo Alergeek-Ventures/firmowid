@@ -2,7 +2,7 @@
 title: "Program do analizy przychodów i kosztów małej firmy"
 description: "Analiza Firmowida pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na 12 kategorii i liczy wynik miesiąca. Cena, porównanie i ograniczenia."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-26
 landing:
   kicker: "Funkcje · Analiza"
   note: "ile zostaje ze 100 zł"
@@ -80,7 +80,7 @@ Propozycję zatwierdzasz albo zmieniasz jednym kliknięciem. Wybór obejmuje wsz
 
 Widok „Trendy” pokazuje wynik każdego miesiąca jako słupek: zysk rośnie w górę, strata w dół. Kliknięcie słupka otwiera podsumowanie tego jednego miesiąca. Najdłuższy okres to 36 miesięcy.
 
-**Jeden projekt.** Przełącznik „Pokaż” zawęża trendy do wybranego projektu. Wynik projektu to jego przychody minus koszty do niego przypisane. Kosztów wspólnych firmy Analiza na projekty nie rozkłada.
+**Jeden projekt.** Przełącznik „Pokaż” zawęża trendy do wybranego projektu. Wynik projektu to jego przychody minus koszty do niego przypisane. Koszty firmy i podatki Firmowid rozkłada na projekty według przepracowanych godzin.
 
 Skąd wziąć godziny i koszty projektu: [Czas pracy w projektach](/funkcje/czas-pracy) · [Rentowność projektu w małej firmie](/poradnik/rentownosc-projektu-firma-uslugowa).
 
@@ -155,7 +155,7 @@ Nie. Kategorię proponuje AI, a Ty ją zatwierdzasz. Lista jest w sekcji [Katego
 Jest w każdym planie, także za 0 zł. Plany różnią się liczbą banków i dostępem przez Claude i ChatGPT, co pokazuje sekcja [Ile to kosztuje](#ile-to-kosztuje).
 
 ### Czy Analiza pokazuje rentowność projektu?
-Pokazuje wynik projektu: jego przychody minus koszty do niego przypisane. Kosztów wspólnych firmy na projekty nie rozkłada.
+Tak. Pokazuje wynik projektu: jego przychody minus koszty do niego przypisane. Koszty firmy i podatki rozkłada na projekty według przepracowanych godzin.
 
 ### Czy Analiza zastąpi biuro księgowe?
 Nie. Kwoty są brutto i bez podatków do zapłaty. To obraz do zarządzania firmą, a nie księgi.
