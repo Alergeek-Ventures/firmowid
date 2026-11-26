@@ -277,8 +277,11 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(exists(members, user_id == ^actor(:user_id) and is_nil(archived_at)))
     end
 
+    # A company API key's account (the only actor with an `organization_id`) belongs to its
+    # organization the way a member does.
     policy action_type(:read) do
       authorize_if expr(id == ^actor([:member, :organization_id]))
+      authorize_if expr(id == ^actor(:organization_id))
     end
 
     # Any authenticated user may create an organization, also next to the ones
@@ -302,6 +305,7 @@ defmodule Firmowid.Core.Organization do
     # Whoever issues an invoice records its cash accounting for the next one.
     policy [action(:remember_cash_accounting), {AtLeastRole, role: :accountant}] do
       authorize_if expr(id == ^actor([:member, :organization_id]))
+      authorize_if expr(id == ^actor(:organization_id))
     end
 
     policy action(:update_billing_plan) do

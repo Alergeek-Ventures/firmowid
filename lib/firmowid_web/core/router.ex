@@ -193,6 +193,18 @@ defmodule FirmowidWeb.Core.Router do
     forward "/", FirmowidWeb.Timetracker.Api
   end
 
+  # The public API's description, readable before anyone has a key.
+  scope "/api/v1" do
+    get "/openapi.json", FirmowidWeb.Api.Controllers.Tools, :open_api
+    get "/docs", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi.json"
+  end
+
+  scope "/api/v1", FirmowidWeb.Api.Controllers do
+    pipe_through :api_key
+
+    post "/:tool", Tools, :run
+  end
+
   scope "/mcp" do
     pipe_through :mcp
 

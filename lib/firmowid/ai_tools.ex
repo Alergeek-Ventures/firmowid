@@ -1,9 +1,10 @@
 defmodule Firmowid.AiTools do
   @moduledoc """
-  Keeps the MCP server and the in-app assistant on the same tools: both read their AshAi
-  tools from here, and each difference between them is listed with its reason. Ash policies
-  authorize every call, so a policy also hides the tools of features the organization's plan
-  does not include, and AshAi hides tools the actor's role can never use.
+  Keeps the MCP server, the in-app assistant and the public API (`/api/v1`) on the same tools:
+  all three read their AshAi tools from here, and each difference between them is listed with
+  its reason. Ash policies authorize every call, so a policy also hides the tools of features
+  the organization's plan does not include, and AshAi hides tools the actor's role can never
+  use.
   """
 
   @shared [
@@ -61,6 +62,10 @@ defmodule Firmowid.AiTools do
   # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
   @assistant_only [:wait_for_ksef_submissions]
 
+  # Another system's order is issued over the API without anyone confirming it, so a store can
+  # invoice its orders; MCP issues an invoice only after the user confirms it in its widget.
+  @api_only [:issue_sales_invoice_from_api]
+
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
   def mcp, do: @shared
@@ -68,4 +73,8 @@ defmodule Firmowid.AiTools do
   @doc "Returns the tools exposed to the in-app assistant."
   @spec assistant() :: [atom()]
   def assistant, do: @shared ++ @assistant_only
+
+  @doc "Returns the tools exposed by the public API, one endpoint each."
+  @spec api() :: [atom()]
+  def api, do: @shared ++ @api_only
 end
