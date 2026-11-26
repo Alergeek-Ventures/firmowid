@@ -3,7 +3,7 @@ defmodule Firmowid.Core do
   Core domain — accounts, organizations and their members.
 
   Owns the User, Member, Organization, OrganizationInvite, Token, UserIdentity,
-  OAuth and RegisteredCompany resources. Authentication flows (password, Google
+  OAuth, ApiKey, ServiceAccount and RegisteredCompany resources. Authentication flows (password, Google
   OAuth, confirmation, password reset) are handled by `ash_authentication` on
   the User resource.
   """
@@ -126,6 +126,19 @@ defmodule Firmowid.Core do
       define :read_invite_by_code, action: :read_by_code
       define :consume_invite, action: :consume
       define :destroy_invite, action: :destroy
+    end
+
+    resource Firmowid.Core.ApiKey do
+      define :list_api_keys, action: :list
+      define :create_api_key, action: :create
+      define :create_company_api_key, action: :create_for_company
+      define :revoke_api_key, action: :destroy
+      define :sign_in_with_api_key, action: :sign_in, args: [:api_key], not_found_error?: false
+    end
+
+    resource Firmowid.Core.ServiceAccount do
+      define :get_service_account, action: :read, get_by: [:id]
+      define :destroy_service_account, action: :destroy
     end
 
     resource Firmowid.Core.OauthClient

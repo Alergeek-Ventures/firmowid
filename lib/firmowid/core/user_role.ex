@@ -44,6 +44,30 @@ defmodule Firmowid.Core.UserRole do
   def label(role), do: to_string(role)
 
   @doc """
+  Returns what a role may do, in a sentence for choosing a role.
+  """
+  @spec description(t()) :: String.t()
+  def description(:admin) do
+    gettext(
+      "Full access to the \"Management\" tab, including managing employees, counterparties and projects. This role also gives full access to invoices and to uploading invoices from outside KSeF."
+    )
+  end
+
+  def description(:employee) do
+    gettext(
+      "Basic access to the organization, including the Time Tracker (working time tracking). The ability to submit leave requests and upload documents."
+    )
+  end
+
+  def description(:invoicing) do
+    gettext("Invoicing access in view-only mode, without the ability to add or edit.")
+  end
+
+  def description(:accountant) do
+    gettext("Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF.")
+  end
+
+  @doc """
   Returns the form/param string for a role atom.
   """
   @spec param(t()) :: String.t()

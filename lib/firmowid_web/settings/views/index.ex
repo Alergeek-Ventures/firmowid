@@ -46,6 +46,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
+  alias FirmowidWeb.Settings.Components.ApiKeysSection
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -175,7 +176,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp assign_tab_data(socket, tab) when tab in [:profile, :documents, :delegations, :leaves],
     do: load_once(socket, :leave_requests, &assign_profile/1)
 
-  defp assign_tab_data(socket, :subscription), do: socket
+  defp assign_tab_data(socket, tab) when tab in [:subscription, :api_keys], do: socket
 
   defp load_once(socket, loaded_key, load) do
     if Map.has_key?(socket.assigns, loaded_key), do: socket, else: load.(socket)
@@ -1154,6 +1155,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             plan_granted?={@plan_granted?}
             purchase={@plan_purchase}
           />
+        <% :api_keys -> %>
+          <.live_component module={ApiKeysSection} id="api-keys-section" scope={@ash_scope} />
         <% :account -> %>
           <.account_tab
             current_user={@current_user}

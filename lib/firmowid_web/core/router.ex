@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
   alias FirmowidWeb.Infrastructure.Hooks.RequireUser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
+  alias FirmowidWeb.Infrastructure.Plugs.ApiKeyAuthentication
   alias Infrastructure.Controllers.AgentDiscovery
   alias Infrastructure.Controllers.LegacyIndex
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
@@ -69,6 +70,12 @@ defmodule FirmowidWeb.Core.Router do
       scope: "api"
 
     plug Authenticate
+  end
+
+  # A program of an organization, with one of its API keys (see `Firmowid.Core.ApiKey`).
+  pipeline :api_key do
+    plug :accepts, ["json"]
+    plug ApiKeyAuthentication
   end
 
   pipeline :oauth_api do
