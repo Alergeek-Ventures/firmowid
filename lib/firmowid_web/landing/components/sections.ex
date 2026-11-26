@@ -42,13 +42,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       title: gettext_noop("Invoices that reach KSeF automatically"),
       description:
         gettext_noop(
-          "Create, send, receive. Firmowid connects to the National e-Invoice System and tracks every regulatory change for you."
+          "You issue an invoice, and Firmowid sends it to KSeF and shows the KSeF number on it. It downloads cost invoices from KSeF every 2 hours."
         ),
       bullets: [
-        gettext_noop("Automatic KSeF compliance validation"),
-        gettext_noop("Invoice import and export (file, scan)"),
-        gettext_noop("Integration with business accounts, including foreign accounts"),
-        gettext_noop("Error notifications before documents reach the tax office")
+        gettext_noop("Unlimited sending to KSeF, including in the Free plan"),
+        gettext_noop("Connection with a Trusted Profile, a KSeF certificate or a token"),
+        gettext_noop("Bilingual invoices in foreign currencies"),
+        gettext_noop("Corrections shown under the original invoice, with before and after tables")
       ],
       visual: :invoices,
       image: "/images/guides/funkcje/faktury-lista.webp",
@@ -59,20 +59,20 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       title: gettext_noop("Transactions matched to invoices"),
       description:
         gettext_noop(
-          "Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."
+          "Firmowid downloads transfers from your bank and matches them to invoices on its own. You check only the matches it is not sure about."
         ),
       bullets: [
-        gettext_noop("Automatic transaction matching to invoices"),
-        gettext_noop("Integration with major Polish banks"),
-        gettext_noop("One-click export for accounting"),
-        gettext_noop("Alerts for unpaid invoices")
+        gettext_noop("29 banks and fintechs, including Revolut and Wise"),
+        gettext_noop("Up to 90 days of history on the first connection"),
+        gettext_noop("New transfers every other day"),
+        gettext_noop("Read-only bank connection: Firmowid does not order transfers")
       ],
       visual: :banking,
       image: "/images/guides/pomoc/transakcja-sugestie.webp",
       page: "bank"
     },
     %{
-      tags: [gettext_noop("costs"), gettext_noop("accounting office")],
+      tags: [gettext_noop("cost invoices"), gettext_noop("accounting office")],
       title: gettext_noop("Cost invoices in one place, without retyping"),
       description:
         gettext_noop(
@@ -110,13 +110,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       title: gettext_noop("Hours that count themselves"),
       description:
         gettext_noop(
-          "Your employees track their hours, but you still do not know what your team really costs? Firmowid keeps everything under control."
+          "An employee starts the timer under a project or enters hours by hand. The hours go to the monthly timesheet and to the cost of the project."
         ),
       bullets: [
-        gettext_noop("Real-time working hours monitoring"),
-        gettext_noop("Hours recorded per project and employee"),
-        gettext_noop("Labor costs visible in reports immediately"),
-        gettext_noop("One-click time tracking export")
+        gettext_noop("Start and stop timer that stops by itself after 12 hours"),
+        gettext_noop("Hours assigned to a project and a person"),
+        gettext_noop("Monthly timesheet signed with a Trusted Profile"),
+        gettext_noop("Timesheet as a PDF and a payout report")
       ],
       visual: :time,
       image: "/images/guides/funkcje/czas-formularz.webp",
@@ -127,13 +127,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       title: gettext_noop("Leave, business trips and team documents in one place."),
       description:
         gettext_noop(
-          "Employees submit leave requests and settle business trips in Firmowid, and you approve them with one click. Records show how many hours everyone worked - ready for payroll."
+          "An employee submits a leave request or settles a business trip in Firmowid, and you approve it in the Inbox. Employee contracts and documents are in the same program."
         ),
       bullets: [
-        gettext_noop("Leave requests with approval"),
-        gettext_noop("Business trips"),
+        gettext_noop("Leave requests approved in the Inbox"),
+        gettext_noop("Business trips: travel order, advance, domestic and foreign allowances"),
         gettext_noop("Employee contracts and documents"),
-        gettext_noop("Tracked hours ready for payroll")
+        gettext_noop("Four roles: employee, invoicing, accounting, admin")
       ],
       visual: :team,
       image: "/images/guides/funkcje/zespol.webp",
@@ -222,7 +222,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </h2>
           <p class="mt-6 text-h5/6.75 text-grey-300 lg:mt-4 lg:max-w-156">
             {gettext(
-              "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
+              "Firmowid connects KSeF invoices, bank transfers and your team's hours, so you can see how much each project leaves."
             )}
           </p>
         </div>
@@ -276,7 +276,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-700 lg:hidden lg:max-w-115">
             {gettext(
-              "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
+              "Firmowid connects KSeF invoices, bank transfers and your team's hours, so you can see how much each project leaves."
             )}
           </p>
         </div>
@@ -350,14 +350,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 grid-cols-1 gap-10 *:min-w-0 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(125)] lg:gap-20">
         <div class="max-w-180 lg:max-w-284.75">
           <p class="mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-teal-700 uppercase">
-            {gettext("Assistant in Firmowid, ChatGPT and Claude")}
+            {gettext("AI assistant in Firmowid, ChatGPT and Claude")}
           </p>
           <h2 class="max-w-125 text-[30px] leading-[1.15] font-bold tracking-normal text-grey-900 lg:text-[48px] lg:leading-[1.15]">
-            {gettext("An assistant to help you with your business")}
+            {gettext("An AI assistant that prepares the invoice and finds its transfer")}
           </h2>
           <p class="mt-3.5 text-h5/6.75 text-grey-700">
             {gettext(
-              "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
+              "You write what you need, and the AI assistant prepares an invoice or a correction, or finds a document. Before anything reaches KSeF, you see a preview and confirm it yourself."
             )}
           </p>
 
@@ -366,7 +366,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <span
                 class="h-3.25 w-3 shrink-0 bg-teal-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat"
                 aria-hidden="true"
-              ></span>{gettext("Issuing invoices - with a preview and KSeF submission")}
+              ></span>{gettext("Issuing invoices with a preview and KSeF submission")}
             </li>
             <li>
               <span
