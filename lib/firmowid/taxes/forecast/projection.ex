@@ -6,17 +6,22 @@ defmodule Firmowid.Taxes.Forecast.Projection do
   amount is tiny early on and grows every day. This module adds what the period
   usually still brings, so the forecast tells the amount of the whole period:
 
-    * for the rest of the current month, per side, the average over the three
+    * for the rest of the current month, per side, the median over the three
       calendar months before it of what was dated after the same day of the
       month (a month shorter than today's day brings nothing);
-    * for each whole month after it up to `until`, per side, the average
+    * for each whole month after it up to `until`, per side, the median
       monthly total of those three months.
 
-  With fewer than three months since the earliest entry the average is over the
-  months that exist, and with none nothing is projected. Refunds are never
-  projected. Corrections in the history, being negative amounts, simply take
-  part in the averages. A document already booked with a date after today is
-  part of that typical rest, so it lowers the projection instead of adding to it.
+  The median, not the average, so that one unusual month does not move the
+  forecast of a business whose months are otherwise steady. For the same reason
+  what comes in only one of the three months is not projected at all.
+
+  With fewer than three months since the earliest entry the median is over the
+  months that exist (of two, their mean), and with none nothing is projected.
+  Refunds are never projected. Corrections in the history, being negative
+  amounts, simply take part in the sums. A document already booked with a date
+  after today is part of that typical rest, so it lowers the projection instead
+  of adding to it.
 
   Why: checked against a company's past months in the middle of each month, the
   booked documents alone missed most of the month's total (a company that
@@ -85,11 +90,11 @@ defmodule Firmowid.Taxes.Forecast.Projection do
       if today == this_month_end do
         []
       else
-        typical = average(Enum.filter(counted, &(&1.date.day > today.day)), months)
+        typical = median(Enum.filter(counted, &(&1.date.day > today.day)), months)
         [{left(typical, entries, Date.add(today, 1), this_month_end), this_month_end}]
       end
 
-    monthly = average(counted, months)
+    monthly = median(counted, months)
 
     later =
       for first <- later_months(Date.add(this_month_end, 1), until) do
@@ -119,10 +124,27 @@ defmodule Firmowid.Taxes.Forecast.Projection do
     |> Enum.take_while(&(Date.compare(Date.end_of_month(&1), until) != :gt))
   end
 
-  defp average(entries, months) do
-    entries
-    |> Enum.reduce(Decimal.new(0), &Decimal.add(&1.amount, &2))
-    |> Decimal.div(length(months))
-    |> Decimal.round(2, :half_up)
+  # Each history month brings one value, its sum (zero without entries).
+  defp median(entries, months) do
+    sums = Enum.group_by(entries, &Date.beginning_of_month(&1.date), & &1.amount)
+
+    sorted =
+      months
+      |> Enum.map(fn month ->
+        sums |> Map.get(month, []) |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      end)
+      |> Enum.sort(Decimal)
+
+    Decimal.round(middle(sorted), 2, :half_up)
+  end
+
+  defp middle(sorted) do
+    half = div(length(sorted), 2)
+
+    if rem(length(sorted), 2) == 1 do
+      Enum.at(sorted, half)
+    else
+      Decimal.div(Decimal.add(Enum.at(sorted, half - 1), Enum.at(sorted, half)), 2)
+    end
   end
 end

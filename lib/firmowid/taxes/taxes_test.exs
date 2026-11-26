@@ -355,12 +355,13 @@ defmodule Firmowid.TaxesTest do
       [october, november, december] =
         Enum.filter(forecasts, &(&1.kind == :vat and &1.period >= "2026-10"))
 
-      # Booked 460 and the typical rest, 3 × 230 over 3 months; input VAT: 2 × 23 over 3, rounded.
+      # Booked 460 and the typical rest, the median of 230 in each of 3 months; input VAT: the median
+      # of 0, 23 and 23 is 23.
       assert Decimal.equal?(november.details.output_vat, 690)
       assert Decimal.equal?(november.details.projected_output_vat, 230)
-      assert Decimal.equal?(november.details.input_vat, 15)
-      assert Decimal.equal?(november.details.projected_input_vat, 15)
-      assert Decimal.equal?(november.amount, 675)
+      assert Decimal.equal?(november.details.input_vat, 23)
+      assert Decimal.equal?(november.details.projected_input_vat, 23)
+      assert Decimal.equal?(november.amount, 667)
 
       # A month that ended and one that has not started count the documents only.
       assert Decimal.equal?(october.amount, 207)
