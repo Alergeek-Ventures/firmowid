@@ -108,6 +108,7 @@ defmodule Firmowid.Ksef.Credential do
     define :delete_failed, args: [:reason]
     define :get_internal, action: :internal, get?: true, not_found_error?: false
     define :all_organization_ids
+    define :connection_statuses, args: [:organization_ids]
     define :refreshable_certificates
     define :backfill_expiration_metadata
     define :authenticate_with_token, args: [:ksef_token]
@@ -260,6 +261,14 @@ defmodule Firmowid.Ksef.Credential do
       prepare build(select: [:organization_id])
     end
 
+    read :connection_statuses do
+      description "List only the connection metadata of the given organizations' credentials, never secrets."
+      argument :organization_ids, {:array, :uuid}, allow_nil?: false
+
+      filter expr(organization_id in ^arg(:organization_ids))
+      prepare build(select: [:organization_id, :status, :expires_on])
+    end
+
     read :refreshable_certificates do
       description "List working certificate credentials for automatic KSeF certificate rollover."
       filter expr(status == :working and auth_type in [:certificate, :generated_certificate])
@@ -397,9 +406,9 @@ defmodule Firmowid.Ksef.Credential do
       authorize_if expr(organization_id == ^actor(:org_id))
     end
 
-    # cross_tenant_reader: enumerate org ids only
+    # cross_tenant_reader: enumerate org ids and read their connection statuses without secrets
     bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
-      authorize_if action(:all_organization_ids)
+      authorize_if action([:all_organization_ids, :connection_statuses])
     end
 
     # All other human access remains implicitly denied, including credential reads.
