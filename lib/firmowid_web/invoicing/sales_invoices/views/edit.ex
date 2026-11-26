@@ -173,7 +173,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       |> assign(:item_price_input_modes, %{})
       |> assign(:gross_item_price_inputs, %{})
       |> assign(:focused_item_price_input_index, nil)
-      |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope))
+      |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope, counterparty_id))
       |> assign_form_with_preview(ash_form)
       |> assign(:bank_accounts, bank_accounts)
       |> assign(

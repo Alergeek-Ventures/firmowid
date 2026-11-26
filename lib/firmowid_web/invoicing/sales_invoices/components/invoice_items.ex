@@ -19,19 +19,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias Phoenix.HTML.FormData
 
-  @doc "Reads the items suggested in the item name fields, none before the first generation."
-  @spec item_suggestions(Firmowid.Scope.t()) :: [map()]
-  def item_suggestions(scope) do
-    case Invoicing.get_item_suggestions!(scope: scope) do
-      %{suggestions: suggestions} ->
-        Enum.map(
-          suggestions,
-          &Map.take(&1, [:name, :quantity, :unit, :unit_price, :currency, :vat_rate])
-        )
-
-      nil ->
-        []
-    end
+  @doc """
+  Reads the items suggested in the item name fields of an invoice to the
+  counterparty, its own invoiced items first.
+  """
+  @spec item_suggestions(Firmowid.Scope.t(), Ash.UUID.t() | nil) :: [map()]
+  def item_suggestions(scope, counterparty_id) do
+    counterparty_id
+    |> Invoicing.list_item_suggestions!(scope: scope)
+    |> Enum.map(&Map.take(&1, [:name, :quantity, :unit, :unit_price, :currency, :vat_rate]))
   end
 
   @doc """
