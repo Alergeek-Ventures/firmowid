@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
       "pricing_przedsiebiorca" => ["Wypróbuj za darmo"],
       "pricing_firma" => ["Wypróbuj za darmo"],
       "final_trial" => ["Zacznij za darmo", "Zacznij za darmo"],
-      "demo_booking" => ["Umów 15 min rozmowę"],
+      "demo_booking" => ["Umów 15-minutową rozmowę"],
       "case_study_request" => ["Wyślijcie mi case study"],
       "github" => ["GitHub", "open source", "Zobacz na GitHubie"],
       "open_source" => ["Więcej o open source"]
