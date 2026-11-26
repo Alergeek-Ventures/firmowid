@@ -40,7 +40,7 @@ Na zakładce **Certyfikat KSeF**: wygeneruj w aplikacji KSeF certyfikat o przezn
 
 ## Sposób C: token (tylko do 1 stycznia 2027 r.)
 
-Na zakładce **Token**: wygeneruj w aplikacji KSeF token z uprawnieniami do wystawiania i przeglądania faktur, wklej go i kliknij **Połącz z KSeF**. Firmowid sprawdzi, czy NIP w tokenie zgadza się z NIP-em firmy. Tokeny działają tylko do 1 stycznia 2027 r., więc przed tą datą trzeba przełączyć się na Profil Zaufany albo certyfikat.
+Na zakładce **Token**: wygeneruj w aplikacji KSeF token z uprawnieniami do wystawiania i przeglądania faktur, wklej go i kliknij **Połącz z KSeF**. Firmowid sprawdzi, czy NIP w tokenie zgadza się z NIP-em firmy. Obecne przepisy pozwalają używać tokenów do końca 2026 r., a projekt nowelizacji wydłuża działanie już wydanych tokenów do 30 listopada 2027 r. Firmowid traktuje na razie połączenie tokenem jako ważne do 1 stycznia 2027 r., więc przed tą datą najlepiej przełączyć się na Profil Zaufany albo certyfikat.
 
 ![Zakładka „Token” z ostrzeżeniem o wygaszaniu metody](/images/guides/pomoc/ksef-5b-token.webp)
 
