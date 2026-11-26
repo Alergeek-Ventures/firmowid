@@ -12,6 +12,26 @@ let
     nodejs-slim = pkgs.nodejs-slim_26;
   };
 
+  # The pinned nixpkgs ships Erlang/OTP 29.1.2, without the 29.1.3 security fixes
+  # (binary_to_term crashes and six other CVEs). Elixir is rebuilt on it; CI requires
+  # .tool-versions and the Containerfile.app builder image to pin the same release.
+  # https://github.com/erlang/otp/releases/tag/OTP-29.1.3
+  beamPackages = pkgs.beam29Packages.overrideScope (
+    _: prev: {
+      erlang = prev.erlang.overrideAttrs (
+        finalAttrs: _: {
+          version = "29.1.3";
+          src = pkgs.fetchFromGitHub {
+            owner = "erlang";
+            repo = "otp";
+            tag = "OTP-${finalAttrs.version}";
+            hash = "sha256-4iE84PlRkdVoZVNBOmGc+/kNINGipY4TEyGqJ4PiIFc=";
+          };
+        }
+      );
+    }
+  );
+
   # The pinned nixpkgs ships Betterleaks 1.9.0, whose brotli is affected by GO-2026-6888.
   # Keep in sync with the secret-scan image in elixir-build-and-test.yml.
   # https://github.com/betterleaks/betterleaks/releases/tag/v1.10.1
@@ -104,8 +124,8 @@ in
     nodejs_26
     pnpm
     accent-cli
-    beam29Packages.elixir_1_20
-    beam29Packages.erlang
+    beamPackages.elixir_1_20
+    beamPackages.erlang
     infisical
     # Verifies the provenance of published translation snapshots.
     gh
