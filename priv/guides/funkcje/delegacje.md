@@ -15,11 +15,11 @@ landing:
       value: "Profil Zaufany"
 ---
 
-Delegacje rozliczaliśmy wcześniej w Excelach, ale to było bardzo ciężkie, trudne i długo zajmowało. Teraz robimy to w stu procentach w Firmowidzie.
+Delegacje rozliczaliśmy wcześniej w Excelach, ale to było bardzo ciężkie, trudne i zajmowało dużo czasu. Teraz robimy to w stu procentach w Firmowidzie.
 
 Excel był bardzo dużym szablonem, który ciężko było zrozumieć i ogarnąć. Dla pracowników też był dużym wyzwaniem. Łatwy interfejs sprawia, że wszystko można szybko wypełnić.
 
-Najwięcej czasu oszczędza cały flow, czyli krok po kroku. Wszyscy mają jeden program i przechodzą przez kolejne kroki. Dokument na nich czeka i widać, że trzeba go podpisać, co bardzo usprawnia.
+Najwięcej czasu oszczędza cały flow, czyli krok po kroku. Wszyscy mają jeden program i przechodzą przez kolejne kroki. Dokument na nich czeka i widać, że trzeba go podpisać, co usprawnia pracę.
 
 Często wyjeżdżamy, mamy dużo delegacji zagranicznych, więc nam to bardzo pomaga. Zaliczki dajemy w zależności od tego, czy delegacja jest krótka, czy zagraniczna i długa. W obu przypadkach jest to bardzo wygodne dla firmy.
 
