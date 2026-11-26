@@ -116,7 +116,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         question: gettext_noop("Is Firmowid compliant with KSeF?"),
         answer: [
           gettext_noop(
-            "Yes. Full KSeF compliance and automatic tracking of regulatory changes — our developers implement them immediately after announcements from the Ministry of Finance."
+            "Yes. Firmowid sends sales invoices to KSeF and shows the KSeF number on the invoice. It downloads cost invoices from KSeF every 2 hours, including in the Free plan. It connects to KSeF with a Trusted Profile, a KSeF certificate or a token."
           )
         ]
       },
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         question: gettext_noop("How does migration from another program work?"),
         answer: [
           gettext_noop(
-            "Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."
+            "There is no separate import from other programs. After you connect KSeF, Firmowid downloads the invoices from the last 30 days on its own, and your bank provides up to 90 days of transfer history. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
           )
         ]
       },
@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         question: gettext_noop("Is my data safe?"),
         answer: [
           gettext_noop(
-            "Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."
+            "Your data is stored on OVH servers in the European Union. You connect your bank as read-only: Firmowid does not order transfers and does not see your bank password, because you log in on the bank's website."
           )
         ]
       },
@@ -166,10 +166,10 @@ defmodule FirmowidWeb.Landing.Components.Faq do
       },
       %{
         id: "oplaty",
-        question: gettext_noop("How do additional charges work?"),
+        question: gettext_noop("Does Firmowid charge extra for invoices or KSeF?"),
         answer: [
           gettext_noop(
-            "There are no additional charges for invoices or KSeF - in every plan, including Free, they are unlimited. Only the number of bank accounts (1 / 3 / unlimited) and users (2 / 5 / unlimited) depends on your plan. Need more? Move to a higher plan, with no per-account charges."
+            "No. Invoices and KSeF are unlimited in every plan, including Free. Your plan sets the number of banks (1, 3 or unlimited) and users (2, 5 or unlimited)."
           )
         ]
       },
