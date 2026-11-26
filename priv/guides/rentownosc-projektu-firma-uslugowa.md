@@ -2,7 +2,7 @@
 title: "Rentowność projektu: jak ją liczyć w firmie usługowej"
 description: "Rentowność projektu to wynik podzielony przez przychód. Jak przypisać koszty i godziny do projektu i co te liczby dały nam w rozmowie z klientem o cenie."
 published: 2026-11-12
-updated: 2026-11-24
+updated: 2026-11-26
 category: firma-uslugowa
 ---
 
@@ -49,7 +49,6 @@ Na podstawie rentowności projektów byliśmy w stanie przedstawić klientowi so
 | Przychód projektu | opłacone faktury sprzedaży przypisane do projektu |
 | Koszty bezpośrednie | faktury kosztowe i wydatki oznaczone projektem, także dzielone między kilka projektów |
 | Wynagrodzenia | dzielone między projekty według godzin danej osoby w miesiącu |
-| Koszty firmy i podatki | rozkładane na projekty według [przepracowanych godzin](/funkcje/czas-pracy) |
 | Projekty wewnętrzne | bez udziału w kosztach firmy, widoczne osobno |
 | Nieopłacone faktury | pokazane osobno, poza wynikiem |
 
@@ -57,7 +56,7 @@ W Firmowidzie te liczby zbiera [Analiza przychodów i kosztów](/funkcje/analiza
 
 W iFirmie projekt też zbiera przychody i koszty, ale wynagrodzenia pracowników dodaje się do niego ręcznie.
 
-![Rentowność projektu w Firmowidzie: przychód to opłacone faktury przypisane do projektu, koszty bezpośrednie to faktury oznaczone projektem, wynagrodzenia oraz koszty firmy i podatki dzieli się według godzin, projekty wewnętrzne są osobno, a nieopłacone faktury poza wynikiem.](/images/guides/rentownosc-projektu-jak-liczymy.webp)
+![Rentowność projektu w Firmowidzie: przychód to opłacone faktury przypisane do projektu, koszty bezpośrednie to faktury oznaczone projektem, wynagrodzenia dzieli się według godzin, projekty wewnętrzne są osobno, a nieopłacone faktury poza wynikiem.](/images/guides/rentownosc-projektu-jak-liczymy.webp)
 
 ## Źródła
 
