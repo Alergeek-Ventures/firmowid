@@ -80,7 +80,7 @@ Firmowid, nasz program, wysyła faktury do produkcyjnego KSeF. Środowiska testo
 
 ## XML i PDF
 
-Podręcznik MF ujmuje to jednym zdaniem: „Fakturą ustrukturyzowaną z założenia jest plik XML”. Faktura w KSeF to plik XML według schemy FA(3). PDF jest tylko jej czytelną wersją i nie zastępuje XML-a. Więcej w poradniku [co to jest KSeF i e-faktura](/poradnik/co-to-jest-ksef-i-e-faktura), a całą drogę na produkcji opisuje [pierwsza faktura w KSeF](/poradnik/pierwsza-faktura-ksef).
+Podręcznik MF ujmuje to jednym zdaniem: „Fakturą ustrukturyzowaną z założenia jest plik XML”. Faktura w KSeF to plik XML według schematu FA(3). PDF jest tylko jej czytelną wersją i nie zastępuje XML-a. Więcej w poradniku [co to jest KSeF i e-faktura](/poradnik/co-to-jest-ksef-i-e-faktura), a całą drogę na produkcji opisuje [pierwsza faktura w KSeF](/poradnik/pierwsza-faktura-ksef).
 
 ## Źródła
 
