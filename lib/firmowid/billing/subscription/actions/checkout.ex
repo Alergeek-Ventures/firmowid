@@ -7,7 +7,7 @@ defmodule Firmowid.Billing.Subscription.Actions.Checkout do
 
   A purchase is refused for the organization that sells Firmowid (it has no Stripe customer), one
   that already pays and one whose plan was granted by hand. The first purchase starts with the
-  free 30 days. A customer has one open session at a time: opening a checkout expires the one
+  free 60 days. A customer has one open session at a time: opening a checkout expires the one
   left open before, so two of them cannot both be paid into two subscriptions.
 
   The subscription carries the organization's id in its metadata, so its events find the
@@ -23,7 +23,7 @@ defmodule Firmowid.Billing.Subscription.Actions.Checkout do
   alias Firmowid.Billing.Subscription.Customer
   alias Firmowid.Core
 
-  @trial_days 30
+  @trial_days 60
 
   @doc "Opens the Checkout Session and returns its URL."
   @spec run(Ash.ActionInput.t(), keyword(), Ash.Resource.Actions.Implementation.Context.t()) ::

@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   attr :purchase, :map,
     default: nil,
     doc:
-      "what a purchase would be (billing_period, free_month?) and the quotas the plans differ in, if the company can buy a plan"
+      "what a purchase would be (billing_period, free_trial?) and the quotas the plans differ in, if the company can buy a plan"
 
   def subscription_tab(assigns) do
     ~H"""
@@ -200,7 +200,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           </div>
 
           <p class="text-sm text-grey-600">
-            {if @purchase.free_month?,
+            {if @purchase.free_trial?,
               do: gettext("Next you enter the card on Stripe's page. Nothing is charged today."),
               else: gettext("Next you pay with a card on Stripe's page.")}
           </p>

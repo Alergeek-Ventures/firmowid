@@ -2,16 +2,16 @@
 title: "Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT"
 description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude i ChatGPT przez MCP. Każdą fakturę zatwierdzasz sam."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-26
 landing:
   kicker: "Funkcje · AI"
   note: "zmiany zatwierdzasz Ty"
   author: franek
   facts:
     - label: "Asystent AI w aplikacji"
-      value: "w każdym planie"
+      value: "od planu Przedsiębiorca"
     - label: "Claude i ChatGPT"
-      value: "przez MCP, od 29 zł netto"
+      value: "przez MCP, w każdym planie"
     - label: "Faktura do KSeF"
       value: "dopiero po Twoim potwierdzeniu"
 ---
@@ -74,11 +74,11 @@ Faktury przez Claude i ChatGPT wystawisz tylko dla firm. Fakturę dla osoby pryw
 
 | Plan | Asystent AI w aplikacji | Claude i ChatGPT przez MCP | Cena |
 |---|---|---|---|
-| Darmowy | tak | nie | 0 zł |
+| Darmowy | nie | tak | 0 zł |
 | Przedsiębiorca | tak | tak | 29 zł netto miesięcznie |
 | Firma | tak | tak | 149 zł netto miesięcznie |
 
-Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca. Konto w Claude albo ChatGPT opłacasz osobno u ich dostawców.
+Pierwsze 60 dni płatnego planu jest bez opłat. Konto w Claude albo ChatGPT opłacasz osobno u ich dostawców.
 
 ## Porównanie z innymi programami
 
@@ -119,7 +119,7 @@ Nie. AI przygotowuje fakturę, a do KSeF wysyłasz ją sam, przyciskiem w oknie 
 Asystent AI w aplikacji ma gotowe pytania i nie wymaga niczego poza kontem Firmowida. W Claude i ChatGPT pracujesz na tych samych danych we własnym czacie, po podłączeniu serwera MCP.
 
 ### Ile kosztuje AI w Firmowidzie?
-Asystent AI w aplikacji jest w każdym planie. Połączenie z Claude i ChatGPT zaczyna się od planu Przedsiębiorca. Szczegóły są w sekcji [Ile to kosztuje](#ile-to-kosztuje).
+Asystent AI w aplikacji jest od planu Przedsiębiorca. Połączenie z Claude i ChatGPT działa w każdym planie, także darmowym. Szczegóły są w sekcji [Ile to kosztuje](#ile-to-kosztuje).
 
 ### Czy pracownik zobaczy przez AI faktury firmy?
 Nie. Przez Claude i ChatGPT widzi swój czas, urlopy i projekty, a asystent AI w aplikacji jest tylko dla ról, które widzą finanse.

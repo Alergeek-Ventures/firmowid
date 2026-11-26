@@ -2976,6 +2976,11 @@ msgstr ""
 msgid "Claim the per diem"
 msgstr ""
 
+#: lib/firmowid_web/assistant/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Claude and ChatGPT work in every plan"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
@@ -3337,6 +3342,11 @@ msgstr ""
 msgid "Connect an account"
 msgstr ""
 
+#: lib/firmowid_web/assistant/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Connect the MCP server to prepare invoices, match transfers and track time with AI, without the assistant."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Connect the company bank account."
@@ -3375,7 +3385,7 @@ msgstr ""
 
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
-msgid "Connecting AI clients is available in the %{plan} plan."
+msgid "Connecting AI clients requires an active Firmowid plan."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -6126,12 +6136,12 @@ msgstr ""
 
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
-msgid "Free for 30 days, then %{amount} gross every month."
+msgid "Free for 60 days, then %{amount} gross every month."
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
-msgid "Free for 30 days, then %{amount} gross once a year."
+msgid "Free for 60 days, then %{amount} gross once a year."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex
@@ -9610,7 +9620,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
-msgid "Paid plans are free for the first 30 days."
+msgid "Paid plans are free for the first 60 days."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -11131,6 +11141,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Secure data storage"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "See how to connect"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/entry_categories.ex
@@ -15708,7 +15723,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
-msgid "for 30 days"
+msgid "for 60 days"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex

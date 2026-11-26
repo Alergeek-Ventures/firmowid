@@ -16,11 +16,9 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   import FirmowidWeb.Auth.Components.ClientLogo, only: [connection_logos: 1]
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Core.Member
   alias Firmowid.Core.Organization
   alias FirmowidWeb.Auth.Components.ClientLogo
-  alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
   alias Phoenix.HTML.Safe
 
@@ -52,17 +50,15 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
 
   @doc """
   Render the consent screen as HTML iodata for ConsentRouter, or, as `:unavailable`,
-  the statement that the account's companies have no plan with AI clients (rendered
+  the statement that the account's companies have no active plan (rendered
   by `ConsentOrganization` itself, so no code is issued).
   """
   @spec render(:consent | :unavailable, map()) :: iodata()
   def render(:unavailable, assigns) do
-    assigns = Map.put(assigns, :plan, :ai |> PlanCatalog.plan_with() |> Worksheet.plan_label())
-
     Safe.to_iodata(~H"""
     <.document app={@app}>
       <h1 class="text-center text-2xl font-bold text-balance text-grey-900">
-        {gettext("Connecting AI clients is available in the %{plan} plan.", plan: @plan)}
+        {gettext("Connecting AI clients requires an active Firmowid plan.")}
       </h1>
       <p class="mbs-3 text-center text-sm text-grey-600">
         {gettext("Company")}

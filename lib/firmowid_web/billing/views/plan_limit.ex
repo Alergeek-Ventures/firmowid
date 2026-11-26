@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
             </fieldset>
 
             <p class="mt-3 text-[0.9375rem]/relaxed text-grey-700">
-              {Worksheet.first_charge_text(@fitting_plan, @billing_period, @free_month?)}
+              {Worksheet.first_charge_text(@fitting_plan, @billing_period, @free_trial?)}
             </p>
 
             <.button
@@ -127,7 +127,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
               {gettext("Buy the %{plan} plan", plan: Worksheet.plan_label(@fitting_plan))}
             </.button>
             <p class="mt-2 text-sm text-grey-600">
-              {if @free_month?,
+              {if @free_trial?,
                 do: gettext("Next you enter the card on Stripe's page. Nothing is charged today."),
                 else: gettext("Next you pay with a card on Stripe's page.")}
             </p>
@@ -333,7 +333,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
 
   # What the upgrade section offers: nothing for a plan granted by hand; a company that already
   # pays manages its plan in Stripe's customer portal; otherwise the purchase, which starts with
-  # the free 30 days while the company never had a subscription.
+  # the free 60 days while the company never had a subscription.
   defp assign_offer(socket) do
     %{current_org: org, ash_scope: scope, fitting_plan: fitting_plan} = socket.assigns
 
@@ -344,7 +344,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
     assign(socket,
       offer: offer,
       subscription: if(offer == :manage, do: Billing.get_subscription_details!(scope: scope)),
-      free_month?: offer == :buy and Billing.subscription_trial_available?(scope: scope)
+      free_trial?: offer == :buy and Billing.subscription_trial_available?(scope: scope)
     )
   end
 
@@ -371,7 +371,7 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
         {:ok, url} ->
           {:noreply, redirect(socket, external: url)}
 
-        # A refused purchase, such as a used free month.
+        # A refused purchase, such as a used trial.
         {:error, error} ->
           {:noreply, refused(socket, error)}
       end

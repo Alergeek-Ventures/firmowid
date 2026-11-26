@@ -134,19 +134,19 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   defp over_limit(count, limit), do: max(count - limit, 0)
 
   @doc """
-  Returns what a purchase of a plan charges and when: the first purchase starts with a 30-day
+  Returns what a purchase of a plan charges and when: the first purchase starts with a 60-day
   trial (`trial?`), a returning company pays at once.
   """
   @spec first_charge_text(PlanCatalog.offered_plan(), PlanCatalog.billing_period(), boolean()) ::
           String.t()
   def first_charge_text(plan, :monthly, true = _trial?) do
-    gettext("Free for 30 days, then %{amount} gross every month.",
+    gettext("Free for 60 days, then %{amount} gross every month.",
       amount: format_money(PlanCatalog.gross_price_pln(plan, :monthly))
     )
   end
 
   def first_charge_text(plan, :yearly, true = _trial?) do
-    gettext("Free for 30 days, then %{amount} gross once a year.",
+    gettext("Free for 60 days, then %{amount} gross once a year.",
       amount: format_money(PlanCatalog.gross_price_pln(plan, :yearly))
     )
   end

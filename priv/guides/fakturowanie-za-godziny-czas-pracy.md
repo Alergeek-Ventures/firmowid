@@ -2,7 +2,7 @@
 title: "Faktura za godziny pracy: jak ją wystawić w KSeF"
 description: "Faktura za godziny ma pozycję z jednostką godz., liczbą godzin i stawką. Jak wpisać niepełną godzinę, kiedy ją wystawić i co z raportem godzin w KSeF."
 published: 2026-11-12
-updated: 2026-11-24
+updated: 2026-11-26
 category: firma-uslugowa
 ---
 
@@ -59,7 +59,7 @@ Licznik czasu w [Firmowidzie](/funkcje/czas-pracy) działa w projekcie. Pole z t
 | inFakt | nie | tak | MCP we wszystkich planach |
 | Kadromierz, RCPonline | tak | nie | nie |
 
-MCP jest dostępny w płatnych planach, od planu [Przedsiębiorca](/cennik).
+MCP jest dostępny w każdym planie, także w [Darmowym](/cennik).
 
 ![Porównanie programów: Firmowid ma czas pracy w projektach, KSeF i fakturę przez asystenta AI po potwierdzeniu. Fakturownia ma KSeF i czas pracy w module Zadania, inFakt ma KSeF i MCP, ale nie czas pracy w projektach. Kadromierz i RCPonline mają czas pracy, ale nie KSeF.](/images/guides/faktura-za-godziny-czas-pracy-programy.webp)
 

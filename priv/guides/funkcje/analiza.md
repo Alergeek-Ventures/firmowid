@@ -105,7 +105,7 @@ Jak podłączyć Claude: [Firmowid w Claude i ChatGPT](/funkcje/claude-chatgpt-m
 
 | Plan | Analiza | Banki zasilające Analizę | Claude i ChatGPT | Cena |
 |---|---|---|---|---|
-| Darmowy | tak | 1 | nie | 0 zł |
+| Darmowy | tak | 1 | tak | 0 zł |
 | Przedsiębiorca | tak | 3 | tak | 29 zł netto miesięcznie |
 | Firma | tak | bez limitu | tak | 149 zł netto miesięcznie |
 
@@ -152,7 +152,7 @@ Z opłaconych faktur i z przelewów na podłączonych kontach. Niczego nie wpisu
 Nie. Kategorię proponuje AI, a Ty ją zatwierdzasz. Lista jest w sekcji [Kategorie kosztów](#kategorie-kosztow).
 
 ### Ile kosztuje Analiza?
-Jest w każdym planie, także za 0 zł. Plany różnią się liczbą banków i dostępem przez Claude i ChatGPT, co pokazuje sekcja [Ile to kosztuje](#ile-to-kosztuje).
+Jest w każdym planie, także za 0 zł. Plany różnią się liczbą banków, co pokazuje sekcja [Ile to kosztuje](#ile-to-kosztuje).
 
 ### Czy Analiza pokazuje rentowność projektu?
 Tak. Pokazuje wynik projektu: jego przychody minus koszty do niego przypisane. Koszty firmy i podatki rozkłada na projekty według przepracowanych godzin.

@@ -15,12 +15,17 @@ defmodule Firmowid.Billing.PlanCatalog do
   @type limit :: non_neg_integer() | :unlimited
 
   @typedoc """
-  What only some plans include. `:ai` is the MCP server (ChatGPT, Claude and other
-  clients) and the in-app assistant; `:ksef_invoice_emails` the emails about new
-  purchase invoices in KSeF.
+  What only some plans include. `:mcp` is the MCP server (ChatGPT, Claude and other
+  clients), `:assistant` the in-app assistant, `:ksef_invoice_emails` the emails about
+  new purchase invoices in KSeF.
   """
   @type feature ::
-          :ai | :leave_requests | :ksef_invoice_emails | :employee_contracts | :delegations
+          :mcp
+          | :assistant
+          | :leave_requests
+          | :ksef_invoice_emails
+          | :employee_contracts
+          | :delegations
 
   @type plan_rules :: %{
           plan: plan(),
@@ -48,7 +53,13 @@ defmodule Firmowid.Billing.PlanCatalog do
 
   @limited [:users, :bank_institutions, :active_projects]
 
-  @przedsiebiorca_features [:ai, :leave_requests, :ksef_invoice_emails, :employee_contracts]
+  @przedsiebiorca_features [
+    :mcp,
+    :assistant,
+    :leave_requests,
+    :ksef_invoice_emails,
+    :employee_contracts
+  ]
 
   @vat_percent 23
 
@@ -92,7 +103,7 @@ defmodule Firmowid.Billing.PlanCatalog do
       monthly_price_pln: decimal("0"),
       yearly_price_pln: decimal("0"),
       limits: %{users: 2, bank_institutions: 1, active_projects: 3},
-      features: [],
+      features: [:mcp],
       monthly_ocr_documents: 10
     }
   end

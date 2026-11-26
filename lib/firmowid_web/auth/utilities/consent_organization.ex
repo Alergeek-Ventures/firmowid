@@ -15,10 +15,11 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   out, the OAuth server sends the person to sign in or sign up; the client is
   remembered so the pages can name it.
 
-  Only organizations whose billing plan includes AI clients are offered and
-  accepted. When the account has none, this plug answers the GET itself with a
+  Only organizations with an active billing plan are offered and accepted; the Free
+  plan works too. When the account has none, this plug answers the GET itself with a
   statement instead of the consent, so no code is issued, not even for an earlier
-  consent. Tokens already issued are not touched (see `FirmowidMcp.PlanGate`).
+  consent. Tokens already issued are not touched; their requests need a usable member
+  (see `FirmowidMcp.Utilities.Authenticate`).
   """
 
   @behaviour Plug
@@ -135,7 +136,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     end
   end
 
-  # Only organizations whose plan includes AI clients can be connected; with none, the
+  # Only organizations with an active billing plan can be connected; with none, the
   # statement replaces the consent, so the OAuth server issues no code, not even for an
   # earlier consent.
   defp consent_or_unavailable(conn, selected, members) do
@@ -145,7 +146,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
     end
   end
 
-  defp connectable?(member), do: PlanCatalog.includes?(member.organization.billing_plan, :ai)
+  defp connectable?(member), do: PlanCatalog.includes?(member.organization.billing_plan, :mcp)
 
   defp preselected(connectable, member) do
     Enum.find(
@@ -228,7 +229,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
             conn,
             400,
             "invalid_request",
-            "the plan of the organization does not include AI clients"
+            "the plan of the organization is not active"
           )
         end
     end

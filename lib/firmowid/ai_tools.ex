@@ -1,8 +1,9 @@
 defmodule Firmowid.AiTools do
   @moduledoc """
-  Keeps the MCP server and the in-app assistant on the same access: both read their AshAi
+  Keeps the MCP server and the in-app assistant on the same tools: both read their AshAi
   tools from here, and each difference between them is listed with its reason. Ash policies
-  authorize every call, and AshAi hides tools the actor's role can never use.
+  authorize every call, so a policy also hides the tools of features the organization's plan
+  does not include, and AshAi hides tools the actor's role can never use.
   """
 
   @shared [

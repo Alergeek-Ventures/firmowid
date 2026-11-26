@@ -64,7 +64,7 @@ defmodule Firmowid.Billing.Subscription do
     end
 
     action :trial_available?, :boolean do
-      description "Whether a purchase starts with the free 30 days: the organization never had a Stripe subscription."
+      description "Whether a purchase starts with the free 60 days: the organization never had a Stripe subscription."
       run TrialAvailable
     end
 

@@ -32,7 +32,7 @@ defmodule Firmowid.Billing.SubscriptionTest do
 
   describe "purchase" do
     @tag :external
-    test "creates the customer from the organization and opens a checkout with a 30-day trial",
+    test "creates the customer from the organization and opens a checkout with a 60-day trial",
          %{admin: admin, org_id: org_id, scope: scope} do
       assert {:ok, "https://checkout.stripe.com/" <> _path} =
                Billing.start_subscription(

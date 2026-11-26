@@ -7,7 +7,6 @@ defmodule FirmowidMcp.Router do
   alias AshAi.Mcp.Router, as: Transport
   alias FirmowidMcp.Invoicing.Privacy
   alias FirmowidMcp.Ksef
-  alias FirmowidMcp.PlanGate
   alias FirmowidMcp.Runtime
   alias FirmowidMcp.Widgets
 
@@ -21,7 +20,7 @@ defmodule FirmowidMcp.Router do
     |> Keyword.put(:otp_app, :firmowid)
     |> Keyword.put(:mcp_name, "Firmowid")
     |> Keyword.put(:instructions, FirmowidMcp.instructions())
-    |> Keyword.put(:tool_argument_transformer, &PlanGate.tool_arguments/3)
+    |> Keyword.put(:tool_argument_transformer, &Privacy.validate_arguments/3)
     |> Keyword.put(:mcp_icons, &__MODULE__.server_icons/1)
     |> Transport.init()
   end
@@ -97,23 +96,6 @@ defmodule FirmowidMcp.Router do
         _ambiguous_or_missing -> decorate(response, %{}, conn)
       end
     end)
-  end
-
-  # A tool that a policy of the plan hides is "not found" before the plan gate runs;
-  # the caller still gets the gate's answer.
-  defp decorate(%{"error" => _error} = response, %{"method" => "tools/call"}, conn) do
-    case PlanGate.refusal(Ash.PlugHelpers.get_actor(conn)) do
-      nil ->
-        response
-
-      refusal ->
-        response
-        |> Map.delete("error")
-        |> Map.put("result", %{
-          "content" => [%{"type" => "text", "text" => refusal}],
-          "isError" => true
-        })
-    end
   end
 
   defp decorate(%{"result" => %{"tools" => tools}} = response, _request, _conn) do
