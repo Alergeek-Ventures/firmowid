@@ -4751,6 +4751,11 @@ msgstr ""
 msgid "Documents sent to OCR this month."
 msgstr ""
 
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "Does Firmowid charge extra for invoices or KSeF?"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Domestic invoice"
@@ -6517,11 +6522,6 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "How do I get back above zero?"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/faq.ex
-#, elixir-autogen, elixir-format
-msgid "How do additional charges work?"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -8813,6 +8813,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "No, a flat fee or selling goods"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "No. Invoices and KSeF are unlimited in every plan, including Free. Your plan sets the number of banks (1, 3 or unlimited) and users (2, 5 or unlimited)."
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/status.ex
@@ -11807,11 +11812,6 @@ msgstr ""
 msgid "Start a work session"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex
-#, elixir-autogen, elixir-format
-msgid "Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
@@ -13221,7 +13221,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
-msgid "There are no additional charges for invoices or KSeF - in every plan, including Free, they are unlimited. Only the number of bank accounts (1 / 3 / unlimited) and users (2 / 5 / unlimited) depends on your plan. Need more? Move to a higher plan, with no per-account charges."
+msgid "There is no separate import from other programs. After you connect KSeF, Firmowid downloads the invoices from the last 30 days on its own, and your bank provides up to 90 days of transfer history. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
@@ -15005,12 +15005,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
-msgid "Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."
-msgstr ""
-
-#: lib/firmowid_web/landing/components/faq.ex
-#, elixir-autogen, elixir-format
-msgid "Yes. Full KSeF compliance and automatic tracking of regulatory changes — our developers implement them immediately after announcements from the Ministry of Finance."
+msgid "Yes. Firmowid sends sales invoices to KSeF and shows the KSeF number on the invoice. It downloads cost invoices from KSeF every 2 hours, including in the Free plan. It connects to KSeF with a Trusted Profile, a KSeF certificate or a token."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
@@ -15294,6 +15289,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Your current usage is within the plan limits."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "Your data is stored on OVH servers in the European Union. You connect your bank as read-only: Firmowid does not order transfers and does not see your bank password, because you log in on the bank's website."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
