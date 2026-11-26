@@ -44,7 +44,7 @@ Na zakładce **Token**: wygeneruj w aplikacji KSeF token z uprawnieniami do wyst
 
 ![Zakładka „Token” z ostrzeżeniem o wygaszaniu metody](/images/guides/pomoc/ksef-5b-token.webp)
 
-## Krok 5. Sprawdź, że działa
+## Krok 5. Sprawdź, czy działa
 
 Status zmieni się na **Połączono z KSeF**, obok zobaczysz typ autoryzacji i datę wygaśnięcia. Od tej chwili możesz wystawiać faktury, a Firmowid pobiera z KSeF faktury z ostatnich 30 dni i potem co 2 godziny ([Pobieranie faktur z KSeF](/pomoc/pobieranie-faktur-z-ksef)).
 
