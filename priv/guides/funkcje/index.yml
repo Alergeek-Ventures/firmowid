@@ -8,7 +8,7 @@ description: "Funkcje Firmowida: faktury i KSeF, faktury kosztowe, bank z dopaso
 page:
   back_label: "← Wszystkie funkcje"
   cta_primary: "Zacznij za darmo"
-  cta_secondary: "Umów 15 min rozmowę"
+  cta_secondary: "Umów 15-minutową rozmowę"
   cta_note: "Konto w 2 minuty. Bez karty."
   match_transfer: "Przelew z banku"
   match_invoice: "Faktura"
