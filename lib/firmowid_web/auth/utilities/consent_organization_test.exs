@@ -154,10 +154,27 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
     assert mcp_tenant(refresh(refreshed["refresh_token"], context)["access_token"]) == first_id
   end
 
-  test "a company on the Free plan gets the statement and no code, also after an earlier consent",
+  test "a company on the Free plan gets the consent screen and a code", %{client: client} do
+    owner = admin_fixture()
+    organization_id = owner.member.organization_id
+    verifier = verifier()
+    {conn, html} = consent_screen(%{user: owner, client: client}, verifier)
+
+    assert html =~ "consent_request"
+    assert html =~ ~s(name="organization_id" value="#{organization_id}")
+
+    tokens = conn |> approve(html, organization_id) |> exchange_code(%{client: client}, verifier)
+    assert mcp_tenant(tokens["access_token"]) == organization_id
+  end
+
+  test "a company without an active plan gets the statement and no code, also after an earlier consent",
        %{client: client} do
     owner = admin_fixture()
     organization_id = owner.member.organization_id
+
+    # Only a superuser keeps a usable member in a company without a plan.
+    Ash.Seed.update!(owner.member.organization, %{billing_plan: :no_plan})
+    owner = owner |> Ash.Seed.update!(%{system_role: :superuser}) |> Core.load_member()
     conn = log_in_user(build_conn(), owner)
     verifier = verifier()
 

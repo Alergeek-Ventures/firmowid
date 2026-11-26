@@ -253,7 +253,7 @@ defmodule Firmowid.Assistant.Conversation do
     # Starting or continuing a conversation belongs to the plans with AI; reading earlier
     # ones and the jobs finishing a started turn stay open.
     policy action([:start, :for_subject, :for_analysis, :send_message, :respond_to_plan]) do
-      forbid_unless {PlanIncludes, feature: :ai}
+      forbid_unless {PlanIncludes, feature: :assistant}
       authorize_if always()
     end
 

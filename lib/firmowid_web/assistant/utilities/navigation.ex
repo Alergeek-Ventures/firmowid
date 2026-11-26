@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Navigation do
 
   @doc "Whether the organization's billing plan includes the assistant; the places that start a conversation render only then."
   @spec available?(%{billing_plan: PlanCatalog.plan()}) :: boolean()
-  def available?(%{billing_plan: plan}), do: PlanCatalog.includes?(plan, :ai)
+  def available?(%{billing_plan: plan}), do: PlanCatalog.includes?(plan, :assistant)
 
   @doc "The full-screen assistant page with the conversation list."
   @spec page_path() :: String.t()

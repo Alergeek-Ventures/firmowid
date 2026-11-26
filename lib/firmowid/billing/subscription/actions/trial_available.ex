@@ -1,6 +1,6 @@
 defmodule Firmowid.Billing.Subscription.Actions.TrialAvailable do
   @moduledoc """
-  Whether a purchase starts with the free 30 days: the organization never had a Stripe
+  Whether a purchase starts with the free 60 days: the organization never had a Stripe
   subscription. An organization without a Stripe customer never had one; otherwise Stripe is
   asked for any subscription of the customer.
   """
@@ -10,7 +10,7 @@ defmodule Firmowid.Billing.Subscription.Actions.TrialAvailable do
   alias Firmowid.Billing.StripeTerms
   alias Firmowid.Core
 
-  @doc "Returns whether the organization's purchase starts with the free 30 days."
+  @doc "Returns whether the organization's purchase starts with the free 60 days."
   @spec run(Ash.ActionInput.t(), keyword(), Ash.Resource.Actions.Implementation.Context.t()) ::
           {:ok, boolean()} | {:error, term()}
   @impl true

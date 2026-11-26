@@ -58,8 +58,8 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
      ]},
     {gettext_noop("ChatGPT and integrations"),
      [
-       {gettext_noop("Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"), :ai},
-       {gettext_noop("Assistant in the app"), :ai}
+       {gettext_noop("Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"), :mcp},
+       {gettext_noop("Assistant in the app"), :assistant}
      ]},
     {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true]}]}
   ]

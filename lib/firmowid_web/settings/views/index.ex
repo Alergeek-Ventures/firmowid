@@ -1346,7 +1346,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     if organization.id != Billing.seller_organization_id() do
       %{
         billing_period: :monthly,
-        free_month?: Billing.subscription_trial_available?(scope: scope),
+        free_trial?: Billing.subscription_trial_available?(scope: scope),
         quotas: PlanOffer.quotas()
       }
     end

@@ -84,7 +84,7 @@ defmodule FirmowidWeb.Billing.Components.PlanNotice do
 
   defp title(feature), do: title(feature, feature |> PlanCatalog.plan_with() |> Worksheet.plan_label())
 
-  defp title(:ai, plan), do: gettext("The assistant is available in the %{plan} plan.", plan: plan)
+  defp title(:assistant, plan), do: gettext("The assistant is available in the %{plan} plan.", plan: plan)
 
   defp title(:leave_requests, plan), do: gettext("Absence requests are available in the %{plan} plan.", plan: plan)
 

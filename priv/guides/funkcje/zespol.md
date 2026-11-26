@@ -78,7 +78,7 @@ Wyjazd służbowy przechodzi w Firmowidzie pięć kroków: wniosek pracownika, p
 | Przedsiębiorca | 5 | wnioski urlopowe, umowy i dokumenty pracowników | 29 zł netto miesięcznie |
 | Firma | bez limitu | delegacje | 149 zł netto miesięcznie |
 
-Cena jest za firmę, a nie za osobę. Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca.
+Cena jest za firmę, a nie za osobę. Pierwsze 60 dni płatnego planu jest bez opłat.
 
 ## Porównanie z innymi programami
 
