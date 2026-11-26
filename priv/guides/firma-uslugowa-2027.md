@@ -21,7 +21,7 @@ Pierwszą fakturę dla firmy wystawisz w Aplikacji Podatnika KSeF albo w program
 
 ## Pierwsze wpłaty
 
-Czynny podatnik VAT, który płaci innemu czynnemu podatnikowi, podaje od 1 stycznia 2027 r. w tytule przelewu numer KSeF faktury. Firma zwolniona z VAT sama ich nie wpisuje, chyba że płaci w mechanizmie podzielonej płatności, a klient może je podać w przelewie do niej dobrowolnie.
+Czynny podatnik VAT, który płaci innemu czynnemu podatnikowi, podaje od 1 stycznia 2027 r. w tytule przelewu numer KSeF faktury. Firma zwolniona z VAT sama go nie wpisuje, chyba że płaci w mechanizmie podzielonej płatności, a klient może go podać w przelewie do niej dobrowolnie.
 
 ![Firma założona w 2027 roku: fakturę dla firmy wystawia tylko w KSeF, dla osoby prywatnej w KSeF dobrowolnie albo poza nim, dla klienta z zagranicy w KSeF z kodem QR. Właściciel JDG ma uprawnienia od razu, numer KSeF w przelewie dotyczy czynnych podatników VAT i płatności w MPP, a zwolnienie z VAT nie zwalnia z KSeF.](/images/guides/firma-zalozona-w-2027-ksef.webp)
 
