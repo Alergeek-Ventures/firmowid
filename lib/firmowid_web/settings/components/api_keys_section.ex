@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core
   alias Firmowid.Core.ApiKey
@@ -168,6 +170,16 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
 
   defp admin?(scope), do: scope.actor.member.role == :admin
 
+  # A call anyone can try with their key: the first invoices the key's role may read.
+  defp api_example do
+    """
+    curl -X POST #{FirmowidWeb.Core.Endpoint.url()}/api/v1/list_sales_invoices \\
+      -H "Authorization: Bearer firmowid_…" \\
+      -H "Content-Type: application/json" \\
+      -d '{"limit": 5}'\
+    """
+  end
+
   defp preset_label(365), do: gettext("1 year")
   defp preset_label(days), do: ngettext("%{count} day", "%{count} days", days)
 
@@ -178,6 +190,7 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
         roles: UserRole.roles(),
         validity_presets: @validity_presets,
         admin?: admin?(assigns.scope),
+        api_example: api_example(),
         company_keys: Enum.filter(assigns.keys, & &1.service_account_id),
         personal_keys: Enum.filter(assigns.keys, & &1.user_id)
       )
@@ -190,18 +203,38 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
             "A key lets a program, such as an online store, a script or an AI assistant, use Firmowid through the API without signing in."
           )}
         </p>
-        <.button
-          :if={not @form_open?}
-          id="new-api-key"
-          type="button"
-          variant="special"
-          size="small"
-          class="self-start"
-          phx-click="open_form"
-          phx-target={@myself}
-        >
-          {gettext("New key")}
-        </.button>
+        <p class="text-sm/snug text-grey-700">
+          {gettext(
+            "The API offers the same operations as Firmowid for AI assistants (MCP). The documentation describes each of them; send the key in the Authorization header:"
+          )}
+        </p>
+        <pre
+          id="api-example"
+          class="overflow-x-auto rounded-sm bg-grey-100 p-4 font-mono text-xs/relaxed text-grey-900"
+        ><%= @api_example %></pre>
+        <div class="flex flex-wrap gap-2.5">
+          <.button
+            :if={not @form_open?}
+            id="new-api-key"
+            type="button"
+            variant="special"
+            size="small"
+            phx-click="open_form"
+            phx-target={@myself}
+          >
+            {gettext("New key")}
+          </.button>
+          <.link
+            id="api-docs"
+            kind="button"
+            variant="tertiary"
+            size="small"
+            redirect={~p"/api/v1/docs"}
+            target="_blank"
+          >
+            {gettext("API documentation")}
+          </.link>
+        </div>
       </div>
 
       <div

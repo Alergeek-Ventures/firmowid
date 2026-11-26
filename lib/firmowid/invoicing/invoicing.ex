@@ -172,6 +172,22 @@ defmodule Firmowid.Invoicing do
                     "issued in the conversation, after the last one, not between invoices. This tool never changes an invoice."
     end
 
+    # Only the public API exposes it (`Firmowid.AiTools.api/0`): another system's order is
+    # issued without anyone confirming it, unlike the confirmed issuance over MCP.
+    tool :issue_sales_invoice_from_api, SalesInvoice, :issue_from_api do
+      annotations title: "Issue sales invoice for an order",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: true
+
+      load [
+        :amount,
+        :ksef_submission_status,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ]
+    end
+
     tool :create_sales_invoice_draft, SalesInvoice, :draft do
       annotations title: "Save invoice draft",
                   read_only_hint: false,
@@ -422,8 +438,10 @@ defmodule Firmowid.Invoicing do
     resource SalesInvoice do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
+      define :get_sales_invoice_by_external_id, action: :by_external_id, args: [:external_id]
       define :draft_sales_invoice, action: :draft
       define :issue_sales_invoice, action: :issue
+      define :issue_sales_invoice_from_api, action: :issue_from_api
       define :correct_sales_invoice, action: :correct
       define :import_sales_invoice_from_ksef, action: :import_from_ksef
       define :revise_sales_invoice_draft, action: :revise

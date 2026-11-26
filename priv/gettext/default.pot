@@ -848,6 +848,11 @@ msgstr ""
 msgid "AI score: %{percent}% confidence"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "API documentation"
+msgstr ""
+
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "API keys"
@@ -12313,6 +12318,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "weekday abbreviation"
 msgid "Th"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/api_keys_section.ex
+#, elixir-autogen, elixir-format
+msgid "The API offers the same operations as Firmowid for AI assistants (MCP). The documentation describes each of them; send the key in the Authorization header:"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex

@@ -3,6 +3,7 @@ defmodule Firmowid.Ksef.Actions.ConnectionStatus do
 
   use Ash.Resource.Actions.Implementation
 
+  alias Firmowid.Core.ServiceAccount
   alias Firmowid.Core.User
   alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
@@ -19,6 +20,13 @@ defmodule Firmowid.Ksef.Actions.ConnectionStatus do
   # The invoice issuing of a system actor bound to the organization, which never connects it.
   def run(_input, _opts, %{actor: %SystemActor{org_id: tenant, role: :sales_invoice_processor}, tenant: tenant})
       when is_binary(tenant) do
+    with {:ok, credential} <- credential_metadata(tenant) do
+      {:ok, project(credential, false)}
+    end
+  end
+
+  # A company API key's account, which issues invoices but never connects KSeF.
+  def run(_input, _opts, %{actor: %ServiceAccount{organization_id: tenant}, tenant: tenant}) when is_binary(tenant) do
     with {:ok, credential} <- credential_metadata(tenant) do
       {:ok, project(credential, false)}
     end

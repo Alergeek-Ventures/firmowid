@@ -381,6 +381,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       get_by [:id]
     end
 
+    read :by_external_id do
+      description "Fetch the sales invoice issued for another system's order ID."
+      get_by [:external_id]
+    end
+
     read :public_shared_chain do
       description "Fetch the root shared invoice and its corrections authorized by the root share token."
 
@@ -433,8 +438,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       argument :input, InvoiceInput
       argument :sales_invoice_items, {:array, :map}
       argument :confirmation_id, :uuid_v7
+      # Set only by :issue_from_api, which first checks that no invoice has it.
+      argument :external_id, :string, public?: false
 
       change Changes.ApplyInvoiceInput
+      change set_attribute(:external_id, arg(:external_id)), where: present(:external_id)
 
       change set_attribute(:id, arg(:confirmation_id)) do
         where present(:confirmation_id)
@@ -793,6 +801,84 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
     # -- Generic actions -------------------------------------------------------
 
+    action :issue_from_api, :struct do
+      description """
+      Issue an invoice for another system's order, numbered in the organization's sequence. An
+      order that already has an invoice gets that invoice back, in whatever state, so a retried
+      request never issues a second one.
+      """
+
+      constraints instance_of: __MODULE__
+      transaction? true
+
+      argument :external_id, :string do
+        allow_nil? false
+        constraints max_length: 64
+        description "The order's ID in the calling system; one invoice per ID."
+      end
+
+      argument :buyer_type, :atom do
+        allow_nil? false
+        constraints one_of: [:company, :individual]
+      end
+
+      argument :buyer_id, :string, description: "The company buyer's tax ID, such as a NIP."
+      argument :buyer_full_name, :string, description: "The company buyer's name."
+      argument :buyer_given_name, :string, description: "The individual buyer's given name."
+      argument :buyer_surname, :string, description: "The individual buyer's surname."
+      argument :buyer_address, :string, allow_nil?: false
+
+      argument :buyer_country, :string do
+        default "PL"
+        description "ISO 3166-1 alpha-2 code, in either case; null means PL."
+      end
+
+      argument :buyer_email, :string
+      argument :buyer_phone, :string
+
+      argument :items, {:array, Firmowid.Invoicing.Types.InvoiceItemInput} do
+        allow_nil? false
+        constraints min_length: 1
+
+        description "The invoice lines; `unit_price` is net, or gross on a VAT-exempt line (`vat_rate: \"zw\"`)."
+      end
+
+      argument :sale_date, :date, description: "Defaults to the issue date, today."
+
+      argument :paid_on, :date,
+        description: "The day the buyer paid in full, by today. The invoice is then issued as paid, with no due date."
+
+      argument :due_date, :date, description: "The payment due date of an invoice still to be paid."
+
+      argument :payment_method, :atom do
+        default :transfer
+        constraints one_of: [:cash, :card, :voucher, :check, :credit, :transfer, :mobile]
+      end
+
+      argument :currency, :string, default: "PLN"
+
+      argument :seller_account_number, :string,
+        description: "The account to pay a transfer to; defaults to the organization's account for the currency."
+
+      argument :invoice_note, :string
+
+      argument :should_send_emails, :boolean,
+        default: false,
+        description:
+          "E-mail the invoice once KSeF accepts it: to the address of the counterparty matched by `buyer_id`, or else to `buyer_email`."
+
+      argument :numbering_format, :atom do
+        default :monthly
+        constraints one_of: [:monthly, :yearly]
+
+        description "`monthly` (also for null) numbers the invoice NN/MM/YYYY[/SERIES], `yearly` [SERIES/]N/YYYY."
+      end
+
+      argument :numbering_series, :string
+
+      run Firmowid.Invoicing.Actions.IssueFromApi
+    end
+
     action :cancel, :struct do
       description "Cancel a KSeF-submitted VAT invoice by creating a zero-value correction."
       constraints instance_of: __MODULE__
@@ -1141,6 +1227,14 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       public?: true
 
     attribute :invoice_number, :string, public?: true
+
+    attribute :external_id, :string,
+      public?: true,
+      constraints: [max_length: 64],
+      description:
+        "The ID another system, such as an online store, gave the invoice's order. At most one invoice " <>
+          "of the organization has it, so the order is never invoiced twice."
+
     attribute :sale_date, :date, public?: true
     attribute :issue_date, :date, public?: true
     attribute :due_date, :date, public?: true
@@ -1510,5 +1604,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     identity :invoice_number_per_org, [:invoice_number, :organization_id],
       nils_distinct?: true,
       message: gettext_noop("the invoice number already exists for this organization")
+
+    identity :external_id_per_org, [:external_id, :organization_id], nils_distinct?: true
   end
 end
