@@ -250,29 +250,30 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         placement="bottom-end"
         class={[
           "origin-top-right space-y-8 rounded border border-grey-200 bg-white px-6 py-4 shadow-small",
+          phone_popover_styles(),
           dropdown_styles()
         ]}
       >
         <%!-- One session sets its work mode below; several get a column each. --%>
         <div class={[
-          "grid gap-x-4",
+          "grid gap-x-4 max-md:grid-cols-1",
           if(single?,
             do: "grid-cols-[58px_136px_109px_109px_24px]",
-            else: "grid-cols-[58px_136px_109px_109px_120px_24px]"
+            else: "grid-cols-[58px_136px_109px_109px_120px_52px]"
           )
         ]}>
-          <div class="col-span-full grid grid-cols-subgrid text-sm/[1.55] text-grey-500">
+          <div class="col-span-full grid grid-cols-subgrid text-sm/[1.55] text-grey-500 max-md:hidden">
             <p class="col-start-2 px-2">{gettext("Date")}</p>
             <p class="px-2">{pgettext("time range column", "From")}</p>
             <p class="px-2">{pgettext("time range column", "To")}</p>
             <p :if={!single?} class="px-2">{pgettext("session column", "Place")}</p>
           </div>
-          <div class="col-span-full mt-2 grid grid-cols-subgrid items-center gap-y-6">
+          <div class="col-span-full mt-2 grid grid-cols-subgrid items-center gap-y-6 max-md:grid-cols-1 max-md:gap-y-4">
             <.inputs_for :let={session} field={sessions_form[:start_end_times]}>
               <.input type="hidden" field={session[:id]} />
               <%= if overnight_session?(session) do %>
-                <div class="col-span-full grid grid-cols-subgrid items-center gap-y-2">
-                  <p class={session_label_styles()}>
+                <div class="col-span-full grid grid-cols-subgrid items-center gap-y-2 max-md:grid-cols-2 max-md:gap-x-3">
+                  <p class={["max-md:col-span-2", session_label_styles()]}>
                     {gettext("Session %{number}", number: session.index + 1)}
                   </p>
                   <.date_field field={session[:date]} />
@@ -280,19 +281,49 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     field={session[:start_time]}
                     value={format_time(session[:start_time].value)}
                   />
-                  <.time_field name="time_placeholder" value="" readonly disabled />
-                  <.workplace_select :if={!single?} field={session[:is_remote]} />
-                  <div />
+                  <div class="contents max-md:hidden">
+                    <.time_field name="time_placeholder" value="" readonly disabled />
+                  </div>
+                  <.workplace_select
+                    :if={!single?}
+                    field={session[:is_remote]}
+                    class="max-md:order-1"
+                  />
+                  <div class="max-md:hidden" />
 
-                  <div />
+                  <div class="max-md:hidden" />
                   <.date_field field={session[:end_date]} />
-                  <.time_field name="time_placeholder" value="" readonly disabled />
+                  <div class="contents max-md:hidden">
+                    <.time_field name="time_placeholder" value="" readonly disabled />
+                  </div>
                   <.time_field
                     field={session[:end_time]}
                     value={format_time(session[:end_time].value)}
                   />
-                  <div :if={!single?} />
+                  <%!-- Aligns both icons with the column the other rows use. --%>
+                  <div :if={!single?} class="max-md:hidden" />
+                  <div
+                    :if={!single?}
+                    class="flex items-center gap-1 max-md:order-2 max-md:col-span-2 max-md:justify-end"
+                  >
+                    <.move_session_button id={session[:id].value} />
+                    <.button
+                      type="button"
+                      phx-click="collapse_overnight_session"
+                      phx-value-id={session[:id].value}
+                      data-confirm={
+                        gettext(
+                          "Shorten the overnight session to one day? The time after midnight will be removed and cannot be restored."
+                        )
+                      }
+                      variant="unstyled"
+                      aria-label={gettext("Shorten session to one day")}
+                    >
+                      <.figma_icon name="trash" class={trash_icon_styles()} />
+                    </.button>
+                  </div>
                   <.button
+                    :if={single?}
                     type="button"
                     phx-click="collapse_overnight_session"
                     phx-value-id={session[:id].value}
@@ -302,58 +333,81 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                       )
                     }
                     variant="unstyled"
+                    class="max-md:col-start-2 max-md:justify-self-end"
                     aria-label={gettext("Shorten session to one day")}
                   >
                     <.figma_icon name="trash" class={trash_icon_styles()} />
                   </.button>
                 </div>
               <% else %>
-                <p class={session_label_styles()}>
-                  {gettext("Session %{number}", number: session.index + 1)}
-                </p>
-                <.date_field field={session[:date]} />
-                <.time_field
-                  field={session[:start_time]}
-                  value={format_time(session[:start_time].value)}
-                />
-                <.time_field
-                  field={session[:end_time]}
-                  value={format_time(session[:end_time].value)}
-                />
-                <.workplace_select :if={!single?} field={session[:is_remote]} />
-                <.button
-                  type="button"
-                  phx-click="delete_session"
-                  phx-value-id={session[:id].value}
-                  variant="unstyled"
-                  aria-label={gettext("Delete session")}
-                >
-                  <.figma_icon name="trash" class={trash_icon_styles()} />
-                </.button>
+                <div class="contents max-md:grid max-md:grid-cols-2 max-md:items-center max-md:gap-x-3 max-md:gap-y-2">
+                  <p class={["max-md:col-span-2", session_label_styles()]}>
+                    {gettext("Session %{number}", number: session.index + 1)}
+                  </p>
+                  <.date_field field={session[:date]} />
+                  <.time_field
+                    field={session[:start_time]}
+                    value={format_time(session[:start_time].value)}
+                  />
+                  <.time_field
+                    field={session[:end_time]}
+                    value={format_time(session[:end_time].value)}
+                  />
+                  <.workplace_select :if={!single?} field={session[:is_remote]} />
+                  <div
+                    :if={!single?}
+                    class="flex items-center gap-1 max-md:col-span-2 max-md:justify-end"
+                  >
+                    <.move_session_button id={session[:id].value} />
+                    <.button
+                      type="button"
+                      phx-click="delete_session"
+                      phx-value-id={session[:id].value}
+                      variant="unstyled"
+                      aria-label={gettext("Delete session")}
+                    >
+                      <.figma_icon name="trash" class={trash_icon_styles()} />
+                    </.button>
+                  </div>
+                  <.button
+                    :if={single?}
+                    type="button"
+                    phx-click="delete_session"
+                    phx-value-id={session[:id].value}
+                    variant="unstyled"
+                    class="max-md:justify-self-end"
+                    aria-label={gettext("Delete session")}
+                  >
+                    <.figma_icon name="trash" class={trash_icon_styles()} />
+                  </.button>
+                </div>
               <% end %>
             </.inputs_for>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3">
-          <%!-- On phones the popover overflows the left edge, so keep the choice beside the buttons. --%>
+        <div class="flex items-center justify-end gap-3 max-md:flex-wrap">
+          <%!-- Keep the choice beside the buttons; a long label wraps on phones. --%>
           <.workplace_switch
             :if={single?}
             name={sessions_form[:start_end_times].name <> "[0][is_remote]"}
             remote={parent_session.is_remote}
           />
-          <.button
-            type="button"
-            variant="outline"
-            size="small"
-            class="rounded! text-grey-900"
-            phx-click={hide_popover(popover_id)}
-          >
-            {gettext("Cancel")}
-          </.button>
-          <.button type="submit" variant="special" size="small" class="rounded!">
-            {gettext("Save")}
-          </.button>
+          <%!-- A wrapped row keeps the buttons together instead of splitting them. --%>
+          <div class="flex items-center gap-3">
+            <.button
+              type="button"
+              variant="outline"
+              size="small"
+              class="rounded! text-grey-900"
+              phx-click={hide_popover(popover_id)}
+            >
+              {gettext("Cancel")}
+            </.button>
+            <.button type="submit" variant="special" size="small" class="rounded!">
+              {gettext("Save")}
+            </.button>
+          </div>
         </div>
       </.popover>
     </.form>
@@ -529,6 +583,12 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     "transition-[opacity,scale] duration-150 ease-out starting:scale-95 starting:opacity-0 motion-reduce:transition-none"
   end
 
+  # On phones the columns cannot fit side by side, so the popover fills the
+  # screen width and scrolls instead of being cut off.
+  defp phone_popover_styles do
+    "max-md:max-h-(--popover-available-height) max-md:w-[calc(100vw-2rem)] max-md:overflow-y-auto max-md:overscroll-contain"
+  end
+
   @doc """
   Date field of the time tracker's session forms, with the calendar icon from
   Figma. Chromium's own picker button stays, invisible, under the icon so a click
@@ -598,6 +658,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   end
 
   attr :field, FormField, required: true
+  attr :class, :any, default: nil
 
   # Where one of several edited sessions was worked. The option only changes the
   # hidden input; the label follows its value through CSS, as the server renders
@@ -606,7 +667,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     assigns = assign(assigns, :list_id, "#{assigns.field.id}-options")
 
     ~H"""
-    <div class="group/place relative" phx-click-away={JS.hide(to: "##{@list_id}")}>
+    <div class={["group/place relative", @class]} phx-click-away={JS.hide(to: "##{@list_id}")}>
       <input type="hidden" id={@field.id} name={@field.name} value={to_string(@field.value)} />
       <.button
         id={"#{@field.id}-button"}
@@ -687,6 +748,34 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   end
 
   defp session_label_styles, do: "line-clamp-1 text-sm font-medium text-grey-700"
+
+  attr :id, :string, required: true
+
+  # One session of a task can leave it under a name of its own; a row with a
+  # single session has nothing to leave.
+  defp move_session_button(assigns) do
+    ~H"""
+    <.tooltip
+      id={"move-session-hint-#{@id}"}
+      text={gettext("Move to a new session")}
+      variant="hint"
+      placement="top"
+    >
+      <.button
+        id={"move-session-#{@id}"}
+        type="button"
+        phx-click="move_session"
+        phx-value-id={@id}
+        variant="unstyled"
+        aria-label={gettext("Move to a new session")}
+      >
+        <Lucideicons.ungroup class={move_icon_styles()} aria-hidden="true" />
+      </.button>
+    </.tooltip>
+    """
+  end
+
+  defp move_icon_styles, do: "size-6 text-grey-500 transition-colors hover:text-grey-700"
 
   defp trash_icon_styles, do: "size-6 text-grey-500 transition-colors hover:text-grey-700"
 

@@ -662,3 +662,53 @@ each session it changes, its old times struck through before the new ones. --%>
     </div>
   </div>
 </.modal>
+
+<%!-- A task can hold sessions that no longer belong together: the chosen one leaves
+under a name of its own, and the rest of the task keeps its title and times. --%>
+<.modal
+  :if={@move_session}
+  id="move-session-modal"
+  show={true}
+  on_cancel={JS.push("cancel_move_session")}
+>
+  <:header>
+    <h2 id="move-session-modal-title" class="text-xl/[30px] font-medium text-black">
+      {gettext("Move to a new session")}
+    </h2>
+    <p id="move-session-modal-description" class="mt-2 text-base/[1.35] text-black">
+      {gettext(
+        "The session will leave “%{title}” and continue under the name you give it. The other sessions of “%{title}” keep their name and times.",
+        title: @move_session.title
+      )}
+    </p>
+  </:header>
+
+  <.form
+    for={@move_session_form}
+    id="move-session-form"
+    phx-change="validate_move_session"
+    phx-submit="save_move_session"
+    class="flex flex-col gap-6"
+  >
+    <.input
+      field={@move_session_form[:title]}
+      label={gettext("New session name")}
+      required={true}
+      phx-debounce="300"
+    />
+
+    <div class="flex justify-end gap-2">
+      <.button
+        type="button"
+        variant="outline"
+        size="small"
+        phx-click={JS.push("cancel_move_session") |> hide_modal("move-session-modal")}
+      >
+        {gettext("Cancel")}
+      </.button>
+      <.button variant="special" size="small" phx-disable-with={gettext("Moving...")}>
+        {gettext("Move")}
+      </.button>
+    </div>
+  </.form>
+</.modal>

@@ -441,6 +441,118 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert updated_session.end_datetime == session.end_datetime
     end
 
+    test "moves one session of a task to a new session", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      date = Date.utc_today()
+      title = "Wspólne zadanie"
+
+      moved =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: title,
+          start_datetime: DateTime.new!(date, ~T[09:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(date, ~T[10:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      kept =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: title,
+          start_datetime: DateTime.new!(date, ~T[11:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(date, ~T[12:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      single =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Pojedyncze zadanie",
+          start_datetime: DateTime.new!(date, ~T[13:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(date, ~T[14:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      {:ok, lv, _html} = live(conn, filtered_sessions_path(project, date))
+
+      assert has_element?(lv, "#move-session-#{moved.id}")
+      assert has_element?(lv, "#move-session-#{kept.id}")
+      refute has_element?(lv, "#move-session-#{single.id}")
+
+      lv |> element("#move-session-#{moved.id}") |> render_click()
+
+      assert has_element?(lv, "#move-session-modal")
+      assert has_element?(lv, "#move-session-form input[value='#{title}']")
+
+      lv
+      |> form("#move-session-form", move_session_form: %{"title" => "Nowe zadanie"})
+      |> render_submit()
+
+      refute has_element?(lv, "#move-session-modal")
+
+      assert Repo.get!(Session, moved.id).title == "Nowe zadanie"
+      assert Repo.get!(Session, kept.id).title == title
+
+      # Moving a session renames it and nothing else: its times and project stay.
+      moved_after = Repo.get!(Session, moved.id)
+      assert moved_after.start_datetime == moved.start_datetime
+      assert moved_after.end_datetime == moved.end_datetime
+      assert moved_after.project_id == moved.project_id
+
+      html = render(lv)
+      assert html =~ "Nowe zadanie"
+      assert html =~ title
+    end
+
+    test "refuses to move a session under its current name", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      date = Date.utc_today()
+      title = "Wspólne zadanie"
+
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: title,
+          start_datetime: DateTime.new!(date, ~T[09:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(date, ~T[10:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        title: title,
+        start_datetime: DateTime.new!(date, ~T[11:00:00], "Etc/UTC"),
+        end_datetime: DateTime.new!(date, ~T[12:00:00], "Etc/UTC"),
+        organization_id: user.member.organization_id
+      })
+
+      {:ok, lv, _html} = live(conn, filtered_sessions_path(project, date))
+
+      lv |> element("#move-session-#{session.id}") |> render_click()
+
+      lv
+      |> form("#move-session-form", move_session_form: %{"title" => title})
+      |> render_submit()
+
+      assert has_element?(lv, "#move-session-modal")
+
+      assert render(lv) =~
+               Gettext.gettext(Firmowid.Gettext, "must be different from the current name")
+
+      assert Repo.get!(Session, session.id).title == title
+    end
+
     test "suggest previous project", %{conn: conn, user: user, project: project} do
       session_fixture(%{
         user_id: user.id,
@@ -480,5 +592,9 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       assert html =~ "Przejdź do zarządzania projektami"
     end
+  end
+
+  defp filtered_sessions_path(project, date) do
+    ~p"/czasosledz?projekt=#{project.id}&miesiac=#{Date.to_iso8601(date)}"
   end
 end

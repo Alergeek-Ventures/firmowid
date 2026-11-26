@@ -22,6 +22,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
+  alias FirmowidWeb.Timetracker.Utilities.MoveSessionForm
   alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
@@ -85,7 +86,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
      |> assign(:is_form_extended, false)
      |> assign(:edit_check, nil)
      |> assign_sessions()
-     |> assign(:trim_plan, nil)}
+     |> assign(:trim_plan, nil)
+     |> assign(:move_session, nil)
+     |> assign(:move_session_form, nil)}
   end
 
   def handle_params(params, _url, socket) do
@@ -820,6 +823,57 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         LiveToast.send_toast(:error, gettext("Could not delete the session"))
         {:noreply, socket}
     end
+  end
+
+  # Moving one session out of a task gives it a name of its own, so only that
+  # session changes; the rest of the task keeps its title and times. A name that
+  # another task already uses joins that task, as titles are what groups rows.
+  def handle_event("move_session", %{"id" => id}, socket) do
+    session = Timetracker.get_session_by_id!(id, scope: socket.assigns.ash_scope)
+
+    changeset =
+      MoveSessionForm.changeset(%{"title" => session.title}, current_title: session.title)
+
+    {:noreply,
+     socket
+     |> assign(:move_session, session)
+     |> assign(:move_session_form, to_form(changeset))}
+  end
+
+  def handle_event(
+        "validate_move_session",
+        %{"move_session_form" => params},
+        %{assigns: %{move_session: %Session{} = session}} = socket
+      ) do
+    changeset = MoveSessionForm.changeset(params, current_title: session.title)
+
+    {:noreply, assign(socket, :move_session_form, to_form(changeset, action: :validate))}
+  end
+
+  def handle_event("validate_move_session", _params, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "save_move_session",
+        %{"move_session_form" => params},
+        %{assigns: %{move_session: %Session{} = session}} = socket
+      ) do
+    changeset = MoveSessionForm.changeset(params, current_title: session.title)
+
+    if changeset.valid? do
+      title = Ecto.Changeset.get_field(changeset, :title)
+
+      socket = assign(socket, move_session: nil, move_session_form: nil)
+
+      ash_update_sessions([{session, %{title: title}}], socket)
+    else
+      {:noreply, assign(socket, :move_session_form, to_form(changeset, action: :validate))}
+    end
+  end
+
+  def handle_event("save_move_session", _params, socket), do: {:noreply, socket}
+
+  def handle_event("cancel_move_session", _params, socket) do
+    {:noreply, socket |> assign(:move_session, nil) |> assign(:move_session_form, nil)}
   end
 
   # The small select in a row's work-mode slot switches all the row's sessions.

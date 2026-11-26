@@ -8157,6 +8157,22 @@ msgstr ""
 msgid "Most used"
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Move"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/components/session.ex
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Move to a new session"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "Moving..."
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Multiple payouts in one month require shared monthly tax costs and reductions."
@@ -8367,6 +8383,11 @@ msgstr ""
 #: lib/firmowid_web/timetracker/components/overlap.ex
 #, elixir-autogen, elixir-format
 msgid "New session"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "New session name"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -13093,6 +13114,11 @@ msgstr ""
 msgid "The session overlaps approved sessions: %{titles}. Change the time of the new session."
 msgstr ""
 
+#: lib/firmowid_web/timetracker/views/index.html.heex
+#, elixir-autogen, elixir-format
+msgid "The session will leave “%{title}” and continue under the name you give it. The other sessions of “%{title}” keep their name and times."
+msgstr ""
+
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "The settlement has been approved."
@@ -15932,6 +15958,11 @@ msgstr ""
 #: lib/firmowid/delegations/delegation_expense/trip.ex
 #, elixir-autogen, elixir-format
 msgid "must be at the same time as the departure or later"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/utilities/move_session_form.ex
+#, elixir-autogen, elixir-format
+msgid "must be different from the current name"
 msgstr ""
 
 #: lib/firmowid_ui/components/inputs.ex
