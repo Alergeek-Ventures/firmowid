@@ -63,6 +63,57 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
       end)
     end
 
+    test "an invoice without a counterparty goes to the buyer address on the invoice" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        admin = admin_fixture()
+        processor_scope = processor_scope(admin.member.organization_id)
+
+        invoice =
+          sales_invoice_fixture!(admin, %{
+            buyer_email: " anna@example.com ",
+            should_send_emails: true
+          })
+
+        drain_swoosh_email_messages()
+
+        confirmed_invoice = confirm_invoice_in_ksef!(invoice, processor_scope)
+
+        assert {:ok, :dispatched} =
+                 Communication.dispatch(confirmed_invoice, :ksef_confirmed, processor_scope)
+
+        assert :ok = perform_sales_invoice_email_job(confirmed_invoice, :basic)
+
+        [delivery] = email_deliveries_for(confirmed_invoice, processor_scope)
+        assert delivery.recipient_email == "anna@example.com"
+        assert_email_sent(to: ["anna@example.com"])
+      end)
+    end
+
+    test "an invoice whose counterparty has no address goes to the buyer address on the invoice" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        admin = admin_fixture()
+        processor_scope = processor_scope(admin.member.organization_id)
+        counterparty = valid_counterparty_fixture!(admin, %{email: nil})
+
+        invoice =
+          sales_invoice_fixture!(admin, %{
+            counterparty_id: counterparty.id,
+            buyer_email: "anna@example.com",
+            should_send_emails: true
+          })
+
+        drain_swoosh_email_messages()
+
+        confirmed_invoice = confirm_invoice_in_ksef!(invoice, processor_scope)
+
+        {:ok, :dispatched} =
+          Communication.dispatch(confirmed_invoice, :ksef_confirmed, processor_scope)
+
+        assert :ok = perform_sales_invoice_email_job(confirmed_invoice, :basic)
+        assert_email_sent(to: ["anna@example.com"])
+      end)
+    end
+
     test "KSeF-confirmed invoice flow does not send an email when sending is disabled" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
