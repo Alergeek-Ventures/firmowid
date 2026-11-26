@@ -12,10 +12,99 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   import FirmowidWeb.Invoicing.FormHelpers, only: [access_forms: 2, parse_decimal: 1]
 
   alias Firmowid.Currencies.NbpApiClient
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Ksef.VatRate
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias Phoenix.HTML.FormData
+
+  @doc "Reads the items suggested in the item name fields, none before the first generation."
+  @spec item_suggestions(Firmowid.Scope.t()) :: [map()]
+  def item_suggestions(scope) do
+    case Invoicing.get_item_suggestions!(scope: scope) do
+      %{suggestions: suggestions} ->
+        Enum.map(
+          suggestions,
+          &Map.take(&1, [:name, :quantity, :unit, :unit_price, :currency, :vat_rate])
+        )
+
+      nil ->
+        []
+    end
+  end
+
+  @doc """
+  Adds the item of a clicked quick suggestion, from the click's params, in place of
+  the first empty item, or after the last one. An item with a name or a price is not
+  empty, so a price the user typed is never replaced.
+  """
+  @spec add_suggested_item(AshPhoenix.Form.t(), atom(), map()) :: AshPhoenix.Form.t()
+  def add_suggested_item(form, items_field, click_params) do
+    params = Map.take(click_params, ~w(name quantity unit unit_price vat_rate))
+
+    form.forms
+    |> access_forms(items_field)
+    |> Enum.find_index(
+      &(blank?(AshPhoenix.Form.value(&1, :name)) and
+          blank?(AshPhoenix.Form.value(&1, :unit_price)))
+    )
+    |> case do
+      nil ->
+        AshPhoenix.Form.add_form(form, [items_field], params: params)
+
+      index ->
+        AshPhoenix.Form.update_form(
+          form,
+          [items_field, index],
+          &AshPhoenix.Form.validate(&1, Map.merge(&1.params, params))
+        )
+    end
+    # Validates the whole invoice again, so its validity includes the new item.
+    |> then(&AshPhoenix.Form.validate(&1, AshPhoenix.Form.params(&1)))
+  end
+
+  defp blank?(value), do: String.trim(to_string(value || "")) == ""
+
+  # The three most likely items not on the invoice yet, those with a price in its currency
+  # first, each with the item params its button adds.
+  defp quick_suggestions(suggestions, items, currency, vat_options, vat_disabled?) do
+    on_invoice = MapSet.new(items, &comparable_name(&1.name))
+    vat_rates = Enum.map(vat_options, &elem(&1, 1))
+
+    suggestions
+    |> Enum.reject(&MapSet.member?(on_invoice, comparable_name(&1.name)))
+    |> Enum.sort_by(&(&1.currency != currency or is_nil(&1.unit_price)))
+    |> Enum.take(3)
+    |> Enum.map(fn suggestion ->
+      unit_price = if suggestion.currency == currency, do: suggestion.unit_price
+
+      vat_rate =
+        cond do
+          vat_disabled? -> List.first(vat_rates)
+          suggestion.vat_rate in vat_rates -> suggestion.vat_rate
+          true -> nil
+        end
+
+      item = %{
+        name: suggestion.name,
+        quantity: suggestion.quantity || Decimal.new(1),
+        unit: if(suggestion.unit in SalesInvoiceItem.units(), do: suggestion.unit, else: "szt."),
+        unit_price: unit_price,
+        vat_rate: vat_rate
+      }
+
+      Map.put(
+        item,
+        :params,
+        item
+        |> Map.reject(fn {_key, value} -> is_nil(value) end)
+        |> Map.new(fn {key, value} -> {to_string(key), to_string(value)} end)
+      )
+    end)
+  end
+
+  defp comparable_name(name), do: (name || "") |> String.trim() |> String.downcase()
 
   defp currency_options do
     # Use only currencies supported by NBP (plus PLN as base currency)
@@ -220,6 +309,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :focused_item_price_input_index, :any, default: nil
   attr :show_vat, :boolean, default: true
 
+  attr :item_suggestions, :list,
+    default: [],
+    doc:
+      "items suggested in the item name fields, most likely first: a name, and the quantity, unit and net unit price it fills in"
+
   slot :rubric,
     doc: "rows put before the currency's, numbered from 1; the content is the row's answer, a single element" do
     attr :label, :string, required: true
@@ -277,6 +371,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       unit_price_error: unit_price_error,
       valid?: form_valid?(source),
       show_vat: show_vat,
+      item_suggestions: input_assigns.item_suggestions,
+      quick_suggestions:
+        quick_suggestions(
+          input_assigns.item_suggestions,
+          items,
+          currency,
+          vat_options,
+          vat_disabled?
+        ),
       item_price_input_modes: input_assigns.item_price_input_modes,
       gross_item_price_inputs: input_assigns.gross_item_price_inputs,
       focused_item_price_input_index: input_assigns.focused_item_price_input_index,
@@ -468,6 +571,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               class="col-span-full grid grid-cols-subgrid gap-y-2"
               id="items_list"
               phx-hook=".Sortable"
+              data-item-suggestions={Jason.encode!(@item_suggestions)}
             >
               <.inputs_for :let={item} field={@items_form[@items_field]}>
                 <% gross_value_input_name =
@@ -486,14 +590,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     value={item[:gtu].value}
                   />
                   <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
-                  <.input
+                  <.item_name
                     field={item[:name]}
-                    placeholder={gettext("Enter a name")}
-                    aria-label={gettext("Item %{number}: product or service", number: item.index + 1)}
-                    phx-debounce
-                    class="w-full"
-                    input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
-                    show_error={false}
+                    index={item.index}
+                    suggest?={@item_suggestions != []}
                   />
                   <.input
                     field={item[:quantity]}
@@ -530,7 +630,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     aria-label={gettext("Item %{number}: unit", number: item.index + 1)}
                     phx-debounce
                     container_class="w-24"
-                    options={["szt.", "godz."]}
+                    options={SalesInvoiceItem.units()}
                   />
                   <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
                   <.hidden_input show={price_input_mode == :net} field={item[:unit_price]}>
@@ -667,6 +767,40 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             >
               <Lucideicons.plus /> {gettext("Add item")}
             </.button>
+
+            <div
+              :if={@quick_suggestions != []}
+              class="col-start-2 -col-end-2 mt-8 flex flex-col gap-3"
+            >
+              <p class="text-sm/snug text-grey-600">{gettext("Add in one click")}</p>
+              <%!-- One flat tile per item, no surface inside: the name, then what the click fills in. --%>
+              <div class="grid grid-cols-3 gap-3 @max-3xl:grid-cols-1">
+                <.button
+                  :for={suggestion <- @quick_suggestions}
+                  type="button"
+                  variant="unstyled"
+                  phx-click="add_suggested_item"
+                  phx-value-name={suggestion.params["name"]}
+                  phx-value-quantity={suggestion.params["quantity"]}
+                  phx-value-unit={suggestion.params["unit"]}
+                  phx-value-unit_price={suggestion.params["unit_price"]}
+                  phx-value-vat_rate={suggestion.params["vat_rate"]}
+                  class="flex min-w-0 cursor-pointer items-start gap-3 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-start transition-colors duration-150 ease-out hover:border-teal-400 hover:bg-teal-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring) active:bg-teal-200"
+                >
+                  <Lucideicons.plus class="mt-0.5 size-4 shrink-0 text-teal-700" />
+                  <span class="flex min-w-0 flex-1 flex-col gap-1.5 self-stretch">
+                    <span class="line-clamp-2 text-sm/snug font-medium wrap-anywhere text-grey-900">
+                      {suggestion.name}
+                    </span>
+                    <.quick_suggestion_details
+                      suggestion={suggestion}
+                      currency={@currency}
+                      show_vat={@show_vat}
+                    />
+                  </span>
+                </.button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -705,6 +839,138 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       </div>
     </div>
 
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ItemSuggestions">
+      // Choosing a suggestion fills in the item's name and the quantity, unit, VAT rate and net
+      // price the suggestion has; the price only on an invoice in its currency.
+
+      // Matches regardless of case and Polish diacritics, so "uslu" finds "Usługi".
+      const normalize = (text) =>
+        text.normalize("NFD").replace(/\p{M}/gu, "").replace(/ł/gi, "l").toLowerCase();
+
+      // Shows at most this many names at a time; typing narrows them down.
+      const LIMIT = 5;
+
+      export default {
+        mounted() {
+          this.input = this.el.querySelector("input");
+          this.list = this.el.querySelector("[role=listbox]");
+          if (!this.list) return;
+          this.suggestions = JSON.parse(this.el.closest("[data-item-suggestions]").dataset.itemSuggestions);
+          this.matches = [];
+          this.active = -1;
+
+          this.input.addEventListener("focus", () => this.open());
+          this.input.addEventListener("input", () => this.open());
+          this.input.addEventListener("blur", () => this.close());
+          this.input.addEventListener("keydown", (event) => this.onKeydown(event));
+          // Keeps focus in the input so a click does not close the list before it chooses.
+          this.list.addEventListener("mousedown", (event) => event.preventDefault());
+          this.list.addEventListener("click", (event) => {
+            const option = event.target.closest("[role=option]");
+            if (option) this.choose(this.matches[Number(option.dataset.index)]);
+          });
+        },
+        open() {
+          const query = normalize(this.input.value.trim());
+
+          this.matches = this.suggestions
+            .filter(({name}) => {
+              const label = normalize(name);
+              return (
+                label !== query &&
+                (label.startsWith(query) || label.split(/[\s-]+/).some((word) => word.startsWith(query)))
+              );
+            })
+            .slice(0, LIMIT);
+
+          this.active = -1;
+          this.render();
+        },
+        close() {
+          this.matches = [];
+          this.active = -1;
+          this.render();
+        },
+        render() {
+          this.list.replaceChildren(
+            ...this.matches.map(({name}, index) => {
+              const option = document.createElement("div");
+              option.id = `${this.list.id}-${index}`;
+              option.setAttribute("role", "option");
+              option.dataset.index = index;
+              option.textContent = name;
+              option.className =
+                "cursor-pointer rounded-md px-2 py-1.5 text-sm text-grey-700 hover:bg-grey-100 data-active:bg-grey-100";
+              option.toggleAttribute("data-active", index === this.active);
+              option.setAttribute("aria-selected", String(index === this.active));
+              return option;
+            }),
+          );
+
+          const expanded = this.matches.length > 0;
+          this.list.hidden = !expanded;
+          this.input.setAttribute("aria-expanded", String(expanded));
+
+          if (this.active >= 0) {
+            this.input.setAttribute("aria-activedescendant", `${this.list.id}-${this.active}`);
+          } else {
+            this.input.removeAttribute("aria-activedescendant");
+          }
+        },
+        choose(suggestion) {
+          const row = this.el.parentElement;
+          const field = (name) => row.querySelector(`[name$="[${name}]"]`);
+          const currency = this.el.closest("form").querySelector('[name$="[currency]"]');
+          let changed = this.input;
+
+          this.input.value = suggestion.name;
+          if (suggestion.quantity) field("quantity").value = suggestion.quantity;
+
+          // The unit list holds only the units the form offers.
+          const unit = field("unit");
+          if ([...unit.options].some((option) => option.value === suggestion.unit)) unit.value = suggestion.unit;
+
+          // A rate the row cannot take (a fixed or narrower list) stays as it is.
+          const vat = field("vat_rate");
+          if (vat?.tagName === "SELECT" && !vat.hasAttribute("readonly") &&
+              [...vat.options].some((option) => option.value === suggestion.vat_rate)) {
+            vat.value = suggestion.vat_rate;
+          }
+
+          if (suggestion.unit_price && suggestion.currency === currency?.value) {
+            field("unit_price").value = suggestion.unit_price;
+            // A typed gross price would override the net one, so the row recomputes it.
+            const gross = field("gross_value");
+            if (gross) gross.value = "";
+            changed = field("unit_price");
+          }
+
+          // The event from the price tells the server to drop a typed gross price.
+          changed.dispatchEvent(new Event("input", {bubbles: true}));
+          this.close();
+        },
+        onKeydown(event) {
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            if (this.matches.length === 0) this.open();
+            const step = event.key === "ArrowDown" ? 1 : -1;
+            const count = this.matches.length;
+            // Cycles through the options and back to the typed text (-1).
+            if (count > 0) this.active = ((this.active + 1 + step + count + 1) % (count + 1)) - 1;
+            this.render();
+          } else if (event.key === "Enter" && this.active >= 0) {
+            event.preventDefault();
+            this.choose(this.matches[this.active]);
+          } else if (event.key === "Escape" && this.matches.length > 0) {
+            // Closes only the list, not a modal around it.
+            event.preventDefault();
+            event.stopPropagation();
+            this.close();
+          }
+        },
+      };
+    </script>
+
     <script :type={Phoenix.LiveView.ColocatedHook} name=".Sortable">
       import Sortable from "sortablejs";
 
@@ -722,6 +988,78 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       }
     </script>
     """
+  end
+
+  attr :suggestion, :map, required: true
+  attr :currency, :string, required: true
+  attr :show_vat, :boolean, required: true
+
+  # "23 szt. · VAT 8%" with the unit price at the end, leaving out what the click does not fill in.
+  defp quick_suggestion_details(assigns) do
+    ~H"""
+    <%!-- Pinned to the tile's bottom, so the details of neighbouring tiles share a line. --%>
+    <span class="mt-auto flex items-baseline justify-between gap-3 text-sm/snug tabular-nums">
+      <span class="text-grey-600">
+        {Firmowid.Cldr.Number.to_string!(@suggestion.quantity)} {@suggestion.unit}
+        <%= if @show_vat and @suggestion.vat_rate do %>
+          · {gettext("VAT %{rate}", rate: VatRate.short_label(@suggestion.vat_rate))}
+        <% end %>
+      </span>
+      <span :if={@suggestion.unit_price} class="shrink-0 font-medium text-grey-900">
+        × {Money.to_string!(Money.new(@currency, @suggestion.unit_price))}
+      </span>
+    </span>
+    """
+  end
+
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :index, :integer, required: true
+  attr :suggest?, :boolean, required: true
+
+  # With suggestions, a combobox whose list the `.ItemSuggestions` hook fills as the user types;
+  # the list and the attributes saying whether it is open are the hook's, so LiveView leaves them alone.
+  # The hook stays without suggestions, since a colocated hook's name must be static.
+  defp item_name(assigns) do
+    ~H"""
+    <div
+      id={"#{@field.id}-suggest"}
+      phx-hook=".ItemSuggestions"
+      class="relative w-full"
+    >
+      <.input
+        field={@field}
+        placeholder={gettext("Enter a name")}
+        aria-label={gettext("Item %{number}: product or service", number: @index + 1)}
+        phx-debounce
+        class="w-full"
+        input_class={[if(invalid_field?(@field), do: "border-brick-700")]}
+        show_error={false}
+        {if @suggest?, do: combobox_attrs(@field), else: []}
+      />
+      <div
+        :if={@suggest?}
+        id={"#{@field.id}-suggestions"}
+        role="listbox"
+        aria-label={gettext("Suggested names")}
+        hidden
+        phx-update="ignore"
+        phx-mounted={JS.ignore_attributes("hidden")}
+        class="absolute inset-x-0 top-full z-20 mt-1 rounded-lg border border-grey-200 bg-white p-1 shadow-lg"
+      >
+      </div>
+    </div>
+    """
+  end
+
+  defp combobox_attrs(field) do
+    [
+      role: "combobox",
+      autocomplete: "off",
+      "aria-autocomplete": "list",
+      "aria-expanded": "false",
+      "aria-controls": "#{field.id}-suggestions",
+      "phx-mounted": JS.ignore_attributes(["aria-expanded", "aria-activedescendant"])
+    ]
   end
 
   # The rows follow the `rubric` rows; the exemption row exists only while an item uses

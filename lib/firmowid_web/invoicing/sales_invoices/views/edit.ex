@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.LocalDate
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
@@ -172,6 +173,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       |> assign(:item_price_input_modes, %{})
       |> assign(:gross_item_price_inputs, %{})
       |> assign(:focused_item_price_input_index, nil)
+      |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope))
       |> assign_form_with_preview(ash_form)
       |> assign(:bank_accounts, bank_accounts)
       |> assign(
@@ -375,6 +377,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       AshPhoenix.Form.add_form(socket.assigns.form.source, :sales_invoice_items,
         params: %{"vat_rate" => "23", "quantity" => "1", "unit" => "szt."}
       )
+
+    {:noreply,
+     socket
+     |> assign_form_with_preview(ash_form)
+     |> push_event("unsaved-changed", %{value: true})}
+  end
+
+  def handle_event("add_suggested_item", params, socket) do
+    ash_form =
+      InvoiceItems.add_suggested_item(socket.assigns.form.source, :sales_invoice_items, params)
 
     {:noreply,
      socket

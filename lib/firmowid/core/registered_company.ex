@@ -55,12 +55,13 @@ defmodule Firmowid.Core.RegisteredCompany do
   policies do
     # Public register data: members who read the analysis see their counterparties' activity.
     policy action(:by_nips) do
-      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup]}
+      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup, :item_suggester]}
+
       authorize_if {AtLeastRole, role: :invoicing}
     end
 
     policy action(:register) do
-      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup]}
+      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup, :item_suggester]}
     end
 
     # Anyone signed in may look up the company they are about to create.

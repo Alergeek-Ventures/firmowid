@@ -262,6 +262,7 @@ defmodule Firmowid.Core.Organization do
        roles: [
          :analysis_classifier,
          :billing_snapshotter,
+         :item_suggester,
          :ksef_session,
          :sales_invoice_processor,
          :tax_forecaster

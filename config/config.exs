@@ -134,6 +134,7 @@ config :firmowid, Oban,
     invoicing: 1,
     vat_id_checks: 1,
     counterparty_websites: 1,
+    item_suggestions: 1,
     document_blobs: 5,
     pictures: 2,
     sales_invoice_emails: 2,
@@ -158,6 +159,7 @@ config :firmowid, Oban,
        {"0 */2 * * *", Firmowid.Ksef.Workers.FetchDispatcher, args: %{}},
        {"30 5 * * *", Firmowid.Invoicing.Workers.VatIdCheckWorker, args: %{}},
        {"0 4 * * *", Firmowid.Invoicing.Workers.CounterpartyWebsiteWorker, args: %{}},
+       {"30 3 * * *", Firmowid.Invoicing.Workers.ItemSuggestionsWorker, args: %{}},
        {"0 9 * * *", Firmowid.Billing.Workers.PlanLimitsWorker, args: %{}}
      ]}
   ]

@@ -1100,6 +1100,11 @@ msgstr ""
 msgid "Add employees"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
+#, elixir-autogen, elixir-format
+msgid "Add in one click"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Add invoice"
@@ -11991,6 +11996,11 @@ msgstr ""
 msgid "Suggested invoices to link"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
+#, elixir-autogen, elixir-format
+msgid "Suggested names"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
@@ -14322,6 +14332,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "VAT"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
+#, elixir-autogen, elixir-format
+msgid "VAT %{rate}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

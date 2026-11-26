@@ -66,6 +66,10 @@ defmodule Firmowid.SystemActor do
   - `:website_finder` — lists an organization's counterparties and records the
     website domain found for its companies.
 
+  - `:item_suggester` — generates the item name suggestions of `org_id` (see
+    `Firmowid.Invoicing.ItemSuggestions`). Reads that organization, its sales
+    invoices and the register data of its own NIP, which it caches.
+
   - `:cross_tenant_reader` — reads every organization and lists the organizations
     connected to KSeF. Schedulers use it to enumerate organizations and hand
     each one to work under an actor bound to that organization.
@@ -155,6 +159,7 @@ defmodule Firmowid.SystemActor do
           | :cross_tenant_reader
           | :vat_id_checker
           | :website_finder
+          | :item_suggester
           | :ksef_digest
           | :billing_snapshotter
           | :document_blob_processor
