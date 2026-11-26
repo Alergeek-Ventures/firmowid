@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG BUILDER_IMAGE="hexpm/elixir:1.20.5-erlang-29.1.2-alpine-3.24.4@sha256:fdc3e2838224d974d854eb5c0ec4cd790da31761ebebf5fbdd22113f19eb0002"
+ARG BUILDER_IMAGE="hexpm/elixir:1.20.5-erlang-29.1.3-alpine-3.24.4@sha256:f6f8f3ee86a523d4e97d8bbb584ff625a831c1258cbac1b97f6735696373f93d"
 ARG RUNNER_IMAGE="alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf"
 
 FROM ${BUILDER_IMAGE} AS builder
