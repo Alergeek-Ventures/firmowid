@@ -2,7 +2,7 @@
 title: "Zwolnienie z VAT a KSeF od 2027 r."
 description: "Podatnik zwolniony z VAT też wystawia faktury w KSeF. Co od stycznia 2027 r. dotyczy firm na zwolnieniu podmiotowym, a co ich nie obejmuje."
 published: 2026-11-12
-updated: 2026-11-23
+updated: 2026-11-26
 category: ksef-w-praktyce
 ---
 
@@ -32,7 +32,7 @@ Inaczej niż czynnych podatników VAT, zwolnionych nie obejmuje od 2027 r. obowi
 
 ## Gdy zwolnienie się kończy
 
-Limit zwolnienia podmiotowego to 200 000 zł sprzedaży w roku. Kto go przekroczy, traci zwolnienie już przy tej sprzedaży, którą przeskoczył próg, i musi zarejestrować się jako czynny podatnik VAT. Od tej chwili faktury mają stawki VAT, a od 2027 r. przy płaceniu faktur od innych czynnych podatników trzeba też wpisywać w przelewie [numer KSeF](/poradnik/numer-ksef-w-przelewie-2027).
+Limit zwolnienia podmiotowego to 240 000 zł sprzedaży w roku. Kto go przekroczy, traci zwolnienie już przy tej sprzedaży, którą przeskoczył próg, i musi zarejestrować się jako czynny podatnik VAT. Od tej chwili faktury mają stawki VAT, a od 2027 r. przy płaceniu faktur od innych czynnych podatników trzeba też wpisywać w przelewie [numer KSeF](/poradnik/numer-ksef-w-przelewie-2027).
 
 ![Podatnik zwolniony z VAT od 1 stycznia 2027 r. wystawia faktury dla firm w KSeF, poza wyjątkami z rozporządzenia, faktury dla konsumentów może wystawiać poza systemem, a numeru KSeF w tytule zwykłego przelewu, poza MPP, nie podaje ani nie dostaje.](/images/guides/zwolnienie-z-vat-ksef-2027.webp)
 
@@ -40,5 +40,6 @@ Limit zwolnienia podmiotowego to 200 000 zł sprzedaży w roku. Kto go przekrocz
 
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026.
 - [MF: Poniżej 10 000 zł](https://ksef.podatki.gov.pl/ponizej-10-000-zl/), dostęp 10.11.2026.
+- [Ustawa z 24 czerwca 2025 r. o zmianie ustawy o podatku od towarów i usług (Dz.U. 2025 poz. 896)](https://eli.gov.pl/api/acts/DU/2025/896/text/T/D20250896L.pdf), dostęp 26.11.2026.
 
 *To informacja ogólna, nie porada podatkowa.*
