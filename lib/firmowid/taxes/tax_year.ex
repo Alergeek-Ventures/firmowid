@@ -23,6 +23,7 @@ defmodule Firmowid.Taxes.TaxYear do
   alias Firmowid.Taxes.TaxYear.Actions.Forecast
   alias Firmowid.Taxes.TaxYear.Actions.SaveForecasts
   alias Firmowid.Taxes.TaxYear.Actions.SuggestSettings
+  alias Firmowid.Taxes.TaxYear.Changes.EnqueueForecasts
   alias Firmowid.Taxes.TaxYear.Changes.FitLegalForm
 
   require Resource
@@ -79,6 +80,7 @@ defmodule Firmowid.Taxes.TaxYear do
              )
 
       change FitLegalForm
+      change EnqueueForecasts
     end
 
     update :update do
@@ -101,6 +103,8 @@ defmodule Firmowid.Taxes.TaxYear do
       # Saving confirms the year's suggestions (`Firmowid.Taxes.pending_suggestions/3`) also when
       # only partners change, which would leave the year's own timestamp as it was.
       change set_attribute(:updated_at, &DateTime.utc_now/0)
+
+      change EnqueueForecasts
     end
 
     action :suggest_settings, {:array, :map} do
@@ -164,7 +168,8 @@ defmodule Firmowid.Taxes.TaxYear do
       description "Keep the organization's upcoming tax and ZUS payments as expected transactions: recalculate " <>
                     "the forecasts of this year and the last one, add the payments that are due and not saved yet, " <>
                     "update the unfulfilled ones and remove those that are no longer due. Returns the number " <>
-                    "of changes. Run daily for every organization by the scheduler."
+                    "of changes. Run daily for every organization by the scheduler, and for one organization " <>
+                    "when its tax year is saved."
 
       # All changes or none, so a failure leaves the expectations as they were for the next run.
       transaction? true
@@ -186,7 +191,7 @@ defmodule Firmowid.Taxes.TaxYear do
       authorize_if action([:forecast, :save_forecasts])
     end
 
-    # Only the daily job saves the forecasts; nobody runs it by hand.
+    # Only the job saves the forecasts (daily, and after a tax year is saved); nobody runs it by hand.
     policy action(:save_forecasts) do
       forbid_if always()
     end

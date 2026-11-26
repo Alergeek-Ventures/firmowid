@@ -6,7 +6,9 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
   Forecasts the current year and the last one, since the last period of a year is due in January.
   `Firmowid.Taxes.Forecast.Expectations` decides what to create, update and remove; this applies
   it. The forecast of the running period includes the typical rest of the period, so the saved
-  amount is that estimate and does not creep up every day; both use the same `today`. It runs for the organization of the tenant, as a system actor bound to that organization.
+  amount is that estimate and does not creep up every day; both use the same `today`. It runs for
+  the organization of the tenant, as a system actor bound to that organization, from the daily
+  scheduled action and from the job that `Changes.EnqueueForecasts` queues when a tax year is saved.
   When the tax year has more than one partner, an owner's payment names the owner, so the rows
   can be told apart.
   """
