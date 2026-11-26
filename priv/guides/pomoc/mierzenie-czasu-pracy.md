@@ -48,7 +48,7 @@ Sesje widzisz po prawej stronie: najpierw „Twoje dzisiejsze sesje” z sumą d
 - Godziny zmienisz po kliknięciu czasu trwania. Otworzy się okno z kolumnami „Data”, „Od”, „Do”, w którym zapisujesz zmianę przyciskiem „Zapisz”.
 - Ikona kosza w tym oknie usuwa sesję od razu, bez pytania o potwierdzenie.
 
-Kilka sesji pod rząd z tym samym tytułem i projektem lista zwija w jeden wiersz z łącznym czasem. Po kliknięciu czasu zobaczysz je osobno jako „Sesja 1”, „Sesja 2” i kolejne.
+Kilka sesji z rzędu z tym samym tytułem i projektem lista zwija w jeden wiersz z łącznym czasem. Po kliknięciu czasu zobaczysz je osobno jako „Sesja 1”, „Sesja 2” i kolejne.
 
 ## Gdy wpisy na siebie nachodzą
 
