@@ -96,7 +96,9 @@ runs:
     # that made deleting it slow on the host's btrfs, until deletions backed up and stalled
     # all containers (2026-11-26). _build cannot be a symlink: Mix links each app's priv by
     # a relative path that would resolve from the clone; MIX_BUILD_ROOT makes Mix compute it
-    # from there. deps can, and keeps the path assets/package.json reaches with ../deps.
+    # from there. deps is bind-mounted at its usual path, which assets/package.json reaches
+    # with ../deps; not symlinked, since npm's postinstall patches it with git apply, which
+    # refuses paths beyond a symlink. The selenge runners' dev user has sudo.
     # Other runners, other toolchains and the isolated coverage benchmark (its own
     # cache-key) use the GitHub cache below.
     - name: Restore the runner's build cache
@@ -110,7 +112,7 @@ runs:
         echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
         dir=/cache/firmowid
         if [ "$CACHE_KEY" = v2 ] && [ -f "$dir/IDENTITY" ] && [ "$(cat "$dir/IDENTITY")" = "$IDENTITY" ]; then
-          ln -s "$dir/deps" deps
+          mkdir deps && sudo mount --bind "$dir/deps" deps
           printf '%s\n' "MIX_BUILD_ROOT=$dir/_build" "HEX_HOME=$dir/hex" >> "$GITHUB_ENV"
           echo "hit=true" >> "$GITHUB_OUTPUT"
           echo "Building on deps and _build of main $(cat "$dir/COMMIT") in the runner's build cache."
