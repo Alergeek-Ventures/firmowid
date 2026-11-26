@@ -360,6 +360,11 @@ defmodule Firmowid.Invoicing do
   end
 
   resources do
+    resource Firmowid.Invoicing.ItemSuggestions do
+      define :get_item_suggestions, action: :current, not_found_error?: false
+      define :generate_item_suggestions, action: :generate
+    end
+
     resource Firmowid.Invoicing.CounterpartyProposal do
       define :list_counterparty_proposals, action: :by_group_keys, args: [:group_keys]
       define :record_counterparty_proposal, action: :record

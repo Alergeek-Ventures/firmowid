@@ -33,6 +33,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.LocalDate
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
@@ -498,6 +499,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:draft, draft)
     |> assign(:items_form, to_form(ash_form))
     |> assign(:items_field, :items)
+    |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope))
     |> assign_new(:item_price_input_modes, fn -> %{} end)
     |> assign_new(:gross_item_price_inputs, fn -> %{} end)
     |> assign_new(:focused_item_price_input_index, fn -> nil end)
@@ -756,6 +758,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     form =
       socket.assigns.items_form.source
       |> AshPhoenix.Form.add_form(socket.assigns.items_field, params: %{"quantity" => "1"})
+      |> to_form()
+
+    {:noreply, assign(socket, :items_form, form)}
+  end
+
+  def handle_event("add_suggested_item", params, socket) do
+    form =
+      socket.assigns.items_form.source
+      |> InvoiceItems.add_suggested_item(socket.assigns.items_field, params)
       |> to_form()
 
     {:noreply, assign(socket, :items_form, form)}

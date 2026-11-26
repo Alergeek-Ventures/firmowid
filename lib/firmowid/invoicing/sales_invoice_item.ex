@@ -77,6 +77,10 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
     end
   end
 
+  @doc "Units the invoice form offers; items imported from KSeF may have others."
+  @spec units() :: [String.t()]
+  def units, do: ["szt.", "godz."]
+
   multitenancy do
     strategy :attribute
     attribute :organization_id
