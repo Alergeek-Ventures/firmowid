@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         question: gettext_noop("How does migration from another program work?"),
         answer: [
           gettext_noop(
-            "There is no separate import from other programs. After you connect KSeF, Firmowid downloads the invoices from the last 30 days on its own, and your bank provides up to 90 days of transfer history. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
+            "You start by connecting KSeF and your bank. Firmowid downloads the invoices from the last 30 days from KSeF and the transfers from the last 3 months from your bank on its own, so you can match transfers to invoices right away. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
           )
         ]
       },

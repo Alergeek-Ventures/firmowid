@@ -13217,11 +13217,6 @@ msgstr ""
 msgid "There are no active employees to show."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex
-#, elixir-autogen, elixir-format
-msgid "There is no separate import from other programs. After you connect KSeF, Firmowid downloads the invoices from the last 30 days on its own, and your bank provides up to 90 days of transfer history. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
-msgstr ""
-
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "These Terms of Service are governed by Polish law. Any disputes arising from the use of the Service will be resolved by the court having jurisdiction over the Service Provider’s registered office, namely a court in Kraków."
@@ -15242,6 +15237,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "You run a business."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "You start by connecting KSeF and your bank. Firmowid downloads the invoices from the last 30 days from KSeF and the transfers from the last 3 months from your bank on its own, so you can match transfers to invoices right away. You can add older cost invoices as a PDF or a photo. Several invoicing programs can be connected to KSeF at once, so your old program can keep working alongside Firmowid until you switch."
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
