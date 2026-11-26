@@ -2,7 +2,7 @@
 title: "Rozliczenie delegacji online: polecenie, zaliczka, diety"
 description: "Delegacje w Firmowidzie: wniosek, polecenie wyjazdu, zaliczka, paragony, diety krajowe i zagraniczne, podpis Profilem Zaufanym. Pięć kroków w jednym programie."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Delegacje"
   note: "diety liczone automatycznie"
@@ -70,6 +70,7 @@ Delegacje należą do planu Firma. Cena jest za firmę, a nie za osobę.
 | Plan | Cena netto za miesiąc | Osoby | Delegacje |
 |---|---|---|---|
 | Darmowy | 0 zł | 2 | nie |
+| Mini | 9 zł | 3 | nie |
 | Przedsiębiorca | 29 zł | 5 | nie |
 | Firma | 149 zł | bez limitu | tak |
 

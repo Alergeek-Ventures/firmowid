@@ -13,6 +13,7 @@ const LANDING_CTAS = new Set([
   "navbar_login",
   "hero_trial",
   "pricing_free",
+  "pricing_mini",
   "pricing_przedsiebiorca",
   "pricing_firma",
   "final_trial",
@@ -22,7 +23,7 @@ const LANDING_CTAS = new Set([
   "github",
   "open_source",
 ]);
-const LANDING_PLANS = new Set(["start", "przedsiebiorca", "firma"]);
+const LANDING_PLANS = new Set(["start", "mini", "przedsiebiorca", "firma"]);
 const LANDING_BILLING_PERIODS = new Set(["monthly", "yearly"]);
 
 /** Properties of `landing_cta_clicked` for an element's dataset, or null when it is not a known CTA. */

@@ -2,7 +2,7 @@
 title: "Program do analizy przychodów i kosztów małej firmy"
 description: "Analiza Firmowida pokazuje, ile zostaje z każdych 100 zł przychodu, dzieli koszty na 12 kategorii i liczy wynik miesiąca. Cena, porównanie i ograniczenia."
 published: 2026-11-18
-updated: 2026-11-26
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Analiza"
   note: "ile zostaje ze 100 zł"
@@ -106,6 +106,7 @@ Jak podłączyć Claude: [Firmowid w Claude i ChatGPT](/funkcje/claude-chatgpt-m
 | Plan | Analiza | Banki zasilające Analizę | Claude i ChatGPT | Cena |
 |---|---|---|---|---|
 | Darmowy | tak | 1 | tak | 0 zł |
+| Mini | tak | 2 | tak | 9 zł netto miesięcznie |
 | Przedsiębiorca | tak | 3 | tak | 29 zł netto miesięcznie |
 | Firma | tak | bez limitu | tak | 149 zł netto miesięcznie |
 

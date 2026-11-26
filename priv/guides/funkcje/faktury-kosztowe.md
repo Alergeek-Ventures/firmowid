@@ -2,7 +2,7 @@
 title: "Program do faktur kosztowych z KSeF, ze skanu i z PDF"
 description: "Firmowid pobiera faktury kosztowe z KSeF automatycznie, a te spoza KSeF odczytuje z PDF i ze zdjęcia. Cena, porównanie z innymi programami i ograniczenia."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Faktury kosztowe"
   note: "przychodzą z KSeF automatycznie"
@@ -56,6 +56,7 @@ Firmowid odczytuje z pliku sprzedawcę, numer faktury, daty, kwotę, walutę i p
 | Plan | Faktury kosztowe z KSeF | Odczyt danych z pliku | Cena |
 |---|---|---|---|
 | Darmowy | bez limitu | 10 miesięcznie | 0 zł |
+| Mini | bez limitu | 25 miesięcznie | 9 zł netto miesięcznie |
 | Przedsiębiorca | bez limitu | 50 miesięcznie | 29 zł netto miesięcznie |
 | Firma | bez limitu | bez limitu | 149 zł netto miesięcznie |
 

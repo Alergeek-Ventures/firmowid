@@ -2,7 +2,7 @@
 title: "Alternatywa dla Fakturowni za darmo"
 description: "Plan Micro w Fakturowni to 3 faktury miesięcznie. Darmowe alternatywy z KSeF: aplikacja MF, plany z limitem 3–10 dokumentów i programy bez limitu faktur."
 published: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-27
 category: wybor-programu
 ---
 
@@ -24,7 +24,7 @@ Dane pochodzą z cenników sprawdzonych 11 listopada 2026 r., ceny są podane ne
 | **Aplikacja Podatnika KSeF (MF)** | bez limitu faktur | wysyłka, odbiór, UPO | brak | narzędzie bezpłatne |
 | **ProFak** | program na komputer, bez limitu faktur | wysyłka i odbiór przez API albo XML | brak informacji | program bezpłatny |
 | **KsefInvoice** | program na komputer, bez limitu faktur | wysyłka i odbiór | brak informacji | program bezpłatny |
-| **Firmowid Darmowy** | faktury sprzedaży bez limitu, 2 użytkowników, czas pracy w 3 projektach | wysyłka i pobieranie bez limitu | 1 konto przez Open Banking z automatycznym dopasowaniem przelewów | Przedsiębiorca 29 zł / mies. (23 zł przy płatności rocznej) |
+| **Firmowid Darmowy** | faktury sprzedaży bez limitu, 2 użytkowników, czas pracy w 3 projektach | wysyłka i pobieranie bez limitu | 1 konto przez Open Banking z automatycznym dopasowaniem przelewów | Mini 9 zł / mies. (7 zł przy płatności rocznej) |
 
 ## Inne darmowe plany z limitem
 

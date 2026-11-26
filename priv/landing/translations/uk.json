@@ -189,6 +189,8 @@
     ["<h3>Przedsiębiorca</h3>", "<h3>Підприємець</h3>"],
     ["</b> zł <span>/ mies. netto</span>", "</b> зл <span>/ міс. нетто</span>"],
     ["oszczędzasz 72 zł rocznie", "заощаджуєте 72 зл на рік"],
+    ["oszczędzasz 24 zł rocznie", "заощаджуєте 24 зл на рік"],
+    ["<ul><li>2 banki, 3 użytkowników</li><li>Czas pracy do 10 projektów</li><li>Powiadomienia mailowe</li><li>OCR 25 dokumentów miesięcznie</li></ul>", "<ul><li>2 банки, 3 користувачі</li><li>Облік часу до 10 проєктів</li><li>Сповіщення електронною поштою</li><li>OCR 25 документів на місяць</li></ul>"],
     ["oszczędzasz 360 zł rocznie", "заощаджуєте 360 зл на рік"],
     ["<ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>", "<ul><li>3 банки, 5 користувачів</li><li>Проєкти без ліміту</li><li>Відпустки й документи команди</li><li>Firmowid у ChatGPT і Claude</li></ul>"],
     [">Wypróbuj za darmo</a>", ">Спробуйте безкоштовно</a>"],

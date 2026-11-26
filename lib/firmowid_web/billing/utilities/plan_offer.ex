@@ -15,10 +15,11 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
   @type value :: String.t() | boolean()
   @type row :: {String.t(), [value()]}
 
-  @plans [:free, :przedsiebiorca, :firma]
+  @plans [:free, :mini, :przedsiebiorca, :firma]
 
   @audiences %{
     free: gettext_noop("For everyone who issues invoices in KSeF"),
+    mini: gettext_noop("For sole traders who want email notifications and a second bank"),
     przedsiebiorca: gettext_noop("For sole traders with several accounts and small teams"),
     firma: gettext_noop("For service companies with 6–20 people")
   }
@@ -27,7 +28,12 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
     {gettext_noop("Users"), :users},
     {gettext_noop("Bank accounts"), :bank_institutions},
     {gettext_noop("Time tracking"),
-     [gettext_noop("up to 3 projects"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
+     [
+       gettext_noop("up to 3 projects"),
+       gettext_noop("up to 10 projects"),
+       gettext_noop("unlimited"),
+       gettext_noop("unlimited")
+     ]},
     {gettext_noop("Leave requests with approval"), :leave_requests}
   ]
 
@@ -35,21 +41,31 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
     {gettext_noop("Invoices and KSeF"),
      [
        {gettext_noop("Sales invoices"),
-        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
+        [
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited")
+        ]},
        {gettext_noop("KSeF: sending invoices and downloading purchases"),
-        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-       {gettext_noop("Clear invoice wizard"), [true, true, true]},
-       {gettext_noop("Customer database with cooperation statistics"), [true, true, true]},
-       {gettext_noop("Invoices in 33 currencies"), [true, true, true]},
-       {gettext_noop("Reverse charge for EU customers (automatic)"), [true, true, true]},
-       {gettext_noop("ZIP package for your accountant"), [true, true, true]},
+        [
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited"),
+          gettext_noop("unlimited")
+        ]},
+       {gettext_noop("Clear invoice wizard"), [true, true, true, true]},
+       {gettext_noop("Customer database with cooperation statistics"), [true, true, true, true]},
+       {gettext_noop("Invoices in 33 currencies"), [true, true, true, true]},
+       {gettext_noop("Reverse charge for EU customers (automatic)"), [true, true, true, true]},
+       {gettext_noop("ZIP package for your accountant"), [true, true, true, true]},
        {gettext_noop("Document OCR"), :monthly_ocr_documents}
      ]},
     {gettext_noop("Banking and payments"), [{gettext_noop("Email notifications"), :ksef_invoice_emails}]},
     {gettext_noop("Team and working time"),
      [
-       {gettext_noop("Project cost"), [true, true, true]},
-       {gettext_noop("PDF time tracking and payroll report"), [true, true, true]}
+       {gettext_noop("Project cost"), [true, true, true, true]},
+       {gettext_noop("PDF time tracking and payroll report"), [true, true, true, true]}
      ]},
     {gettext_noop("HR"),
      [
@@ -61,7 +77,7 @@ defmodule FirmowidWeb.Billing.Utilities.PlanOffer do
        {gettext_noop("Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"), :mcp},
        {gettext_noop("Assistant in the app"), :assistant}
      ]},
-    {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true]}]}
+    {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true, true]}]}
   ]
 
   @doc "Returns the offered plans, cheapest first: the order of every row's values."

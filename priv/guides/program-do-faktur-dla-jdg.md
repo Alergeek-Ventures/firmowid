@@ -2,7 +2,7 @@
 title: "Program do faktur dla JDG: jak wybrać po wejściu KSeF"
 description: "JDG często bierze program, który ktoś polecił, i płaci za funkcje, których nie używa. Jak dobrać program do faktur z KSeF do pracy jednoosobowej firmy."
 published: 2026-11-06
-updated: 2026-11-24
+updated: 2026-11-27
 category: wybor-programu
 ---
 
@@ -52,7 +52,7 @@ Dwie ściągi: co wraca w zwykłym miesiącu i jak to sprawdzić na ostatnim.
 | Ewidencja czasu | do 3 projektów |
 | Koszt projektu | w pakiecie |
 
-W cenniku przy tym planie jest dopisek „Bez karty, bez okresu próbnego”. Następny plan, Przedsiębiorca, kosztuje 29 zł netto miesięcznie. KPiR, ryczałtu, ZUS ani deklaracji Firmowid nie prowadzi.
+W cenniku przy tym planie jest dopisek „Bez karty, bez okresu próbnego”. Następny plan, Mini, kosztuje 9 zł netto miesięcznie. KPiR, ryczałtu, ZUS ani deklaracji Firmowid nie prowadzi.
 
 ## Dalsze czytanie
 

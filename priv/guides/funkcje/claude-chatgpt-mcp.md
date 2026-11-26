@@ -2,7 +2,7 @@
 title: "Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT"
 description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude i ChatGPT przez MCP. Każdą fakturę zatwierdzasz sam."
 published: 2026-11-18
-updated: 2026-11-26
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · AI"
   note: "zmiany zatwierdzasz Ty"
@@ -75,6 +75,7 @@ Faktury przez Claude i ChatGPT wystawisz tylko dla firm. Fakturę dla osoby pryw
 | Plan | Asystent AI w aplikacji | Claude i ChatGPT przez MCP | Cena |
 |---|---|---|---|
 | Darmowy | nie | tak | 0 zł |
+| Mini | nie | tak | 9 zł netto miesięcznie |
 | Przedsiębiorca | tak | tak | 29 zł netto miesięcznie |
 | Firma | tak | tak | 149 zł netto miesięcznie |
 

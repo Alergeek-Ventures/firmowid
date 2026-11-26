@@ -20,6 +20,14 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       cta: gettext_noop("Create a free account")
     },
     %{
+      key: "mini",
+      plan: :mini,
+      name: gettext_noop("Mini"),
+      monthly_detail: gettext_noop("Monthly, no commitment"),
+      yearly_detail: gettext_noop("PLN 84 per year (save PLN 24)"),
+      cta: gettext_noop("Try for free")
+    },
+    %{
       key: "przedsiebiorca",
       plan: :przedsiebiorca,
       name: gettext_noop("Entrepreneur"),
@@ -110,7 +118,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         <div
           id="landing-pricing"
           phx-hook="LandingPricing"
-          class="grid gap-6 lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:gap-0"
+          class="grid gap-6 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))] lg:gap-0"
         >
           <article
             :for={plan <- @plans}
@@ -164,7 +172,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
               {plan.detail}
             </p>
             <p class={[
-              "text-sm/5.25 lg:min-h-11.5",
+              "text-sm/5.25 lg:mb-8 lg:min-h-11.5",
               if(plan.featured, do: "text-grey-300", else: "text-grey-700")
             ]}>
               {plan.audience}
@@ -173,7 +181,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
               navigate={~p"/zarejestruj"}
               variant={if plan.featured, do: :rust, else: :pricing_outline}
               class={[
-                "mt-10 whitespace-nowrap max-lg:w-full max-lg:px-2 lg:mt-8",
+                "mt-10 whitespace-nowrap max-lg:w-full max-lg:px-2 lg:mt-auto",
                 plan.featured && "lg:px-3"
               ]}
               data-landing-cta="pricing_register"
@@ -195,7 +203,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
           <div
             id="landing-pricing-plans"
-            class="group/pricing sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-[13px] *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:py-2.5 lg:*:text-sm lg:*:transition-colors lg:*:duration-200 lg:data-[stuck=true]:overflow-hidden lg:data-[stuck=true]:rounded-2xl lg:motion-reduce:*:transition-none"
+            class="group/pricing sticky top-(--landing-nav-height) z-20 grid grid-cols-4 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-[13px] *:font-semibold lg:col-[2/6] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:py-2.5 lg:*:text-sm lg:*:transition-colors lg:*:duration-200 lg:data-[stuck=true]:overflow-hidden lg:data-[stuck=true]:rounded-2xl lg:motion-reduce:*:transition-none"
           >
             <span
               :for={plan <- @plans}
@@ -221,7 +229,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             {gettext("Key differences")}
           </p>
 
-          <dl class="lg:col-[1/5] lg:row-3">
+          <dl class="lg:col-[1/6] lg:row-3">
             <.comparison_row
               :for={{label, values} <- @rows}
               label={label}
@@ -239,9 +247,9 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           >
             <div class="min-h-0 overflow-hidden">
               <section :for={{title, rows} <- @sections}>
-                <h4 class="grid grid-cols-3 lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))]">
+                <h4 class="grid grid-cols-4 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]">
                   <span class="col-span-full pt-6 pb-2 text-caps-sm font-bold tracking-[0.08em] text-rust-700 uppercase lg:col-span-1 lg:py-5">{title}</span>
-                  <span aria-hidden="true" class="hidden lg:col-3 lg:block lg:bg-grey-900"></span>
+                  <span aria-hidden="true" class="hidden lg:col-4 lg:block lg:bg-grey-900"></span>
                 </h4>
                 <dl>
                   <.comparison_row
@@ -258,9 +266,9 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <div
             id="landing-pricing-tab-end"
             aria-hidden="true"
-            class="hidden h-6 lg:col-span-full lg:grid lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))]"
+            class="hidden h-6 lg:col-span-full lg:grid lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]"
           >
-            <span class="col-3 rounded-b-2xl bg-grey-900"></span>
+            <span class="col-4 rounded-b-2xl bg-grey-900"></span>
           </div>
 
           <button
@@ -307,13 +315,13 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   defp comparison_row(assigns) do
     ~H"""
-    <div class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-3 [&_dt]:pb-0.5 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
+    <div class="grid grid-cols-4 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-3 [&_dt]:pb-0.5 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
       <dt>{@label}</dt>
       <dd
         :for={{value, index} <- Enum.with_index(@values)}
         class={[
           "px-1 pt-0.5 pb-3 text-center font-semibold text-[#0f0f0f] lg:px-3 lg:py-4",
-          index == 1 && "bg-transparent lg:bg-grey-900 lg:text-[#f5f1ea]"
+          Enum.at(@plans, index).featured && "bg-transparent lg:bg-grey-900 lg:text-[#f5f1ea]"
         ]}
       >
         <span class="sr-only">{Enum.at(@plans, index).name}: </span>
@@ -322,7 +330,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           aria-hidden="true"
           class={[
             "mx-auto inline-block h-3.25 w-3 bg-rust-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
-            index == 1 && "lg:bg-rust-500"
+            Enum.at(@plans, index).featured && "lg:bg-rust-500"
           ]}
         ></span>
         <span :if={value == false} aria-hidden="true" class="text-[#737373]">–</span>
@@ -360,7 +368,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   defp trial_section do
     {gettext("Trial period"),
      [
-       {gettext("Paid features for free"), [false, gettext("for 60 days"), gettext("for 60 days")]}
+       {gettext("Paid features for free"),
+        [false, gettext("for 60 days"), gettext("for 60 days"), gettext("for 60 days")]}
      ]}
   end
 end

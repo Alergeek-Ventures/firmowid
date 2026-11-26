@@ -2,7 +2,7 @@
 title: "Program do faktur dla firmy usługowej 2–20 osób"
 description: "Sprawdź program do faktur dla firmy usługowej na fakturze KSeF, czasie pracy zespołu i przelewie z banku. Praktyczna lista do testu."
 published: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-27
 category: firma-uslugowa
 ---
 
@@ -52,9 +52,10 @@ O tym, jak wybrać program do faktur, pisaliśmy już w osobnym poradniku. W fir
 | faktury sprzedaży oraz wysyłanie i pobieranie z KSeF | bez limitu w planie Darmowym |
 | ewidencja czasu | według projektu i pracownika; do 3 projektów w planie Darmowym |
 | bank | 1 konto z parowaniem przelewów w planie Darmowym |
-| użytkownicy | 2 w planie Darmowym, 5 w planie Przedsiębiorca |
+| użytkownicy | 2 w planie Darmowym, 3 w planie Mini, 5 w planie Przedsiębiorca |
 | role | administrator, księgowość, fakturowanie, pracownik |
 | dokumenty dla biura księgowego | paczka ZIP we wszystkich planach |
+| plan Mini | 9 zł netto miesięcznie |
 | plan Przedsiębiorca | 29 zł netto miesięcznie |
 | plan Firma | 149 zł netto miesięcznie |
 

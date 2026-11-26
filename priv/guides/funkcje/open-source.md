@@ -2,7 +2,7 @@
 title: "Program do faktur KSeF open source na własny serwer"
 description: "Firmowid ma otwarty kod na licencji AGPL-3.0. Uruchomisz go na własnym serwerze bez opłaty licencyjnej. Co jest w kodzie i czym różni się od firmowid.pl."
 published: 2026-11-23
-updated: 2026-11-23
+updated: 2026-11-27
 path: /open-source
 landing:
   kicker: "Open source · AGPL-3.0"
@@ -31,7 +31,7 @@ Kod leży w [repozytorium Firmowida na GitHubie](https://github.com/Alergeek-Ven
 | | firmowid.pl | Własny serwer |
 |---|---|---|
 | Kod | ten sam, z gałęzi `main` | ten sam, budujesz z gałęzi `main` |
-| Opłata | plan Darmowy 0 zł, płatne plany 29 i 149 zł netto miesięcznie | brak opłaty licencyjnej, płacisz za serwer |
+| Opłata | plan Darmowy 0 zł, płatne plany od 9 do 149 zł netto miesięcznie | brak opłaty licencyjnej, płacisz za serwer |
 | Aktualizacje i kopie zapasowe | robimy my | robisz Ty albo Twój administrator |
 | KSeF | Profil Zaufany, certyfikat albo token | tak samo |
 | Bank | w cenie planu | własne konto w GoCardless |
