@@ -138,7 +138,8 @@ defmodule Firmowid.Invoicing.Changes.GenerateItemSuggestions do
     invoiced_vat_rates = MapSet.new(history, & &1.vat_rate)
 
     instructions()
-    |> OpenAIStructuredResponse.request!(prompt(activity, history), @response_format, [])
+    # 50 items with all their fields take about 2000 tokens.
+    |> OpenAIStructuredResponse.request!(prompt(activity, history), @response_format, max_output_tokens: 4000)
     |> Map.fetch!("items")
     |> Enum.map(&suggestion(&1, invoiced_prices, invoiced_vat_rates))
     |> Enum.reject(&(&1.name == ""))

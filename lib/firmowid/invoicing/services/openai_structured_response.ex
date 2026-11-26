@@ -9,7 +9,8 @@ defmodule Firmowid.Invoicing.Services.OpenAIStructuredResponse do
   @doc """
   Returns the decoded JSON answer. Raises when the request fails or the answer
   is not JSON. Pass `web_search: "low" | "medium"` (the search context size)
-  to make the model search the web first.
+  to make the model search the web first, and `max_output_tokens` for an answer
+  longer than the default 1000 tokens allow, which would otherwise be cut off.
   """
   @spec request!(String.t(), String.t(), map(), keyword()) :: map()
   def request!(instructions, input, format, opts) do
@@ -17,7 +18,7 @@ defmodule Firmowid.Invoicing.Services.OpenAIStructuredResponse do
       model: "gpt-6-luna",
       reasoning: %{effort: "none"},
       # Web search calls count towards this limit.
-      max_output_tokens: 1000,
+      max_output_tokens: Keyword.get(opts, :max_output_tokens, 1000),
       instructions: instructions,
       input: input,
       text: %{format: format}
