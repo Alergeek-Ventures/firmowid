@@ -36,8 +36,14 @@ defmodule Firmowid.Taxes do
                     "the company's tax micro-account: the period (month or quarter) and form symbol in their titles. " <>
                     "Each suggestion has the year whose transfers it comes from (the year before when the year has " <>
                     "none) and how many transfers it counts. Income tax suggestions only fit a sole proprietorship, " <>
-                    "whose owner pays from the company account. Not binding: say they are based on the transactions; " <>
-                    "an admin confirms them by saving the year in the company settings. Changes nothing."
+                    "whose owner pays from the company account. For a sole proprietorship with its one owner saved " <>
+                    "in the year, also social_insurance and voluntary_sickness (from the ZUS transfers, each month's " <>
+                    "total equal to the contributions that setting makes, to the grosz) and lump_sum_rate (from lump " <>
+                    "sum advances, equal within 1 zł, only when the saved income tax is the lump sum); each needs two " <>
+                    "matching months or periods and no other setting matching as often. value is a word, true/false " <>
+                    "(voluntary_sickness) or the rate in percent (lump_sum_rate). Not binding: say they are based " <>
+                    "on the transactions; an admin confirms them by saving the year in the company settings. " <>
+                    "Changes nothing."
     end
 
     tool :forecast_taxes, TaxYear, :forecast do
@@ -114,8 +120,8 @@ defmodule Firmowid.Taxes do
   defp applies?(:vat_period, organization), do: organization.is_vat_payer
   defp applies?(:cit_advances, organization), do: organization.legal_form == :limited_company
 
-  # The owner of a sole proprietorship pays income tax from the company account; partners of a
-  # civil partnership usually pay their own from private ones, so their transfers say nothing.
+  # The owner of a sole proprietorship pays income tax and ZUS from the company account; partners of
+  # a civil partnership usually pay their own from private ones, so their transfers say nothing.
   defp applies?(_income_tax, organization), do: organization.legal_form == :sole_proprietorship
 
   defp pending?(_suggestion, nil), do: true
@@ -126,10 +132,14 @@ defmodule Firmowid.Taxes do
         true
 
       value ->
-        value != suggestion.value and
+        not same_value?(value, suggestion.value) and
           DateTime.after?(suggestion.latest_transfer_at, tax_year.updated_at)
     end
   end
+
+  # A rate is a decimal, and 12 and 12.0 are the same one.
+  defp same_value?(%Decimal{} = saved, %Decimal{} = suggested), do: Decimal.eq?(saved, suggested)
+  defp same_value?(saved, suggested), do: saved == suggested
 
   defp saved_value(tax_year, setting) when setting in [:vat_period, :cit_advances], do: Map.fetch!(tax_year, setting)
 

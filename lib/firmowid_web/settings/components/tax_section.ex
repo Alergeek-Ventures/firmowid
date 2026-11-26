@@ -163,7 +163,8 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   defp put_suggestion(params, %{setting: setting, value: value}) when setting in [:vat_period, :cit_advances],
     do: Map.put(params, to_string(setting), to_string(value))
 
-  # Income tax suggestions apply only to a sole proprietorship, whose owner is the only row.
+  # The owner's suggestions (income tax, ZUS) apply only to a sole proprietorship, whose owner is the
+  # only row.
   defp put_suggestion(%{"partners" => [owner]} = params, %{setting: setting, value: value}),
     do: Map.put(params, "partners", [Map.put(owner, to_string(setting), to_string(value))])
 
@@ -494,6 +495,7 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
           show_error={false}
         />
         <.field_errors field={@partner[:lump_sum_rate]} submitted?={@submitted?} />
+        <.suggested field={@partner[:lump_sum_rate]} value={@suggested[:lump_sum_rate]} />
       </div>
       <%!-- A saved partner is updated with what the form sends; without the rate's select the
            previous rate would stay. --%>
@@ -528,25 +530,33 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
         show_error={false}
       />
       <.field_errors field={@partner[:social_insurance]} submitted?={@submitted?} />
+      <.suggested field={@partner[:social_insurance]} value={@suggested[:social_insurance]} />
     </div>
-    <div class="flex h-9 flex-col justify-center">
-      <%= if without_sickness?(@partner[:social_insurance].value) do %>
-        <%!-- A disabled switch sends nothing, which would keep a previous "on". --%>
-        <input type="hidden" name={@partner[:voluntary_sickness].name} value="false" />
-        <.switch
-          field={%{@partner[:voluntary_sickness] | value: false}}
-          color="teal"
-          disabled
-          aria-label={gettext("Sickness insurance")}
-        />
-      <% else %>
-        <.switch
-          field={@partner[:voluntary_sickness]}
-          color="teal"
-          aria-label={gettext("Sickness insurance")}
-        />
-      <% end %>
-      <.field_errors field={@partner[:voluntary_sickness]} submitted?={@submitted?} />
+    <div>
+      <div class="flex h-9 flex-col justify-center">
+        <%= if without_sickness?(@partner[:social_insurance].value) do %>
+          <%!-- A disabled switch sends nothing, which would keep a previous "on". --%>
+          <input type="hidden" name={@partner[:voluntary_sickness].name} value="false" />
+          <.switch
+            field={%{@partner[:voluntary_sickness] | value: false}}
+            color="teal"
+            disabled
+            aria-label={gettext("Sickness insurance")}
+          />
+        <% else %>
+          <.switch
+            field={@partner[:voluntary_sickness]}
+            color="teal"
+            aria-label={gettext("Sickness insurance")}
+          />
+        <% end %>
+        <.field_errors field={@partner[:voluntary_sickness]} submitted?={@submitted?} />
+      </div>
+      <.suggested
+        :if={!without_sickness?(@partner[:social_insurance].value)}
+        field={@partner[:voluntary_sickness]}
+        value={@suggested[:voluntary_sickness]}
+      />
     </div>
     <div :if={@legal_form == :civil_partnership} class="flex h-9 items-center">
       <.button
@@ -594,13 +604,13 @@ defmodule FirmowidWeb.Settings.Components.TaxSection do
   end
 
   attr :field, FormField, required: true
-  attr :value, :atom, default: nil
+  attr :value, :any, default: nil, doc: "an atom, a boolean or a decimal"
 
   # Marks a preselected value while it is still the one the transfers suggest.
   defp suggested(assigns) do
     ~H"""
     <p
-      :if={@value && to_string(@field.value) == to_string(@value)}
+      :if={!is_nil(@value) && to_string(@field.value) == to_string(@value)}
       class="mt-1.5 flex items-center gap-1 text-xs text-grey-500"
     >
       <Lucideicons.history class="size-3.5 shrink-0" aria-hidden="true" />
