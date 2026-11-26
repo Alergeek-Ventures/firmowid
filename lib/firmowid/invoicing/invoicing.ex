@@ -363,6 +363,7 @@ defmodule Firmowid.Invoicing do
     resource Firmowid.Invoicing.ItemSuggestions do
       define :get_item_suggestions, action: :current, not_found_error?: false
       define :generate_item_suggestions, action: :generate
+      define :list_item_suggestions, action: :for_counterparty, args: [:counterparty_id]
     end
 
     resource Firmowid.Invoicing.CounterpartyProposal do

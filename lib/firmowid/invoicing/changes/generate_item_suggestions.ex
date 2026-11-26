@@ -19,17 +19,12 @@ defmodule Firmowid.Invoicing.Changes.GenerateItemSuggestions do
   alias Firmowid.Core
   alias Firmowid.Core.RegisteredCompany
   alias Firmowid.Core.Services.CompanyRegister
-  alias Firmowid.Invoicing
-  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.ItemSuggestions.InvoicedItems
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.Services.OpenAIStructuredResponse
   alias Firmowid.Ksef.VatRate
-  alias Firmowid.LocalDate
   alias Firmowid.Scope
 
-  require Ash.Query
-
-  @history_limit 100
   @max_suggestions 50
 
   @suggestion_fields ~w(name quantity unit unit_price currency vat_rate)
@@ -74,7 +69,7 @@ defmodule Firmowid.Invoicing.Changes.GenerateItemSuggestions do
   defp generate(changeset, scope) do
     case activity(scope) do
       {:ok, activity} ->
-        suggestions = suggest(activity, history(scope))
+        suggestions = suggest(activity, InvoicedItems.list(scope))
         Ash.Changeset.force_change_attribute(changeset, :suggestions, suggestions)
 
       {:error, error} ->
@@ -92,43 +87,6 @@ defmodule Firmowid.Invoicing.Changes.GenerateItemSuggestions do
          [] -> nil
        end}
     end
-  end
-
-  # The distinct items of the issued invoices of the last year, most used first, each with
-  # its latest use. Corrections are left out: their lines say what changed, not what was sold.
-  defp history(scope) do
-    SalesInvoice
-    |> Ash.Query.select([:id, :currency, :issue_date])
-    |> Ash.Query.filter(ksef_invoice_kind != :kor)
-    |> Ash.Query.sort(issue_date: :desc)
-    |> Ash.Query.load(
-      sales_invoice_items: Ash.Query.select(SalesInvoiceItem, [:name, :quantity, :unit, :unit_price, :vat_rate])
-    )
-    |> then(
-      &Invoicing.list_sales_invoices!(
-        %{date_from: Date.shift(LocalDate.today(), year: -1), submission: :confirmed},
-        scope: scope,
-        query: &1
-      )
-    )
-    |> Enum.flat_map(fn invoice ->
-      Enum.map(invoice.sales_invoice_items, &%{item: &1, currency: invoice.currency})
-    end)
-    |> Enum.reject(&(String.trim(&1.item.name) == ""))
-    |> Enum.group_by(&(&1.item.name |> String.trim() |> String.downcase()))
-    |> Enum.map(fn {_key, [%{item: latest, currency: currency} | _older] = uses} ->
-      %{
-        name: String.trim(latest.name),
-        count: length(uses),
-        quantity: latest.quantity,
-        unit: latest.unit,
-        unit_price: latest.unit_price,
-        currency: currency,
-        vat_rate: latest.vat_rate
-      }
-    end)
-    |> Enum.sort_by(& &1.count, :desc)
-    |> Enum.take(@history_limit)
   end
 
   defp suggest(nil, []), do: []

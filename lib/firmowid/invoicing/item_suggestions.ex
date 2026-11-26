@@ -16,6 +16,7 @@ defmodule Firmowid.Invoicing.ItemSuggestions do
 
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Invoicing.ItemSuggestions.Suggestion
   alias Firmowid.Resource
 
   require Resource
@@ -42,6 +43,12 @@ defmodule Firmowid.Invoicing.ItemSuggestions do
       upsert_fields {:replace_all_except, [:id, :inserted_at]}
       change Firmowid.Invoicing.Changes.GenerateItemSuggestions
     end
+
+    action :for_counterparty, {:array, Suggestion} do
+      description "Suggestions for an invoice to the counterparty, its own invoiced items first."
+      argument :counterparty_id, :uuid_v7
+      run Firmowid.Invoicing.ItemSuggestions.Actions.ForCounterparty
+    end
   end
 
   policies do
@@ -50,7 +57,7 @@ defmodule Firmowid.Invoicing.ItemSuggestions do
     end
 
     policy {AtLeastRole, role: :invoicing} do
-      authorize_if action(:current)
+      authorize_if action([:current, :for_counterparty])
     end
   end
 
@@ -62,7 +69,7 @@ defmodule Firmowid.Invoicing.ItemSuggestions do
   attributes do
     uuid_v7_primary_key :id
 
-    attribute :suggestions, {:array, Firmowid.Invoicing.ItemSuggestions.Suggestion},
+    attribute :suggestions, {:array, Suggestion},
       allow_nil?: false,
       default: [],
       public?: true,

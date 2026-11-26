@@ -499,7 +499,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:draft, draft)
     |> assign(:items_form, to_form(ash_form))
     |> assign(:items_field, :items)
-    |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope))
+    |> assign(:item_suggestions, InvoiceItems.item_suggestions(scope, draft.counterparty_id))
     |> assign_new(:item_price_input_modes, fn -> %{} end)
     |> assign_new(:gross_item_price_inputs, fn -> %{} end)
     |> assign_new(:focused_item_price_input_index, fn -> nil end)
