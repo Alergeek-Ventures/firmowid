@@ -5,6 +5,6 @@
     "uuid-ossp",
     "citext",
     "btree_gist",
-    "ash_money_v5"
+    "ash_money_v6"
   ]
 }
