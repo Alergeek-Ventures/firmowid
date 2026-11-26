@@ -55,7 +55,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
   end
 
   defp send_invoice_email(invoice, delivery_type, idempotency_key, scope, ash_opts) do
-    case EmailRecipientEligibility.fetch_valid_counterparty_email(invoice.counterparty_id, scope) do
+    case EmailRecipientEligibility.fetch_valid_recipient_email(invoice, scope) do
       {:ok, recipient_email} ->
         send_invoice_email_to_valid_recipient(
           invoice,
