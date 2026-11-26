@@ -647,6 +647,37 @@ defmodule Firmowid.TaxesTest do
       assert {:error, %Forbidden{}} =
                Finances.destroy_expected_transaction(vat, scope: forecaster(org_id))
     end
+
+    test "follows a saved tax year at once, without the daily run", %{scope: scope} do
+      # The job that saving queues runs as the daily one does, on the real today: the periods are
+      # the ones around it, so the keys are built from it instead of a fixed date.
+      today = Firmowid.LocalDate.today()
+      month = "vat:#{Calendar.strftime(today, "%Y-%m")}"
+      quarter = "vat:#{today.year}-Q#{div(today.month - 1, 3) + 1}"
+
+      set_legal_form(scope, :limited_company)
+      seed_sales(scope, %{sale_date: Date.beginning_of_month(today)}, Decimal.new("10000"))
+
+      tax_year =
+        Taxes.create_tax_year!(
+          %{
+            year: today.year,
+            vat_period: :monthly,
+            cit_rate: :reduced,
+            cit_advances: :quarterly,
+            partners: []
+          },
+          scope: scope
+        )
+
+      assert %{^month => _} = saved = saved(scope)
+      refute is_map_key(saved, quarter)
+
+      Taxes.update_tax_year!(tax_year, %{vat_period: :quarterly, partners: []}, scope: scope)
+
+      assert %{^quarter => _} = saved = saved(scope)
+      refute is_map_key(saved, month)
+    end
   end
 
   describe "pending_suggestions/3" do
