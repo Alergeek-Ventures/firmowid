@@ -49,13 +49,15 @@ Na podstawie rentowności projektów byliśmy w stanie przedstawić klientowi so
 | Przychód projektu | opłacone faktury sprzedaży przypisane do projektu |
 | Koszty bezpośrednie | faktury kosztowe i wydatki oznaczone projektem, także dzielone między kilka projektów |
 | Wynagrodzenia | dzielone między projekty według godzin danej osoby w miesiącu |
+| Koszty firmy i podatki | rozkładane na projekty według [przepracowanych godzin](/funkcje/czas-pracy) |
+| Projekty wewnętrzne | bez udziału w kosztach firmy, widoczne osobno |
 | Nieopłacone faktury | pokazane osobno, poza wynikiem |
 
 W Firmowidzie te liczby zbiera [Analiza przychodów i kosztów](/funkcje/analiza), w której widok Trendy można zawęzić do jednego projektu.
 
 W iFirmie projekt też zbiera przychody i koszty, ale wynagrodzenia pracowników dodaje się do niego ręcznie.
 
-![Rentowność projektu w Firmowidzie: przychód to opłacone faktury przypisane do projektu, koszty bezpośrednie to faktury oznaczone projektem, wynagrodzenia dzieli się według godzin, a nieopłacone faktury są poza wynikiem.](/images/guides/rentownosc-projektu-jak-liczymy.webp)
+![Rentowność projektu w Firmowidzie: przychód to opłacone faktury przypisane do projektu, koszty bezpośrednie to faktury oznaczone projektem, wynagrodzenia oraz koszty firmy i podatki dzieli się według godzin, projekty wewnętrzne są osobno, a nieopłacone faktury poza wynikiem.](/images/guides/rentownosc-projektu-jak-liczymy.webp)
 
 ## Źródła
 
