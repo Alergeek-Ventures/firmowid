@@ -66,7 +66,7 @@ Program możesz uruchomić w firmie, zmieniać i rozwijać bez opłat. Gdy zmien
 
 ## Jak pomóc w rozwoju
 
-Pytania i pomysły zadajesz w [Dyskusjach na GitHubie](https://github.com/Alergeek-Ventures/firmowid/discussions). Błąd zgłaszasz jako issue z krokami do odtworzenia, a poprawkę wysyłasz jako pull request do gałęzi `main`. Podatności zgłaszasz prywatnie, według pliku [SECURITY.md](https://github.com/Alergeek-Ventures/firmowid/blob/main/SECURITY.md).
+Pytania zadajesz, a pomysły zgłaszasz w [Dyskusjach na GitHubie](https://github.com/Alergeek-Ventures/firmowid/discussions). Błąd zgłaszasz jako issue z krokami do odtworzenia, a poprawkę wysyłasz jako pull request do gałęzi `main`. Podatności zgłaszasz prywatnie, według pliku [SECURITY.md](https://github.com/Alergeek-Ventures/firmowid/blob/main/SECURITY.md).
 
 ## Najważniejsze dane
 
