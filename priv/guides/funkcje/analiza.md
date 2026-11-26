@@ -95,7 +95,7 @@ Pod liczbami są kafelki z gotowymi pytaniami do asystenta AI, dobranymi do tego
 
 Te same dane są dostępne w Claude i ChatGPT. Tam zapytasz też o rzeczy, których nie ma na ekranie:
 
-- Jaki powtarzalny koszt z ostatnich 3 miesięcy dałoby się zniwelować?
+- Jaki powtarzalny koszt z ostatnich 3 miesięcy dałoby się ograniczyć?
 - Jakie są prognozy na kolejne miesiące?
 - Co się stanie z wynikiem na koniec roku, jeśli zmienimy jeden czynnik?
 
