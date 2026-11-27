@@ -150,17 +150,20 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   end
 
   defp prepare_from_snapshot(changeset, original_invoice, latest_snapshot) do
+    swift_given? = explicit?(changeset, :seller_account_swift)
+
     # Defaults are changes too, but they are not caller intent. Preserve explicit
     # values (including nil/false) and replace omitted/defaulted fields with the snapshot.
     changeset =
-      Enum.reduce(@copied_fields, changeset, fn field, cs ->
-        if field in cs.defaults or not Ash.Changeset.changing_attribute?(cs, field) do
-          value = Map.get(latest_snapshot, field)
-          Ash.Changeset.force_change_attribute(cs, field, value)
-        else
+      @copied_fields
+      |> Enum.reduce(changeset, fn field, cs ->
+        if explicit?(cs, field) do
           cs
+        else
+          Ash.Changeset.force_change_attribute(cs, field, Map.get(latest_snapshot, field))
         end
       end)
+      |> drop_swift_of_another_account(latest_snapshot, swift_given?)
 
     # Buyer tax identity must stay stable across corrections.
     # We force the identity-driving fields from the latest effective snapshot
@@ -178,5 +181,20 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
       corrected_invoice: original_invoice,
       invoice_reference: latest_snapshot
     })
+  end
+
+  defp explicit?(changeset, field),
+    do: field not in changeset.defaults and Ash.Changeset.changing_attribute?(changeset, field)
+
+  # The SWIFT code belongs to the corrected invoice's account; another account chosen in the
+  # correction would otherwise be shown with the old bank's code.
+  defp drop_swift_of_another_account(changeset, latest_snapshot, swift_given?) do
+    if not swift_given? and
+         Ash.Changeset.get_attribute(changeset, :seller_account_number) !=
+           latest_snapshot.seller_account_number do
+      Ash.Changeset.force_change_attribute(changeset, :seller_account_swift, nil)
+    else
+      changeset
+    end
   end
 end
