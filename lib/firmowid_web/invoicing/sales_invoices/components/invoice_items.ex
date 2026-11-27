@@ -347,6 +347,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     name_error = get_first_error_for_items(item_forms, :name)
     quantity_error = get_first_error_for_items(item_forms, :quantity)
     unit_price_error = get_first_error_for_items(item_forms, :unit_price)
+    discount_error = get_first_error_for_items(item_forms, :discount)
 
     # Sort/drop param names
     form_name = items_form.name
@@ -371,6 +372,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       name_error: name_error,
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
+      discount_error: discount_error,
+      # Only invoices that already carry a line discount (e.g. imported from KSeF) show the column.
+      discount?: Enum.any?(items, &(not is_nil(&1.discount))),
       valid?: form_valid?(source),
       show_vat: show_vat,
       item_suggestions: input_assigns.item_suggestions,
@@ -501,10 +505,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <div class={[
             "col-span-full -me-8 grid gap-x-2",
             cond do
+              @unit_vat? and @discount? ->
+                "grid-cols-[min-content_1fr_repeat(8,min-content)] @max-[60rem]:grid-cols-[min-content_1fr_repeat(7,min-content)]"
+
               @unit_vat? ->
                 "grid-cols-[min-content_1fr_repeat(7,min-content)] @max-[60rem]:grid-cols-[min-content_1fr_repeat(6,min-content)]"
 
+              @show_vat and @discount? ->
+                "grid-cols-[min-content_1fr_repeat(8,min-content)]"
+
               @show_vat ->
+                "grid-cols-[min-content_1fr_repeat(7,min-content)]"
+
+              @discount? ->
                 "grid-cols-[min-content_1fr_repeat(7,min-content)]"
 
               true ->
@@ -530,6 +543,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               >
                 {@unit_price_error}
               </.error>
+              <.error :if={@discount_error} is_tooltip={true} target="discount">
+                {@discount_error}
+              </.error>
               <p id="name">
                 {gettext("Product/service")}
               </p>
@@ -549,6 +565,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               >
                 {gettext("Net price")}
               </.button>
+              <p :if={@discount?} id="discount" class="text-center">{gettext("Discount")}</p>
 
               <%= if @unit_vat? do %>
                 <%!-- The column gives way where the names would otherwise be too narrow. --%>
@@ -586,36 +603,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   <input type="hidden" name={@sort_param} value={item.index} />
                   <input type="hidden" name={item[:index].name} value={item.index} />
                   <input
-                    :if={item[:discount].value}
-                    type="hidden"
-                    name={item[:discount].name}
-                    value={item[:discount].value}
-                  />
-                  <input
                     :if={item[:gtu].value}
                     type="hidden"
                     name={item[:gtu].name}
                     value={item[:gtu].value}
                   />
                   <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
-                  <div class="flex min-w-0 flex-col gap-1">
-                    <.item_name
-                      field={item[:name]}
-                      index={item.index}
-                      suggest?={@item_suggestions != []}
-                    />
-                    <.input
-                      :if={not is_nil(item[:discount].value)}
-                      field={item[:discount]}
-                      type="number"
-                      label={gettext("Discount")}
-                      step="any"
-                      placeholder="0.00"
-                      phx-debounce
-                      class="w-32"
-                      input_class="text-center"
-                    />
-                  </div>
+                  <.item_name
+                    field={item[:name]}
+                    index={item.index}
+                    suggest?={@item_suggestions != []}
+                  />
                   <.input
                     field={item[:quantity]}
                     placeholder="0"
@@ -693,6 +691,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                       </div>
                     </:fallback>
                   </.hidden_input>
+
+                  <.input
+                    :if={@discount?}
+                    field={item[:discount]}
+                    type="number"
+                    aria-labelledby="discount"
+                    phx-debounce
+                    step="any"
+                    placeholder="0,00"
+                    class="w-24"
+                    input_class={[
+                      "text-center",
+                      if(invalid_field?(item[:discount]), do: "border-brick-700")
+                    ]}
+                    show_error={false}
+                  />
 
                   <%= if @unit_vat? do %>
                     <% vat_value =
