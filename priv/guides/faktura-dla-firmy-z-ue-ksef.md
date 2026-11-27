@@ -2,7 +2,7 @@
 title: "Faktura dla klienta z UE w KSeF: jaka stawka VAT i adnotacja"
 description: "Usługa dla firmy z UE z numerem VAT-UE: w KSeF stawka np II i adnotacja „odwrotne obciążenie”, bez polskiego VAT. Wcześniej rejestracja VAT-UE i VIES."
 published: 2026-11-12
-updated: 2026-11-24
+updated: 2026-11-27
 category: ksef-w-praktyce
 ---
 
@@ -62,8 +62,20 @@ Nie, KSeF jest polskim systemem. O unijnym pakiecie VIDA ministerstwo pisze: „
 
 ![Usługa z art. 28b dla firmy z UE z numerem VAT-UE: stawka np II i adnotacja odwrotne obciążenie. Osoba prywatna z UE: polska stawka VAT. Firma spoza UE: np I. Krajowe odwrotne obciążenie: oo. Przed pierwszą usługą dla firmy z UE trzeba zarejestrować się jako podatnik VAT-UE.](/images/guides/faktura-ue-ksef-stawka-np-ii.webp)
 
+## Porównanie programów do faktur dla klientów z UE
+
+| Program | Waluty | Odwrotne obciążenie i VIES | Plan | Stan na |
+|---|---|---|---|---|
+| Firmowid | „Faktury w 33 walutach” | „Odwrotne obciążenie dla klientów z UE (automatycznie)” | Darmowy, 0 zł | 25.11.2026 |
+| Fakturownia | „Dowolna waluta na fakturze” | „faktury z odwrotnym obciążeniem”, VIES przy fakturze OSS | Micro, 0 zł, 3 faktury | 27.11.2026 |
+| wFirma | „Transakcje zagraniczne”, „Różnice kursowe” | „Integracja z VIES i białą listą” | Księgowość, 60 zł | 27.11.2026 |
+| iFirma | brak informacji w cenniku | brak informacji w cenniku | | 27.11.2026 |
+
+Cudzysłowy to zapisy z cenników. Ceny netto za miesiąc.
+
 ## Źródła
 
+- Cenniki: [Firmowid](https://firmowid.pl/cennik), dostęp 25.11.2026; [Fakturownia](https://fakturownia.pl/cennik), [wFirma](https://wfirma.pl/cennik) i [iFirma](https://www.ifirma.pl/cennik/), dostęp 27.11.2026.
 - Art. 19a, art. 28b, art. 28e, art. 31a, art. 100, art. 97 ust. 3 i art. 106e ust. 1 pkt 18 ustawy z 11 marca 2004 r. o podatku od towarów i usług.
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/), dostęp 11.11.2026 i 24.11.2026.
 - [MF: Podręcznik KSeF 2.0, cz. II, rozdział 2.1.3](https://ksef.podatki.gov.pl/media/rronoxyt/podrecznik-ksef-20-cz-ii-wystawianie-i-otrzymywanie-faktur-w-ksef-06082026.pdf) (wersja z sierpnia 2026 r.), dostęp 23.11.2026.
