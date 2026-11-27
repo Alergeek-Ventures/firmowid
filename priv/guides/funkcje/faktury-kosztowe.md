@@ -15,7 +15,7 @@ landing:
       value: "PDF i zdjęcia, do 50 naraz"
 ---
 
-Wcześniej faktury kosztowe gromadziły się na mailu. Często płaciliśmy w innym terminie, niż te maile przychodziły, więc na końcu miesiąca musieliśmy w ogóle szukać tych faktur po mailach. To było słabe. Część była na papierze, musieliśmy to skanować i coś się gubiło. Teraz faktury z KSeF przychodzą same, a papierowe zazwyczaj skanujemy prosto do Firmowida. Komentarz dla biura księgowego kiedyś dopisywaliśmy ręcznie, teraz robimy to z pomocą AI, która uczy się na poprzednich fakturach i kategoriach firm. To naprawdę mocno uprzyjemnia pracę.
+Wcześniej faktury kosztowe gromadziły się na mailu. Często płaciliśmy w innym terminie, niż te maile przychodziły, więc na końcu miesiąca musieliśmy w ogóle szukać tych faktur po mailach. To było uciążliwe. Część była na papierze, musieliśmy to skanować i coś się gubiło. Teraz faktury z KSeF przychodzą same, a papierowe zazwyczaj skanujemy prosto do Firmowida. Komentarz dla biura księgowego kiedyś dopisywaliśmy ręcznie, teraz robimy to z pomocą AI, która uczy się na poprzednich fakturach i kategoriach firm. To naprawdę mocno uprzyjemnia pracę.
 
 ![Lista faktur zakupowych z KSeF i wgranych z pliku](/images/guides/funkcje/faktury-zakupowe.webp)
 
