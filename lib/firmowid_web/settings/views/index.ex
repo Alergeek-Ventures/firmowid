@@ -11,6 +11,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import FirmowidWeb.Settings.Components.AccountTab
   import FirmowidWeb.Settings.Components.CompanyTab
+
+  import FirmowidWeb.Settings.Components.Integrations,
+    only: [integrations_index: 1, integration_logo: 1]
+
+  import FirmowidWeb.Settings.Components.McpIntegration
   import FirmowidWeb.Settings.Components.ProfileTab
   import FirmowidWeb.Settings.Components.SettingsPage
   import FirmowidWeb.Settings.Components.SubscriptionTab
@@ -47,6 +52,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Settings.Components.ApiKeysSection
+  alias FirmowidWeb.Settings.Components.Integrations
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -176,7 +182,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp assign_tab_data(socket, tab) when tab in [:profile, :documents, :delegations, :leaves],
     do: load_once(socket, :leave_requests, &assign_profile/1)
 
-  defp assign_tab_data(socket, tab) when tab in [:subscription, :api_keys], do: socket
+  defp assign_tab_data(socket, :subscription), do: socket
+
+  # The catalog shows how many API keys the member sees; it is read again on every visit, so it
+  # counts the keys created or revoked on the API subpage.
+  defp assign_tab_data(socket, :integrations),
+    do: assign(socket, :api_key_count, length(Core.list_api_keys!(scope: socket.assigns.ash_scope)))
 
   defp load_once(socket, loaded_key, load) do
     if Map.has_key?(socket.assigns, loaded_key), do: socket, else: load.(socket)
@@ -257,6 +268,27 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_params(params, _uri, socket) when map_size(params) == 0 do
     {:noreply, push_patch(socket, to: Navigation.default_path())}
+  end
+
+  def handle_params(%{"integration" => slug}, _uri, socket) do
+    case Navigation.resolve_integration(slug) do
+      {:ok, integration} ->
+        # Every member sees the integrations page, so the section always opens here.
+        {:noreply, socket} =
+          handle_resolved_section(
+            :integrations,
+            %{canonical?: true, canonical_path: Navigation.integration_path(integration)},
+            socket
+          )
+
+        {:noreply,
+         socket
+         |> assign(:integration, integration)
+         |> assign(:page_title, Navigation.integration_title(integration))}
+
+      :error ->
+        {:noreply, push_patch(socket, to: Navigation.canonical_path(:integrations))}
+    end
   end
 
   def handle_params(%{"section" => section}, _uri, socket) do
@@ -1110,7 +1142,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def render(assigns) do
     ~H"""
-    <.settings_page title={@page_title}>
+    <.settings_page
+      title={@page_title}
+      back={
+        @settings_tab == :integrations && @integration && Navigation.canonical_path(:integrations)
+      }
+      description={
+        @settings_tab == :integrations && @integration && Integrations.description(@integration)
+      }
+    >
+      <:icon :if={@settings_tab == :integrations && @integration}>
+        <.integration_logo integration={@integration} />
+      </:icon>
       <:actions :if={@settings_tab == :delegations}>
         <.plan_business_trip_link current_org={@current_org} />
       </:actions>
@@ -1155,8 +1198,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
             plan_granted?={@plan_granted?}
             purchase={@plan_purchase}
           />
-        <% :api_keys -> %>
-          <.live_component module={ApiKeysSection} id="api-keys-section" scope={@ash_scope} />
+        <% :integrations -> %>
+          <.integrations_index
+            :if={is_nil(@integration)}
+            integrations={Navigation.integrations()}
+            api_key_count={@api_key_count}
+          />
+          <.mcp_integration
+            :if={@integration == :mcp}
+            mcp_url={FirmowidWeb.Core.Endpoint.url() <> "/mcp"}
+          />
+          <.live_component
+            :if={@integration == :api}
+            module={ApiKeysSection}
+            id="api-keys-section"
+            scope={@ash_scope}
+          />
         <% :account -> %>
           <.account_tab
             current_user={@current_user}
@@ -1292,6 +1349,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign_tab_data(tab)
          |> assign(:settings_tab, tab)
+         |> assign(:integration, nil)
          |> assign(:main_class, main_class(tab))
          |> assign(:page_title, Navigation.page_title(tab))
          |> assign_subscription_preview_if_visible()}

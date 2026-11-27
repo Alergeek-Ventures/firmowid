@@ -15,11 +15,12 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           | :subscription
           | :ksef
           | :bank_accounts
-          | :api_keys
+          | :integrations
           | :roles
           | :documents
           | :delegations
           | :leaves
+  @type integration :: :mcp | :api
   @type visibility_context :: %{
           required(:current_user) => %{
             required(:id) => term(),
@@ -35,7 +36,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
     "abonament" => :subscription,
     "ksef" => :ksef,
     "konta-bankowe" => :bank_accounts,
-    "klucze-api" => :api_keys,
+    "integracje" => :integrations,
     "role" => :roles,
     "dokumenty" => :documents,
     "delegacje" => :delegations,
@@ -43,7 +44,11 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   }
 
   # Former addresses of settings pages, so that old links still lead to them.
-  @legacy_slugs %{"bezpieczenstwo" => :account, "organizacja" => :organization}
+  @legacy_slugs %{
+    "bezpieczenstwo" => :account,
+    "organizacja" => :organization,
+    "klucze-api" => :integrations
+  }
 
   @admin_pages [:organization, :ksef, :bank_accounts, :roles]
 
@@ -64,7 +69,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   def canonical_path(:ksef), do: ~p"/ustawienia/ksef"
   def canonical_path(:bank_accounts), do: ~p"/ustawienia/konta-bankowe"
-  def canonical_path(:api_keys), do: ~p"/ustawienia/klucze-api"
+  def canonical_path(:integrations), do: ~p"/ustawienia/integracje"
   # Roles and invitations are managed on the team page.
   def canonical_path(:roles), do: ~p"/zarzadzanie/pracownicy"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
@@ -79,10 +84,30 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def page_title(:subscription), do: pgettext("settings tab", "Subscription")
   def page_title(:ksef), do: "KSeF"
   def page_title(:bank_accounts), do: gettext("Bank accounts")
-  def page_title(:api_keys), do: gettext("API keys")
+  def page_title(:integrations), do: gettext("Integrations")
   def page_title(:documents), do: gettext("Documents")
   def page_title(:delegations), do: gettext("Business trips")
   def page_title(:leaves), do: gettext("Absences")
+
+  @integration_slugs %{"asystenci-ai" => :mcp, "api" => :api}
+
+  @doc "Resolves the slug of an integration's subpage of the integrations page."
+  @spec resolve_integration(String.t()) :: {:ok, integration()} | :error
+  def resolve_integration(slug), do: Map.fetch(@integration_slugs, slug)
+
+  @doc "Returns the path of an integration's subpage."
+  @spec integration_path(integration()) :: String.t()
+  def integration_path(:mcp), do: ~p"/ustawienia/integracje/asystenci-ai"
+  def integration_path(:api), do: ~p"/ustawienia/integracje/api"
+
+  @doc "Returns the title of an integration's subpage."
+  @spec integration_title(integration()) :: String.t()
+  def integration_title(:mcp), do: gettext("AI assistants (MCP)")
+  def integration_title(:api), do: gettext("REST API")
+
+  @doc "Returns the integrations shown on the integrations page; every member may set them up."
+  @spec integrations() :: [integration()]
+  def integrations, do: [:mcp, :api]
 
   @doc """
   Resolves a settings section slug or legacy alias.

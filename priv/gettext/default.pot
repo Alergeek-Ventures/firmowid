@@ -247,6 +247,13 @@ msgid_plural "%{count} items"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} key"
+msgid_plural "%{count} keys"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} leave request"
@@ -843,6 +850,11 @@ msgstr ""
 msgid "AI assistant in Firmowid, ChatGPT and Claude"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "AI assistants (MCP)"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "AI score: %{percent}% confidence"
@@ -851,11 +863,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/api_keys_section.ex
 #, elixir-autogen, elixir-format
 msgid "API documentation"
-msgstr ""
-
-#: lib/firmowid_web/settings/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgid "API keys"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -1051,6 +1058,11 @@ msgctxt "projects month"
 msgid "Active projects"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Add Firmowid to your assistant"
+msgstr ""
+
 #: lib/firmowid_web/development/views/modals.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
@@ -1213,6 +1225,16 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Add the signed file (.xml)"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Add this MCP server; in Claude it is a custom connector"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Add to ChatGPT"
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
@@ -2354,6 +2376,7 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Buyer"
 msgstr ""
@@ -2693,6 +2716,16 @@ msgstr ""
 msgid "ChatGPT or another AI"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "ChatGPT, Claude and others"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "ChatGPT, Claude, Cursor and other programs that support MCP work on your company's data"
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
@@ -2962,6 +2995,11 @@ msgstr ""
 msgid "Choose the bank account to receive the payment."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Choose the company"
+msgstr ""
+
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
 msgid "Choose the company %{client} will work in."
@@ -3021,6 +3059,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Claude and ChatGPT work in every plan"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Claude, Cursor and other programs"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex
@@ -3391,6 +3434,11 @@ msgstr ""
 msgid "Connect an account"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "Connect an assistant"
+msgstr ""
+
 #: lib/firmowid_web/assistant/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Connect the MCP server to prepare invoices, match transfers and track time with AI, without the assistant."
@@ -3599,6 +3647,7 @@ msgid "Convert at the NBP rate"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/api_keys_section.ex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Copied"
 msgstr ""
@@ -3606,6 +3655,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/views/guides.ex
 #: lib/firmowid_web/settings/components/api_keys_section.ex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr ""
@@ -5601,6 +5651,11 @@ msgstr ""
 msgid "Everything you set up is waiting there"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Example"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Example conversation and invoice confirmation preview"
@@ -6115,6 +6170,11 @@ msgstr ""
 msgid "For everyone who issues invoices in KSeF"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "For example"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/controls.ex
 #, elixir-autogen, elixir-format
 msgid "For example: how much did we spend on subcontractors in October?"
@@ -6457,6 +6517,7 @@ msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/management/views/employees.html.heex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Gross"
 msgstr ""
@@ -6644,6 +6705,11 @@ msgstr ""
 msgid "How have fixed costs changed?"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "How it works"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "How much of every 100 PLN of income stayed"
@@ -6687,6 +6753,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "I have an invite code from my employer"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "I have prepared the invoice. Check it and confirm, and it goes to KSeF."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
@@ -6976,6 +7047,11 @@ msgstr ""
 msgid "Install on your own server and pay no subscription."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Install the Firmowid plugin there"
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Insurance status during the work period"
@@ -6989,6 +7065,11 @@ msgstr ""
 #: lib/firmowid_web/billing/utilities/plan_offer.ex
 #, elixir-autogen, elixir-format
 msgid "Integration with AI assistants (Claude, ChatGPT, Cursor, Grok and others)"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "Integrations"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -7309,6 +7390,16 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Issue an invoice for Północny Kod: 120 h at PLN 180 net."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Issue an invoice to Acme Sp. z o.o. for the rollout, 1,230 PLN net"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Issue and send to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
@@ -7718,6 +7809,11 @@ msgstr ""
 msgid "Key differences"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "Keys your own programs, such as an online store, use to call Firmowid"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/primitives.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
@@ -7900,6 +7996,11 @@ msgstr ""
 msgid "Linked account"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "List of MCP tools"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgctxt "VAT white list"
@@ -8047,6 +8148,11 @@ msgstr ""
 msgid "MCP authorization"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "MCP server address"
+msgstr ""
+
 #: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
@@ -8061,6 +8167,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_details.ex
 #, elixir-autogen, elixir-format
 msgid "Make the transfer now - click the button to copy the required details."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "Manage keys"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -8371,6 +8482,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/nip_check.ex
 #, elixir-autogen, elixir-format
 msgid "Neither the VAT white list nor CEIDG lists this NIP. That is normal for a KRS company outside VAT, since KRS cannot be searched by NIP. KSeF delivers the invoice to whoever holds the NIP, so make sure the number is right."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Net"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -9210,6 +9326,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "On every 100 zł of income I lose %{lost}. Each złoty of every 100 is %{amount} in this period. What would get me back above zero?"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "On the consent screen. The assistant works only in that company and can do what your role allows."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
@@ -10165,6 +10286,7 @@ msgid "Preparing the file..."
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Preview"
 msgstr ""
@@ -10414,6 +10536,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "Questions for the assistant"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "REST API"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_details.ex
@@ -11012,6 +11139,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
+#: lib/firmowid_web/settings/components/mcp_integration.ex
 #, elixir-autogen, elixir-format
 msgid "Sales invoice"
 msgstr ""
@@ -11753,6 +11881,11 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Sign in as owner"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/mcp_integration.ex
+#, elixir-autogen, elixir-format
+msgid "Sign in with your Firmowid account"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex
