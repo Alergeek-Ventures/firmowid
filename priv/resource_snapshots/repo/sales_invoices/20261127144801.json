@@ -45,6 +45,18 @@
       "references": null,
       "scale": null,
       "size": null,
+      "source": "external_id",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
       "source": "sale_date",
       "type": "date"
     },
@@ -739,8 +751,26 @@
     }
   ],
   "has_create_action": true,
-  "hash": "542CF6F8FA9FFA7B61850690E218B75044A813DA413463DAB1CA1E2C4E0040AD",
+  "hash": "CDBE0FF7D824805C1AE583AAAF5B772A1961F23069A7F199E52C9C737C8D8F75",
   "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "sales_invoices_external_id_per_org_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "external_id"
+        },
+        {
+          "type": "atom",
+          "value": "organization_id"
+        }
+      ],
+      "name": "external_id_per_org",
+      "nils_distinct?": true,
+      "where": null
+    },
     {
       "all_tenants?": false,
       "base_filter": null,

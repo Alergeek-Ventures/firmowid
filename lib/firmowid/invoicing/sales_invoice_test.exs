@@ -212,6 +212,39 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       assert Money.to_currency_code(invoice.effective_amount) == :PLN
     end
 
+    test "drops the SWIFT code when a correction pays to another account" do
+      user = admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            seller_account_swift: "WBKPPLPP",
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      Ash.Seed.update!(invoice, %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"})
+
+      assert {:ok, correction} =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 SalesInvoice.correct(
+                   %{
+                     original_invoice_id: invoice.id,
+                     invoice_number: "FK/#{System.unique_integer([:positive])}",
+                     issue_date: ~D[2026-01-11],
+                     seller_account_number: "PL27114020040000300201355387",
+                     sales_invoice_items: [base_item_attrs(%{})]
+                   },
+                   scope: scope_for(user)
+                 )
+               end)
+
+      assert correction.seller_account_number == "PL27114020040000300201355387"
+      assert correction.seller_account_swift == nil
+    end
+
     test "keeps a zero-value invoice as Money" do
       user = admin_fixture()
 

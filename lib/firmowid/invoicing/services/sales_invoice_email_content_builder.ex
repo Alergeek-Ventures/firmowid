@@ -111,7 +111,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
     %{
       recipient: seller,
       account: account,
-      swift: Map.get(invoice, :seller_account_swift),
+      swift: invoice.seller_account_swift,
       title: invoice.invoice_number
     }
   end
