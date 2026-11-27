@@ -139,7 +139,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
-      {:posthog, "~> 2.23.2"},
+      {:posthog, "~> 2.23.4"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.13.1"},
       {:mdex, "~> 0.7"},

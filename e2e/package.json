@@ -8,7 +8,7 @@
   "devDependencies": {
     "@e2e-dev/web": "0.16.1",
     "@openrouter/ai-sdk-provider": "3.1.0",
-    "ai": "7.0.177",
+    "ai": "7.0.179",
     "e2e": "0.24.0"
   }
 }
