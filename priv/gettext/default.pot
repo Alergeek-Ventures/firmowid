@@ -853,6 +853,7 @@ msgstr ""
 msgid "API documentation"
 msgstr ""
 
+#: lib/firmowid_web/billing/utilities/plan_offer.ex
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "API keys"
