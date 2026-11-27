@@ -66,6 +66,21 @@ defmodule Firmowid.AiTools do
   # invoice its orders; MCP issues an invoice only after the user confirms it in its widget.
   @api_only [:issue_sales_invoice_from_api]
 
+  # These act on the signed-in person's own time, leave and profile. A company API key belongs to
+  # no person, so it is not given them.
+  @personal [
+    :list_sessions,
+    :get_current_session,
+    :stop_current_session,
+    :start_session,
+    :edit_session,
+    :add_sessions,
+    :list_leave_requests,
+    :create_leave_request,
+    :update_profile,
+    :get_shared_birthday
+  ]
+
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
   def mcp, do: @shared
@@ -77,4 +92,8 @@ defmodule Firmowid.AiTools do
   @doc "Returns the tools exposed by the public API, one endpoint each."
   @spec api() :: [atom()]
   def api, do: @shared ++ @api_only
+
+  @doc "Returns the public API tools a company key may call: those that do not act as a person."
+  @spec company_api() :: [atom()]
+  def company_api, do: api() -- @personal
 end

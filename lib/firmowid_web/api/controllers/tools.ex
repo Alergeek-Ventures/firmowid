@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Api.Controllers.Tools do
     case Enum.find(Tools.for_actor(actor, tenant), &(Atom.to_string(&1.name) == name)) do
       nil ->
         if Tools.known?(name),
-          do: error(conn, 403, "forbidden", "The key's role does not allow #{name}."),
+          do: error(conn, 403, "forbidden", "This key may not call #{name}."),
           else: error(conn, 404, "not_found", "There is no operation #{name}.")
 
       tool ->

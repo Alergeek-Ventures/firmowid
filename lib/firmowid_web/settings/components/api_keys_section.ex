@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core
@@ -28,6 +29,7 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
   def mount(socket) do
     {:ok,
      socket
+     |> attach_access_hook(:scope)
      |> assign(:created_key, nil)
      |> assign(:form_open?, false)
      |> reset_form()}
