@@ -2,7 +2,7 @@
 title: "KSeF w banku, aplikacja Ministerstwa Finansów czy program do faktur?"
 description: "Bezpłatne narzędzia MF, moduł KSeF w banku i osobny program do faktur: co potrafi każde z nich i komu wystarczy przy kilku fakturach w miesiącu."
 published: 2026-11-12
-updated: 2026-11-23
+updated: 2026-11-27
 category: wybor-programu
 ---
 
@@ -32,8 +32,6 @@ Za samo wystawianie i odbieranie faktur w KSeF nie trzeba płacić ani złotówk
 | Informacja, kto zapłacił | nie | w programach połączonych z bankiem |
 | Kilka osób wystawiających faktury | uprawnienia nadawane w Aplikacji Podatnika | osobne konta użytkowników |
 | Cena | 0 zł | plan za 0 zł z limitem, bez limitu albo abonament |
-
-![Narzędzia Ministerstwa Finansów i program do faktur w jednej tabeli. Wystawianie i odbiór faktur w KSeF działa w obu. UPO, uprawnienia i korekty są w narzędziach MF, w programach zwykle też. Tryb offline24 z kodami QR ma aplikacja mobilna z certyfikatem typu 2, w programach zależy to od programu. Do ewidencji VAT przenosi faktury e-mikrofirma albo program z księgowością. Informację, kto zapłacił, dają tylko programy połączone z bankiem. Narzędzia MF kosztują 0 zł, programy mają plan za 0 zł z limitem, bez limitu albo abonament.](/images/guides/czy-trzeba-kupowac-program-mf-czy-program.webp)
 
 ## Aplikacja mobilna KSeF
 
