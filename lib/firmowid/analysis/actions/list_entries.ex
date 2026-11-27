@@ -12,6 +12,7 @@ defmodule Firmowid.Analysis.Actions.ListEntries do
   alias Firmowid.Core
   alias Firmowid.Core.Nip
   alias Firmowid.Core.RegisteredCompany
+  alias Firmowid.Core.ServiceAccount
   alias Firmowid.Core.User
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
@@ -22,7 +23,16 @@ defmodule Firmowid.Analysis.Actions.ListEntries do
 
   @impl true
   def run(input, _opts, %{actor: %User{member: %{organization_id: tenant}} = actor, tenant: tenant})
-      when is_binary(tenant) do
+      when is_binary(tenant), do: run_in_organization(input, actor, tenant)
+
+  # A company API key's account.
+  def run(input, _opts, %{actor: %ServiceAccount{organization_id: tenant} = actor, tenant: tenant})
+      when is_binary(tenant), do: run_in_organization(input, actor, tenant)
+
+  # This must also reject mismatched tenants for admins, whose policy bypass is global.
+  def run(_input, _opts, _context), do: {:error, Ash.Error.Forbidden.exception([])}
+
+  defp run_in_organization(input, actor, tenant) do
     # Salaries count in their salary month, so only whole months add up to the totals.
     from = Date.beginning_of_month(input.arguments.from)
     to = Date.end_of_month(input.arguments.to)
@@ -38,9 +48,6 @@ defmodule Firmowid.Analysis.Actions.ListEntries do
         {:ok, list(from, to, %Scope{actor: actor, tenant: tenant})}
     end
   end
-
-  # This must also reject mismatched tenants for admins, whose policy bypass is global.
-  def run(_input, _opts, _context), do: {:error, Ash.Error.Forbidden.exception([])}
 
   defp list(from, to, scope) do
     entries = Analysis.get_organization_entries(from, to, scope)

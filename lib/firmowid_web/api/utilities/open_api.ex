@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Api.Utilities.OpenApi do
   JSON body is the tool's arguments.
   """
 
+  alias Firmowid.AiTools
   alias FirmowidWeb.Api.Utilities.Tools
 
   @error_schema %{
@@ -45,7 +46,7 @@ defmodule FirmowidWeb.Api.Utilities.OpenApi do
       # Grouped by the domain the operation belongs to, such as Invoicing or Finances.
       "tags" => [tool.domain |> Module.split() |> List.last()],
       "summary" => tool.title || tool.annotations[:title] || Atom.to_string(tool.name),
-      "description" => AshAi.Tools.description(tool),
+      "description" => description(tool),
       "requestBody" => %{
         "required" => true,
         "content" => %{
@@ -60,10 +61,16 @@ defmodule FirmowidWeb.Api.Utilities.OpenApi do
           }
         },
         "401" => error("A valid API key is required."),
-        "403" => error("The key's role does not allow the operation."),
+        "403" => error("The key's role does not allow the operation, or a company key called a personal one."),
         "422" => error("The operation failed, for example on invalid input; `message` says why.")
       }
     }
+  end
+
+  defp description(tool) do
+    if tool.name in AiTools.company_api(),
+      do: AshAi.Tools.description(tool),
+      else: AshAi.Tools.description(tool) <> "\n\nPersonal keys only: it acts as the key's person."
   end
 
   defp error(description),
