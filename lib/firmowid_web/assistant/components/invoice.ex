@@ -265,6 +265,7 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
     before.name != now.name or before.unit != now.unit or
       not Decimal.eq?(before.quantity, now.quantity) or
       not Decimal.eq?(before.unit_price, now.unit_price) or
+      not Decimal.eq?(before.discount || Decimal.new(0), now.discount || Decimal.new(0)) or
       not Decimal.eq?(before.gross_value, now.gross_value)
   end
 

@@ -129,6 +129,31 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
     end
   end
 
+  test "line discounts and sub-grosz prices are rendered in FA(3) order", %{
+    model: model,
+    org_id: org_id
+  } do
+    invoice = build_domestic_invoice(org_id: org_id, items: 2)
+    [discounted, precise] = invoice.sales_invoice_items
+
+    Ash.Seed.update!(discounted, %{discount: Decimal.new("10.00")})
+    Ash.Seed.update!(precise, %{unit_price: Decimal.new("0.33330000")})
+
+    invoice =
+      Ash.load!(
+        invoice,
+        [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+        Keyword.put(@bridge_opts, :tenant, org_id)
+      )
+
+    xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+    assert xml =~ ~r|<P_9A>100\.00</P_9A>\s*<P_10>10\.00</P_10>\s*<P_11>90\.00</P_11>|
+    assert xml =~ ~r|<P_9A>0\.3333</P_9A>\s*<P_11>0\.33</P_11>|
+    assert xml =~ ~r|<P_13_1>90\.33</P_13_1>\s*<P_14_1>20\.78</P_14_1>|
+    assert :ok = validate_xml(xml, model)
+  end
+
   # ---------------------------------------------------------------------------
   # Reverse Charge Invoices
   # ---------------------------------------------------------------------------
@@ -318,6 +343,9 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
           with_ksef_number: true
         )
 
+      [item] = original.sales_invoice_items
+      Ash.Seed.update!(item, %{discount: Decimal.new("10.00")})
+
       opts = Keyword.put(@bridge_opts, :tenant, original.organization_id)
 
       cancellation =
@@ -335,7 +363,12 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
 
       # should include before+after rows for changed items
       assert length(Regex.scan(~r/<FaWiersz>/, xml)) >= 2
-      assert xml =~ "<P_8B>0</P_8B>"
+
+      assert xml =~
+               ~r|<P_10>10\.00</P_10>\s*<P_11>90\.00</P_11>\s*<P_12>23</P_12>\s*<StanPrzed>1</StanPrzed>|
+
+      assert xml =~ ~r|<P_8B>0</P_8B>\s*<P_9A>100\.00</P_9A>\s*<P_11>0\.00</P_11>|
+      assert xml =~ "<P_15>-110.70</P_15>"
     end
   end
 
@@ -411,6 +444,30 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
 
       assert xml =~
                ~r/<Zamowienie>\s*<WartoscZamowienia>#{p_15}<\/WartoscZamowienia>\s*<ZamowienieWiersz>/
+    end
+
+    test "totals retain their previous rounding for multiple long unit prices", %{org_id: org_id} do
+      invoice =
+        [org_id: org_id, items: 3]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{ksef_invoice_kind: :advance})
+
+      Enum.each(invoice.sales_invoice_items, fn item ->
+        Ash.Seed.update!(item, %{unit_price: Decimal.new("0.00444444")})
+      end)
+
+      invoice =
+        Ash.load!(
+          invoice,
+          [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+          Keyword.put(@bridge_opts, :tenant, org_id)
+        )
+
+      xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+      assert xml =~ ~r|<P_9AZ>0\.00444444</P_9AZ>\s*<P_11NettoZ>0\.00</P_11NettoZ>|
+      assert xml =~ ~r|<P_13_1>0\.01</P_13_1>\s*<P_14_1>0\.00</P_14_1>|
+      assert xml =~ "<P_15>0.02</P_15>"
     end
   end
 

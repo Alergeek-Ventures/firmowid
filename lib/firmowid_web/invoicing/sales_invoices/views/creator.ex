@@ -265,6 +265,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           quantity: item.quantity,
           unit: item.unit,
           unit_price: item.unit_price,
+          discount: item.discount,
           vat_rate: item.vat_rate
         }
       end)
@@ -612,6 +613,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         "quantity" => item.quantity,
         "unit" => item.unit,
         "unit_price" => item.unit_price,
+        "discount" => item.discount,
         "vat_rate" => item.vat_rate
       }
     end)

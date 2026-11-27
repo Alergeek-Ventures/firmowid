@@ -479,7 +479,8 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     [
       {original, sales_invoice_xml("FV/#{suffix}", lines: both_lines)},
       # A discount (P_10) leaves the unit price (P_9A) above the line's net value (P_11).
-      {"KSEF-DISCOUNT-#{suffix}", sales_invoice_xml("RAB/#{suffix}", lines: [{"A", "100.00", "90.00", false}])},
+      {"KSEF-DISCOUNT-#{suffix}", sales_invoice_xml("RAB/#{suffix}", lines: [{"A", "100.00", "90.00", "10.00", false}])},
+      {"KSEF-SUBGROSZ-#{suffix}", sales_invoice_xml("SUB/#{suffix}", lines: [{"A", "0.3333", "0.33", false}])},
       {correction,
        sales_invoice_xml("KOR1/#{suffix}",
          kind: "KOR",
@@ -567,7 +568,12 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
 
     invoices =
       SalesInvoice
-      |> Ash.Query.load([:gross_value, :corrected_invoice_id, latest_correction: :invoice_number])
+      |> Ash.Query.load([
+        :gross_value,
+        :corrected_invoice_id,
+        latest_correction: :invoice_number,
+        sales_invoice_items: [:net_value, :gross_value]
+      ])
       |> then(&SalesInvoice.list!(scope: scope, query: &1))
       |> Map.new(&{&1.invoice_number, &1})
 
@@ -575,12 +581,28 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
              Enum.sort([
                "FV/#{suffix}",
                "RAB/#{suffix}",
+               "SUB/#{suffix}",
                "KOR1/#{suffix}",
                "KOR2/#{suffix}",
                "EUROK/#{suffix}"
              ])
 
     assert Decimal.equal?(invoices["RAB/#{suffix}"].gross_value, Decimal.new("110.70"))
+
+    assert [%{unit_price: discount_price, discount: discount, net_value: discounted_net}] =
+             invoices["RAB/#{suffix}"].sales_invoice_items
+
+    assert Decimal.equal?(discount_price, Decimal.new("100.00"))
+    assert Decimal.equal?(discount, Decimal.new("10.00"))
+    assert Decimal.equal?(discounted_net, Decimal.new("90.00"))
+
+    assert [%{unit_price: subgrosz_price, discount: subgrosz_discount, net_value: subgrosz_net}] =
+             invoices["SUB/#{suffix}"].sales_invoice_items
+
+    assert Decimal.equal?(subgrosz_price, Decimal.new("0.3333"))
+    assert is_nil(subgrosz_discount)
+    assert Decimal.equal?(subgrosz_net, Decimal.new("0.3333"))
+    assert Decimal.equal?(invoices["SUB/#{suffix}"].gross_value, Decimal.new("0.409959"))
 
     vat = invoices["FV/#{suffix}"]
     assert invoices["KOR1/#{suffix}"].corrected_invoice_id == vat.id
@@ -777,61 +799,63 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
   defp skipped_ksef_numbers({:error, %SkippedInvoicesError{skipped: skipped}}),
     do: skipped |> Enum.map(& &1.ksef_number) |> Enum.sort()
 
-  # Lines are {name, unit price, before?} or {name, unit price, net value, before?}, one unit each at 23% VAT.
+  # Lines are {name, unit price, before?}, {name, unit price, net value, before?} or
+  # {name, unit price, net value, discount, before?}, one unit each at 23% VAT.
   defp group_net(lines) do
     lines
-    |> Enum.map(fn {_name, _price, net, _before?} -> Decimal.new(net) end)
+    |> Enum.map(fn {_name, _price, net, _discount, _before?} -> Decimal.new(net) end)
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
     |> Decimal.round(2)
   end
 
   defp group_vat(lines) do
     lines
-    |> Enum.map(fn {_name, _price, net, _before?} ->
+    |> Enum.map(fn {_name, _price, net, _discount, _before?} ->
       Decimal.mult(Decimal.new(net), Decimal.new("0.23"))
     end)
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
     |> Decimal.round(2)
   end
 
+  defp gross_total(lines) do
+    lines
+    |> Enum.map(fn {_name, _price, net, _discount, before?} ->
+      gross = Decimal.mult(Decimal.new(net), Decimal.new("1.23"))
+      if before?, do: Decimal.negate(gross), else: gross
+    end)
+    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+    |> Decimal.round(2)
+  end
+
+  defp normalize_line({name, price, before?}), do: {name, price, price, nil, before?}
+  defp normalize_line({name, price, net, before?}), do: {name, price, net, nil, before?}
+  defp normalize_line(line), do: line
+
   defp sales_invoice_xml(invoice_number, opts) do
     kind = Keyword.get(opts, :kind, "VAT")
     lines = Keyword.get(opts, :lines, [{"Usługa", "100.00", false}])
 
-    lines =
-      Enum.map(lines, fn
-        {name, price, before?} -> {name, price, price, before?}
-        line -> line
-      end)
+    lines = Enum.map(lines, &normalize_line/1)
 
     # P_14_1 is the 23% group's VAT rounded to the grosz; for a correction, the change between
     # the rounded groups after and before it.
     vat_total =
       lines
-      |> Enum.split_with(fn {_name, _price, _net, before?} -> before? end)
+      |> Enum.split_with(fn {_name, _price, _net, _discount, before?} -> before? end)
       |> then(fn {before, after_} -> Decimal.sub(group_vat(after_), group_vat(before)) end)
 
     net_total =
       lines
-      |> Enum.split_with(fn {_name, _price, _net, before?} -> before? end)
+      |> Enum.split_with(fn {_name, _price, _net, _discount, before?} -> before? end)
       |> then(fn {before, after_} -> Decimal.sub(group_net(after_), group_net(before)) end)
 
     # P_15 of a correction is the change it makes.
-    gross_total =
-      Keyword.get_lazy(opts, :gross_total, fn ->
-        lines
-        |> Enum.map(fn {_name, _price, net, before?} ->
-          gross = Decimal.mult(Decimal.new(net), Decimal.new("1.23"))
-          if before?, do: Decimal.negate(gross), else: gross
-        end)
-        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-        |> Decimal.round(2)
-      end)
+    gross_total = Keyword.get_lazy(opts, :gross_total, fn -> gross_total(lines) end)
 
     rows =
       lines
       |> Enum.with_index(1)
-      |> Enum.map_join(fn {{name, price, net, before?}, index} ->
+      |> Enum.map_join(fn {{name, price, net, discount, before?}, index} ->
         """
         <FaWiersz>
           <NrWierszaFa>#{index}</NrWierszaFa>
@@ -839,6 +863,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
           <P_8A>szt.</P_8A>
           <P_8B>1</P_8B>
           <P_9A>#{price}</P_9A>
+          #{if discount, do: "<P_10>#{discount}</P_10>"}
           <P_11>#{net}</P_11>
           <P_12>23</P_12>
           #{if before?, do: "<StanPrzed>1</StanPrzed>"}

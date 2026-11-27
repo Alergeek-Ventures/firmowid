@@ -83,7 +83,7 @@ defmodule Firmowid.Invoicing.Actions.IssueWizardState do
       |> Enum.with_index()
       |> Enum.map(fn {item, index} ->
         item
-        |> Map.take([:name, :quantity, :unit, :unit_price, :vat_rate])
+        |> Map.take([:name, :quantity, :unit, :unit_price, :discount, :vat_rate])
         |> Map.put(:index, index)
       end)
 

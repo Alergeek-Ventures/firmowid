@@ -4828,6 +4828,11 @@ msgstr ""
 msgid "Disconnecting will stop the current KSeF integration for this organization."
 msgstr ""
 
+#: lib/firmowid_ui/invoicing/components/sales_invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Discount"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex

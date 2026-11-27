@@ -123,8 +123,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp item_net_value(item_form) do
     unit_price = parse_decimal(item_form[:unit_price].value)
     quantity = parse_decimal(item_form[:quantity].value)
+    discount = parse_decimal(item_form[:discount].value) || Decimal.new(0)
 
-    if unit_price && quantity, do: Decimal.mult(unit_price, quantity), else: Decimal.new(0)
+    if unit_price && quantity,
+      do: Decimal.sub(Decimal.mult(unit_price, quantity), discount),
+      else: Decimal.new(0)
   end
 
   defp item_gross_value(item_form) do
@@ -235,8 +238,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  defp summary_item_net(%{quantity: qty, unit_price: price}) when not is_nil(qty) and not is_nil(price) do
-    Decimal.mult(parse_decimal(qty) || Decimal.new(0), parse_decimal(price) || Decimal.new(0))
+  defp summary_item_net(%{quantity: qty, unit_price: price} = item) when not is_nil(qty) and not is_nil(price) do
+    (parse_decimal(qty) || Decimal.new(0))
+    |> Decimal.mult(parse_decimal(price) || Decimal.new(0))
+    |> Decimal.sub(parse_decimal(Map.get(item, :discount)) || Decimal.new(0))
   end
 
   defp summary_item_net(_), do: Decimal.new(0)
@@ -284,6 +289,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         quantity: AshPhoenix.Form.value(item_form, :quantity),
         unit: AshPhoenix.Form.value(item_form, :unit),
         unit_price: AshPhoenix.Form.value(item_form, :unit_price),
+        discount: AshPhoenix.Form.value(item_form, :discount),
         vat_rate: AshPhoenix.Form.value(item_form, :vat_rate)
       }
     end)
@@ -579,6 +585,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 <div class="col-span-full grid grid-cols-subgrid items-center">
                   <input type="hidden" name={@sort_param} value={item.index} />
                   <input type="hidden" name={item[:index].name} value={item.index} />
+                  <input
+                    :if={item[:discount].value}
+                    type="hidden"
+                    name={item[:discount].name}
+                    value={item[:discount].value}
+                  />
                   <input
                     :if={item[:gtu].value}
                     type="hidden"

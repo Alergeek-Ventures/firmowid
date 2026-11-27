@@ -288,6 +288,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
   attr :show_vat, :boolean, default: true
 
   defp items_table(assigns) do
+    show_discount? = Enum.any?(assigns.sales_invoice.sales_invoice_items, & &1.discount)
+    assigns = assign(assigns, :show_discount?, show_discount?)
+
     ~H"""
     <div>
       <h2 class="text-[8px] font-bold text-grey-600">
@@ -307,10 +310,12 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <%= if @show_vat do %>
                 <th class="text-right">Cena netto</th>
                 <th class="w-12 pl-5 text-center">Vat</th>
+                <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
                 <th class="text-right">Wartość netto</th>
                 <th class="text-right">Wartość brutto</th>
               <% else %>
                 <th class="text-right">Cena jednostkowa</th>
+                <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
                 <th class="text-right">Cena sumaryczna</th>
               <% end %>
             </tr>
@@ -322,6 +327,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <th class="text-right">Ilość</th>
               <th class="text-right">J. m.</th>
               <th class="text-right">Cena jednostkowa</th>
+              <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
               <th class="text-right">Cena sumaryczna</th>
             </tr>
             <tr class="pb-2">
@@ -330,6 +336,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <th class="text-right">Count</th>
               <th class="text-right">Unit</th>
               <th class="text-right">Unit price</th>
+              <th :if={@show_discount?} class="text-right">Discount</th>
               <th class="text-right">Total price</th>
             </tr>
           <% end %>
@@ -343,14 +350,15 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <td class="py-1 text-right">{item.unit}</td>
               <%= if @sales_invoice.invoice_type == :poland do %>
                 <td class="py-1 text-right">
-                  {Money.new(
-                    @sales_invoice.currency,
-                    item.unit_price,
-                    currency_symbol: ""
-                  )}
+                  {display_unit_price(Money.new!(@sales_invoice.currency, item.unit_price))}
                 </td>
                 <td :if={@show_vat} class="py-1 text-right">
                   {VatRate.label(item.vat_rate)}
+                </td>
+                <td :if={@show_discount?} class="py-1 text-right">
+                  {Money.new(@sales_invoice.currency, item.discount || Decimal.new(0),
+                    currency_symbol: ""
+                  )}
                 </td>
                 <td class="py-1 text-right">
                   {Money.new(
@@ -369,7 +377,10 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <% end %>
               <%= if @sales_invoice.invoice_type == :foreign do %>
                 <td class="py-1 text-right">
-                  {Money.new!(@sales_invoice.currency, item.unit_price)
+                  {display_unit_price(Money.new!(@sales_invoice.currency, item.unit_price))}
+                </td>
+                <td :if={@show_discount?} class="py-1 text-right">
+                  {Money.new!(@sales_invoice.currency, item.discount || Decimal.new(0))
                   |> Money.to_string!(currency_symbol: "")}
                 </td>
                 <td class="py-1 text-right">
@@ -388,11 +399,17 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
     """
   end
 
+  defp display_unit_price(%Money{amount: amount} = money) do
+    fractional_digits = amount |> Decimal.normalize() |> Decimal.scale() |> max(2) |> min(8)
+    Money.to_string!(money, currency_symbol: "", fractional_digits: fractional_digits)
+  end
+
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
   attr :item, :map, required: true
   attr :index, :integer, required: true
   attr :struck, :boolean, default: false
+  attr :show_discount?, :boolean, default: false
 
   defp correction_item_row(assigns) do
     ~H"""
@@ -403,14 +420,13 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       <td class="py-1 text-right">{@item.unit}</td>
       <%= if @sales_invoice.invoice_type == :poland do %>
         <td class="py-1 text-right">
-          {Money.new(
-            @sales_invoice.currency,
-            @item.unit_price,
-            currency_symbol: ""
-          )}
+          {display_unit_price(Money.new!(@sales_invoice.currency, @item.unit_price))}
         </td>
         <td :if={@show_vat} class="py-1 text-right">
           {VatRate.label(@item.vat_rate)}
+        </td>
+        <td :if={@show_discount?} class="py-1 text-right">
+          {Money.new(@sales_invoice.currency, @item.discount || Decimal.new(0), currency_symbol: "")}
         </td>
         <td class="py-1 text-right">
           {Money.new(
@@ -429,7 +445,10 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       <% end %>
       <%= if @sales_invoice.invoice_type == :foreign do %>
         <td class="py-1 text-right">
-          {Money.new!(@sales_invoice.currency, @item.unit_price)
+          {display_unit_price(Money.new!(@sales_invoice.currency, @item.unit_price))}
+        </td>
+        <td :if={@show_discount?} class="py-1 text-right">
+          {Money.new!(@sales_invoice.currency, @item.discount || Decimal.new(0))
           |> Money.to_string!(currency_symbol: "")}
         </td>
         <td class="py-1 text-right">
@@ -458,7 +477,11 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
         compare_vat_rate?
       )
 
-    assigns = assign(assigns, :rows, rows)
+    show_discount? =
+      Enum.any?(assigns.sales_invoice.sales_invoice_items, & &1.discount) or
+        Enum.any?(assigns.reference_invoice.sales_invoice_items, & &1.discount)
+
+    assigns = assign(assigns, rows: rows, show_discount?: show_discount?)
 
     ~H"""
     <div class="mb-4">
@@ -479,10 +502,12 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <%= if @show_vat do %>
                 <th class="text-right">Cena netto</th>
                 <th class="w-12 pl-5 text-center">Vat</th>
+                <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
                 <th class="text-right">Wartość netto</th>
                 <th class="text-right">Wartość brutto</th>
               <% else %>
                 <th class="text-right">Cena jednostkowa</th>
+                <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
                 <th class="text-right">Cena sumaryczna</th>
               <% end %>
             </tr>
@@ -494,6 +519,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <th class="text-right">Ilość</th>
               <th class="text-right">J. m.</th>
               <th class="text-right">Cena jednostkowa</th>
+              <th :if={@show_discount?} class="text-right">{gettext("Discount")}</th>
               <th class="text-right">Cena sumaryczna</th>
             </tr>
             <tr class="*:pb-1">
@@ -502,6 +528,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
               <th class="text-right">Count</th>
               <th class="text-right">Unit</th>
               <th class="text-right">Unit price</th>
+              <th :if={@show_discount?} class="text-right">Discount</th>
               <th class="text-right">Total price</th>
             </tr>
           <% end %>
@@ -511,6 +538,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
             :for={{item, index, struck} <- @rows}
             sales_invoice={@sales_invoice}
             show_vat={@show_vat}
+            show_discount?={@show_discount?}
             item={item}
             index={index}
             struck={struck}
@@ -1074,7 +1102,8 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       current.unit != reference.unit or
       (compare_vat_rate? and current.vat_rate != reference.vat_rate) or
       not Decimal.eq?(current.quantity, reference.quantity) or
-      not Decimal.eq?(current.unit_price, reference.unit_price)
+      not Decimal.eq?(current.unit_price, reference.unit_price) or
+      not Decimal.eq?(current.discount || Decimal.new(0), reference.discount || Decimal.new(0))
   end
 
   defp correction_table_rows(current_items, reference_items, compare_vat_rate?) do

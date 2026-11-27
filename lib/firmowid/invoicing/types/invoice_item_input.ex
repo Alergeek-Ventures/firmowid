@@ -9,6 +9,7 @@ defmodule Firmowid.Invoicing.Types.InvoiceItemInput do
         quantity: [type: :decimal, allow_nil?: false],
         unit: [type: :string, allow_nil?: false],
         unit_price: [type: :decimal, allow_nil?: false],
+        discount: [type: :decimal],
         vat_rate: [type: :string],
         gtu: [type: :string]
       ]

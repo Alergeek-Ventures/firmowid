@@ -459,6 +459,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             name: "Usługa A",
             quantity: Decimal.new("2"),
             unit_price: Decimal.new("100.00"),
+            discount: Decimal.new("10.00"),
             vat_rate: "23"
           }),
           base_item_attrs(%{
@@ -587,6 +588,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             name: "Pakiet Premium",
             quantity: Decimal.new("3"),
             unit_price: Decimal.new("99.99"),
+            discount: Decimal.new("9.99"),
             vat_rate: "23"
           })
         ]

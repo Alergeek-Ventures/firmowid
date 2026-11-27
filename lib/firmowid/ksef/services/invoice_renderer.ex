@@ -169,6 +169,16 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
 
   def format_decimal(value) when is_number(value), do: :erlang.float_to_binary(value / 1, decimals: 2)
 
+  @doc "Formats an FA(3) unit price with 2 to 8 decimal places and no insignificant trailing zeros."
+  @spec format_unit_price(Decimal.t()) :: String.t()
+  def format_unit_price(%Decimal{} = value) do
+    precision = value |> Decimal.normalize() |> Decimal.scale() |> max(2) |> min(8)
+
+    value
+    |> Decimal.round(precision)
+    |> Decimal.to_string(:normal)
+  end
+
   @doc """
   Formats quantity values with up to 6 decimal places (TIlosci type in XSD).
   Uses normal notation (not scientific) as required by XSD.
@@ -469,7 +479,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
   Checks if invoice items changed between current and reference invoice.
   Returns true if item count differs or any item field differs.
 
-  Compares: name, quantity, unit, unit_price, vat_rate
+  Compares: name, quantity, unit, unit_price, discount, vat_rate
   Ignores: id (always differs between invoices), timestamps
   """
   @spec invoice_items_changed?(map(), map()) :: boolean()
@@ -495,6 +505,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
       not Decimal.eq?(current.quantity, reference.quantity) or
       current.unit != reference.unit or
       not Decimal.eq?(current.unit_price, reference.unit_price) or
+      not Decimal.eq?(current.discount || Decimal.new(0), reference.discount || Decimal.new(0)) or
       current.vat_rate != reference.vat_rate or
       current.gtu != reference.gtu
   end
