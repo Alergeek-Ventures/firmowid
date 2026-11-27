@@ -27,6 +27,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Validations.ValidateLineDiscount
   alias Firmowid.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Resource
 
@@ -59,6 +60,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
       description "Create a sales invoice line item."
       primary? true
       accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu]
+      validate {ValidateLineDiscount, []}
       validate {ValidateVatRate, []}
     end
 
@@ -67,6 +69,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
       primary? true
       require_atomic? false
       accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu]
+      validate {ValidateLineDiscount, []}
       validate {ValidateVatRate, []}
     end
   end

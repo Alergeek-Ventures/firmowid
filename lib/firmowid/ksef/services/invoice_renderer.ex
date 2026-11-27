@@ -169,7 +169,7 @@ defmodule Firmowid.Ksef.Services.InvoiceRenderer do
 
   def format_decimal(value) when is_number(value), do: :erlang.float_to_binary(value / 1, decimals: 2)
 
-  @doc "Formats an FA(3) unit price with 2 to 8 decimal places and no insignificant trailing zeros."
+  @doc "Formats an FA(3) unit price or line discount with 2 to 8 decimal places."
   @spec format_unit_price(Decimal.t()) :: String.t()
   def format_unit_price(%Decimal{} = value) do
     precision = value |> Decimal.normalize() |> Decimal.scale() |> max(2) |> min(8)

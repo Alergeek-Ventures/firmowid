@@ -200,7 +200,7 @@
 						<P_8A><%= item.unit %></P_8A>
 						<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
 						<P_9A><%= T.format_unit_price(item.unit_price) %></P_9A>
-						<%= if not is_nil(item.discount) do %><P_10><%= T.format_decimal(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
+						<%= if not is_nil(item.discount) do %><P_10><%= T.format_unit_price(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
 						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
 						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 						<StanPrzed>1</StanPrzed>
@@ -214,7 +214,7 @@
 						<P_8A><%= item.unit %></P_8A>
 						<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
 						<P_9A><%= T.format_unit_price(item.unit_price) %></P_9A>
-						<%= if not is_nil(item.discount) do %><P_10><%= T.format_decimal(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
+						<%= if not is_nil(item.discount) do %><P_10><%= T.format_unit_price(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
 						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
 						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 					</FaWiersz>
@@ -231,7 +231,7 @@
 					<P_8A><%= item.unit %></P_8A>
 					<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
 					<P_9A><%= T.format_unit_price(item.unit_price) %></P_9A>
-					<%= if not is_nil(item.discount) do %><P_10><%= T.format_decimal(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
+					<%= if not is_nil(item.discount) do %><P_10><%= T.format_unit_price(item.discount) %></P_10><% end %><P_11><%= T.format_decimal(item.net_value) %></P_11>
 					<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
 						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 				</FaWiersz>

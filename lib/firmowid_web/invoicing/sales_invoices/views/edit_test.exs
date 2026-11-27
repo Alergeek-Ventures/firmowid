@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
   alias Firmowid.Finances
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.InvoicingFixtures
 
   test "draft review preserves edits and issues the selected custom number to KSeF", %{conn: conn} do
@@ -324,6 +325,81 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
     # A draft is issued today, so payment suggestions count from today.
     assert render(view) =~ ~s(value="#{Date.add(Firmowid.LocalDate.today(), 7)}")
+  end
+
+  test "correction form edits precise prices and rejects discounts above the edited line value",
+       %{
+         conn: conn
+       } do
+    admin = admin_fixture()
+    invoice = foreign_draft_fixture!(admin)
+    [item] = invoice.sales_invoice_items
+
+    Ash.Seed.update!(item, %{
+      quantity: Decimal.new("1"),
+      unit_price: Decimal.new("100"),
+      discount: Decimal.new("10"),
+      vat_rate: "23"
+    })
+
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      organization_id: admin.member.organization_id,
+      sales_invoice_id: invoice.id,
+      index: 1,
+      name: "Precise line",
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new("0.3333"),
+      vat_rate: "23"
+    })
+
+    Ash.Seed.update!(invoice, %{
+      invoice_number: "FV/TEST/DISCOUNT",
+      ksef_number: "KSEF-TEST",
+      ksef_invoice_checksum: "test-checksum"
+    })
+
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
+
+    assert has_element?(
+             view,
+             "input[name='form[sales_invoice_items][0][discount]'][type='number'][step='any']"
+           )
+
+    assert has_element?(
+             view,
+             "input[name='form[sales_invoice_items][1][unit_price]'][value='0.3333'][step='any']"
+           )
+
+    html =
+      view
+      |> form("#invoice-form", %{
+        "form" => %{
+          "sales_invoice_items" => %{
+            "0" => %{
+              "index" => "0",
+              "name" => "Line",
+              "quantity" => "0",
+              "unit" => "szt.",
+              "unit_price" => "100",
+              "discount" => "10",
+              "vat_rate" => "23"
+            },
+            "1" => %{
+              "index" => "1",
+              "name" => "Precise line",
+              "quantity" => "1",
+              "unit" => "szt.",
+              "unit_price" => "0.3333",
+              "vat_rate" => "23"
+            }
+          }
+        }
+      })
+      |> render_submit()
+
+    assert html =~ "Rabat musi mieścić się między zerem a wartością pozycji przed rabatem."
   end
 
   test "a draft opens the edit form, but an invoice issued outside KSeF cannot be edited", %{
