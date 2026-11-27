@@ -192,7 +192,7 @@
     ["<ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>", "<ul><li>3 banks, 5 users</li><li>Unlimited projects</li><li>Team leave and documents</li><li>Firmowid in ChatGPT and Claude</li></ul>"],
     [">Wypróbuj za darmo</a>", ">Try it for free</a>"],
     ["<h3>Firma</h3>", "<h3>Company</h3>"],
-    ["<ul><li>Wszystko bez limitu</li><li>Delegacje</li><li>Ewidencja czasu w PDF</li><li>Raport wypłat</li></ul>", "<ul><li>Everything unlimited</li><li>Business trips</li><li>Timesheets as PDF</li><li>Payroll report</li></ul>"],
+    ["<ul><li>Wszystko bez limitu</li><li>Delegacje</li></ul>", "<ul><li>Everything unlimited</li><li>Business trips</li></ul>"],
     ["Zanim założysz konto.", "Before you sign up."],
     ["Czy Firmowid zastąpi księgowość?", "Will Firmowid replace my accountant?"],
     ["Nie. To wynik zarządczy, nie podatkowy. Biuro księgowe dostaje od Ciebie paczkę faktur za miesiąc, a Ty wiesz, jak stoi firma, zanim przyjdzie rozliczenie.", "No. It shows a management result, not a tax one. Your accounting office gets a package of the month’s invoices from you, and you know how the company is doing before the tax settlement comes."],

@@ -193,7 +193,7 @@
     ["<ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>", "<ul><li>3 банки, 5 користувачів</li><li>Проєкти без ліміту</li><li>Відпустки й документи команди</li><li>Firmowid у ChatGPT і Claude</li></ul>"],
     [">Wypróbuj za darmo</a>", ">Спробуйте безкоштовно</a>"],
     ["<h3>Firma</h3>", "<h3>Компанія</h3>"],
-    ["<ul><li>Wszystko bez limitu</li><li>Delegacje</li><li>Ewidencja czasu w PDF</li><li>Raport wypłat</li></ul>", "<ul><li>Усе без ліміту</li><li>Відрядження</li><li>Облік часу в PDF</li><li>Звіт про виплати</li></ul>"],
+    ["<ul><li>Wszystko bez limitu</li><li>Delegacje</li></ul>", "<ul><li>Усе без ліміту</li><li>Відрядження</li></ul>"],
     ["Zanim założysz konto.", "Перш ніж створити акаунт."],
     ["Czy Firmowid zastąpi księgowość?", "Чи замінить Firmowid бухгалтерію?"],
     ["Nie. To wynik zarządczy, nie podatkowy. Biuro księgowe dostaje od Ciebie paczkę faktur za miesiąc, a Ty wiesz, jak stoi firma, zanim przyjdzie rozliczenie.", "Ні. Це управлінський результат, а не податковий. Бухгалтерське бюро отримує від вас пакет рахунків за місяць, а ви знаєте, як справи у фірми, ще до розрахунку."],
