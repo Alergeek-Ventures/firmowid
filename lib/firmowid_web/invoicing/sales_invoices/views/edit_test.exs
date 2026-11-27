@@ -99,8 +99,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
       }
     })
 
-    refute has_element?(view, "input[name='form[sales_invoice_items][0][discount]']")
+    refute has_element?(
+             view,
+             "input[name='form[sales_invoice_items][0][discount]'][type='number']"
+           )
 
+    # Switching back on starts from an empty discount, not the saved one.
+    view |> form("#invoice-form") |> render_change(%{"form" => %{"line_discounts" => "true"}})
+
+    assert has_element?(
+             view,
+             "input[name='form[sales_invoice_items][0][discount]'][type='number']"
+           )
+
+    refute has_element?(view, "input[name='form[sales_invoice_items][0][discount]'][value='10']")
+
+    view |> form("#invoice-form") |> render_change(%{"form" => %{"line_discounts" => "false"}})
     view |> form("#invoice-form") |> render_submit()
     view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
 
