@@ -83,7 +83,7 @@ O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku]
 
 ## Źródła
 
-- Firmowid, funkcje, ograniczenia publicznego kodu i licencja; weryfikacja 22.10.2026.
+- [Firmowid: kod źródłowy i licencja AGPL-3.0](https://github.com/Alergeek-Ventures/firmowid), dostęp 22.10.2026.
 - [Ministerstwo Finansów: Aplikacja Podatnika KSeF 2.0](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/), dostęp 27.10.2026.
 - [CISA: Back Up Business Data](https://www.cisa.gov/secure-our-world/back-business-data), dostęp 6.11.2026.
 - [CISA: Require Multifactor Authentication](https://www.cisa.gov/secure-our-world/require-multifactor-authentication), dostęp 6.11.2026.
