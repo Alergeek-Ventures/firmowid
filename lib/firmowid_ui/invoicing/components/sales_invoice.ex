@@ -356,8 +356,8 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
                   {VatRate.label(item.vat_rate)}
                 </td>
                 <td :if={@show_discount?} class="py-1 text-right">
-                  {Money.new(@sales_invoice.currency, item.discount || Decimal.new(0),
-                    currency_symbol: ""
+                  {display_unit_price(
+                    Money.new!(@sales_invoice.currency, item.discount || Decimal.new(0))
                   )}
                 </td>
                 <td class="py-1 text-right">
@@ -380,8 +380,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
                   {display_unit_price(Money.new!(@sales_invoice.currency, item.unit_price))}
                 </td>
                 <td :if={@show_discount?} class="py-1 text-right">
-                  {Money.new!(@sales_invoice.currency, item.discount || Decimal.new(0))
-                  |> Money.to_string!(currency_symbol: "")}
+                  {display_unit_price(
+                    Money.new!(@sales_invoice.currency, item.discount || Decimal.new(0))
+                  )}
                 </td>
                 <td class="py-1 text-right">
                   {Money.new!(
@@ -426,7 +427,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           {VatRate.label(@item.vat_rate)}
         </td>
         <td :if={@show_discount?} class="py-1 text-right">
-          {Money.new(@sales_invoice.currency, @item.discount || Decimal.new(0), currency_symbol: "")}
+          {display_unit_price(Money.new!(@sales_invoice.currency, @item.discount || Decimal.new(0)))}
         </td>
         <td class="py-1 text-right">
           {Money.new(
@@ -448,8 +449,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           {display_unit_price(Money.new!(@sales_invoice.currency, @item.unit_price))}
         </td>
         <td :if={@show_discount?} class="py-1 text-right">
-          {Money.new!(@sales_invoice.currency, @item.discount || Decimal.new(0))
-          |> Money.to_string!(currency_symbol: "")}
+          {display_unit_price(Money.new!(@sales_invoice.currency, @item.discount || Decimal.new(0)))}
         </td>
         <td class="py-1 text-right">
           {Money.new!(
