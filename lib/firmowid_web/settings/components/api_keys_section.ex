@@ -348,7 +348,8 @@ defmodule FirmowidWeb.Settings.Components.ApiKeysSection do
                 min={Date.to_iso8601(Date.add(LocalDate.today(), 1))}
                 disabled={@no_expiry?}
                 phx-debounce
-                input_class={[(:expires_on in @errors and not @no_expiry?) && "border-brick-700"]}
+                errors={if(:expires_on in @errors and not @no_expiry?, do: [""], else: [])}
+                show_error={false}
                 class="h-8 w-43 has-disabled:opacity-50"
               />
               <.button

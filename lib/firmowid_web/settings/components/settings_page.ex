@@ -16,14 +16,29 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   """
   @spec settings_page(map()) :: Rendered.t()
   attr :title, :string, default: nil
+
+  attr :back, :string,
+    default: nil,
+    doc: "The page a subpage goes back to, shown above its title."
+
+  attr :description, :string, default: nil, doc: "One line under the title."
+
   slot :inner_block, required: true
   slot :actions, doc: "Shown next to the title."
+  slot :icon, doc: "A logo before the title, such as an integration's."
 
   def settings_page(assigns) do
     ~H"""
     <section class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
+      <.back :if={@back} patch={@back} class="-mb-4 self-start" />
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold text-grey-900">{@title}</h1>
+        <div class="flex items-center gap-4">
+          {render_slot(@icon)}
+          <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-semibold text-grey-900">{@title}</h1>
+            <p :if={@description} class="text-sm/snug text-grey-700">{@description}</p>
+          </div>
+        </div>
         {render_slot(@actions)}
       </div>
       {render_slot(@inner_block)}

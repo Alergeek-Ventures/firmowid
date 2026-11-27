@@ -345,6 +345,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/czasosledz/ewidencja", HoursRecord.Views.Index, :index
       live "/ustawienia", Settings.Views.Index, :index
       live "/ustawienia/:section", Settings.Views.Index, :index
+      live "/ustawienia/integracje/:integration", Settings.Views.Index, :index
       live "/delegacje/dodaj", DelegationForm, :new
       live "/delegacje/:reference/edycja", DelegationForm, :edit
       live "/delegacje/:reference", Delegations.Views.Delegation, :show
