@@ -168,7 +168,10 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       invoice =
         create_sales_invoice!(
           user,
-          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+          Map.merge(base_invoice_attrs(), %{
+            seller_account_swift: "WBKPPLPP",
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
         )
 
       InvoicingFixtures.connect_ksef!(user.member.organization_id)
@@ -181,7 +184,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
         sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("50")})]
       }
 
-      assert {:ok, _correction} =
+      assert {:ok, correction} =
                Oban.Testing.with_testing_mode(:manual, fn ->
                  assert {:error, %Invalid{errors: errors}} =
                           SalesInvoice.correct(correction_attrs, scope: scope)
@@ -204,6 +207,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       invoice = Ash.load!(invoice, [:effective_amount], scope: scope)
 
+      assert correction.seller_account_swift == "WBKPPLPP"
       assert Decimal.equal?(Money.to_decimal(invoice.effective_amount), Decimal.new("61.50"))
       assert Money.to_currency_code(invoice.effective_amount) == :PLN
     end
@@ -696,6 +700,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
           Map.merge(base_invoice_attrs(), %{
             buyer_id: "1234567897",
             buyer_country: "SE",
+            seller_account_swift: "WBKPPLPP",
             sales_invoice_items: [base_item_attrs(%{})]
           })
         )
@@ -712,6 +717,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  SalesInvoice.cancel(original.id, %{confirm_corrected_buyer_vat_id: true}, scope: scope_for(user))
 
         assert correction.buyer_id == "1234567897"
+        assert correction.seller_account_swift == "WBKPPLPP"
       end)
     end
 

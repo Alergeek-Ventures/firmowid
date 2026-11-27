@@ -107,7 +107,13 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
   defp transfer(%{payment_method: :transfer, seller_account_number: account} = invoice, seller, lang)
        when is_binary(account) and account != "" do
     account = if lang == :en, do: iban(account), else: account
-    %{recipient: seller, account: account, title: invoice.invoice_number}
+
+    %{
+      recipient: seller,
+      account: account,
+      swift: Map.get(invoice, :seller_account_swift),
+      title: invoice.invoice_number
+    }
   end
 
   defp transfer(_invoice, _seller, _lang), do: nil
@@ -204,6 +210,9 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
                 {line}
               </span>
             </.field>
+            <.field :if={@content.transfer.swift not in [nil, ""]} label="SWIFT">
+              {@content.transfer.swift}
+            </.field>
             <.field label={@copy.title}>{@content.transfer.title}</.field>
           </div>
         </:right>
@@ -252,8 +261,9 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       "",
       content.amount && "Do zapłaty (brutto): #{content.amount}",
       content.due_date && "Termin płatności: #{content.due_date}",
-      content.transfer &&
-        "Numer konta: #{content.transfer.account}\nTytuł przelewu: #{content.transfer.title}",
+      content.transfer && "Numer konta: #{content.transfer.account}",
+      content.transfer && content.transfer.swift && "SWIFT: #{content.transfer.swift}",
+      content.transfer && "Tytuł przelewu: #{content.transfer.title}",
       content.share_url && "\nZobacz fakturę: #{content.share_url}"
     ])
   end
@@ -265,8 +275,9 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       "",
       content.amount && "Amount due (gross): #{content.amount}",
       content.due_date && "Due date: #{content.due_date}",
-      content.transfer &&
-        "IBAN: #{content.transfer.account}\nTransfer title: #{content.transfer.title}",
+      content.transfer && "IBAN: #{content.transfer.account}",
+      content.transfer && content.transfer.swift && "SWIFT: #{content.transfer.swift}",
+      content.transfer && "Transfer title: #{content.transfer.title}",
       content.share_url && "\nView invoice: #{content.share_url}"
     ])
   end

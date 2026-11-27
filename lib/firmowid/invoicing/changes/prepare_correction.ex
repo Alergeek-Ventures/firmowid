@@ -32,6 +32,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
     :seller_name,
     :seller_surname,
     :seller_account_number,
+    :seller_account_swift,
     :vat_exemption_type,
     :vat_exemption_basis,
     :counterparty_id,

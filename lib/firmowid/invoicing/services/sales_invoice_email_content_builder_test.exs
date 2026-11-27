@@ -15,7 +15,8 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilderTest do
       is_paid_on_issue: false,
       is_correction: false,
       payment_method: :transfer,
-      seller_account_number: "61 1090 1014 0000 0712 1981 2874"
+      seller_account_number: "61 1090 1014 0000 0712 1981 2874",
+      seller_account_swift: "WBKPPLPP"
     }
 
     share_url = "https://firmowid.example/faktury/FV-1"
@@ -27,6 +28,9 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilderTest do
     assert html =~ "Faktura od Acme &lt;sp. z o.o.&gt;"
     assert html =~ "01.09.2026"
     assert html =~ "61 1090 1014 0000 0712 1981 2874"
+    assert html =~ "SWIFT"
+    assert html =~ "WBKPPLPP"
+    assert text =~ "SWIFT: WBKPPLPP"
     assert text =~ "12\u00A0300,00\u00A0zł"
     assert text =~ share_url
   end

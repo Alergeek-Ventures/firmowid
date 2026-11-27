@@ -106,6 +106,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                           :seller_nip,
                           :seller_display_name,
                           :seller_address,
+                          :seller_account_swift,
                           :ksef_number,
                           :ksef_invoice_checksum,
                           :ksef_permanent_storage_date,
@@ -478,6 +479,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         :payment_method,
         :currency,
         :seller_account_number,
+        :seller_account_swift,
         :vat_exemption_type,
         :vat_exemption_basis,
         :buyer_type,
@@ -1257,6 +1259,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     attribute :seller_name, :string, public?: true
     attribute :seller_surname, :string, public?: true
     attribute :seller_account_number, :string, public?: true
+    attribute :seller_account_swift, :string, public?: true
 
     attribute :buyer_type, :atom,
       constraints: [one_of: [:individual, :company]],

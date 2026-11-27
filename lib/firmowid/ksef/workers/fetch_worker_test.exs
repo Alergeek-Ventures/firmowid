@@ -373,7 +373,12 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     package = [
       %{ksef_number: confirmed.ksef_number, number: confirmed.invoice_number, kind: "VAT"},
       %{ksef_number: "KSEF-PENDING-#{suffix}", number: pending.invoice_number, kind: "VAT"},
-      %{ksef_number: "KSEF-OTHER-#{suffix}", number: "OTHER/#{suffix}", kind: "VAT"},
+      %{
+        ksef_number: "KSEF-OTHER-#{suffix}",
+        number: "OTHER/#{suffix}",
+        kind: "VAT",
+        swift: "WBKPPLPP"
+      },
       %{ksef_number: "KSEF-ADVANCE-#{suffix}", number: "ZAL/#{suffix}", kind: "ZAL"}
     ]
 
@@ -381,7 +386,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     |> Enum.map(fn invoice ->
       %{
         ksef_number: invoice.ksef_number,
-        xml: sales_invoice_xml(invoice.number, kind: invoice.kind),
+        xml: sales_invoice_xml(invoice.number, kind: invoice.kind, swift: invoice[:swift]),
         permanent_storage_date: storage_date
       }
     end)
@@ -407,6 +412,8 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     assert imported.issue_date == ~D[2026-03-06]
     assert imported.seller_display_name == "Other Software Seller"
     assert imported.buyer_full_name == "Kupiec Sp. z o.o."
+    assert imported.seller_account_number == "12345678901234567890123456"
+    assert imported.seller_account_swift == "WBKPPLPP"
 
     assert [%{name: "Usługa", unit_price: unit_price, vat_rate: "23"}] =
              imported.sales_invoice_items
@@ -891,10 +898,14 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
           <FormaPlatnosci>6</FormaPlatnosci>
           <RachunekBankowy>
             <NrRB>12345678901234567890123456</NrRB>
+            #{swift_xml(opts[:swift])}
           </RachunekBankowy>
         </Platnosc>
       </Fa>
     </Faktura>
     """
   end
+
+  defp swift_xml(nil), do: ""
+  defp swift_xml(swift), do: "<SWIFT>#{swift}</SWIFT>"
 end

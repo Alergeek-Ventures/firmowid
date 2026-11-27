@@ -29,6 +29,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     :seller_display_name,
     :seller_address,
     :seller_account_number,
+    :seller_account_swift,
     :buyer_type,
     :buyer_id,
     :buyer_full_name,
