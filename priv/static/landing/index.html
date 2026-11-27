@@ -251,6 +251,8 @@
       <ul class="assist__facts reveal">
         <li>Czyta te same faktury, przelewy i godziny co <a href="/funkcje/analiza">Analiza</a>.</li>
         <li>Wystawi fakturę albo dopasuje przelew. Każdą zmianę zatwierdzasz sam.</li>
+        <li>W ChatGPT instalujesz Firmowid jako plugin, w każdym planie.</li>
+        <li>Te same narzędzia ma <a href="/api/v1/docs">API</a>, więc sklep sam wystawi fakturę do zamówienia.</li>
       </ul>
     </div>
     <div class="chat reveal" id="chat" aria-label="Przykładowa rozmowa z asystentem">
@@ -408,19 +410,19 @@
     <div class="toggle" id="billing" role="group" aria-label="Okres rozliczeniowy">
       <button class="on" data-b="m" aria-pressed="true">Miesięcznie</button><button data-b="y" aria-pressed="false">Rocznie <em>−20%</em></button>
     </div>
-    <p class="pricing__fine">Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca.</p>
+    <p class="pricing__fine">Płatne plany są bez opłat przez pierwsze 60 dni.</p>
     <div class="plans">
       <article class="plan reveal">
         <h3>Darmowy</h3>
         <p class="plan__price"><b>0</b> zł <span>na zawsze</span></p>
-        <ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li></ul>
+        <ul><li>Faktury i KSeF bez limitu</li><li>1 bank z parowaniem przelewów</li><li>Czas pracy do 3 projektów</li><li>2 użytkowników</li><li>Firmowid w ChatGPT i Claude</li></ul>
         <a class="btn btn--sketch" href="/zarejestruj" data-landing-cta="pricing_free">Załóż darmowe konto</a>
       </article>
       <article class="plan plan--top reveal">
         <span class="plan__badge">Najczęściej wybierany</span>
         <h3>Przedsiębiorca</h3>
         <p class="plan__price"><b data-m="29" data-y="23">29</b> zł <span>/ mies. netto</span><em class="save">oszczędzasz 72 zł rocznie</em></p>
-        <ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Firmowid w ChatGPT i Claude</li></ul>
+        <ul><li>3 banki, 5 użytkowników</li><li>Projekty bez limitu</li><li>Urlopy i dokumenty zespołu</li><li>Asystent AI w aplikacji</li></ul>
         <a class="btn btn--rust" href="/zarejestruj" data-landing-cta="pricing_przedsiebiorca">Wypróbuj za darmo</a>
       </article>
       <article class="plan reveal">
