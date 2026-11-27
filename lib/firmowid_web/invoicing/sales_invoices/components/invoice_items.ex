@@ -120,19 +120,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp to_boolean("true"), do: true
   defp to_boolean("false"), do: false
 
-  # With the discount switch off, a discount typed before switching it off no longer counts.
-  defp item_net_value(item_form, discount?) do
+  defp item_net_value(item_form) do
     unit_price = parse_decimal(item_form[:unit_price].value)
     quantity = parse_decimal(item_form[:quantity].value)
-    discount = (discount? && parse_decimal(item_form[:discount].value)) || Decimal.new(0)
+    discount = parse_decimal(item_form[:discount].value) || Decimal.new(0)
 
     if unit_price && quantity,
       do: Decimal.sub(Decimal.mult(unit_price, quantity), discount),
       else: Decimal.new(0)
   end
 
-  defp item_gross_value(item_form, discount?) do
-    net = item_net_value(item_form, discount?)
+  defp item_gross_value(item_form) do
+    net = item_net_value(item_form)
     vat_rate = to_string(item_form[:vat_rate].value || "0")
     vat_rate_numeric = VatRate.to_numeric(vat_rate)
     vat = Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
@@ -313,6 +312,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp form_valid?(%AshPhoenix.Form{} = form), do: form.valid?
 
+  @doc """
+  Clears every line discount in the submitted invoice params when the discount switch is off.
+
+  The event that switches it off still carries the discount inputs, so the views run this before
+  validating or saving.
+  """
+  @spec clear_switched_off_discounts(map(), atom()) :: map()
+  def clear_switched_off_discounts(%{"line_discounts" => "false"} = params, items_field) do
+    Map.update(params, to_string(items_field), %{}, fn items ->
+      Map.new(items, fn {index, item} -> {index, Map.put(item, "discount", nil)} end)
+    end)
+  end
+
+  def clear_switched_off_discounts(params, _items_field), do: params
+
   attr :invoice, :any, required: true
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
@@ -365,18 +379,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     drop_param = "#{form_name}[#{drop_param_name(source, items_field)}][]"
     add_param = sort_param
 
-    discount? = line_discounts?(items_form, items)
-
     assigns = %{
       invoice: invoice,
       items_form: items_form,
       items_field: items_field,
       currency: currency,
-      summary:
-        invoice_summary(
-          if(discount?, do: items, else: Enum.map(items, &%{&1 | discount: nil})),
-          currency
-        ),
+      summary: invoice_summary(items, currency),
       single_item?: single_item?,
       show_exemption?: show_exemption?,
       # Reverse charge and non-VAT payers show one value per item instead of VAT and gross prices.
@@ -389,7 +397,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
       discount_error: discount_error,
-      discount?: discount?,
+      discount?: line_discounts?(items_form, items),
       valid?: form_valid?(source),
       show_vat: show_vat,
       item_suggestions: input_assigns.item_suggestions,
@@ -713,7 +721,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     </:fallback>
                   </.hidden_input>
 
-                  <input :if={not @discount?} type="hidden" name={item[:discount].name} value="" />
                   <.input
                     :if={@discount?}
                     field={item[:discount]}
@@ -785,7 +792,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     </.hidden_input>
                   <% else %>
                     <% gross_value =
-                      Money.new(@currency, item_gross_value(item, @discount?)) %>
+                      Money.new(@currency, item_gross_value(item)) %>
 
                     <%!-- Narrows with the "VAT / jedn." column of the VAT layout. --%>
                     <p class={[

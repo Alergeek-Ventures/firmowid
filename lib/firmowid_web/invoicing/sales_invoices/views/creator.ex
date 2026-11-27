@@ -737,7 +737,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp normalize_price_input_params(params, items_field, target \\ :all) do
     indexes = PriceInput.gross_value_indexes(params, items_field, target)
 
-    PriceInput.normalize_gross_value_params(params, items_field, indexes)
+    params
+    |> PriceInput.normalize_gross_value_params(items_field, indexes)
+    |> InvoiceItems.clear_switched_off_discounts(items_field)
   end
 
   defp parse_sort_order(raw_sort_order), do: PolishValues.parse_sort_order(raw_sort_order) || :asc

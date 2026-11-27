@@ -885,7 +885,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp normalize_price_input_params(params, target \\ :all) do
     indexes = PriceInput.gross_value_indexes(params, :sales_invoice_items, target)
 
-    PriceInput.normalize_gross_value_params(params, :sales_invoice_items, indexes)
+    params
+    |> PriceInput.normalize_gross_value_params(:sales_invoice_items, indexes)
+    |> InvoiceItems.clear_switched_off_discounts(:sales_invoice_items)
   end
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :advance}) do
