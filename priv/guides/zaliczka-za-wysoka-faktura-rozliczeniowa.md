@@ -2,7 +2,7 @@
 title: "Zaliczka wyższa niż cena końcowa: korekta w KSeF"
 description: "Zaliczka przewyższa cenę końcową? Sprawdź, którą fakturę skorygować w KSeF, jak zwrócić różnicę i jakie dane przygotować."
 published: 2026-11-06
-updated: 2026-11-24
+updated: 2026-11-27
 category: ksef-w-praktyce
 ---
 
@@ -31,9 +31,6 @@ W tym przykładzie wystawiasz fakturę korygującą do faktury zaliczkowej na 24
 6. Zwróć różnicę przelewem z numerem korygowanej faktury w tytule.
 
 ## Który dokument wystawić
-
-![Który dokument wystawić przy rozliczeniu zaliczki: faktura końcowa, brak rozliczenia albo faktura korygująca.](/images/guides/rozliczenie-zaliczki-ktory-dokument.webp)
-*Dokument zależy od tego, czy zaliczka pokrywa cenę.*
 
 | Sytuacja | Dokument |
 |---|---|
