@@ -76,7 +76,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.PdfTest do
     assert has_element?(view, "button", "Pobierz faktury (ZIP)")
 
     {:ok, list, _} = live(conn, ~p"/fakturowanie?filtr=faktury&podfiltr=zakupowe")
-    render_async(list, 2_000)
+    render_async(list)
 
     refute has_element?(list, "a[href='#{Navigation.cost_invoice_pdf_preview_path(original)}']")
     assert has_element?(list, "a[data-phx-link='redirect'][href^='/kosztowe/#{original.id}']")
