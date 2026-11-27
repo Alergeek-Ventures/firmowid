@@ -23,7 +23,7 @@ defmodule Firmowid.Analysis.CategoryReview do
           nip: String.t() | nil,
           transfer_names: [String.t()],
           accounts: [String.t()],
-          salary_user_id: Ash.UUID.t() | nil,
+          salary_person: Ash.UUID.t() | nil,
           certain: IndustryTemplate.category() | nil,
           classified: IndustryTemplate.category() | nil,
           probability: float() | nil,
@@ -38,7 +38,8 @@ defmodule Firmowid.Analysis.CategoryReview do
   Groups are sorted by amount, largest first; `months` holds their amount per
   month and `names` the names of its counterparty in any category, one per key. The salaries
   group has no `key`, `name` or `names`, but `people`, the ids of the users
-  paid per month. A group the classifier suggested has the `probability` of its
+  paid per month (a transfer whose user is gone counts as a person of its own). A group the
+  classifier suggested has the `probability` of its
   least certain entry and, as `options`, the categories the classifier found
   comparable for that entry, its own first. Every group keeps its `entries`. `unclassified` lists the entries still waiting for the classifier:
   without a confirmed counterparty, a certain signal or a stored category;
@@ -172,7 +173,7 @@ defmodule Firmowid.Analysis.CategoryReview do
     # A salary keeps its own name, so a supplier's rule never takes it out of the salaries group.
     account_names =
       for entry <- without_nip,
-          entry.salary_user_id == nil,
+          entry.salary_person == nil,
           account <- entry.accounts,
           [nip] <- [Map.get(owners, {entry.side, account}, [])],
           do: {{entry.side, nip}, key(entry.name), :linked}
@@ -254,7 +255,7 @@ defmodule Firmowid.Analysis.CategoryReview do
 
   # Payroll salaries are one group, also of people the owner confirmed: each person's amount is
   # nobody's business in the overview.
-  defp group_by({%{salary_user_id: user} = entry, _key, {:payroll, _source}}) when user != nil,
+  defp group_by({%{salary_person: person} = entry, _key, {:payroll, _source}}) when person != nil,
     do: {entry.side, nil, :payroll, :salaries}
 
   defp group_by({entry, key, {category, source}}), do: {entry.side, key, category, source == :confirmed}
@@ -280,7 +281,7 @@ defmodule Firmowid.Analysis.CategoryReview do
         if(key == nil,
           do:
             entries
-            |> Enum.group_by(& &1.month, & &1.salary_user_id)
+            |> Enum.group_by(& &1.month, & &1.salary_person)
             |> Map.new(fn {month, users} -> {month, MapSet.new(users)} end)
         ),
       amount: sum(entries),

@@ -1,6 +1,9 @@
 defmodule Firmowid.Core.OrganizationExternalCleanup do
   @moduledoc """
-  Best-effort cleanup of organization-owned remote data before local deletion.
+  Best-effort cleanup of organization-owned remote data once the local deletion has committed.
+
+  What the deletion erases (requisitions, KSeF credential) is captured beforehand;
+  nothing remote is destroyed unless the local transaction commits.
 
   Reports only stable failure categories and identifiers for manual recovery;
   never sends remote responses, object keys or credential material to Sentry.
@@ -12,7 +15,9 @@ defmodule Firmowid.Core.OrganizationExternalCleanup do
   alias Ash.Error.Unknown
   alias Firmowid.ErrorKind
   alias Firmowid.Finances.GoCardless.ApiClient
+  alias Firmowid.Finances.Requisition
   alias Firmowid.Ksef
+  alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.CredentialMetadata
   alias Firmowid.Scope
   alias Firmowid.Sentry
@@ -20,24 +25,39 @@ defmodule Firmowid.Core.OrganizationExternalCleanup do
 
   require Logger
 
-  @doc "Attempt each remote cleanup independently and report failures."
-  @spec run(String.t(), [String.t()]) :: :ok
-  def run(organization_id, requisition_ids) do
-    # The caller has authorized organization deletion. Use this tenant-bound
-    # system role only for KSeF, not for parent authorization or other cleanup.
-    ksef_scope = %Scope{
-      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
-      tenant: organization_id
+  @typedoc "What remote cleanup needs, captured before the local deletion erases it."
+  @type captured :: %{
+          organization_id: String.t(),
+          requisition_ids: [String.t()],
+          ksef_identifiers: map(),
+          ksef_revocation: Ksef.revocation_request() | nil
+        }
+
+  @doc """
+  Captures the remote cleanup inputs that the local deletion erases: the open
+  requisitions and the KSeF credential data. Destroys nothing remotely, and a
+  failure is reported and leaves that input out, never blocking the deletion.
+  """
+  @spec capture(String.t(), Scope.t()) :: captured()
+  def capture(organization_id, cleanup_scope) do
+    {ksef_identifiers, ksef_revocation} = capture_ksef(organization_id)
+
+    %{
+      organization_id: organization_id,
+      requisition_ids: capture_requisition_ids(organization_id, cleanup_scope),
+      ksef_identifiers: ksef_identifiers,
+      ksef_revocation: ksef_revocation
     }
+  end
 
-    # Capture the recovery identifier before cleanup can erase credentials.
-    ksef_identifiers = ksef_identifiers(organization_id, ksef_scope)
-
+  @doc "Attempt each remote cleanup independently and report failures."
+  @spec run(captured()) :: :ok
+  def run(%{organization_id: organization_id} = captured) do
     attempt(organization_id, "s3", "delete_objects", %{}, fn ->
       Firmowid.S3Client.delete_organization_objects(organization_id)
     end)
 
-    Enum.each(requisition_ids, fn requisition_id ->
+    Enum.each(captured.requisition_ids, fn requisition_id ->
       attempt(
         organization_id,
         "gocardless",
@@ -49,48 +69,87 @@ defmodule Firmowid.Core.OrganizationExternalCleanup do
       )
     end)
 
-    attempt(organization_id, "ksef", "unauthenticate", ksef_identifiers, fn ->
-      Ksef.unauthenticate(ksef_scope)
-    end)
+    if captured.ksef_revocation do
+      attempt(organization_id, "ksef", "unauthenticate", captured.ksef_identifiers, fn ->
+        Ksef.revoke_remote(captured.ksef_revocation)
+      end)
+    end
 
     :ok
   end
 
-  defp ksef_identifiers(organization_id, scope) do
-    case Ksef.get_credential(scope: scope) do
-      {:ok, %{auth_type: :generated_certificate} = credential} ->
-        serial = CredentialMetadata.certificate_serial_number(credential)
+  defp capture_requisition_ids(organization_id, cleanup_scope) do
+    case Requisition.list(%{remote_deleted?: false}, scope: cleanup_scope, query: [select: [:id]]) do
+      {:ok, requisitions} ->
+        Enum.map(requisitions, & &1.id)
 
-        if Regex.match?(~r/\A[0-9A-F]{16,40}\z/, serial) do
-          %{certificate_serial_number: serial}
-        else
-          report(
-            organization_id,
-            "ksef",
-            "read_certificate_metadata",
-            %{},
-            :invalid_certificate_serial
-          )
+      {:error, reason} ->
+        report(organization_id, "gocardless", "list_requisitions", %{}, reason)
+        []
+    end
+  end
 
-          %{}
-        end
+  defp capture_ksef(organization_id) do
+    # The caller has authorized organization deletion. Use this tenant-bound
+    # system role only for KSeF, not for parent authorization or other cleanup.
+    ksef_scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
 
-      {:ok, _credential} ->
-        %{}
+    case Ksef.get_credential(scope: ksef_scope) do
+      {:ok, %Credential{} = credential} ->
+        identifiers = ksef_identifiers(organization_id, credential)
+        {identifiers, ksef_revocation(organization_id, credential, identifiers)}
+
+      {:ok, nil} ->
+        {%{}, nil}
 
       {:error, reason} ->
         report(organization_id, "ksef", "read_certificate_metadata", %{}, reason)
-        %{}
+        {%{}, nil}
     end
   rescue
     error ->
       report(organization_id, "ksef", "read_certificate_metadata", %{}, error)
-      %{}
+      {%{}, nil}
   catch
     kind, _reason ->
       report(organization_id, "ksef", "read_certificate_metadata", %{}, kind)
-      %{}
+      {%{}, nil}
   end
+
+  defp ksef_revocation(organization_id, credential, identifiers) do
+    Ksef.revocation_request(credential)
+  rescue
+    error ->
+      report(organization_id, "ksef", "capture_revocation", identifiers, error)
+      nil
+  catch
+    kind, _reason ->
+      report(organization_id, "ksef", "capture_revocation", identifiers, kind)
+      nil
+  end
+
+  defp ksef_identifiers(organization_id, %Credential{auth_type: :generated_certificate} = credential) do
+    serial = CredentialMetadata.certificate_serial_number(credential)
+
+    if Regex.match?(~r/\A[0-9A-F]{16,40}\z/, serial) do
+      %{certificate_serial_number: serial}
+    else
+      report(
+        organization_id,
+        "ksef",
+        "read_certificate_metadata",
+        %{},
+        :invalid_certificate_serial
+      )
+
+      %{}
+    end
+  end
+
+  defp ksef_identifiers(_organization_id, %Credential{}), do: %{}
 
   @doc "Log safe failure categories and send a sanitized failure report to Sentry."
   @spec report_local_failure(String.t(), String.t(), term()) :: :ok

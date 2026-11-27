@@ -21,7 +21,6 @@ defmodule Firmowid.Core do
   alias Firmowid.Core.OrganizationInvite
   alias Firmowid.Core.RegisteredCompany
   alias Firmowid.Core.User
-  alias Firmowid.Finances.Requisition
   alias Firmowid.Invoicing.KsefInvoiceDigest
   alias Firmowid.Invoicing.KsefInvoiceDigestItem
   alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
@@ -308,10 +307,11 @@ defmodule Firmowid.Core do
   @doc """
   Destroys a user inside a single explicit Ash transaction.
 
-  For each organization the user owns, best-effort remote cleanup happens after
-  authorization and before the local transaction. Organization cleanup and the
-  final user destroy share that transaction. Local failures roll it back and
-  are reported for manual follow-up when remote cleanup was attempted.
+  For each organization the user owns, the data remote cleanup needs is captured
+  after authorization and before the local transaction. Organization cleanup and
+  the final user destroy share that transaction. Only once it commits does
+  best-effort remote cleanup run; local failures roll back, destroy nothing
+  remotely and are reported for manual follow-up.
   """
   @spec destroy_user(User.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_user(%User{} = user, opts \\ []) do
@@ -321,10 +321,14 @@ defmodule Firmowid.Core do
     with :ok <- authorize_destroy(user, opts),
          :ok <-
            each_ok(owned, fn {organization, owner_opts} ->
-             prepare_organization_deletion(organization, owner_opts)
+             authorize_destroy(organization, owner_opts)
            end) do
+      captured =
+        Enum.map(owned, fn {organization, _opts} -> capture_remote_cleanup(organization) end)
+
       result =
         with :ok <- transact(fn -> destroy_user_in_transaction(user, opts) end) do
+          Enum.each(captured, &OrganizationExternalCleanup.run/1)
           each_ok(owned, fn {organization, _opts} -> remove_wizard_states(organization) end)
         end
 
@@ -337,16 +341,21 @@ defmodule Firmowid.Core do
   end
 
   @doc """
-  Destroys an organization after authorized, best-effort remote cleanup.
+  Destroys an organization, then cleans up its remote data on a best-effort basis.
 
-  Remote failures are reported but do not prevent the local transaction. Local
-  failures roll back database changes and are reported for manual follow-up.
+  What the cleanup needs is captured after authorization, before the local
+  transaction. Remote failures are reported but never undo the deletion. Local
+  failures roll back database changes, destroy nothing remotely and are
+  reported for manual follow-up.
   """
   @spec destroy_organization(Organization.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_organization(%Organization{} = organization, opts \\ []) do
-    with :ok <- prepare_organization_deletion(organization, opts) do
+    with :ok <- authorize_destroy(organization, opts) do
+      captured = capture_remote_cleanup(organization)
+
       result =
         with :ok <- transact(fn -> destroy_organization_in_transaction(organization, opts) end) do
+          OrganizationExternalCleanup.run(captured)
           remove_wizard_states(organization)
         end
 
@@ -477,16 +486,8 @@ defmodule Firmowid.Core do
     end
   end
 
-  defp prepare_organization_deletion(organization, opts) do
-    with :ok <- authorize_destroy(organization, opts),
-         {:ok, requisitions} <-
-           Requisition.list(%{remote_deleted?: false},
-             scope: organization_cleanup_scope(organization),
-             query: [select: [:id]]
-           ) do
-      OrganizationExternalCleanup.run(organization.id, Enum.map(requisitions, & &1.id))
-    end
-  end
+  defp capture_remote_cleanup(organization),
+    do: OrganizationExternalCleanup.capture(organization.id, organization_cleanup_scope(organization))
 
   defp ensure_actor(opts, actor) do
     if Keyword.has_key?(opts, :scope) or Keyword.has_key?(opts, :actor) do
