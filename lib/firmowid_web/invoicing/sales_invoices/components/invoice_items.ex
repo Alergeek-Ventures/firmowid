@@ -721,6 +721,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     </:fallback>
                   </.hidden_input>
 
+                  <%!-- Keeps the cleared discount in the params, so switching back on does not
+                  bring back the saved one. --%>
+                  <input :if={not @discount?} type="hidden" name={item[:discount].name} value="" />
                   <.input
                     :if={@discount?}
                     field={item[:discount]}
