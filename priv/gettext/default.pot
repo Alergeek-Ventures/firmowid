@@ -5513,11 +5513,6 @@ msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
-msgid "Everything your business needs."
-msgstr ""
-
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
 msgid "Example conversation and invoice confirmation preview"
 msgstr ""
 
@@ -6506,11 +6501,6 @@ msgstr ""
 msgid "Hours record change request"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex
-#, elixir-autogen, elixir-format
-msgid "Hours that count themselves"
-msgstr ""
-
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/management/views/employees.ex
@@ -7172,6 +7162,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices, bank accounts and users without plan limits."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Invoices, bank and team hours."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
@@ -14920,6 +14915,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Work session"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/sections.ex
+#, elixir-autogen, elixir-format
+msgid "Working hours assigned to projects"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/transcript.ex

@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     },
     %{
       tags: [gettext_noop("record-keeping"), gettext_noop("working hours")],
-      title: gettext_noop("Hours that count themselves"),
+      title: gettext_noop("Working hours assigned to projects"),
       description:
         gettext_noop(
           "An employee starts the timer under a project or enters hours by hand. The hours go to the monthly timesheet and to the cost of the project."
@@ -271,7 +271,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             tag_name={@heading_tag}
             class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:max-w-279 lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]"
           >
-            {gettext("Everything your business needs.")}<br class="hidden lg:block" />
+            {gettext("Invoices, bank and team hours.")}<br class="hidden lg:block" />
             {gettext("In one place.")}
           </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-700 lg:hidden lg:max-w-115">
