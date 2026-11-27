@@ -2,7 +2,7 @@
 title: "Program do ewidencji czasu pracy w projektach"
 description: "Czasośledź mierzy czas pracy w projektach. Godziny trafiają do miesięcznej ewidencji, kosztu projektu i raportu wypłat, w tym samym programie co faktury i bank."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Czas pracy"
   note: "start, stop i gotowe"
@@ -98,7 +98,7 @@ Na liście zespołu masz godziny każdej osoby w wybranym miesiącu i znaczek, c
 | Przedsiębiorca | 29 zł | 5 | bez limitu |
 | Firma | 149 zł | bez limitu | bez limitu |
 
-Cena jest za firmę, a nie za osobę. Ewidencja godzin w PDF i raport wypłat należą do planu Firma.
+Cena jest za firmę, a nie za osobę. Ewidencja godzin w PDF i raport wypłat są w każdym planie.
 
 ## Porównanie z innymi programami
 
