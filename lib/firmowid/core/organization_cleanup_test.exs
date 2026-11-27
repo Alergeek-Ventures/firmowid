@@ -1,6 +1,7 @@
 defmodule Firmowid.Core.OrganizationCleanupTest do
   @moduledoc "Checks account-scoped OAuth cleanup after the read/list split."
-  use Firmowid.DataCase, async: true
+  # One test adds a trigger to `requisitions`; its lock would stall concurrent tests writing there.
+  use Firmowid.DataCase, async: false
 
   import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
@@ -155,6 +156,14 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
     end
 
     test "does not run when the deletion fails", ctx do
+      parent = self()
+      seed_ksef_session(ctx.organization.id)
+
+      Req.Test.stub(:ksef_api, fn conn ->
+        send(parent, {:ksef, conn.method, conn.request_path})
+        Plug.Conn.send_resp(conn, 204, "")
+      end)
+
       # Rolled back with the test's transaction, like everything else.
       Firmowid.Repo.query!("""
       CREATE FUNCTION fail_requisition_delete() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -171,25 +180,14 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
       end)
 
       refute_received {:gocardless, _method, _path, _exists}
+      refute_received {:ksef, _method, _path}
       assert Firmowid.Repo.get(Organization, ctx.organization.id)
     end
 
     test "revokes the KSeF session captured before its credential was deleted", ctx do
       organization_id = ctx.organization.id
       parent = self()
-
-      Ash.Seed.seed!(Credential, %{
-        organization_id: organization_id,
-        status: :working,
-        auth_type: :token,
-        credentials: "token-#{System.unique_integer([:positive])}"
-      })
-
-      Cachex.put(
-        :ksef,
-        {:access_token, organization_id},
-        Firmowid.Ksef.KsefTestHelpers.jwt(3_600)
-      )
+      seed_ksef_session(organization_id)
 
       Req.Test.stub(:ksef_api, fn conn ->
         send(
@@ -206,6 +204,17 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
 
       assert_received {:ksef, "DELETE", "/v2/auth/sessions/current", false}
     end
+  end
+
+  defp seed_ksef_session(organization_id) do
+    Ash.Seed.seed!(Credential, %{
+      organization_id: organization_id,
+      status: :working,
+      auth_type: :token,
+      credentials: "token-#{System.unique_integer([:positive])}"
+    })
+
+    Cachex.put(:ksef, {:access_token, organization_id}, Firmowid.Ksef.KsefTestHelpers.jwt(3_600))
   end
 
   test "a user paid a salary in another organization can delete their account" do

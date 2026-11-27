@@ -75,6 +75,12 @@ defmodule Firmowid.Core.OrganizationExternalCleanup do
       end)
     end
 
+    # Even when revoking failed or nothing could be captured, no session or job of the deleted
+    # organization may stay behind.
+    attempt(organization_id, "ksef", "forget_session", %{}, fn ->
+      Ksef.forget_session(organization_id)
+    end)
+
     :ok
   end
 
