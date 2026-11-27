@@ -36,7 +36,7 @@ defmodule Firmowid.Core.Organization do
 
   require Resource
 
-  @trial_days 30
+  @trial_days 60
 
   code_interface do
     define :destroy, action: :destroy
