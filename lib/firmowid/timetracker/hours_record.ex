@@ -29,6 +29,8 @@ defmodule Firmowid.Timetracker.HoursRecord do
 
     references do
       reference :member, on_delete: :delete
+      # A deleted reviewer's account leaves the reviewed record in place.
+      reference :change_reviewer, on_delete: :nilify
     end
 
     custom_indexes do
