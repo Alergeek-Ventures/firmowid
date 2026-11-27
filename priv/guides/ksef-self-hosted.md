@@ -2,11 +2,11 @@
 title: "KSeF self-hosted: czy własny serwer jest bezpieczniejszy?"
 description: "Porównaj KSeF self-hosted z chmurą i programem desktopowym. Sprawdź kopie, aktualizacje, dostęp użytkowników i koszty utrzymania."
 published: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-27
 category: ai-api-i-open-source
 ---
 
-O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku](/poradnik/jak-bezpiecznie-przetestowac-ksef). Przy instalacji self-hosted do tej próby dochodzi odtworzenie bazy z kopii na innym serwerze. CISA zaleca przechowywanie kopii oddzielnie od systemu, którego dotyczą. Aktualizacje aplikacji, certyfikat TLS i konta użytkowników obsługuje wtedy administrator firmy. Dotyczy to również naszego Firmowida, którego [kod na licencji AGPL-3.0](/open-source) można uruchomić na własnym serwerze.
+Własny serwer nie jest sam z siebie bezpieczniejszy od chmury dostawcy. Daje kontrolę nad tym, gdzie leżą dane, ale aktualizacje aplikacji, certyfikat TLS, konta użytkowników i kopie zapasowe obsługuje wtedy administrator firmy. CISA zaleca przechowywanie kopii oddzielnie od systemu, którego dotyczą. Dotyczy to również naszego Firmowida, którego [kod na licencji AGPL-3.0](/open-source) można uruchomić na własnym serwerze. Przed przeniesieniem prawdziwych faktur zrób próbę opisaną w poradniku [Jak bezpiecznie przetestować KSeF](/poradnik/jak-bezpiecznie-przetestowac-ksef) i dołóż do niej odtworzenie bazy z kopii na innym serwerze.
 
 ## Trzy sposoby przechowywania danych
 
@@ -66,7 +66,7 @@ O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku]
 
 1. Uruchom osobne środowisko testowe.
 2. Dodaj użytkownika z ograniczonymi uprawnieniami.
-3. Wystaw i wyślij fakturę z fikcyjnymi danymi do środowiska testowego KSeF (w Firmowid: `KSEF_ENV=test`).
+3. Wystaw i wyślij fakturę z fikcyjnymi danymi do środowiska testowego KSeF (w Firmowidzie: `KSEF_ENV=test`).
 4. Pobierz dokument oraz numer KSeF.
 5. Wykonaj korektę.
 6. Zrób kopię bazy.
