@@ -22,12 +22,18 @@ defmodule Firmowid.Taxes.Forecast.Vat do
   alias Firmowid.Taxes.Forecast.Period
   alias Firmowid.Taxes.Forecast.Projection
 
+  @due_day 25
+
   @type entry :: %{
           required(:side) => :output | :input | :refund,
           required(:amount) => Decimal.t(),
           required(:date) => Date.t(),
           optional(:projected?) => boolean()
         }
+
+  @doc "Returns the day of the month after the period on which its VAT is due."
+  @spec due_day() :: 1..28
+  def due_day, do: @due_day
 
   @doc "Returns one forecast for each period of `year`; entries of other years are left out."
   @spec forecast([entry()], Period.frequency(), integer()) :: [map()]
@@ -49,7 +55,7 @@ defmodule Firmowid.Taxes.Forecast.Vat do
           period_start: period.first,
           period_end: period.last,
           amount: Decimal.max(balance, 0),
-          due_date: Period.due_date(period, 25),
+          due_date: Period.due_date(period, @due_day),
           description: gettext("VAT for %{period}", period: Period.name(period)),
           member_id: nil,
           details: %{

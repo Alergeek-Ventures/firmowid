@@ -29,26 +29,14 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
   """
   use Ash.Resource.Actions.Implementation
 
-  alias Firmowid.Analysis
   alias Firmowid.Core
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Scope
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Forecast.Detection
   alias Firmowid.Taxes.Forecast.Documents
   alias Firmowid.Taxes.Forecast.Income
+  alias Firmowid.Taxes.Forecast.Payments
   alias Firmowid.Taxes.TaxYear
-
-  require Ash.Query
-
-  # The transfer form's own period field (`26M04`), and the period as banks write it out in a
-  # title they compose (`M 04 2026`, `04 M - Miesiąc 2026`).
-  @periods [
-    ~r/(?<!\d)(?<year>\d{2})(?<kind>[MK])(?<number>\d{2})(?!\d)/,
-    ~r/(?<![\w-])(?<kind>[MK])\s+(?<number>\d{2})\s+(?<year>\d{4})(?!\d)/,
-    ~r/(?<!\d)(?<number>\d{2})\s+(?<kind>[MK])(?!\w).*?(?<!\d)(?<year>\d{4})(?!\d)/
-  ]
-  @symbol ~r/(?<![\w-])(VAT-7K|VAT-7D|VAT-7|VAT|PIT-36L|PIT-36|PIT-28|PPL|PPE|PIT|CIT-8|CIT)(?![\w-])/i
 
   @income_tax %{
     "PIT" => :tax_scale,
@@ -65,33 +53,16 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
 
     transfers =
       :taxes
-      |> transfers_to(Date.new!(year - 1, 1, 1), Date.new!(year + 1, 12, 31), context)
-      |> Enum.flat_map(&parse/1)
+      |> Payments.transfers_to(
+        Date.new!(year - 1, 1, 1),
+        Date.new!(year + 1, 12, 31),
+        Ash.Context.to_opts(context)
+      )
+      |> Enum.flat_map(&Payments.parse/1)
 
     with {:ok, owner} <- owner_suggestions(year, transfers, context) do
       {:ok, suggest(transfers, year) ++ owner}
     end
-  end
-
-  # The query narrows by the digits, as accounts may be written with spaces or dashes;
-  # the recognition of the analysis of public levies decides.
-  defp transfers_to(levy, first, last, context) do
-    account = Analysis.public_levy_account(levy)
-
-    Transaction
-    |> Ash.Query.filter(
-      contains(fragment("regexp_replace(?, '[^0-9]', '', 'g')", creditor_account), ^account) and
-        booking_date >= ^first and booking_date <= ^last
-    )
-    |> Ash.Query.select([
-      :creditor_account,
-      :remittance_information_unstructured,
-      :amount,
-      :booking_date,
-      :inserted_at
-    ])
-    |> Ash.read!(Ash.Context.to_opts(context))
-    |> Enum.filter(&(Analysis.public_levy(&1) == levy))
   end
 
   # The owner of a sole proprietorship pays from the company account, and a saved year with its one
@@ -109,8 +80,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
            Core.get_organization(context.tenant, opts) do
       zus_payments =
         :payroll
-        |> transfers_to(Date.new!(year, 1, 1), Date.new!(year, 12, 31), context)
-        |> Enum.map(&zus_payment/1)
+        |> Payments.transfers_to(Date.new!(year, 1, 1), Date.new!(year, 12, 31), opts)
+        |> Enum.map(&Payments.zus_payment/1)
 
       advances =
         if owner.income_tax == :lump_sum, do: lump_sum_payments(transfers, year), else: []
@@ -180,15 +151,6 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
     }
   end
 
-  # A transfer to the ZUS account is a payment of its booking month, for the month before.
-  defp zus_payment(%Transaction{} = transaction) do
-    %{
-      date: transaction.booking_date,
-      amount: paid(transaction),
-      synced_at: transaction.inserted_at
-    }
-  end
-
   defp lump_sum_payments(transfers, year) do
     for %{tax: :pit, year: ^year, symbol: symbol} = transfer <- transfers,
         Map.fetch!(@income_tax, symbol) == :lump_sum do
@@ -200,52 +162,6 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SuggestSettings do
       }
     end
   end
-
-  defp paid(%Transaction{amount: amount}), do: amount |> Money.to_decimal() |> Decimal.abs()
-
-  defp parse(%Transaction{remittance_information_unstructured: nil}), do: []
-
-  defp parse(%Transaction{remittance_information_unstructured: title, inserted_at: synced_at} = transaction) do
-    with {year, kind, number} <- read_period(title),
-         [_symbol, symbol] <- Regex.run(@symbol, title) do
-      symbol = String.upcase(symbol)
-
-      [
-        %{
-          year: year,
-          period: period(kind, symbol),
-          number: number,
-          symbol: symbol,
-          tax: tax(symbol),
-          amount: paid(transaction),
-          synced_at: synced_at
-        }
-      ]
-    else
-      nil -> []
-    end
-  end
-
-  defp read_period(title) do
-    Enum.find_value(@periods, fn pattern ->
-      with %{"year" => year, "kind" => kind, "number" => number} <-
-             Regex.named_captures(pattern, title) do
-        {full_year(year), kind, String.to_integer(number)}
-      end
-    end)
-  end
-
-  defp full_year(<<year::binary-size(2)>>), do: 2000 + String.to_integer(year)
-  defp full_year(year), do: String.to_integer(year)
-
-  # The quarterly VAT returns name the quarter even where a title's period says otherwise.
-  defp period(_kind, symbol) when symbol in ["VAT-7K", "VAT-7D"], do: :quarterly
-  defp period("M", _symbol), do: :monthly
-  defp period("K", _symbol), do: :quarterly
-
-  defp tax("VAT" <> _rest), do: :vat
-  defp tax("CIT" <> _rest), do: :cit
-  defp tax(_income_tax), do: :pit
 
   defp suggest(transfers, year) do
     transfers

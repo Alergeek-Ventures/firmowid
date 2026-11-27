@@ -77,6 +77,12 @@ defmodule Firmowid.Taxes do
                     "cumulative), social_deducted, health_deducted, tax_base, tax, advances_before, income_tax, " <>
                     "rate (nil on the tax scale), rates_year; zus is monthly, details pension, disability, " <>
                     "accident, sickness, labour_fund, health, social_base, health_base, rates_year. " <>
+                    "details documents_amount and typical_payment are present only when amount is the median of " <>
+                    "the last three payments of that kind (transfers to the tax micro-account or to ZUS) because " <>
+                    "the documents gave less than half of it (only for periods not past due and within the look-ahead) " <>
+                    "and explained less than half of what was paid for those last three periods, " <>
+                    "as for a company that does not issue its invoices " <>
+                    "in Firmowid; documents_amount is what the documents gave. " <>
                     "vat and cit details also have cost_invoices_without_vat, the cost invoices up to the period " <>
                     "without a VAT amount: they bring no input VAT and count at their gross amount in CIT costs. " <>
                     "Simplifications: revenue is issued invoices net of VAT plus incoming transfers without an invoice " <>

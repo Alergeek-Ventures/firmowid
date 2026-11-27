@@ -416,6 +416,53 @@ defmodule Firmowid.TaxesTest do
       assert Decimal.equal?(february.details.projected_output_vat, 0)
     end
 
+    test "falls back to the median payment when a sole proprietorship issues no sales invoices",
+         %{
+           admin: admin,
+           org_id: org_id,
+           scope: scope
+         } do
+      set_legal_form(scope, :sole_proprietorship)
+
+      Taxes.create_tax_year!(
+        %{year: 2026, vat_period: :monthly, partners: [partner(admin.member.id, 100)]},
+        scope: scope
+      )
+
+      bank_account = bank_account_fixture_for_organization!(org_id)
+
+      for {number, date, amount} <- [
+            {"07", ~D[2026-08-20], "-900"},
+            {"08", ~D[2026-09-21], "-1100"},
+            {"09", ~D[2026-10-22], "-1000"}
+          ] do
+        Ash.Seed.seed!(Transaction, %{
+          organization_id: org_id,
+          bank_account_id: bank_account.id,
+          creditor_account: @tax_account,
+          remittance_information_unstructured: "1234567890 26M#{number} VAT",
+          amount: Money.new!(:PLN, amount),
+          booking_date: date,
+          value_date: date
+        })
+      end
+
+      today = ~D[2026-11-10]
+      {:ok, forecasts} = forecast(scope, 2026, today)
+      november = Enum.find(forecasts, &(&1.kind == :vat and &1.period == "2026-11"))
+
+      assert Decimal.equal?(november.amount, 1000)
+      assert Decimal.equal?(november.details.documents_amount, 0)
+      assert Decimal.equal?(november.details.typical_payment, 1000)
+
+      # The forecaster that saves the expectations reads the transfers as well.
+      forecaster_forecasts =
+        Taxes.forecast_taxes!(2026, scope: forecaster(org_id), private_arguments: %{today: today})
+
+      assert november ==
+               Enum.find(forecaster_forecasts, &(&1.kind == :vat and &1.period == "2026-11"))
+    end
+
     test "forecasts the CIT advance of a limited company from net revenue and costs", %{
       scope: scope
     } do

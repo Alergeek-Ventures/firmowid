@@ -28,10 +28,16 @@ defmodule Firmowid.Taxes.Forecast.Cit do
   alias Firmowid.Taxes.Forecast.Income
   alias Firmowid.Taxes.Forecast.Period
 
+  @due_day 20
+
   @type settings :: %{
           cit_rate: :reduced | :standard,
           cit_advances: :monthly | :quarterly | :simplified
         }
+
+  @doc "Returns the day of the month after the period on which its CIT advance is due."
+  @spec due_day() :: 1..28
+  def due_day, do: @due_day
 
   @doc "Returns one forecast for each period of `year`, from entries of any year."
   @spec forecast([Income.entry()], settings(), integer()) :: [map()]
@@ -64,7 +70,7 @@ defmodule Firmowid.Taxes.Forecast.Cit do
           period_start: period.first,
           period_end: period.last,
           amount: advance,
-          due_date: Period.due_date(period, 20),
+          due_date: Period.due_date(period, @due_day),
           description: gettext("CIT advance for %{period}", period: Period.name(period)),
           member_id: nil,
           details: %{
