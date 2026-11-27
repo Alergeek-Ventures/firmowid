@@ -56,9 +56,11 @@ defmodule Firmowid.Taxes do
                     "transactions Firmowid has. An estimate to plan cash, not a tax return: say so. One item per " <>
                     "period: kind, period, period_start, period_end, amount in PLN, due_date, description, " <>
                     "member_id and details, the figures the amount comes from; use details to explain an amount. " <>
-                    "The period that is still running includes the typical rest of the period, taken from the " <>
-                    "previous three months, so its amount is for the whole period and not only for the " <>
-                    "documents dated so far; details projected_output_vat and projected_input_vat (vat) and " <>
+                    "The period that is still running includes the typical rest of the period, and the periods " <>
+                    "ahead the typical month, both taken from the previous three months, so their amounts are " <>
+                    "for the whole period and not only for the documents dated so far; the forecast looks " <>
+                    "ahead to the end of the second month after today's, later periods count the documents " <>
+                    "only; details projected_output_vat and projected_input_vat (vat) and " <>
                     "projected_revenue and projected_costs (cit, pit) say how much of the figure is that " <>
                     "expectation (zero for a period without any). " <>
                     "vat: for a VAT payer with a saved vat_period; details output_vat, input_vat, carried_over, " <>

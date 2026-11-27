@@ -48,15 +48,18 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   Cost invoices without a VAT amount bring none to VAT and count at their gross
   amount in CIT costs, so each forecast tells how many its period has.
 
-  In the year that contains today the period that is still running would count
-  only the documents dated so far, so the entries get the typical rest of that
-  period from the three months before (`Firmowid.Taxes.Forecast.Projection`):
-  until the end of the VAT period, and for CIT and PIT until the end of the
-  advance period. An owner's entries are projected before they are multiplied
-  by the profit share, and ZUS only until the end of the month, which the
-  lump-sum health contribution needs. Periods that ended count the booked
-  documents only. The cumulative figures of the periods after the running one
-  build on the running one, so they include its projection. `details` tells how
+  The period that is still running would count only the documents dated so far,
+  and the periods ahead none, so the entries get the typical rest of the running
+  month and the typical month for each later one from the three months before
+  (`Firmowid.Taxes.Forecast.Projection`), up to the horizon of
+  `Firmowid.Taxes.Forecast.Period.horizon/1` (the end of the second month after
+  today's): until the end of the VAT period that contains it, and for CIT and PIT
+  until the end of the advance period that contains it. The horizon may reach the
+  next year, whose forecast then projects too. An owner's entries are projected
+  before they are multiplied by the profit share, and ZUS only until the horizon,
+  which the lump-sum health contribution needs. Periods that ended count the
+  booked documents only. The cumulative figures of the periods after the running
+  one build on it, so they include its projection. `details` tells how
   much of each figure is projected: `projected_output_vat` and
   `projected_input_vat` of VAT, `projected_revenue` and `projected_costs` of CIT
   and PIT, zero where nothing is. "Today" is a private argument, the day in
@@ -100,9 +103,12 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     end
   end
 
-  # Only the year that contains today has a running period; the entries get the typical rest of it.
+  # The years from today's to the horizon's have periods that are running or ahead; the entries get
+  # the typical rest of them.
   defp project(entries, year, today, until) do
-    if year == today.year, do: entries ++ Projection.project(entries, today, until), else: entries
+    if year in today.year..Period.horizon(today).year,
+      do: entries ++ Projection.project(entries, today, until),
+      else: entries
   end
 
   defp vat(%{vat_period: frequency, year: year}, %{is_vat_payer: true} = organization, documents, today)
@@ -112,7 +118,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     documents.sales_invoices
     |> VatEntries.build(documents.cost_invoices, organization.is_cash_account)
     |> Kernel.++(VatEntries.refunds(documents.skipped_transactions))
-    |> project(year, today, Period.last_day(frequency, today))
+    |> project(year, today, Period.last_day(frequency, Period.horizon(today)))
     |> Vat.forecast(frequency, year)
     |> Enum.map(fn forecast ->
       missing =
@@ -141,7 +147,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     entries =
       documents
       |> Documents.income_entries(organization, scope)
-      |> project(year, today, Period.last_day(advances, today))
+      |> project(year, today, Period.last_day(advances, Period.horizon(today)))
 
     without_vat =
       if organization.is_vat_payer,
@@ -165,8 +171,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   defp cit(_tax_year, _organization, _documents, _scope, _today), do: []
 
   # The owners' PIT advances and ZUS contributions, all PIT first. The company's entries are
-  # projected before the owner's share is taken; ZUS only to the end of the month, as the PIT
-  # advance period may be a quarter.
+  # projected before the owner's share is taken; ZUS only to the horizon, as the PIT advance period
+  # may be a quarter.
   defp owners(
          %{partners: [_ | _] = partners, accident_insurance_rate: accident_rate, year: year},
          %{legal_form: legal_form} = organization,
@@ -182,12 +188,12 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
       |> Enum.map(fn partner ->
         zus_entries =
           entries
-          |> project(year, today, Date.end_of_month(today))
+          |> project(year, today, Period.horizon(today))
           |> Income.scale(partner.profit_share)
 
         pit_entries =
           entries
-          |> project(year, today, Period.last_day(partner.pit_advances, today))
+          |> project(year, today, Period.last_day(partner.pit_advances, Period.horizon(today)))
           |> Income.scale(partner.profit_share)
 
         contributions = Zus.contributions(zus_entries, partner, accident_rate, year)

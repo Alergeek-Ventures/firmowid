@@ -7,15 +7,17 @@ defmodule Firmowid.Taxes.Forecast.Expectations do
   loaded) and today's date, and returns the operations that bring the expectations in step with
   the forecasts. `Firmowid.Taxes.TaxYear.Actions.SaveForecasts` applies them.
 
-    * A forecast with an amount whose period has started and whose payment is not past due gets an
-      expectation when it has none.
+    * A forecast with an amount whose period starts within the horizon of
+      `Firmowid.Taxes.Forecast.Period.horizon/1` (the end of the second month after today's) and
+      whose payment is not past due gets an expectation when it has none, so the cash flow ahead shows.
     * An unfulfilled expectation follows its forecast as long as the forecast has an amount, also
       past its due date: the payment may have been made without linking it.
-    * An unfulfilled expectation of the current or the last year whose forecast has no amount any
+    * An unfulfilled expectation of the last year, the current one or the one the horizon reaches whose forecast has no amount any
       more, or is gone because the settings changed, is removed.
     * A fulfilled expectation is never touched.
   """
   alias Firmowid.Finances.ExpectedTransaction
+  alias Firmowid.Taxes.Forecast.Period
 
   @type forecast :: %{
           required(:kind) => :vat | :cit | :pit | :zus,
@@ -48,12 +50,13 @@ defmodule Firmowid.Taxes.Forecast.Expectations do
     by_key = Map.new(existing, &{&1.forecast_key, &1})
     payable = Enum.filter(forecasts, &Decimal.gt?(&1.amount, 0))
     payable_keys = MapSet.new(payable, &key/1)
-    years = [today.year - 1, today.year]
+    horizon = Period.horizon(today)
+    years = Enum.uniq([today.year - 1, today.year, horizon.year])
 
     creates =
       for forecast <- payable,
           not is_map_key(by_key, key(forecast)),
-          not Date.before?(today, forecast.period_start),
+          not Date.after?(forecast.period_start, horizon),
           not Date.before?(forecast.due_date, today),
           do: {:create, attributes(forecast)}
 
