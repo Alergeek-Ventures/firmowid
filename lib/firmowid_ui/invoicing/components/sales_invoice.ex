@@ -783,7 +783,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
             :credit -> "Kredyt"
             :transfer -> "Przelew"
             :mobile -> "Mobilna"
-          end}<span :if={@sales_invoice.seller_account_number not in [nil, ""]}> | nr konta: {@sales_invoice.seller_account_number}</span>
+          end}<span :if={@sales_invoice.seller_account_number not in [nil, ""]}> | nr konta: {@sales_invoice.seller_account_number}</span><span :if={
+            @sales_invoice.seller_account_swift not in [nil, ""]
+          }> | SWIFT: {@sales_invoice.seller_account_swift}</span>
         </div>
       <% end %>
       <%= if @sales_invoice.invoice_type == :foreign do %>
@@ -799,7 +801,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           end}
         </div>
         <div :if={@sales_invoice.seller_account_number not in [nil, ""]}>
-          Nr konta / Bank account number: {@sales_invoice.seller_account_number}
+          Nr konta / Bank account number: {@sales_invoice.seller_account_number}<span :if={
+            @sales_invoice.seller_account_swift not in [nil, ""]
+          }> | SWIFT: {@sales_invoice.seller_account_swift}</span>
         </div>
       <% end %>
       <div :if={@sales_invoice.is_paid_on_issue == true}>

@@ -253,6 +253,7 @@
 			<%= if @invoice.seller_account_number do %>
 				<RachunekBankowy>
 					<NrRB><%= @invoice.seller_account_number %></NrRB>
+					<%= if @invoice.seller_account_swift do %><SWIFT><%= @invoice.seller_account_swift %></SWIFT><% end %>
 				</RachunekBankowy>
 			<% end %>
 		</Platnosc>

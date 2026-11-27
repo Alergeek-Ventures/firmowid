@@ -21,6 +21,7 @@ defmodule Firmowid.Invoicing.Actions.CancelInvoice do
     :seller_name,
     :seller_surname,
     :seller_account_number,
+    :seller_account_swift,
     :counterparty_id,
     :buyer_type,
     :buyer_id,

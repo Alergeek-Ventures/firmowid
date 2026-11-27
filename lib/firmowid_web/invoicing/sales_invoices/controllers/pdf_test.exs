@@ -14,7 +14,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
 
     correction =
       original
-      |> Map.take([:sale_date, :due_date, :payment_method, :seller_account_number, :invoice_type])
+      |> Map.take([
+        :sale_date,
+        :due_date,
+        :payment_method,
+        :seller_account_number,
+        :seller_account_swift,
+        :invoice_type
+      ])
       |> Map.merge(%{
         invoice_number: "FK/#{System.unique_integer([:positive])}",
         issue_date: ~D[2026-01-11],
@@ -45,6 +52,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
     conn = conn |> log_in_user(admin) |> get(~p"/sprzedazowe/#{correction.id}/pdf")
 
     assert html_response(conn, 200) =~ "Razem do zapłaty / Total:"
+    assert html_response(conn, 200) =~ "SWIFT: WBKPPLPP"
   end
 
   defp sales_invoice_fixture!(admin) do
@@ -57,6 +65,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
           seller_account_number: "PL61109010140000071219812874",
+          seller_account_swift: "WBKPPLPP",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

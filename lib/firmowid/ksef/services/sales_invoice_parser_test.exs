@@ -112,6 +112,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParserTest do
       :seller_display_name,
       :seller_address,
       :seller_account_number,
+      :seller_account_swift,
       :buyer_id,
       :buyer_address,
       :buyer_country

@@ -77,7 +77,6 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
     {"RachunekBankowyFaktora", "factoring account (RachunekBankowyFaktora)"},
     {"Skonto", "cash discount (Skonto)"},
     {"PlatnoscInna", "other payment method (PlatnoscInna)"},
-    {"RachunekBankowy/SWIFT", "bank account SWIFT"},
     {"RachunekBankowy/OpisRachunku", "bank account description (OpisRachunku)"},
     {"RachunekBankowy/RachunekWlasnyBanku", "bank's own account (RachunekWlasnyBanku)"},
     {"LinkDoPlatnosci", "payment link (LinkDoPlatnosci)"},
@@ -128,6 +127,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
          due_date: date(text(doc, "/Faktura/Fa/Platnosc/TerminPlatnosci/Termin")) || issue_date,
          payment_method: payment_method,
          seller_account_number: text(doc, "/Faktura/Fa/Platnosc/RachunekBankowy/NrRB"),
+         seller_account_swift: text(doc, "/Faktura/Fa/Platnosc/RachunekBankowy/SWIFT"),
          is_reverse_charge: text(doc, "/Faktura/Fa/Adnotacje/P_18") == "1",
          is_cash_account: text(doc, "/Faktura/Fa/Adnotacje/P_16") == "1",
          related_parties: text(doc, "/Faktura/Fa/TP") == "1",
@@ -232,7 +232,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
 
   # Payment instructions the sales invoice does not show: a factor's account, a cash discount
   # for early payment, a payment method described in text instead of a code, bank account
-  # details beyond its number, or a payment link.
+  # details beyond its number and SWIFT code, or a payment link.
   defp supported_payment(doc) do
     case Enum.find(@unsupported_payment, fn {element, _reason} ->
            xpath(doc, tns(sigil_x("/Faktura/Fa/Platnosc/#{element}", ~c"o")))

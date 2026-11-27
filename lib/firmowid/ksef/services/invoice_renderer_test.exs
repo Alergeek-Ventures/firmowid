@@ -45,6 +45,16 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
+    test "renders the seller bank account SWIFT after its number", %{model: model, org_id: org_id} do
+      invoice = %{build_domestic_invoice(org_id: org_id) | seller_account_swift: "WBKPPLPP"}
+      xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+      assert xml =~
+               ~r{<NrRB>12345678901234567890123456</NrRB>\s*<SWIFT>WBKPPLPP</SWIFT>}
+
+      assert :ok = validate_xml(xml, model)
+    end
+
     test "8% VAT invoice passes XSD validation", %{model: model, org_id: org_id} do
       invoice = build_domestic_invoice(vat_rate: "8", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
