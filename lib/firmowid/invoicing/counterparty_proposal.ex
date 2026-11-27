@@ -21,6 +21,11 @@ defmodule Firmowid.Invoicing.CounterpartyProposal do
   postgres do
     table "counterparty_proposals"
     repo Firmowid.Repo
+
+    # Deleted with its organization.
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   actions do

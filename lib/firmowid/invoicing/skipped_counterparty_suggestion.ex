@@ -20,6 +20,11 @@ defmodule Firmowid.Invoicing.SkippedCounterpartySuggestion do
   postgres do
     table "skipped_counterparty_suggestions"
     repo Firmowid.Repo
+
+    # Deleted with its organization.
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   actions do
