@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Api.Utilities.Tools do
   @doc """
   Returns the tools the actor's role may call in the organization, like the MCP tool list.
   """
-  @spec for_actor(term(), binary() | nil) :: [AshAi.Tool.t()]
+  @spec for_actor(term(), binary() | nil) :: [%AshAi.Tool{}]
   def for_actor(actor, tenant),
     do: AshAi.exposed_tools(otp_app: :firmowid, tools: AiTools.api(), actor: actor, tenant: tenant)
 
@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Api.Utilities.Tools do
   widest a key can have, may call. Policies are only pre-checked, so its organization is never
   read.
   """
-  @spec documented() :: [AshAi.Tool.t()]
+  @spec documented() :: [%AshAi.Tool{}]
   def documented,
     do: for_actor(%ServiceAccount{id: Ecto.UUID.generate(), role: :admin, organization_id: Ecto.UUID.generate()}, nil)
 
