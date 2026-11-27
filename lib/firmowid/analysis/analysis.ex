@@ -407,7 +407,7 @@ defmodule Firmowid.Analysis do
           accounts: counterparty_accounts(entity),
           amount: amount |> Decimal.abs() |> Decimal.round(2),
           lines: entry_lines(entity),
-          salary_user_id: salary_user_id(entity),
+          salary_person: salary_person(entity),
           certain: certain_category(entity, tags, amount),
           classified: stored && stored.category,
           probability: stored && stored.probability,
@@ -554,10 +554,11 @@ defmodule Firmowid.Analysis do
 
   defp entry_lines(_entity), do: []
 
-  # A transfer pinned to a salary pays its user.
-  defp salary_user_id(%Transaction{salary_month: %Date{}} = transaction), do: transaction.salary_user_id
+  # A transfer pinned to a salary pays its user; the transfer of a deleted account stays a salary
+  # of one more, unnamed person.
+  defp salary_person(%Transaction{salary_month: %Date{}} = transaction), do: transaction.salary_user_id || transaction.id
 
-  defp salary_user_id(_entity), do: nil
+  defp salary_person(_entity), do: nil
 
   defp certain_category(%Transaction{salary_month: %Date{}}, _tags, _amount), do: :payroll
 
@@ -773,7 +774,13 @@ defmodule Firmowid.Analysis do
         Timetracker.list_sessions!(
           %{month: month.month, year: month.year},
           load: [:duration, :member],
-          query: [filter: [member: [user_id: [in: Enum.map(transactions, & &1.salary_user_id)]]]],
+          query: [
+            filter: [
+              member: [
+                user_id: [in: for(%{salary_user_id: id} when id != nil <- transactions, do: id)]
+              ]
+            ]
+          ],
           scope: analysis_scope(scope)
         )
       end)

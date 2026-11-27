@@ -99,10 +99,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   # Salary transfers show the projects the analysis derives from tracked time, not stored tags.
   defp with_salary_tags(entries, scope) do
     salaries =
-      Enum.filter(
-        entries,
-        &match?(%Transaction{salary_user_id: user_id} when not is_nil(user_id), &1)
-      )
+      Enum.filter(entries, &match?(%Transaction{salary_month: %Date{}}, &1))
 
     tags = Analysis.salary_project_tags(salaries, scope)
 

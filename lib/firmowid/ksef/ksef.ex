@@ -136,38 +136,70 @@ defmodule Firmowid.Ksef do
   """
   @spec unauthenticate(Scope.t()) :: {:ok, term()} | {:error, :not_connected | term()}
   def unauthenticate(scope) do
-    org_id = scope.tenant
-
     case get_credential!(scope: scope) do
       nil ->
         {:error, :not_connected}
 
       credential ->
-        access_token = SessionWorker.get_access_token!(org_id)
-
-        with :ok <- maybe_revoke_generated_certificate(credential, access_token),
-             :ok <- ApiClient.revoke_refresh_token(access_token),
-             {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
+        with :ok <- revoke_remote(revocation_request(session_credential(credential))) do
           fn ->
-            # Oban.Job is not an Ash resource — raw Ecto query is required here.
-            Firmowid.Oban.cancel_all_jobs(
-              from(j in Oban.Job,
-                where:
-                  j.worker in [
-                    "Firmowid.Ksef.Workers.SessionWorker",
-                    "Firmowid.Ksef.Workers.CertificateEnrollmentWorker",
-                    "Firmowid.Ksef.Workers.FetchWorker"
-                  ],
-                where: fragment("?->>'organization_id' = ?", j.args, ^org_id),
-                where: j.state in ["available", "scheduled", "executing", "retryable"]
-              )
-            )
-
             {:ok, Credential.destroy!(credential, scope: scope, return_notifications?: true)}
           end
           |> Repo.transact()
           |> notify_disconnected()
         end
+    end
+  end
+
+  @typedoc "What revoking a credential at KSeF needs, captured while the credential still exists."
+  @type revocation_request :: %{
+          organization_id: String.t(),
+          certificate_serial_number: String.t() | nil,
+          access_token: String.t()
+        }
+
+  @doc """
+  Captures what `revoke_remote/1` needs from a credential read with its material:
+  the certificate serial number of a generated certificate and a valid access token.
+
+  Obtaining the token may renew the session but revokes nothing, so a caller about to
+  delete the credential can capture first and revoke once the deletion has committed.
+  """
+  @spec revocation_request(Credential.t()) :: revocation_request()
+  def revocation_request(%Credential{} = credential) do
+    %{
+      organization_id: credential.organization_id,
+      certificate_serial_number: generated_certificate_serial_number(credential),
+      access_token: SessionWorker.get_access_token!(credential.organization_id)
+    }
+  end
+
+  @doc """
+  Revokes the captured credential at KSeF, invalidates the cached access token and cancels
+  the organization's pending session, certificate and fetch jobs. Does not touch the stored
+  credential, which may be gone already.
+  """
+  @spec revoke_remote(revocation_request()) :: :ok | {:error, term()}
+  def revoke_remote(%{organization_id: org_id} = request) do
+    with :ok <- maybe_revoke_certificate(request),
+         :ok <- ApiClient.revoke_refresh_token(request.access_token),
+         {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
+      # Oban.Job is not an Ash resource — raw Ecto query is required here.
+      {:ok, _count} =
+        Firmowid.Oban.cancel_all_jobs(
+          from(j in Oban.Job,
+            where:
+              j.worker in [
+                "Firmowid.Ksef.Workers.SessionWorker",
+                "Firmowid.Ksef.Workers.CertificateEnrollmentWorker",
+                "Firmowid.Ksef.Workers.FetchWorker"
+              ],
+            where: fragment("?->>'organization_id' = ?", j.args, ^org_id),
+            where: j.state in ["available", "scheduled", "executing", "retryable"]
+          )
+        )
+
+      :ok
     end
   end
 
@@ -179,24 +211,27 @@ defmodule Firmowid.Ksef do
 
   defp notify_disconnected(error), do: error
 
-  # The admin's read above authorizes the disconnect; the certificate is read as the
-  # KSeF session, the only actor that sees credential material. The match on the id
-  # keeps the revocation on the credential the admin read.
-  defp maybe_revoke_generated_certificate(%Credential{auth_type: :generated_certificate} = credential, access_token) do
-    %Credential{id: credential_id, organization_id: organization_id} = credential
-
+  # The admin's read in `unauthenticate/1` authorizes the disconnect; the credential material
+  # is read as the KSeF session, the only actor that sees it. The match on the id keeps the
+  # revocation on the credential the admin read.
+  defp session_credential(%Credential{id: credential_id, organization_id: organization_id}) do
     session_scope = %Scope{
       actor: %SystemActor{org_id: organization_id, role: :ksef_session},
       tenant: organization_id
     }
 
-    %Credential{id: ^credential_id} = with_material = get_credential!(scope: session_scope)
-    serial_number = CredentialMetadata.certificate_serial_number(with_material)
-
-    ApiClient.revoke_certificate(access_token, serial_number, :unspecified)
+    %Credential{id: ^credential_id} = get_credential!(scope: session_scope)
   end
 
-  defp maybe_revoke_generated_certificate(%Credential{}, _access_token), do: :ok
+  defp generated_certificate_serial_number(%Credential{auth_type: :generated_certificate} = credential),
+    do: CredentialMetadata.certificate_serial_number(credential)
+
+  defp generated_certificate_serial_number(%Credential{}), do: nil
+
+  defp maybe_revoke_certificate(%{certificate_serial_number: nil}), do: :ok
+
+  defp maybe_revoke_certificate(%{certificate_serial_number: serial_number, access_token: access_token}),
+    do: ApiClient.revoke_certificate(access_token, serial_number, :unspecified)
 
   @doc """
   Enqueues Oban jobs fetching the organization's cost and sales invoices stored in KSeF

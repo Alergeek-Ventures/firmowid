@@ -44,10 +44,11 @@ defmodule Firmowid.Finances.Transaction.Calculations do
                     "fulfil others."
     end
 
-    calculate :has_salary?, :boolean, expr(not is_nil(salary_user_id)) do
+    calculate :has_salary?, :boolean, expr(not is_nil(salary_month)) do
       public? true
 
-      description "Whether the transaction is settled by a monthly salary assignment."
+      description "Whether the transaction is settled by a monthly salary assignment. " <>
+                    "It stays so when the employee's account is deleted."
     end
 
     calculate :date, :date, expr(booking_date)

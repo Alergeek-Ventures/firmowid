@@ -67,7 +67,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
           entry("PRZELEW INNA NAZWA", accounts: [account]),
           entry("Jan Kowalski",
             accounts: [account],
-            salary_user_id: Ecto.UUID.generate(),
+            salary_person: Ecto.UUID.generate(),
             certain: :payroll
           )
         ],
@@ -149,7 +149,7 @@ defmodule Firmowid.Analysis.CategoryReviewTest do
           nip: nil,
           transfer_names: [],
           accounts: [],
-          salary_user_id: nil,
+          salary_person: nil,
           certain: nil,
           classified: nil,
           probability: nil,

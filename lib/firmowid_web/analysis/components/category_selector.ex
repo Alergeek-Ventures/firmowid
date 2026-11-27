@@ -361,7 +361,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   salary (split by tracked time instead), or a skipped or paid invoice.
   """
   @spec editable?(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) :: boolean()
-  def editable?(%Transaction{} = row), do: row.skip_invoicing and is_nil(row.salary_user_id)
+  def editable?(%Transaction{} = row), do: row.skip_invoicing and is_nil(row.salary_month)
 
   def editable?(row), do: row.skip_invoicing or row.transactions != []
 

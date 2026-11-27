@@ -122,7 +122,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
         </:detail>
       </MatchingComponents.confirmed_card>
       <.link
-        :if={@admin?}
+        :if={@admin? and @transaction.salary_user_id}
         kind="text"
         class="self-end"
         navigate={

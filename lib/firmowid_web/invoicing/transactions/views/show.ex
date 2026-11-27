@@ -275,7 +275,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     scope = socket.assigns.ash_scope
 
     estimate =
-      if socket.assigns.salary_admin? and transaction.has_salary? do
+      if socket.assigns.salary_admin? and transaction.salary_user_id do
         salary =
           %{
             user_id: transaction.salary_user_id,

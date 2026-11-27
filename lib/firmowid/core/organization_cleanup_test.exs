@@ -2,7 +2,9 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
   @moduledoc "Checks account-scoped OAuth cleanup after the read/list split."
   use Firmowid.DataCase, async: true
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
   import Firmowid.TimetrackerFixtures
 
   alias Firmowid.Core
@@ -10,11 +12,15 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
   alias Firmowid.Core.OauthAuthorizationCode
   alias Firmowid.Core.OauthConsent
   alias Firmowid.Core.OauthRefreshToken
+  alias Firmowid.Core.Organization
   alias Firmowid.Core.OrganizationCleanup
   alias Firmowid.Delegations.DelegationReferenceCounter
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.CounterpartyProposal
   alias Firmowid.Invoicing.SkippedCounterpartySuggestion
+  alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
   alias Firmowid.SystemActor
   alias Phoenix.Socket.Broadcast
@@ -111,6 +117,129 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
         Ecto.UUID.dump!(invoice.id)
       ])
     end
+  end
+
+  describe "remote cleanup" do
+    setup do
+      owner = admin_fixture()
+      organization_id = owner.member.organization_id
+
+      requisition =
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), organization_id: organization_id})
+
+      parent = self()
+
+      # The stub runs in the test process: record whether the organization still exists at each call.
+      Req.Test.stub(:bank_data_requisition, fn conn ->
+        send(
+          parent,
+          {:gocardless, conn.method, conn.request_path, Firmowid.Repo.get(Organization, organization_id) != nil}
+        )
+
+        Req.Test.json(conn, %{"agreement" => Ecto.UUID.generate()})
+      end)
+
+      scope = %Scope{actor: owner, tenant: organization_id}
+      organization = Core.get_organization!(organization_id, scope: scope)
+
+      %{organization: organization, requisition: requisition, scope: scope, owner: owner}
+    end
+
+    test "runs with the captured requisitions only after the deletion committed", ctx do
+      capture_log(fn ->
+        assert :ok = Core.destroy_organization(ctx.organization, scope: ctx.scope)
+      end)
+
+      assert_received {:gocardless, "DELETE", path, false}
+      assert path =~ ctx.requisition.id
+    end
+
+    test "does not run when the deletion fails", ctx do
+      # Rolled back with the test's transaction, like everything else.
+      Firmowid.Repo.query!("""
+      CREATE FUNCTION fail_requisition_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'simulated deletion failure'; END $$
+      """)
+
+      Firmowid.Repo.query!("""
+      CREATE TRIGGER fail_requisition_delete BEFORE DELETE ON requisitions
+      FOR EACH ROW EXECUTE FUNCTION fail_requisition_delete()
+      """)
+
+      capture_log(fn ->
+        assert {:error, _error} = Core.destroy_organization(ctx.organization, scope: ctx.scope)
+      end)
+
+      refute_received {:gocardless, _method, _path, _exists}
+      assert Firmowid.Repo.get(Organization, ctx.organization.id)
+    end
+
+    test "revokes the KSeF session captured before its credential was deleted", ctx do
+      organization_id = ctx.organization.id
+      parent = self()
+
+      Ash.Seed.seed!(Credential, %{
+        organization_id: organization_id,
+        status: :working,
+        auth_type: :token,
+        credentials: "token-#{System.unique_integer([:positive])}"
+      })
+
+      Cachex.put(
+        :ksef,
+        {:access_token, organization_id},
+        Firmowid.Ksef.KsefTestHelpers.jwt(3_600)
+      )
+
+      Req.Test.stub(:ksef_api, fn conn ->
+        send(
+          parent,
+          {:ksef, conn.method, conn.request_path, Firmowid.Repo.get(Organization, organization_id) != nil}
+        )
+
+        Plug.Conn.send_resp(conn, 204, "")
+      end)
+
+      capture_log(fn ->
+        assert :ok = Core.destroy_organization(ctx.organization, scope: ctx.scope)
+      end)
+
+      assert_received {:ksef, "DELETE", "/v2/auth/sessions/current", false}
+    end
+  end
+
+  test "a user paid a salary in another organization can delete their account" do
+    owner = admin_fixture()
+    organization_id = owner.member.organization_id
+    employee = user_in_org_fixture(organization_id)
+
+    bank_account = bank_account_fixture!(owner)
+
+    transaction =
+      Ash.Seed.seed!(Transaction, %{
+        organization_id: organization_id,
+        bank_account_id: bank_account.id,
+        debtor_account: bank_account.iban,
+        creditor_account: "PL999",
+        amount: Money.new!(:PLN, -100),
+        booking_date: ~D[2026-01-10],
+        value_date: ~D[2026-01-10],
+        salary_user_id: employee.id,
+        salary_month: ~D[2025-12-01]
+      })
+
+    capture_log(fn ->
+      assert :ok = Core.destroy_user(employee, actor: with_session_claims(employee))
+    end)
+
+    scope = %Scope{actor: owner, tenant: organization_id}
+
+    persisted =
+      Firmowid.Finances.get_transaction!(transaction.id, load: [:has_salary?], scope: scope)
+
+    assert persisted.has_salary?
+    assert persisted.salary_month == ~D[2025-12-01]
+    assert is_nil(persisted.salary_user_id)
   end
 
   test "account cleanup lists and deletes only its user's OAuth records" do

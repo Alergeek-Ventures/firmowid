@@ -23,6 +23,11 @@ defmodule Firmowid.Finances.Transaction do
     table "transactions"
     repo Firmowid.Repo
 
+    references do
+      # The transfer stays a salary of its month when the employee's account is deleted.
+      reference :salary_user, on_delete: :nilify
+    end
+
     custom_statements do
       statement :allow_pending_transaction_entity_tags do
         up "DROP TRIGGER transaction_entity_tag_taggable_trigger ON transaction_entity_tags;"

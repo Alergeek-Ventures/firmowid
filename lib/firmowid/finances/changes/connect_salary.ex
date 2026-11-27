@@ -57,7 +57,7 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
       transaction.salary_user_id == user_id and transaction.salary_month == month ->
         nil
 
-      transaction.salary_user_id ->
+      transaction.salary_month ->
         {gettext_noop("The transaction already pays the salary of %{month}. Unlink it first."),
          [month: Date.to_iso8601(transaction.salary_month)]}
 
