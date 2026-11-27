@@ -2,7 +2,7 @@
 title: "Masowa korekta faktur w KSeF"
 description: "Sprawdź, jak przygotować serię korekt po znalezieniu tego samego błędu na wielu fakturach i jak kontrolować wysyłkę do KSeF."
 published: 2026-11-06
-updated: 2026-11-24
+updated: 2026-11-27
 category: ksef-w-praktyce
 ---
 
@@ -20,9 +20,6 @@ Dla każdej błędnej faktury zapisz:
 - informację o wcześniejszych korektach.
 
 ## Plan wysyłki
-
-![Sześć etapów masowej korekty faktur w KSeF: od podziału dokumentów i ustaleń z biurem księgowym po wysyłkę partiami i raport.](/images/guides/masowa-korekta-faktur-ksef-plan-wysylki.webp)
-*Plan wysyłki korekt i co zachować do kontroli.*
 
 | Etap | Co zrobić | Co zachować do kontroli |
 |---|---|---|
