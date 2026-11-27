@@ -21,6 +21,11 @@ defmodule Firmowid.Seeds.Cafe do
 
   require Ash.Query
 
+  @seed_actor %CoreUser{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Core.Member{role: :admin}
+  }
+
   @nip "6770012344"
   @org_name "Kawiarnia Ziarno"
   @address "ul. Józefa 12/1, 31-056 Kraków"
@@ -594,7 +599,7 @@ defmodule Firmowid.Seeds.Cafe do
         entity_type == :transaction and resource_id == ^transaction.id
       )
 
-    if !Ash.exists?(query, tenant: ctx.org_id, authorize?: false) do
+    if !Ash.exists?(query, tenant: ctx.org_id, actor: @seed_actor, authorize?: false) do
       Ash.Seed.seed!(
         EntryCategory,
         %{
