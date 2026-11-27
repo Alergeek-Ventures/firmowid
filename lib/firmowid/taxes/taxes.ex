@@ -77,12 +77,26 @@ defmodule Firmowid.Taxes do
                     "cumulative), social_deducted, health_deducted, tax_base, tax, advances_before, income_tax, " <>
                     "rate (nil on the tax scale), rates_year; zus is monthly, details pension, disability, " <>
                     "accident, sickness, labour_fund, health, social_base, health_base, rates_year. " <>
-                    "details documents_amount and typical_payment are present only when amount is the median of " <>
-                    "the last three payments of that kind (transfers to the tax micro-account or to ZUS) because " <>
-                    "the documents gave less than half of it (only for periods not past due and within the look-ahead) " <>
-                    "and explained less than half of what was paid for those last three periods, " <>
-                    "as for a company that does not issue its invoices " <>
-                    "in Firmowid; documents_amount is what the documents gave. " <>
+                    "details documents_amount and typical_payment are present only when amount is the median " <>
+                    "of the last three payments of that kind (transfers to the tax micro-account or to ZUS; only " <>
+                    "the periods due on or after the booking date of the earliest transaction count, so for a " <>
+                    "recent bank history the median of two (their mean) or of one, and none without any) " <>
+                    "instead of what the documents gave: for a period not past due and within the look-ahead, " <>
+                    "when the documents did not track the payments (the forecasts of those last three periods " <>
+                    "were not within 1.5 times of the three sums paid) and the documents' amount is not within " <>
+                    "1.5 times of that median, so too low as for a company that does not issue its invoices in " <>
+                    "Firmowid, or too high as from wrong settings; documents_amount is what the documents gave. " <>
+                    "A year without saved settings is forecast with those of the latest saved year before it; " <>
+                    "without any saved year the vat_period that suggest_tax_settings gives (from the transfers " <>
+                    "to the tax micro-account) lets a VAT payer's VAT be forecast from the documents, nothing is " <>
+                    "saved, and cit, pit and zus come from the payments alone as their rate, owners and ZUS " <>
+                    "settings are unknown. " <>
+                    "A kind that the settings do not forecast at all (no saved year, ZUS of a limited company, " <>
+                    "simplified CIT advances, unknown legal form) is forecast from the payments alone: the " <>
+                    "frequency of its latest paid period, one item per period of the year not past due, within " <>
+                    "the look-ahead and not paid yet, amount the median of the last three payments, member_id " <>
+                    "empty (the organization's total) and only typical_payment in details; ZUS of a limited " <>
+                    "company is due on the 15th. " <>
                     "vat and cit details also have cost_invoices_without_vat, the cost invoices up to the period " <>
                     "without a VAT amount: they bring no input VAT and count at their gross amount in CIT costs. " <>
                     "Simplifications: revenue is issued invoices net of VAT plus incoming transfers without an invoice " <>

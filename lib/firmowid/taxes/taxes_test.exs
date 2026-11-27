@@ -20,6 +20,8 @@ defmodule Firmowid.TaxesTest do
 
   # A made-up tax micro-account: the NBP part 10100071222 after the check digits.
   @tax_account "PL12101000712222000123456789"
+  # A made-up ZUS account: the NBP part 60000002026 after the check digits.
+  @zus_account "PL12600000020262000123456789"
 
   setup do
     admin = admin_fixture()
@@ -461,6 +463,185 @@ defmodule Firmowid.TaxesTest do
 
       assert november ==
                Enum.find(forecaster_forecasts, &(&1.kind == :vat and &1.period == "2026-11"))
+    end
+
+    defp seed_transfer(org_id, account, title, date, amount) do
+      Ash.Seed.seed!(Transaction, %{
+        organization_id: org_id,
+        bank_account_id: bank_account_fixture_for_organization!(org_id).id,
+        creditor_account: account,
+        remittance_information_unstructured: title,
+        amount: Money.new!(:PLN, amount),
+        booking_date: date,
+        value_date: date
+      })
+    end
+
+    # VAT of July to September and ZUS booked in August to October, as paid by a company without settings.
+    defp seed_payments(org_id) do
+      for {number, date, amount} <- [
+            {"07", ~D[2026-08-20], "-900"},
+            {"08", ~D[2026-09-21], "-1100"},
+            {"09", ~D[2026-10-22], "-1000"}
+          ] do
+        seed_transfer(org_id, @tax_account, "1234567890 26M#{number} VAT", date, amount)
+        seed_transfer(org_id, @zus_account, nil, Date.add(date, -10), "-500")
+      end
+    end
+
+    test "uses the settings of the latest saved year before a year without any", %{scope: scope} do
+      create_company_tax_year(scope)
+
+      assert {:ok, forecasts} = forecast(scope, 2027)
+      vat = Enum.filter(forecasts, &(&1.kind == :vat))
+      assert length(vat) == 12
+
+      assert Enum.map(Enum.filter(forecasts, &(&1.kind == :cit)), & &1.period) ==
+               ~w(2027-Q1 2027-Q2 2027-Q3 2027-Q4)
+
+      assert %{due_date: ~D[2027-02-25], period_start: ~D[2027-01-01]} = hd(vat)
+
+      # An earlier year has no settings to carry.
+      assert {:ok, []} = forecast(scope, 2025)
+    end
+
+    test "forecasts VAT and ZUS from the payments of an organization without a tax year, and saves them",
+         %{org_id: org_id, scope: scope} do
+      seed_payments(org_id)
+      today = ~D[2026-11-10]
+
+      assert {:ok, forecasts} = forecast(scope, 2026, today)
+      assert [:vat, :zus] = forecasts |> Enum.map(& &1.kind) |> Enum.uniq()
+
+      # The suggested VAT period forecasts VAT from the (empty) documents, which do not track the
+      # payments: October to December, not past due, take the typical payment; earlier months stay.
+      corrected = Enum.filter(forecasts, &is_map_key(&1.details, :typical_payment))
+
+      assert Enum.all?(
+               corrected,
+               &(&1.member_id == nil and Decimal.equal?(&1.details.typical_payment, &1.amount))
+             )
+
+      assert ~w(2026-10 2026-11 2026-12) ==
+               for(%{kind: :vat} = forecast <- corrected, do: forecast.period)
+
+      assert Decimal.equal?(hd(corrected).amount, 1000)
+      assert Decimal.equal?(List.last(corrected).amount, 500)
+
+      # The horizon reaches January 2027 too: four VAT and four ZUS payments.
+      assert {:ok, 8} =
+               Taxes.save_tax_forecasts(%{},
+                 scope: forecaster(org_id),
+                 private_arguments: %{today: today}
+               )
+
+      assert %{"vat:2026-11" => vat, "zus:2027-01" => zus} = saved(scope)
+      assert Money.equal?(vat.amount, Money.new!(:PLN, "-1000"))
+      assert Money.equal?(zus.amount, Money.new!(:PLN, "-500"))
+
+      # Settings that forecast the kinds replace the expectations keyed without an owner.
+      set_legal_form(scope, :sole_proprietorship)
+      owner = scope.actor.member.id
+
+      Taxes.create_tax_year!(%{year: 2026, vat_period: :monthly, partners: [partner(owner, 100)]},
+        scope: scope
+      )
+
+      assert {:ok, _changes} =
+               Taxes.save_tax_forecasts(%{},
+                 scope: forecaster(org_id),
+                 private_arguments: %{today: today}
+               )
+
+      keys = scope |> saved() |> Map.keys()
+      assert "vat:2026-11" in keys
+      assert "zus:2026-11:#{owner}" in keys
+      refute "zus:2026-11" in keys
+    end
+
+    # VAT transfers of July to September, 920 each, as paid by a company without any saved tax year.
+    defp seed_vat_transfers(org_id) do
+      for {number, date} <- [
+            {"07", ~D[2026-08-20]},
+            {"08", ~D[2026-09-21]},
+            {"09", ~D[2026-10-22]}
+          ] do
+        seed_transfer(org_id, @tax_account, "1234567890 26M#{number} VAT", date, "-920")
+      end
+    end
+
+    defp november_vat(scope) do
+      assert {:ok, forecasts} = forecast(scope, 2026, ~D[2026-11-10])
+      Enum.find(forecasts, &(&1.kind == :vat and &1.period == "2026-11"))
+    end
+
+    test "forecasts VAT from the documents with the suggested period when they track the payments",
+         %{
+           org_id: org_id,
+           scope: scope
+         } do
+      seed_vat_transfers(org_id)
+
+      # 4000 net at 23% is the 920 paid, in each reference month.
+      for date <- [~D[2026-07-10], ~D[2026-08-10], ~D[2026-09-10], ~D[2026-11-03]] do
+        seed_sales(scope, %{sale_date: date, issue_date: date}, Decimal.new("4000"))
+      end
+
+      november = november_vat(scope)
+
+      refute is_map_key(november.details, :typical_payment)
+      assert Decimal.compare(november.details.output_vat, 920) in [:gt, :eq]
+    end
+
+    test "takes the typical payment where the documents do not track the suggested period's payments",
+         %{
+           org_id: org_id,
+           scope: scope
+         } do
+      seed_vat_transfers(org_id)
+
+      seed_sales(
+        scope,
+        %{sale_date: ~D[2026-11-03], issue_date: ~D[2026-11-03]},
+        Decimal.new("100")
+      )
+
+      november = november_vat(scope)
+
+      assert Decimal.equal?(november.amount, 920)
+      assert Decimal.equal?(november.details.typical_payment, 920)
+      assert Decimal.equal?(november.details.documents_amount, 23)
+    end
+
+    test "forecasts from the one quarterly payment of a history of 90 days", %{
+      org_id: org_id,
+      scope: scope
+    } do
+      # The history starts on 12 August: the third quarter, due on 26 October, is the only known one
+      # of the three before 10 November (the second was due on 27 July).
+      seed_transfer(org_id, "PL12100000000000000000000001", "Coffee", ~D[2026-08-12], "-10")
+      seed_transfer(org_id, @tax_account, "/OKR/26K03/SFP/VAT/", ~D[2026-10-20], "-1500")
+
+      assert {:ok, forecasts} = forecast(scope, 2026, ~D[2026-11-10])
+
+      assert %{amount: amount} =
+               Enum.find(forecasts, &(&1.kind == :vat and &1.period == "2026-Q4"))
+
+      assert Decimal.equal?(amount, 1500)
+    end
+
+    test "is due on the 15th for the ZUS of a limited company forecast from payments", %{
+      org_id: org_id,
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+      seed_payments(org_id)
+
+      assert {:ok, forecasts} = forecast(scope, 2026, ~D[2026-11-10])
+      zus = Enum.filter(forecasts, &(&1.kind == :zus))
+
+      assert %{due_date: ~D[2026-12-15], period: "2026-11"} =
+               Enum.find(zus, &(&1.period == "2026-11"))
     end
 
     test "forecasts the CIT advance of a limited company from net revenue and costs", %{

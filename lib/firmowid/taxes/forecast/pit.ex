@@ -61,6 +61,10 @@ defmodule Firmowid.Taxes.Forecast.Pit do
   @spec due_day() :: 1..28
   def due_day, do: @due_day
 
+  @doc "Returns the description of the PIT advance for `period`."
+  @spec description(Period.t()) :: String.t()
+  def description(period), do: gettext("PIT advance for %{period}", period: Period.name(period))
+
   @doc "Returns one forecast for each period of `year`, from entries of any year."
   @spec forecast([Income.entry()], partner(), [Zus.contribution()], String.t(), integer()) :: [
           map()
@@ -89,7 +93,7 @@ defmodule Firmowid.Taxes.Forecast.Pit do
           period_end: period.last,
           amount: advance,
           due_date: Period.due_date(period, @due_day),
-          description: gettext("PIT advance for %{period}", period: Period.name(period)),
+          description: description(period),
           member_id: member_id,
           details: %{
             revenue: Decimal.round(revenue, 2),

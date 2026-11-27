@@ -73,6 +73,19 @@ defmodule Firmowid.Taxes.Forecast.Zus do
   def due_day, do: @due_day
 
   @doc """
+  Returns the day of the month after the period on which a payer of `legal_form` pays ZUS: the 15th
+  with legal personality (a limited company), the 20th for the others (art. 47 ust. 1 of the social
+  insurance system act; https://www.zus.pl/en/firmy/rozliczenia-z-zus/dokumenty-rozliczeniowe/termin-skladania-dokumentow-i-oplacania-skladek).
+  """
+  @spec payer_due_day(atom() | nil) :: 1..28
+  def payer_due_day(:limited_company), do: 15
+  def payer_due_day(_legal_form), do: @due_day
+
+  @doc "Returns the description of the ZUS contribution for `period`."
+  @spec description(Period.t()) :: String.t()
+  def description(period), do: gettext("ZUS for %{period}", period: Period.name(period))
+
+  @doc """
   Returns the monthly contributions of `year` in order, from the partner's
   entries of the year and the one before. `social_deductible` is the part of
   the social contributions that income tax deducts: all but the Labour Fund.
@@ -123,7 +136,7 @@ defmodule Firmowid.Taxes.Forecast.Zus do
         period_end: period.last,
         amount: Decimal.add(social, contribution.health),
         due_date: Period.due_date(period, @due_day),
-        description: gettext("ZUS for %{period}", period: Period.name(period)),
+        description: description(period),
         member_id: member_id,
         details:
           Map.take(contribution, [

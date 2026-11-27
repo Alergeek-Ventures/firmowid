@@ -35,6 +35,10 @@ defmodule Firmowid.Taxes.Forecast.Vat do
   @spec due_day() :: 1..28
   def due_day, do: @due_day
 
+  @doc "Returns the description of the VAT for `period`."
+  @spec description(Period.t()) :: String.t()
+  def description(period), do: gettext("VAT for %{period}", period: Period.name(period))
+
   @doc "Returns one forecast for each period of `year`; entries of other years are left out."
   @spec forecast([entry()], Period.frequency(), integer()) :: [map()]
   def forecast(entries, frequency, year) do
@@ -56,7 +60,7 @@ defmodule Firmowid.Taxes.Forecast.Vat do
           period_end: period.last,
           amount: Decimal.max(balance, 0),
           due_date: Period.due_date(period, @due_day),
-          description: gettext("VAT for %{period}", period: Period.name(period)),
+          description: description(period),
           member_id: nil,
           details: %{
             output_vat: output_vat,
