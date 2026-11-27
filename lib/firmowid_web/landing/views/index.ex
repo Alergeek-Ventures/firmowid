@@ -63,12 +63,6 @@ defmodule FirmowidWeb.Landing.Views.Index do
       <.landing_navbar />
 
       <main>
-        <h1
-          :if={@live_action == :pricing}
-          class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
-        >
-          {@page_title}
-        </h1>
         <.hero_section :if={@live_action == :home} />
         <.top_metrics_section :if={@live_action == :home} />
         <.audience_section :if={@live_action == :home} />
@@ -79,7 +73,11 @@ defmodule FirmowidWeb.Landing.Views.Index do
         <.assistants_section :if={@live_action in [:home, :features]} />
         <.proof_section :if={@live_action == :home} />
         <.how_it_works_section :if={@live_action == :home} />
-        <.pricing_section :if={@live_action in [:home, :pricing]} billing_period={@billing_period} />
+        <.pricing_section
+          :if={@live_action in [:home, :pricing]}
+          billing_period={@billing_period}
+          heading_tag={if @live_action == :pricing, do: "h1", else: "h2"}
+        />
         <.open_source_section
           :if={@live_action in [:home, :open_source]}
           standalone?={@live_action == :open_source}

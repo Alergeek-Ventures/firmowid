@@ -43,6 +43,11 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   @spec pricing_section(map()) :: Rendered.t()
   attr :billing_period, :string, required: true
 
+  attr :heading_tag, :string,
+    default: "h2",
+    values: ["h1", "h2"],
+    doc: "the pricing page has no other heading, so there the section title is the page heading"
+
   def pricing_section(assigns) do
     yearly? = assigns.billing_period == "yearly"
 
@@ -63,9 +68,12 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Pricing")}
           </p>
-          <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
+          <.dynamic_tag
+            tag_name={@heading_tag}
+            class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]"
+          >
             {gettext("Fair pricing. No fine print.")}
-          </h2>
+          </.dynamic_tag>
           <p class="mx-auto mt-6 text-h5/6.75 text-grey-700 lg:max-w-147 lg:text-h5">
             {gettext(
               "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
