@@ -45,6 +45,8 @@ defmodule Firmowid.Taxes.Forecast.Zus do
   @health_scale Decimal.new("9")
   @health_flat_tax Decimal.new("4.9")
 
+  @due_day 20
+
   @type partner :: %{
           required(:income_tax) => :tax_scale | :flat_tax | :lump_sum,
           required(:social_insurance) => :start_relief | :preferential | :small_plus | :full | :none,
@@ -65,6 +67,10 @@ defmodule Firmowid.Taxes.Forecast.Zus do
           health_base: Decimal.t(),
           rates_year: integer()
         }
+
+  @doc "Returns the day of the month after the period on which its ZUS contribution is due."
+  @spec due_day() :: 1..28
+  def due_day, do: @due_day
 
   @doc """
   Returns the monthly contributions of `year` in order, from the partner's
@@ -116,7 +122,7 @@ defmodule Firmowid.Taxes.Forecast.Zus do
         period_start: period.first,
         period_end: period.last,
         amount: Decimal.add(social, contribution.health),
-        due_date: Period.due_date(period, 20),
+        due_date: Period.due_date(period, @due_day),
         description: gettext("ZUS for %{period}", period: Period.name(period)),
         member_id: member_id,
         details:

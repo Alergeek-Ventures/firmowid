@@ -45,6 +45,16 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   accounting, the previous month's health contribution base in January and
   Mały ZUS Plus need them; every calculation ignores entries outside its dates.
 
+  Only when the documents explained less than half of what was paid for the last three periods of
+  a kind, a forecast that is not past due, starts within the horizon (see below) and whose amount
+  is under half of the typical payment (the median of those three payments, read from the
+  transfers to the tax micro-account and to ZUS) takes that payment instead, and its `details` get
+  `documents_amount` and `typical_payment` (see `Firmowid.Taxes.Forecast.PaymentHistory`). It
+  covers companies that do not issue their invoices in Firmowid. The forecasts of those periods
+  are computed unadjusted, from the year before as well when they fall in it. VAT and CIT payments
+  always count; PIT and ZUS only for a sole proprietorship with one partner, who pays from the
+  company account.
+
   Cost invoices without a VAT amount bring none to VAT and count at their gross
   amount in CIT costs, so each forecast tells how many its period has.
 
@@ -56,8 +66,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   today's): until the end of the VAT period that contains it, and for CIT and PIT
   until the end of the advance period that contains it. The horizon may reach the
   next year, whose forecast then projects too. An owner's entries are projected
-  before they are multiplied by the profit share, and ZUS only until the horizon,
-  which the lump-sum health contribution needs. Periods that ended count the
+  before they are multiplied by the profit share, and ZUS reads the same entries
+  as PIT, so the contributions PIT deducts see every month of its period. Periods that ended count the
   booked documents only. The cumulative figures of the periods after the running
   one build on it, so they include its projection. `details` tells how
   much of each figure is projected: `projected_output_vat` and
@@ -74,6 +84,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   alias Firmowid.Taxes.Forecast.Documents
   alias Firmowid.Taxes.Forecast.Income
   alias Firmowid.Taxes.Forecast.IncomeEntries
+  alias Firmowid.Taxes.Forecast.PaymentHistory
+  alias Firmowid.Taxes.Forecast.Payments
   alias Firmowid.Taxes.Forecast.Period
   alias Firmowid.Taxes.Forecast.Pit
   alias Firmowid.Taxes.Forecast.Projection
@@ -87,20 +99,67 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     today = input.arguments.today
     opts = Ash.Context.to_opts(context)
 
-    with {:ok, tax_year} <-
-           Taxes.get_tax_year(
-             year,
-             opts |> Keyword.put(:not_found_error?, false) |> Keyword.put(:load, [:partners])
-           ),
-         {:ok, organization} <- Core.get_organization(context.tenant, opts) do
-      documents = Documents.read(year, opts)
-      scope = %Scope{actor: context.actor, tenant: context.tenant}
-
-      {:ok,
-       vat(tax_year, organization, documents, today) ++
-         cit(tax_year, organization, documents, scope, today) ++
-         owners(tax_year, organization, documents, scope, today)}
+    with {:ok, tax_year} <- get_tax_year(year, opts),
+         {:ok, organization} <- Core.get_organization(context.tenant, opts),
+         {:ok, forecasts} <- unadjusted(tax_year, organization, today, context, opts) do
+      adjust_to_payments(forecasts, year, organization, tax_year, today, context, opts)
     end
+  end
+
+  defp get_tax_year(year, opts) do
+    Taxes.get_tax_year(
+      year,
+      opts |> Keyword.put(:not_found_error?, false) |> Keyword.put(:load, [:partners])
+    )
+  end
+
+  # A year without a saved tax year has no forecasts.
+  defp unadjusted(nil, _organization, _today, _context, _opts), do: {:ok, []}
+
+  defp unadjusted(tax_year, organization, today, context, opts) do
+    documents = Documents.read(tax_year.year, opts)
+    scope = %Scope{actor: context.actor, tenant: context.tenant}
+
+    {:ok,
+     vat(tax_year, organization, documents, today) ++
+       cit(tax_year, organization, documents, scope, today) ++
+       owners(tax_year, organization, documents, scope, today)}
+  end
+
+  defp adjust_to_payments([], _year, _organization, _tax_year, _today, _context, _opts), do: {:ok, []}
+
+  defp adjust_to_payments(forecasts, year, organization, tax_year, today, context, opts) do
+    owner_pays? =
+      organization.legal_form == :sole_proprietorship and match?([_], tax_year.partners)
+
+    case Payments.history(
+           Date.new!(year - 1, 1, 1),
+           Date.new!(year + 1, 12, 31),
+           owner_pays?,
+           opts
+         ) do
+      [] ->
+        {:ok, forecasts}
+
+      payments ->
+        with {:ok, reference} <- reference(forecasts, year, organization, today, context, opts) do
+          {:ok, PaymentHistory.adjust(forecasts, reference, payments, today)}
+        end
+    end
+  end
+
+  # The forecasts themselves plus those of the other year the reference periods fall in.
+  defp reference(forecasts, year, organization, today, context, opts) do
+    other_years = PaymentHistory.reference_years(forecasts, today) -- [year]
+
+    Enum.reduce_while(other_years, {:ok, forecasts}, fn other_year, {:ok, acc} ->
+      with {:ok, tax_year} <- get_tax_year(other_year, opts),
+           {:ok, other} <- unadjusted(tax_year, organization, today, context, opts) do
+        {:cont, {:ok, acc ++ other}}
+      else
+        error -> {:halt, error}
+      end
+    end)
   end
 
   # The years from today's to the horizon's have periods that are running or ahead; the entries get
@@ -171,8 +230,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   defp cit(_tax_year, _organization, _documents, _scope, _today), do: []
 
   # The owners' PIT advances and ZUS contributions, all PIT first. The company's entries are
-  # projected before the owner's share is taken; ZUS only to the horizon, as the PIT advance period
-  # may be a quarter.
+  # projected before the owner's share is taken, to the end of the PIT advance period that contains
+  # the horizon: the contributions PIT deducts need the income of every month of that period.
   defp owners(
          %{partners: [_ | _] = partners, accident_insurance_rate: accident_rate, year: year},
          %{legal_form: legal_form} = organization,
@@ -186,19 +245,14 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     {pit, zus} =
       partners
       |> Enum.map(fn partner ->
-        zus_entries =
-          entries
-          |> project(year, today, Period.horizon(today))
-          |> Income.scale(partner.profit_share)
-
-        pit_entries =
+        partner_entries =
           entries
           |> project(year, today, Period.last_day(partner.pit_advances, Period.horizon(today)))
           |> Income.scale(partner.profit_share)
 
-        contributions = Zus.contributions(zus_entries, partner, accident_rate, year)
+        contributions = Zus.contributions(partner_entries, partner, accident_rate, year)
 
-        {Pit.forecast(pit_entries, partner, contributions, partner.member_id, year),
+        {Pit.forecast(partner_entries, partner, contributions, partner.member_id, year),
          Zus.forecast(contributions, partner.member_id)}
       end)
       |> Enum.unzip()

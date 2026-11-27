@@ -48,12 +48,18 @@ defmodule Firmowid.Taxes.Forecast.Pit do
   @scale_deduction Decimal.new(3_600)
   @scale_first_tax Decimal.new(10_800)
 
+  @due_day 20
+
   @type partner :: %{
           required(:income_tax) => :tax_scale | :flat_tax | :lump_sum,
           required(:lump_sum_rate) => Decimal.t() | nil,
           required(:pit_advances) => Period.frequency(),
           optional(atom()) => any()
         }
+
+  @doc "Returns the day of the month after the period on which its PIT advance is due."
+  @spec due_day() :: 1..28
+  def due_day, do: @due_day
 
   @doc "Returns one forecast for each period of `year`, from entries of any year."
   @spec forecast([Income.entry()], partner(), [Zus.contribution()], String.t(), integer()) :: [
@@ -82,7 +88,7 @@ defmodule Firmowid.Taxes.Forecast.Pit do
           period_start: period.first,
           period_end: period.last,
           amount: advance,
-          due_date: Period.due_date(period, 20),
+          due_date: Period.due_date(period, @due_day),
           description: gettext("PIT advance for %{period}", period: Period.name(period)),
           member_id: member_id,
           details: %{
