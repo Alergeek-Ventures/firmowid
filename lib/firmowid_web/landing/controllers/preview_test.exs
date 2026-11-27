@@ -69,6 +69,14 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     assert build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/ksef</loc>"
   end
 
+  test "gives each page its own link preview image", %{conn: conn} do
+    for {path, image} <- [{"/", "home"}, {"/ksef", "ksef"}, {"/historie/bonobo", "bonobo"}] do
+      html = conn |> get(path) |> html_response(200)
+
+      assert html =~ ~s(<meta property="og:image" content="https://firmowid.pl/images/og/#{image}.png">)
+    end
+  end
+
   test "describes the company and the app in valid structured data", %{conn: conn} do
     html = conn |> get(~p"/") |> html_response(200)
 

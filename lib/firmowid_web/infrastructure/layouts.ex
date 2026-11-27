@@ -304,7 +304,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   defp social_image(_assigns) do
     %{
-      url: Endpoint.url() <> Endpoint.static_path("/images/social-card.png"),
+      url: Endpoint.url() <> Endpoint.static_path("/images/og/home.png"),
       width: 1200,
       height: 630,
       alt: gettext("Firmowid - free KSeF invoices, banking and team time tracking")
