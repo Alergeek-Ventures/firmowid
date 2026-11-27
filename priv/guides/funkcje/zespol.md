@@ -2,7 +2,7 @@
 title: "Zespół: role, wnioski urlopowe online i dokumenty pracowników"
 description: "Firmowid dla małego zespołu: cztery role, wnioski urlopowe z akceptacją w Skrzynce, umowy i dokumenty pracowników. Cena i porównanie z innymi programami."
 published: 2026-11-18
-updated: 2026-11-20
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · Zespół"
   note: "każdy widzi swoje"
@@ -76,7 +76,7 @@ Wyjazd służbowy przechodzi w Firmowidzie pięć kroków: wniosek pracownika, p
 |---|---|---|---|
 | Darmowy | 2 | role i czas pracy do 3 projektów | 0 zł |
 | Przedsiębiorca | 5 | wnioski urlopowe, umowy i dokumenty pracowników | 29 zł netto miesięcznie |
-| Firma | bez limitu | delegacje, ewidencja czasu w PDF, raport wypłat | 149 zł netto miesięcznie |
+| Firma | bez limitu | delegacje | 149 zł netto miesięcznie |
 
 Cena jest za firmę, a nie za osobę. Po założeniu konta płatne funkcje działają bez opłat do końca następnego miesiąca.
 
