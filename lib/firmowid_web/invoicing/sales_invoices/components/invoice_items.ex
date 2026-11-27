@@ -120,18 +120,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp to_boolean("true"), do: true
   defp to_boolean("false"), do: false
 
-  defp item_net_value(item_form) do
+  # With the discount switch off, a discount typed before switching it off no longer counts.
+  defp item_net_value(item_form, discount?) do
     unit_price = parse_decimal(item_form[:unit_price].value)
     quantity = parse_decimal(item_form[:quantity].value)
-    discount = parse_decimal(item_form[:discount].value) || Decimal.new(0)
+    discount = (discount? && parse_decimal(item_form[:discount].value)) || Decimal.new(0)
 
     if unit_price && quantity,
       do: Decimal.sub(Decimal.mult(unit_price, quantity), discount),
       else: Decimal.new(0)
   end
 
-  defp item_gross_value(item_form) do
-    net = item_net_value(item_form)
+  defp item_gross_value(item_form, discount?) do
+    net = item_net_value(item_form, discount?)
     vat_rate = to_string(item_form[:vat_rate].value || "0")
     vat_rate_numeric = VatRate.to_numeric(vat_rate)
     vat = Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
@@ -299,6 +300,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp get_currency(%AshPhoenix.Form{} = form), do: AshPhoenix.Form.value(form, :currency)
 
+  # The discount switch is a UI-only param on the invoice form; until it is touched, the column shows
+  # when a line already carries a discount (e.g. an invoice imported from KSeF).
+  defp line_discounts?(items_form, items) do
+    case items_form[:line_discounts].value do
+      nil -> Enum.any?(items, &(not is_nil(&1.discount)))
+      value -> to_boolean(value)
+    end
+  end
+
   defp get_reverse_charge(%AshPhoenix.Form{} = form), do: AshPhoenix.Form.value(form, :is_reverse_charge) || false
 
   defp form_valid?(%AshPhoenix.Form{} = form), do: form.valid?
@@ -355,12 +365,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     drop_param = "#{form_name}[#{drop_param_name(source, items_field)}][]"
     add_param = sort_param
 
+    discount? = line_discounts?(items_form, items)
+
     assigns = %{
       invoice: invoice,
       items_form: items_form,
       items_field: items_field,
       currency: currency,
-      summary: invoice_summary(items, currency),
+      summary:
+        invoice_summary(
+          if(discount?, do: items, else: Enum.map(items, &%{&1 | discount: nil})),
+          currency
+        ),
       single_item?: single_item?,
       show_exemption?: show_exemption?,
       # Reverse charge and non-VAT payers show one value per item instead of VAT and gross prices.
@@ -373,8 +389,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
       discount_error: discount_error,
-      # Only invoices that already carry a line discount (e.g. imported from KSeF) show the column.
-      discount?: Enum.any?(items, &(not is_nil(&1.discount))),
+      discount?: discount?,
       valid?: form_valid?(source),
       show_vat: show_vat,
       item_suggestions: input_assigns.item_suggestions,
@@ -440,6 +455,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               />
             </:label_slot>
           </.switch>
+          <.switch
+            field={%{@items_form[:line_discounts] | value: @discount?}}
+            color="teal"
+            label={gettext("Discount")}
+            class="flex-row-reverse gap-2 text-sm text-grey-700"
+          />
           <.switch
             :if={@invoice.buyer_country != "PL"}
             field={@items_form[:is_reverse_charge]}
@@ -692,6 +713,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     </:fallback>
                   </.hidden_input>
 
+                  <input :if={not @discount?} type="hidden" name={item[:discount].name} value="" />
                   <.input
                     :if={@discount?}
                     field={item[:discount]}
@@ -763,7 +785,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     </.hidden_input>
                   <% else %>
                     <% gross_value =
-                      Money.new(@currency, item_gross_value(item)) %>
+                      Money.new(@currency, item_gross_value(item, @discount?)) %>
 
                     <%!-- Narrows with the "VAT / jedn." column of the VAT layout. --%>
                     <p class={[
