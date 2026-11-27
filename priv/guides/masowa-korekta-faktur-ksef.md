@@ -94,4 +94,4 @@ Czego nie ma. Korekty zbiorczej nie ma. Wysyłki wsadowej nie ma. Korekty faktur
 - [Ministerstwo Finansów: Zakres obowiązkowego KSeF](https://ksef.podatki.gov.pl/informacje-ogolne-ksef-20/zakres-obowiazkowego-ksef/), dostęp 6.11.2026.
 - [Ministerstwo Finansów: Podręcznik Aplikacji Podatnika KSeF 2.0, wersja 2.3](https://ksef.podatki.gov.pl/media/i1ubiukl/aplikacja-podatnika-ksef-20-podrecznik-uzytkownika_25042026.pdf), 25.04.2026, dostęp 6.11.2026.
 - [MF: Podręcznik KSeF 2.0, cz. II, rozdziały 1.6.2, 2.13 i 3.3.2](https://ksef.podatki.gov.pl/media/rronoxyt/podrecznik-ksef-20-cz-ii-wystawianie-i-otrzymywanie-faktur-w-ksef-06082026.pdf) (wersja z sierpnia 2026 r.), dostęp 24.11.2026.
-- Firmowid, fakty produktowe zweryfikowane 22.10.2026 i 24.11.2026.
+- [Firmowid: funkcje](https://firmowid.pl/funkcje), dostęp 24.11.2026.
