@@ -69,9 +69,18 @@ defmodule Firmowid.Taxes.Forecast.ExpectationsTest do
     assert %{forecast_key: "cit:2026-Q4", counterparty_name: "Urząd Skarbowy"} = cit
   end
 
-  test "ignores a period that has not started, a payment past due and one without an amount" do
+  test "creates an expectation for a period that starts within the horizon, not after it" do
+    # The horizon of 25 November 2026 is 31 January 2027.
+    within = forecast(period: "2027-01", period_start: ~D[2027-01-01], due_date: ~D[2027-02-25])
+    after_it = forecast(period: "2027-02", period_start: ~D[2027-02-01], due_date: ~D[2027-03-25])
+
+    assert [{:create, %{forecast_key: "vat:2027-01"}}] =
+             Expectations.plan([within, after_it], [], @today)
+  end
+
+  test "ignores a period beyond the horizon, a payment past due and one without an amount" do
     forecasts = [
-      forecast(period: "2026-12", period_start: ~D[2026-12-01], due_date: ~D[2027-01-25]),
+      forecast(period: "2027-02", period_start: ~D[2027-02-01], due_date: ~D[2027-03-25]),
       forecast(period: "2026-10", period_start: ~D[2026-10-01], due_date: ~D[2026-11-24]),
       forecast(period: "2026-09", period_start: ~D[2026-09-01], amount: Decimal.new(0))
     ]

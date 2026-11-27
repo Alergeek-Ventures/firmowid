@@ -8,6 +8,9 @@ defmodule Firmowid.Taxes.Forecast.Period do
   """
   use Gettext, backend: Firmowid.Gettext
 
+  # How many months after today's the forecast looks ahead, to the end of that month.
+  @horizon_months 2
+
   @type frequency :: :monthly | :quarterly
   @type t :: %{key: String.t(), first: Date.t(), last: Date.t()}
 
@@ -40,6 +43,13 @@ defmodule Firmowid.Taxes.Forecast.Period do
   def last_day(:monthly, date), do: Date.end_of_month(date)
 
   def last_day(:quarterly, date), do: Date.end_of_month(Date.new!(date.year, div(date.month - 1, 3) * 3 + 3, 1))
+
+  @doc """
+  Returns the last day the forecast looks ahead to: the end of the second month after today's.
+  A period is within the horizon when it starts on or before that day.
+  """
+  @spec horizon(Date.t()) :: Date.t()
+  def horizon(today), do: Date.end_of_month(Date.shift(today, month: @horizon_months))
 
   @doc "Returns the period's name for a description, such as `10/2026`."
   @spec name(t()) :: String.t()

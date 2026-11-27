@@ -1,10 +1,11 @@
 defmodule Firmowid.Taxes.Forecast.Projection do
   @moduledoc """
-  Projects the typical rest of the running period onto the forecast entries.
+  Projects the typical rest of the running period, and the periods ahead, onto the forecast entries.
 
   A period that is still running counts only the documents dated so far, so its
-  amount is tiny early on and grows every day. This module adds what the period
-  usually still brings, so the forecast tells the amount of the whole period:
+  amount is tiny early on and grows every day, and later ones count none. This
+  module adds what they usually still bring, so the forecast tells the amount of
+  the whole period:
 
     * for the rest of the current month, per side, the median over the three
       calendar months before it of what was dated after the same day of the
@@ -51,7 +52,7 @@ defmodule Firmowid.Taxes.Forecast.Projection do
 
   @doc """
   Returns the projected entries of the days after `today` up to `until`, the
-  last day of a month on or after the end of today's month.
+  last day of a month on or after the end of today's month, in today's year or a later one.
   """
   @spec project([entry()], Date.t(), Date.t()) :: [entry()]
   def project(entries, today, until) do

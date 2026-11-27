@@ -364,17 +364,56 @@ defmodule Firmowid.TaxesTest do
       assert Decimal.equal?(november.details.projected_input_vat, 23)
       assert Decimal.equal?(november.amount, 667)
 
-      # A month that ended and one that has not started count the documents only.
+      # A month that ended counts the documents only; the one ahead gets the typical month: 230 of
+      # output VAT less 23 of input VAT.
       assert Decimal.equal?(october.amount, 207)
       assert Decimal.equal?(october.details.projected_output_vat, 0)
-      assert Decimal.equal?(december.amount, 0)
-      assert Decimal.equal?(december.details.projected_output_vat, 0)
+      assert Decimal.equal?(december.amount, 207)
+      assert Decimal.equal?(december.details.projected_output_vat, 230)
 
       {:ok, later} = forecast(scope)
       assert Enum.find(later, &(&1.kind == :vat and &1.period == "2026-10")) == october
       later_november = Enum.find(later, &(&1.kind == :vat and &1.period == "2026-11"))
       assert Decimal.equal?(later_november.details.projected_output_vat, 0)
       assert Decimal.equal?(later_november.amount, 460)
+    end
+
+    test "projects the typical month into the periods ahead, also in the next year", %{
+      scope: scope
+    } do
+      create_company_tax_year(scope)
+
+      Taxes.create_tax_year!(
+        %{
+          year: 2027,
+          vat_period: :monthly,
+          cit_rate: :reduced,
+          cit_advances: :quarterly,
+          partners: []
+        },
+        scope: scope
+      )
+
+      for date <- [~D[2026-08-28], ~D[2026-09-29], ~D[2026-10-30]],
+          do: seed_sales(scope, %{sale_date: date, issue_date: date}, Decimal.new("1000"))
+
+      today = ~D[2026-11-27]
+      {:ok, this_year} = forecast(scope, 2026, today)
+      {:ok, next_year} = forecast(scope, 2027, today)
+
+      december = Enum.find(this_year, &(&1.kind == :vat and &1.period == "2026-12"))
+      january = Enum.find(next_year, &(&1.kind == :vat and &1.period == "2027-01"))
+      february = Enum.find(next_year, &(&1.kind == :vat and &1.period == "2027-02"))
+
+      # The typical month: 230 of output VAT in each of the three months before November.
+      for forecast <- [december, january] do
+        assert Decimal.equal?(forecast.amount, 230)
+        assert Decimal.equal?(forecast.details.projected_output_vat, 230)
+      end
+
+      # February is beyond the horizon, which ends on 31 January.
+      assert Decimal.equal?(february.amount, 0)
+      assert Decimal.equal?(february.details.projected_output_vat, 0)
     end
 
     test "forecasts the CIT advance of a limited company from net revenue and costs", %{
@@ -659,14 +698,19 @@ defmodule Firmowid.TaxesTest do
         private_arguments: %{forecast_key: "vat:2026-01"}
       )
 
-      assert {:ok, 3} = save_forecasts(org_id)
+      # The horizon of 5 February ends on 30 April: four VAT months and the first two CIT quarters.
+      assert {:ok, 6} = save_forecasts(org_id)
 
       # January's VAT is due soon, the running February's VAT is its typical rest (the one
-      # invoice of January comes after the 5th too) and the first quarter's CIT advance later.
+      # invoice of January comes after the 5th too), March and April the typical month and the
+      # first quarter's CIT advance later.
       assert %{"vat:2026-01" => vat, "vat:2026-02" => february, "cit:2026-Q1" => cit} =
                expected = saved(scope)
 
-      assert map_size(expected) == 3
+      assert map_size(expected) == 6
+
+      assert Enum.sort(Map.keys(expected) -- ["vat:2026-01", "vat:2026-02", "cit:2026-Q1"]) ==
+               ["cit:2026-Q2", "vat:2026-03", "vat:2026-04"]
 
       assert vat.date == ~D[2026-02-25]
       assert Money.equal?(vat.amount, Money.new!(:PLN, "-2300"))
@@ -702,7 +746,7 @@ defmodule Firmowid.TaxesTest do
     } do
       create_company_tax_year(scope)
       seed_sales(scope, %{}, Decimal.new("10000"))
-      assert {:ok, 3} = save_forecasts(org_id)
+      assert {:ok, 6} = save_forecasts(org_id)
 
       %{"vat:2026-01" => vat, "cit:2026-Q1" => cit} = saved(scope)
 
@@ -724,8 +768,8 @@ defmodule Firmowid.TaxesTest do
         Decimal.new("5000")
       )
 
-      # The running February's VAT and the CIT advance follow the new invoice.
-      assert {:ok, 2} = save_forecasts(org_id)
+      # The VAT of February to April and the CIT advances of both quarters follow the new invoice.
+      assert {:ok, 5} = save_forecasts(org_id)
 
       # The fulfilled expectation keeps its amount, the others follow the forecast.
       assert %{"vat:2026-01" => fulfilled, "vat:2026-02" => february, "cit:2026-Q1" => followed} =

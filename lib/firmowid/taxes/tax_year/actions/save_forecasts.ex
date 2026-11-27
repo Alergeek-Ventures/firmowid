@@ -3,10 +3,11 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
   Keeps the tax and ZUS payments the forecast expects as expected transactions, so they show in
   the transaction list and raise an inbox alert when they stay unpaid.
 
-  Forecasts the current year and the last one, since the last period of a year is due in January.
-  `Firmowid.Taxes.Forecast.Expectations` decides what to create, update and remove; this applies
-  it. The forecast of the running period includes the typical rest of the period, so the saved
-  amount is that estimate and does not creep up every day; both use the same `today`. It runs for
+  Forecasts the current year, the last one, since the last period of a year is due in January, and
+  the one the horizon reaches (see `Firmowid.Taxes.Forecast.Period.horizon/1`), as periods ahead are
+  saved too. `Firmowid.Taxes.Forecast.Expectations` decides what to create, update and remove; this
+  applies it. The forecast of the running and later periods includes the typical rest or month, so
+  the saved amount is that estimate and does not creep up every day; both use the same `today`. It runs for
   the organization of the tenant, as a system actor bound to that organization, from the daily
   scheduled action and from the job that `Changes.EnqueueForecasts` queues when a tax year is saved.
   When the tax year has more than one partner, an owner's payment names the owner, so the rows
@@ -20,6 +21,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
   alias Firmowid.SystemActor
   alias Firmowid.Taxes
   alias Firmowid.Taxes.Forecast.Expectations
+  alias Firmowid.Taxes.Forecast.Period
 
   @impl true
   def run(input, _opts, context) do
@@ -30,7 +32,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
       tenant: context.tenant
     }
 
-    forecasts = Enum.flat_map([today.year - 1, today.year], &forecasts(&1, today, scope))
+    years = Enum.uniq([today.year - 1, today.year, Period.horizon(today).year])
+    forecasts = Enum.flat_map(years, &forecasts(&1, today, scope))
 
     existing =
       Finances.list_expected_transactions!(%{forecast: true}, scope: scope, load: [:is_fulfilled])
