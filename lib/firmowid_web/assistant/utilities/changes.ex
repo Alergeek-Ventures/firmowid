@@ -563,11 +563,16 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp same_items?(saved, revised) do
     length(saved.sales_invoice_items) == length(revised.sales_invoice_items) and
       Enum.all?(Enum.zip(saved.sales_invoice_items, revised.sales_invoice_items), fn {before, later} ->
-        before.name == later.name and before.unit == later.unit and
-          Decimal.eq?(before.quantity, later.quantity) and
-          Decimal.eq?(before.unit_price, later.unit_price) and before.vat_rate == later.vat_rate and
-          before.gtu == later.gtu
+        same_item?(before, later)
       end) and saved.currency == revised.currency
+  end
+
+  defp same_item?(before, later) do
+    before.name == later.name and before.unit == later.unit and
+      Decimal.eq?(before.quantity, later.quantity) and
+      Decimal.eq?(before.unit_price, later.unit_price) and
+      Decimal.eq?(before.discount || Decimal.new(0), later.discount || Decimal.new(0)) and
+      before.vat_rate == later.vat_rate and before.gtu == later.gtu
   end
 
   defp vat_rates(invoice), do: Enum.map_join(invoice.sales_invoice_items, "; ", &VatRate.label(&1.vat_rate))

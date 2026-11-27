@@ -15,7 +15,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
   ## Calculations
 
     * `:vat_rate_numeric` — converts KSeF string VAT rate to decimal (e.g. "23" → 0.23)
-    * `:net_value` — quantity × unit_price
+    * `:net_value` — quantity × unit_price − discount
     * `:vat_value` — net_value × vat_rate_numeric
     * `:gross_value` — net_value + vat_value
 
@@ -58,7 +58,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
     create :create do
       description "Create a sales invoice line item."
       primary? true
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu]
+      accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu]
       validate {ValidateVatRate, []}
     end
 
@@ -66,7 +66,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
       description "Update a sales invoice line item."
       primary? true
       require_atomic? false
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu]
+      accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu]
       validate {ValidateVatRate, []}
     end
   end
@@ -94,6 +94,8 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
     attribute :quantity, :decimal, allow_nil?: false, public?: true
     attribute :unit, :string, allow_nil?: false, public?: true
     attribute :unit_price, :decimal, allow_nil?: false, public?: true
+    # Net discount for the whole line (FA(3) P_10), not included in the unit price.
+    attribute :discount, :decimal, public?: true
     attribute :vat_rate, :string, public?: true
 
     # Goods and services group (GTU_01…GTU_13) of the line in KSeF.
@@ -137,7 +139,10 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
                 end
               )
 
-    calculate :net_value, :decimal, expr(quantity * unit_price)
+    calculate :net_value,
+              :decimal,
+              expr(quantity * unit_price - if(is_nil(discount), do: 0, else: discount))
+
     calculate :vat_value, :decimal, expr(net_value * vat_rate_numeric)
     calculate :gross_value, :decimal, expr(net_value + vat_value)
   end

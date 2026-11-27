@@ -42,7 +42,18 @@ defmodule Firmowid.Invoicing.WizardState.Item do
     create :create do
       description "Create a line item inside the browser wizard state."
       primary? true
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :wizard_state_id]
+
+      accept [
+        :index,
+        :name,
+        :quantity,
+        :unit,
+        :unit_price,
+        :discount,
+        :vat_rate,
+        :wizard_state_id
+      ]
+
       validate {ValidateVatRate, []}
     end
 
@@ -50,7 +61,7 @@ defmodule Firmowid.Invoicing.WizardState.Item do
       description "Update a line item inside the browser wizard state."
       primary? true
       require_atomic? false
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+      accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate]
       validate {ValidateVatRate, []}
     end
   end
@@ -94,6 +105,7 @@ defmodule Firmowid.Invoicing.WizardState.Item do
     attribute :quantity, :decimal, public?: true, allow_nil?: false
     attribute :unit, :string, public?: true, default: "szt.", allow_nil?: false
     attribute :unit_price, :decimal, public?: true, allow_nil?: false
+    attribute :discount, :decimal, public?: true
     attribute :vat_rate, :string, public?: true, allow_nil?: false
   end
 
@@ -126,7 +138,10 @@ defmodule Firmowid.Invoicing.WizardState.Item do
                 end
               )
 
-    calculate :net_value, :decimal, expr(quantity * unit_price)
+    calculate :net_value,
+              :decimal,
+              expr(quantity * unit_price - if(is_nil(discount), do: 0, else: discount))
+
     calculate :vat_value, :decimal, expr(net_value * vat_rate_numeric)
     calculate :gross_value, :decimal, expr(net_value + vat_value)
   end

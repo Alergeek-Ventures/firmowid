@@ -38,6 +38,43 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParserTest do
     end
   end
 
+  test "preserves line discounts and exact unit prices below the grosz", %{org_id: org_id} do
+    invoice = build_domestic_invoice(org_id: org_id, items: 2)
+    [discounted, precise] = invoice.sales_invoice_items
+    Ash.Seed.update!(discounted, %{discount: Decimal.new("10.00")})
+    Ash.Seed.update!(precise, %{unit_price: Decimal.new("0.33330000")})
+    invoice = renderable(invoice)
+    xml = render(invoice)
+
+    assert xml =~ ~r/<P_9A>100\.00<\/P_9A>\s*<P_10>10\.00<\/P_10>\s*<P_11>90\.00<\/P_11>/
+    assert xml =~ ~r/<P_9A>0\.3333<\/P_9A>\s*<P_11>0\.33<\/P_11>/
+    assert {:ok, attrs} = SalesInvoiceParser.parse(xml)
+    assert items(attrs) == items(invoice)
+
+    with_optional_amounts =
+      String.replace(
+        xml,
+        ~r/<P_9A>0\.3333<\/P_9A>\s*<P_11>0\.33<\/P_11>/,
+        "<P_9A>0.3333</P_9A><P_9B>0.409959</P_9B><P_11>0.33</P_11><P_11A>0.41</P_11A>"
+      )
+
+    assert {:ok, optional_amounts} = SalesInvoiceParser.parse(with_optional_amounts)
+    assert items(optional_amounts) == items(invoice)
+
+    derived_xml = String.replace(xml, ~r/<P_9A>[^<]+<\/P_9A>\s*/, "")
+    assert {:ok, derived} = SalesInvoiceParser.parse(derived_xml)
+    assert [first, second] = derived.sales_invoice_items
+    assert Decimal.equal?(first.unit_price, Decimal.new("100.00"))
+    assert Decimal.equal?(first.discount, Decimal.new("10.00"))
+    # The original sub-grosz price is absent, so P_11 is the only available price basis.
+    assert Decimal.equal?(second.unit_price, Decimal.new("0.33"))
+
+    mismatched_xml = String.replace(xml, "<P_11>0.33</P_11>", "<P_11>0.34</P_11>")
+
+    assert {:error, {:unsupported, "line net value differs from quantity, unit price and discount"}} =
+             SalesInvoiceParser.parse(mismatched_xml)
+  end
+
   test "reads a Polish buyer without a tax ID as an individual", %{org_id: org_id} do
     invoice = build_no_id_invoice(org_id: org_id)
 
@@ -119,9 +156,20 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParserTest do
     ]
   end
 
+  defp renderable(invoice) do
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      actor: %Firmowid.SystemActor{
+        org_id: invoice.organization_id,
+        role: :sales_invoice_processor
+      },
+      tenant: invoice.organization_id
+    )
+  end
+
   defp items(%{sales_invoice_items: items}) do
     Enum.map(items, fn item ->
-      {item.name, item.unit, Decimal.normalize(item.quantity), Decimal.normalize(item.unit_price), item.vat_rate}
+      {item.name, item.unit, Decimal.normalize(item.quantity), Decimal.normalize(item.unit_price),
+       item.discount && Decimal.normalize(item.discount), item.vat_rate}
     end)
   end
 end

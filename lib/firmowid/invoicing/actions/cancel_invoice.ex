@@ -67,8 +67,9 @@ defmodule Firmowid.Invoicing.Actions.CancelInvoice do
       zeroed_items =
         Enum.map(latest.sales_invoice_items, fn item ->
           item
-          |> Map.take([:index, :name, :unit, :unit_price, :vat_rate, :gtu])
+          |> Map.take([:index, :name, :unit, :unit_price, :discount, :vat_rate, :gtu])
           |> Map.put(:quantity, Decimal.new(0))
+          |> Map.put(:discount, nil)
         end)
 
       correction_reason =

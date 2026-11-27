@@ -27,7 +27,7 @@ defmodule Firmowid.Test.Support.InvoicingCopyAssertions do
     :internal_note
   ]
 
-  @item_fields [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+  @item_fields [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate]
 
   @doc """
   Asserts that the copied invoice or draft preserves all business fields that

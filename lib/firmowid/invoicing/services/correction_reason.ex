@@ -20,6 +20,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
           | :vat_rate
           | :quantity
           | :price
+          | :discount
           | :price_and_quantity
           | :item_name
           | :items_changed
@@ -34,6 +35,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
     vat_rate: {"korekta stawki VAT", "VAT rate correction"},
     quantity: {"korekta ilości", "quantity correction"},
     price: {"korekta ceny", "price correction"},
+    discount: {"korekta rabatu", "discount correction"},
     price_and_quantity: {"korekta ceny i ilości", "price and quantity correction"},
     item_name: {"korekta nazwy pozycji", "item name correction"},
     items_changed: {"korekta pozycji na fakturze", "invoice items correction"},
@@ -121,6 +123,10 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
           |> maybe_put(:vat_rate, current.vat_rate != ref.vat_rate)
           |> maybe_put(:quantity, not Decimal.eq?(current.quantity, ref.quantity))
           |> maybe_put(:price, not Decimal.eq?(current.unit_price, ref.unit_price))
+          |> maybe_put(
+            :discount,
+            not Decimal.eq?(current.discount || Decimal.new(0), ref.discount || Decimal.new(0))
+          )
           |> maybe_put(:item_name, current.name != ref.name)
         end)
 
@@ -136,7 +142,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
         end
 
       # Maintain priority order
-      [:vat_rate, :price_and_quantity, :quantity, :price, :item_name]
+      [:vat_rate, :price_and_quantity, :quantity, :price, :discount, :item_name]
       |> Enum.filter(&MapSet.member?(changes, &1))
       |> Enum.reverse(acc)
     else

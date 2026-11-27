@@ -415,6 +415,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
           unit: text(row, "./P_8A"),
           quantity: text(row, "./P_8B"),
           unit_price: text(row, "./P_9A"),
+          discount: text(row, "./P_10"),
           net_value: text(row, "./P_11"),
           gross_value: text(row, "./P_11A"),
           vat_value: text(row, "./P_11Vat"),
@@ -462,7 +463,11 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
       net =
         if row.net_value,
           do: Decimal.new(row.net_value),
-          else: Decimal.mult(Decimal.new(row.unit_price), quantity)
+          else:
+            Decimal.sub(
+              Decimal.mult(Decimal.new(row.unit_price), quantity),
+              decimal(row.discount) || Decimal.new(0)
+            )
 
       %{net: net, vat_rate: row.vat_rate}
     end
@@ -479,6 +484,7 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
          unit: row.unit || @default_unit,
          quantity: quantity,
          unit_price: unit_price(row, quantity),
+         discount: decimal(row.discount),
          vat_rate: row.vat_rate,
          gtu: row.gtu
        }}
@@ -486,6 +492,9 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
   end
 
   defp check_line(row, quantity) do
+    price = unit_price(row, quantity)
+    net = price && line_net_value(price, row.discount, quantity)
+
     cond do
       not VatRate.valid?(row.vat_rate) ->
         {:error, {:unsupported, "VAT rate #{inspect(row.vat_rate)}"}}
@@ -493,19 +502,14 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
       is_nil(row.unit_price) and is_nil(row.net_value) ->
         {:error, {:unsupported, "line without a net price"}}
 
-      is_nil(unit_price(row, quantity)) ->
+      is_nil(price) ->
         {:error, {:unsupported, "line net value not divisible by its quantity"}}
 
-      not line_amounts_match?(row, quantity) ->
-        {:error, {:unsupported, "line gross or VAT differs from Firmowid's calculation"}}
+      error = line_amounts_error(row, net) ->
+        error
 
-      # Firmowid writes unit prices to the grosz on the documents it renders, e.g. corrections.
-      Decimal.scale(Decimal.normalize(unit_price(row, quantity))) > 2 ->
-        {:error, {:unsupported, "unit price below the grosz"}}
-
-      # FA(3) amounts (TKwotowy) allow at most 14 digits before the decimal point.
-      Decimal.compare(Decimal.abs(unit_price(row, quantity)), Decimal.new("99999999999999.99")) ==
-          :gt ->
+      # FA(3) TKwotowy and TKwotowy2 allow at most 14 digits before the decimal point.
+      Decimal.compare(Decimal.abs(price), Decimal.new("100000000000000")) != :lt ->
         {:error, {:unsupported, "unit price above the FA(3) amount range"}}
 
       true ->
@@ -513,9 +517,25 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
     end
   end
 
+  defp line_amounts_error(row, net) do
+    cond do
+      not line_net_value_matches?(row.net_value, net) ->
+        {:error, {:unsupported, "line net value differs from quantity, unit price and discount"}}
+
+      not line_amounts_match?(row, net) ->
+        {:error, {:unsupported, "line gross or VAT differs from Firmowid's calculation"}}
+
+      true ->
+        nil
+    end
+  end
+
+  defp line_net_value_matches?(nil, _net), do: true
+
+  defp line_net_value_matches?(stated, net), do: Decimal.equal?(Decimal.new(stated), Decimal.round(net, 2))
+
   # A line's stated gross (P_11A) and VAT (P_11Vat) must be what Firmowid shows for it.
-  defp line_amounts_match?(row, quantity) do
-    net = Decimal.mult(unit_price(row, quantity), quantity)
+  defp line_amounts_match?(row, net) do
     vat = Decimal.mult(net, Decimal.div(VatRate.to_numeric(row.vat_rate), 100))
 
     Enum.all?([{row.vat_value, vat}, {row.gross_value, Decimal.add(net, vat)}], fn
@@ -524,21 +544,29 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
     end)
   end
 
-  # The line's net value (P_11) already accounts for a discount (P_10) the unit price leaves out.
-  # A unit price that does not multiply back to it exactly would shift the totals, so it is nil.
-  defp unit_price(%{net_value: nil, unit_price: unit_price}, _quantity), do: Decimal.new(unit_price)
+  defp line_net_value(price, discount, quantity) do
+    Decimal.sub(Decimal.mult(price, quantity), decimal(discount) || Decimal.new(0))
+  end
 
-  defp unit_price(%{net_value: net_value, unit_price: unit_price}, quantity) do
-    net_value = Decimal.new(net_value)
-    multiplies_back? = &Decimal.equal?(Decimal.mult(&1, quantity), net_value)
+  # Without P_9A, derive the price only when P_11 plus P_10 divides exactly by the quantity.
+  defp unit_price(%{unit_price: unit_price}, _quantity) when not is_nil(unit_price), do: Decimal.new(unit_price)
 
-    cond do
-      unit_price && multiplies_back?.(Decimal.new(unit_price)) -> Decimal.new(unit_price)
-      Decimal.eq?(quantity, 0) -> nil
-      multiplies_back?.(Decimal.div(net_value, quantity)) -> Decimal.div(net_value, quantity)
-      true -> nil
+  defp unit_price(%{net_value: nil}, _quantity), do: nil
+
+  defp unit_price(row, quantity) do
+    net_before_discount =
+      Decimal.add(Decimal.new(row.net_value), decimal(row.discount) || Decimal.new(0))
+
+    if Decimal.eq?(quantity, 0) do
+      nil
+    else
+      price = Decimal.div(net_before_discount, quantity)
+      if Decimal.equal?(Decimal.mult(price, quantity), net_before_discount), do: price
     end
   end
+
+  defp decimal(nil), do: nil
+  defp decimal(value), do: Decimal.new(value)
 
   defp payment_method(nil), do: {:ok, nil}
 

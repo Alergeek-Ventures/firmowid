@@ -97,7 +97,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
   defp items_snapshot(invoice) do
     Enum.map(
       invoice.sales_invoice_items,
-      &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
+      &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu])
     )
   end
 
@@ -107,7 +107,8 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
 
     items
     |> Enum.reduce_while({:ok, []}, fn attrs, {:ok, items} ->
-      attrs = Map.take(attrs, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
+      attrs =
+        Map.take(attrs, [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate, :gtu])
 
       changeset =
         attrs
@@ -129,7 +130,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
   end
 
   defp item_totals(item, opts) do
-    refs = Map.take(item, [:quantity, :unit_price, :vat_rate])
+    refs = Map.take(item, [:quantity, :unit_price, :discount, :vat_rate])
 
     Enum.reduce_while(@totals, {:ok, item}, fn field, {:ok, item} ->
       case Ash.calculate(SalesInvoiceItem, field, Keyword.put(opts, :refs, refs)) do
