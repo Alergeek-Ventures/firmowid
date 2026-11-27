@@ -9,7 +9,8 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
   applies it. The forecast of the running and later periods includes the typical rest or month, so
   the saved amount is that estimate and does not creep up every day; both use the same `today`. It runs for
   the organization of the tenant, as a system actor bound to that organization, from the daily
-  scheduled action and from the job that `Changes.EnqueueForecasts` queues when a tax year is saved.
+  scheduled action and from the job that `Firmowid.Taxes.Forecast.Recalculation` queues when a tax
+  year is saved or the data the forecast reads changes.
   When the tax year has more than one partner, an owner's payment names the owner, so the rows
   can be told apart. Also an organization without any saved tax year gets the expectations that its
   payment history forecasts (without an owner); once settings forecast the kind, those are removed
