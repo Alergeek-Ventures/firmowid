@@ -82,6 +82,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Resource
   alias Firmowid.Scope
   alias Firmowid.SystemActor
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Firmowid.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
   require Resource
@@ -1206,6 +1207,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
   changes do
     change {Changes.ClearVatExemptionBasis, []}
+    change RecalculateForecasts, on: [:create, :update, :destroy]
   end
 
   validations do

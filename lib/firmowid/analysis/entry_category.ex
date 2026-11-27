@@ -16,6 +16,7 @@ defmodule Firmowid.Analysis.EntryCategory do
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -43,6 +44,7 @@ defmodule Firmowid.Analysis.EntryCategory do
       upsert? true
       upsert_identity :unique_entry
       upsert_fields [:category, :probability, :probabilities, :updated_at]
+      change RecalculateForecasts
 
       validate fn changeset, _context ->
         category = Ash.Changeset.get_attribute(changeset, :category)

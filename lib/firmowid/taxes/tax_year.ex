@@ -187,7 +187,9 @@ defmodule Firmowid.Taxes.TaxYear do
                     "the forecasts of this year and the last one, add the payments that are due and not saved yet, " <>
                     "update the unfulfilled ones and remove those that are no longer due. Returns the number " <>
                     "of changes. Run daily for every organization by the scheduler, and for one organization " <>
-                    "when its tax year is saved."
+                    "when its tax year is saved and about a minute after the data the forecast reads changes " <>
+                    "(a bank sync, invoices, classified transfers, the organization's legal form, VAT payer or " <>
+                    "cash accounting)."
 
       # All changes or none, so a failure leaves the expectations as they were for the next run.
       transaction? true
@@ -209,7 +211,8 @@ defmodule Firmowid.Taxes.TaxYear do
       authorize_if action([:forecast, :suggest_settings, :save_forecasts])
     end
 
-    # Only the job saves the forecasts (daily, and after a tax year is saved); nobody runs it by hand.
+    # Only the job saves the forecasts (daily, after a tax year is saved and after the data it reads
+    # changes); nobody runs it by hand.
     policy action(:save_forecasts) do
       forbid_if always()
     end

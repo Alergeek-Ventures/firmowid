@@ -65,6 +65,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.Signals
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -704,6 +705,10 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
     publish :create, ["created", :_tenant]
     publish_all :update, ["updated", :_tenant]
+  end
+
+  changes do
+    change RecalculateForecasts, on: [:create, :update, :destroy]
   end
 
   multitenancy do

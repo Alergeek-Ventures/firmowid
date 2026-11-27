@@ -15,6 +15,7 @@ defmodule Firmowid.Analysis.CounterpartyCategory do
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -52,6 +53,7 @@ defmodule Firmowid.Analysis.CounterpartyCategory do
       upsert? true
       upsert_identity :unique_counterparty
       upsert_fields [:counterparty_name, :category, :updated_at]
+      change RecalculateForecasts
 
       validate fn changeset, _context ->
         side = Ash.Changeset.get_attribute(changeset, :side)

@@ -23,6 +23,7 @@ defmodule Firmowid.Finances.BankAccount do
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Events.Event
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -192,6 +193,7 @@ defmodule Firmowid.Finances.BankAccount do
       """
 
       change Firmowid.Finances.Changes.SyncTransactions
+      change RecalculateForecasts
 
       emit Firmowid.Finances.Signals, :bank_account_synced, fields: [bank_account_id: :id]
     end

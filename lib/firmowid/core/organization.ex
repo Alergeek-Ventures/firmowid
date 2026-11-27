@@ -33,6 +33,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Core.Validations.ValidateNip
   alias Firmowid.Invoicing.VatExemption
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -128,6 +129,9 @@ defmodule Firmowid.Core.Organization do
       ]
 
       pipe_through [:company_details]
+
+      change RecalculateForecasts,
+        where: any([changing(:legal_form), changing(:is_vat_payer), changing(:is_cash_account)])
     end
 
     # ── Scoped updates ──────────────────────────────────────────────
@@ -152,6 +156,9 @@ defmodule Firmowid.Core.Organization do
 
       pipe_through [:company_details]
 
+      change RecalculateForecasts,
+        where: any([changing(:legal_form), changing(:is_vat_payer), changing(:is_cash_account)])
+
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]
     end
@@ -164,7 +171,10 @@ defmodule Firmowid.Core.Organization do
 
     update :remember_cash_accounting do
       description "Remember whether the last domestic invoice used cash accounting, for the next one to start with."
+      require_atomic? false
       accept [:is_cash_account]
+
+      change RecalculateForecasts, where: changing(:is_cash_account)
     end
 
     update :update_billing_plan do

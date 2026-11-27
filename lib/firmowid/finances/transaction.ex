@@ -16,6 +16,7 @@ defmodule Firmowid.Finances.Transaction do
   alias Firmowid.Preparations.FilterByAmount
   alias Firmowid.Preparations.ParadeDBSearch
   alias Firmowid.Resource
+  alias Firmowid.Taxes.Changes.RecalculateForecasts
 
   require Resource
 
@@ -181,6 +182,7 @@ defmodule Firmowid.Finances.Transaction do
       primary? true
       accept [:skip_invoicing]
       change filter(expr(invoice_matchable?))
+      change RecalculateForecasts
     end
 
     update :restore_for_matching do
@@ -190,6 +192,7 @@ defmodule Firmowid.Finances.Transaction do
       validate Firmowid.Finances.Transaction.Validations.NotMatched
       change set_attribute(:skip_invoicing, false)
       change filter(expr(reconciliation_status != :matched))
+      change RecalculateForecasts
     end
 
     update :connect_salary do
@@ -200,6 +203,7 @@ defmodule Firmowid.Finances.Transaction do
 
       change get_and_lock_for_update()
       change Firmowid.Finances.Changes.ConnectSalary
+      change RecalculateForecasts
     end
 
     update :disconnect_salary do
@@ -207,6 +211,7 @@ defmodule Firmowid.Finances.Transaction do
       accept []
       change set_attribute(:salary_user_id, nil)
       change set_attribute(:salary_month, nil)
+      change RecalculateForecasts
     end
 
     action :invoice_suggestions, {:array, Types.InvoiceSuggestion} do
