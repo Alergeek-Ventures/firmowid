@@ -18,6 +18,7 @@ defmodule Firmowid.Application do
     Oban.Telemetry.attach_default_logger()
     Firmowid.JobTelemetry.attach()
     Firmowid.Assistant.Telemetry.attach()
+    FirmowidMcp.Telemetry.attach()
     Ecto.DevLogger.install(Firmowid.Repo)
     Sentry.setup()
 

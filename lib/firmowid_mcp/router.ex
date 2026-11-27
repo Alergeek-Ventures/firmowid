@@ -9,6 +9,7 @@ defmodule FirmowidMcp.Router do
   alias FirmowidMcp.Ksef
   alias FirmowidMcp.Runtime
   alias FirmowidMcp.Widgets
+  alias FirmowidWeb.Auth.Components.ClientLogo
 
   @security_schemes [%{"type" => "oauth2", "scopes" => ["mcp"]}]
 
@@ -30,13 +31,15 @@ defmodule FirmowidMcp.Router do
   @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def call(conn, opts) do
     context =
-      Map.merge(
-        Ash.PlugHelpers.get_context(conn) || %{},
+      (Ash.PlugHelpers.get_context(conn) || %{})
+      |> Map.merge(
         FirmowidMcp.Invoicing.action_context(),
         fn
           :shared, existing, required -> Map.merge(existing, required)
         end
       )
+      # The verified client app, for the analytics of its tool calls (FirmowidMcp.Telemetry).
+      |> Map.put(:mcp_client, ClientLogo.app(get_in(conn.assigns, [:oauth_claims, "client_id"])))
 
     conn
     |> Ash.PlugHelpers.set_context(context)
