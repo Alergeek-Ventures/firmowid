@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
     conn = get(conn, ~p"/ksef")
     html = html_response(conn, 200)
 
-    assert html =~ "Faktury KSeF bez limitu."
+    assert html =~ "Program do KSeF<br>bez limitu faktur."
     assert html =~ ~s(<link rel="canonical" href="https://firmowid.pl/ksef">)
     refute html =~ "/funkcje/fakturowanie"
     assert html =~ Endpoint.static_path("/landing/ksef.css")
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Landing.Controllers.PreviewTest do
       |> get(~p"/ksef")
       |> html_response(200)
 
-    assert english =~ "Faktury KSeF bez limitu."
+    assert english =~ "Program do KSeF<br>bez limitu faktur."
 
     assert build_conn() |> get(~p"/sitemap.xml") |> response(200) =~ "/ksef</loc>"
   end
