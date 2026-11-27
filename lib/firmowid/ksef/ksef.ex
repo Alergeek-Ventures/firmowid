@@ -141,7 +141,8 @@ defmodule Firmowid.Ksef do
         {:error, :not_connected}
 
       credential ->
-        with :ok <- revoke_remote(revocation_request(session_credential(credential))) do
+        with :ok <- revoke_remote(revocation_request(session_credential(credential))),
+             :ok <- forget_session(credential.organization_id) do
           fn ->
             {:ok, Credential.destroy!(credential, scope: scope, return_notifications?: true)}
           end
@@ -175,15 +176,23 @@ defmodule Firmowid.Ksef do
   end
 
   @doc """
-  Revokes the captured credential at KSeF, invalidates the cached access token and cancels
-  the organization's pending session, certificate and fetch jobs. Does not touch the stored
-  credential, which may be gone already.
+  Revokes the captured credential at KSeF: its generated certificate and its refresh token.
+  Does not touch the stored credential, which may be gone already.
   """
   @spec revoke_remote(revocation_request()) :: :ok | {:error, term()}
-  def revoke_remote(%{organization_id: org_id} = request) do
-    with :ok <- maybe_revoke_certificate(request),
-         :ok <- ApiClient.revoke_refresh_token(request.access_token),
-         {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
+  def revoke_remote(request) do
+    with :ok <- maybe_revoke_certificate(request) do
+      ApiClient.revoke_refresh_token(request.access_token)
+    end
+  end
+
+  @doc """
+  Invalidates the organization's cached access token and cancels its pending session,
+  certificate and fetch jobs. Needs no KSeF call, so it also runs when revoking failed.
+  """
+  @spec forget_session(String.t()) :: :ok | {:error, term()}
+  def forget_session(org_id) do
+    with {:ok, _} <- SessionWorker.invalidate_access_token(org_id) do
       # Oban.Job is not an Ash resource — raw Ecto query is required here.
       {:ok, _count} =
         Firmowid.Oban.cancel_all_jobs(
