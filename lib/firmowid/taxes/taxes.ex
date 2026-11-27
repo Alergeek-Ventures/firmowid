@@ -83,8 +83,8 @@ defmodule Firmowid.Taxes do
                     "is overstated by the VAT in them, and the VAT of such sales is not forecast; " <>
                     "costs are cost invoices net of VAT, " <>
                     "salary transfers and skipped outgoing transfers that the analysis put into a cost " <>
-                    "category (not taxes, ZUS of owners or transfers between own accounts; unclassified " <>
-                    "transfers are not costs); no depreciation, reliefs or losses of earlier years; " <>
+                    "category (not taxes or other, ZUS of owners or transfers between own accounts; " <>
+                    "unclassified transfers are not costs); no depreciation, reliefs or losses of earlier years; " <>
                     "contributions use the rates_year figures and count in the month they are for; VAT " <>
                     "surplus is carried forward and lowered by refunds, not refunded itself. Changes nothing."
     end

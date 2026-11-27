@@ -440,6 +440,7 @@ defmodule Firmowid.TaxesTest do
       end
 
       classified = transfer.("Acme Hosting")
+      catch_all = transfer.("Acme Misc")
       transfer.("Acme Exchange")
 
       # Neither transfer is classified: no costs.
@@ -454,6 +455,20 @@ defmodule Firmowid.TaxesTest do
           category: :software,
           probability: 0.9,
           probabilities: %{"software" => 0.9}
+        },
+        tenant: org_id
+      )
+
+      # A transfer in the catch-all category `other` is not a cost either.
+      Ash.Seed.seed!(
+        EntryCategory,
+        %{
+          organization_id: org_id,
+          entity_type: :transaction,
+          resource_id: catch_all.id,
+          category: :other,
+          probability: 0.9,
+          probabilities: %{"other" => 0.9}
         },
         tenant: org_id
       )

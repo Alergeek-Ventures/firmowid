@@ -28,7 +28,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     * a skipped incoming transfer is revenue, at its gross amount, only when the
       analysis put it into a revenue category, and a skipped outgoing transfer
       is a cost only when the analysis put it into
-      a category other than taxes (see `Firmowid.Taxes.Forecast.IncomeEntries`);
+      a category other than taxes and the catch-all `other` (see `Firmowid.Taxes.Forecast.IncomeEntries`);
     * a VAT surplus is carried forward and lowered by the refunds from a tax
       office (incoming skipped transfers titled with VAT), not refunded itself.
 
