@@ -499,11 +499,8 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
       not VatRate.valid?(row.vat_rate) ->
         {:error, {:unsupported, "VAT rate #{inspect(row.vat_rate)}"}}
 
-      is_nil(row.unit_price) and is_nil(row.net_value) ->
-        {:error, {:unsupported, "line without a net price"}}
-
-      is_nil(price) ->
-        {:error, {:unsupported, "line net value not divisible by its quantity"}}
+      error = line_price_error(row, price) ->
+        error
 
       error = line_amounts_error(row, net) ->
         error
@@ -514,6 +511,22 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParser do
 
       true ->
         :ok
+    end
+  end
+
+  defp line_price_error(row, price) do
+    cond do
+      is_nil(row.unit_price) and is_nil(row.net_value) ->
+        {:error, {:unsupported, "line without a net price"}}
+
+      is_nil(price) ->
+        {:error, {:unsupported, "line net value not divisible by its quantity"}}
+
+      is_nil(row.unit_price) and not Decimal.equal?(price, Decimal.round(price, 8)) ->
+        {:error, {:unsupported, "derived unit price needs more than 8 decimal places"}}
+
+      true ->
+        nil
     end
   end
 

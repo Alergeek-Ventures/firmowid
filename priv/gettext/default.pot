@@ -4829,8 +4829,14 @@ msgid "Disconnecting will stop the current KSeF integration for this organizatio
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/sales_invoice.ex
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Discount"
+msgstr ""
+
+#: lib/firmowid/invoicing/validations/validate_line_discount.ex
+#, elixir-autogen, elixir-format
+msgid "Discount must be between zero and the line value before discount."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/changes.ex

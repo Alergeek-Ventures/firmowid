@@ -19,6 +19,7 @@ defmodule Firmowid.Invoicing.WizardState.Item do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Checks.ActorRole
+  alias Firmowid.Invoicing.Validations.ValidateLineDiscount
   alias Firmowid.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Resource
 
@@ -54,6 +55,7 @@ defmodule Firmowid.Invoicing.WizardState.Item do
         :wizard_state_id
       ]
 
+      validate {ValidateLineDiscount, []}
       validate {ValidateVatRate, []}
     end
 
@@ -62,6 +64,7 @@ defmodule Firmowid.Invoicing.WizardState.Item do
       primary? true
       require_atomic? false
       accept [:index, :name, :quantity, :unit, :unit_price, :discount, :vat_rate]
+      validate {ValidateLineDiscount, []}
       validate {ValidateVatRate, []}
     end
   end

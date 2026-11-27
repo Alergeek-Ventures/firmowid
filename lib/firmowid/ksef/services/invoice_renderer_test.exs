@@ -129,6 +129,25 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
     end
   end
 
+  test "a sub-grosz discount keeps its precision and reconciles the line", %{
+    model: model,
+    org_id: org_id
+  } do
+    invoice = build_domestic_invoice(org_id: org_id)
+
+    Ash.Seed.update!(hd(invoice.sales_invoice_items), %{
+      unit_price: Decimal.new("100.005"),
+      discount: Decimal.new("0.004")
+    })
+
+    xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+    assert xml =~
+             ~r|<P_9A>100\.005</P_9A>\s*<P_10>0\.004</P_10>\s*<P_11>100\.00</P_11>|
+
+    assert :ok = validate_xml(xml, model)
+  end
+
   test "line discounts and sub-grosz prices are rendered in FA(3) order", %{
     model: model,
     org_id: org_id

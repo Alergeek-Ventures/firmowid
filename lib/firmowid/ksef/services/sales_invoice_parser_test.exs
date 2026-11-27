@@ -75,6 +75,21 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceParserTest do
              SalesInvoiceParser.parse(mismatched_xml)
   end
 
+  test "rejects a price derived from P_11 that needs more than 8 decimal places", %{
+    org_id: org_id
+  } do
+    xml =
+      [org_id: org_id]
+      |> build_domestic_invoice()
+      |> render()
+      |> String.replace(~r/<P_8B>[^<]+<\/P_8B>/, "<P_8B>1000000000</P_8B>")
+      |> String.replace(~r/<P_9A>[^<]+<\/P_9A>\s*/, "")
+      |> String.replace(~r/<P_11>[^<]+<\/P_11>/, "<P_11>1.00</P_11>")
+
+    assert {:error, {:unsupported, "derived unit price needs more than 8 decimal places"}} =
+             SalesInvoiceParser.parse(xml)
+  end
+
   test "reads a Polish buyer without a tax ID as an individual", %{org_id: org_id} do
     invoice = build_no_id_invoice(org_id: org_id)
 

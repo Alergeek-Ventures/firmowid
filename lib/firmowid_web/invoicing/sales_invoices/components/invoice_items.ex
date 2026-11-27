@@ -598,11 +598,24 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     value={item[:gtu].value}
                   />
                   <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
-                  <.item_name
-                    field={item[:name]}
-                    index={item.index}
-                    suggest?={@item_suggestions != []}
-                  />
+                  <div class="flex min-w-0 flex-col gap-1">
+                    <.item_name
+                      field={item[:name]}
+                      index={item.index}
+                      suggest?={@item_suggestions != []}
+                    />
+                    <.input
+                      :if={not is_nil(item[:discount].value)}
+                      field={item[:discount]}
+                      type="number"
+                      label={gettext("Discount")}
+                      step="any"
+                      placeholder="0.00"
+                      phx-debounce
+                      class="w-32"
+                      input_class="text-center"
+                    />
+                  </div>
                   <.input
                     field={item[:quantity]}
                     placeholder="0"
@@ -651,7 +664,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                           aria-label={gettext("Item %{number}: net price", number: item.index + 1)}
                           phx-mounted={focus_price_input? && JS.focus()}
                           phx-debounce
-                          step=".01"
+                          step="any"
                           min="0"
                           placeholder="0,00"
                           class="w-30"
