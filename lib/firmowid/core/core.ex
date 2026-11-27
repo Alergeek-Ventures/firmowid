@@ -410,6 +410,8 @@ defmodule Firmowid.Core do
     with :ok <- authorize_destroy(organization, opts),
          :ok <- OrganizationCleanup.remove_dependents(scope),
          :ok <- OrganizationCleanup.detach_users(scope) do
+      # The cascade deletes KSeF cost invoices, which a trigger otherwise protects; SET LOCAL ends with the transaction.
+      Firmowid.Repo.query!("SET LOCAL firmowid.organization_purge = 'on'")
       Organization.destroy(organization, opts)
     end
   end
