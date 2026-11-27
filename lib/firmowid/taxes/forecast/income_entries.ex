@@ -26,9 +26,11 @@ defmodule Firmowid.Taxes.Forecast.IncomeEntries do
       their own signed amounts);
     * transfers pinned to a salary, on the salary month;
     * skipped outgoing transfers on their booking date that the analysis put
-      into a cost category other than taxes (`categories`, by transaction id);
-      an unclassified transfer is not a cost, as most of such money is currency
-      exchange, internal movements or dividends. Transfers between the
+      into a cost category other than taxes or `:other` (`categories`, by
+      transaction id); `:other` is a catch-all for costs fitting no category,
+      the way `:other_income` is for revenue. An unclassified transfer is not a
+      cost, as most of such money is currency exchange, internal movements or
+      dividends. Transfers between the
       company's own accounts and entries tagged as internal or as taxes never
       count, and neither do public levies: tax payments are never a cost, ZUS
       is one only for a limited company (payroll contributions; an owner's own
@@ -153,6 +155,7 @@ defmodule Firmowid.Taxes.Forecast.IncomeEntries do
 
   defp cost_category?(nil), do: false
   defp cost_category?(:taxes), do: false
+  defp cost_category?(:other), do: false
   defp cost_category?(_category), do: true
 
   defp entry(side, amount, date) do
