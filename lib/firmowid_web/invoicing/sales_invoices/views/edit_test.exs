@@ -76,6 +76,39 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert is_nil(SalesInvoice.get!(invoice.id, scope: scope).invoice_number)
   end
 
+  test "switching the discount off clears the line discount the draft is saved with", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = %{tenant: admin.member.organization_id, actor: admin}
+    invoice = draft_fixture!(admin)
+    [item] = invoice.sales_invoice_items
+    Ash.Seed.update!(item, %{discount: Decimal.new("10")})
+    {:ok, view, _html} = live(log_in_user(conn, admin), ~p"/sprzedazowe/#{invoice.id}/edytuj")
+
+    assert has_element?(view, "input[name='form[sales_invoice_items][0][discount]'][value='10']")
+
+    # The switch-off event still carries the discount input that is about to disappear.
+    view
+    |> form("#invoice-form")
+    |> render_change(%{
+      "_target" => ["form", "line_discounts"],
+      "form" => %{
+        "line_discounts" => "false",
+        "sales_invoice_items" => %{"0" => %{"discount" => "10"}}
+      }
+    })
+
+    refute has_element?(view, "input[name='form[sales_invoice_items][0][discount]']")
+
+    view |> form("#invoice-form") |> render_submit()
+    view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
+
+    saved = SalesInvoice.get!(invoice.id, scope: scope, load: [sales_invoice_items: [:net_value]])
+    assert [%{discount: nil, net_value: net_value}] = saved.sales_invoice_items
+    assert Decimal.equal?(net_value, Decimal.new("100"))
+  end
+
   test "issuing without KSeF is unavailable, while saving the draft still works", %{conn: conn} do
     admin = admin_fixture()
     invoice = draft_fixture!(admin)
