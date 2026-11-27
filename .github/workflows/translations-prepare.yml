@@ -65,8 +65,29 @@ jobs:
           ref: ${{ inputs.version || github.sha }}
           persist-credentials: false
 
-      - name: Enter devenv, which provides the Accent CLI
-        uses: ./.github/actions/devenv
+      # scripts/accent.exs needs only Elixir, Hex and, on main, gh. They come from devenv's
+      # pinned nixpkgs, beam-packages.nix and hex-version, so they are the same store paths
+      # and Hex as in devenv, without the ~20 s it takes to evaluate the whole devenv on this
+      # critical path.
+      # fetchTarball with the locked hash reuses the nixpkgs source devenv already put in
+      # the runner's store; a flake reference would unpack nixpkgs again (~20 s).
+      - name: Install devenv's Elixir, Hex and gh
+        run: |
+          set -euo pipefail
+          read -r rev nar_hash < <(jq -er '.nodes.nixpkgs.locked | "\(.rev) \(.narHash)"' devenv.lock)
+          bins=$(nix build --impure --no-link --print-out-paths --argstr rev "$rev" --argstr narHash "$nar_hash" --expr '
+            { rev, narHash }:
+            let
+              pkgs = import (builtins.fetchTarball {
+                url = "https://github.com/NixOS/nixpkgs/archive/" + rev + ".tar.gz";
+                sha256 = narHash;
+              }) { };
+              beamPackages = import ./beam-packages.nix { inherit pkgs; };
+            in [ beamPackages.elixir_1_20 pkgs.gh ]' | sed 's|$|/bin|')
+          hex=$(sed -n 's/^ *hex-version = "\(.*\)";$/\1/p' devenv.nix)
+          PATH="$(paste -sd: <<< "$bins"):$PATH" mix local.hex "$hex" --force
+          echo "$bins" >> "$GITHUB_PATH"
+          echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
 
       # A main commit keeps the snapshot it was first validated and deployed with.
       - name: Reuse the published snapshot of this main commit
