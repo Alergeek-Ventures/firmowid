@@ -391,6 +391,7 @@ defmodule Firmowid.Core.User do
 
     action :get_shared_birthday, :string do
       description "Returns the authenticated user's shared birthday (nil if not shared)."
+      allow_nil? true
 
       run fn _input, context ->
         member = Ash.load!(context.actor.member, :shared_birthday, Ash.Context.to_opts(context))
