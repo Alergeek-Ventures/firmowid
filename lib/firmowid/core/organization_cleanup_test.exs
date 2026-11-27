@@ -11,6 +11,7 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
   alias Firmowid.Core.OauthConsent
   alias Firmowid.Core.OauthRefreshToken
   alias Firmowid.Core.OrganizationCleanup
+  alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Scope
   alias Firmowid.SystemActor
   alias Phoenix.Socket.Broadcast
@@ -65,6 +66,29 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
     assert :ok = Core.destroy_organization(organization, scope: scope)
   end
 
+  test "an organization with a cost invoice imported from KSeF can be deleted" do
+    owner = admin_fixture()
+    organization_id = owner.member.organization_id
+    invoice = seed_ksef_cost_invoice!(organization_id)
+    scope = %Scope{actor: owner, tenant: organization_id}
+    organization = Core.get_organization!(organization_id, scope: scope)
+
+    assert :ok = Core.destroy_organization(organization, scope: scope)
+
+    assert Firmowid.Repo.get(CostInvoice, invoice.id) == nil
+  end
+
+  test "a KSeF cost invoice cannot be deleted outside of an organization deletion" do
+    owner = admin_fixture()
+    invoice = seed_ksef_cost_invoice!(owner.member.organization_id)
+
+    assert_raise Postgrex.Error, ~r/Cannot delete a KSeF-imported cost invoice/, fn ->
+      Firmowid.Repo.query!("DELETE FROM cost_invoices WHERE id = $1", [
+        Ecto.UUID.dump!(invoice.id)
+      ])
+    end
+  end
+
   test "account cleanup lists and deletes only its user's OAuth records" do
     owner = user_fixture()
     other = user_in_org_fixture(owner.member.organization_id)
@@ -96,6 +120,25 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
 
       assert remaining.id == other_record.id
     end
+  end
+
+  defp seed_ksef_cost_invoice!(organization_id) do
+    Ash.Seed.seed!(CostInvoice, %{
+      seller: "Acme Sp. z o.o.",
+      seller_display_name: "Acme",
+      seller_address: "ul. Przykładowa 1, 00-001 Warszawa",
+      sale_date: ~D[2026-02-01],
+      issue_date: ~D[2026-02-01],
+      due_date: ~D[2026-02-14],
+      amount: Money.new!("PLN", Decimal.new("-123.45")),
+      description: "Import z KSeF",
+      invoice_identifier: "FV/2026/02/001",
+      skip_invoicing: false,
+      organization_id: organization_id,
+      ksef_number: "KSEF-2026-TEST-#{System.unique_integer([:positive])}",
+      ksef_permanent_storage_date: ~N[2026-02-01 12:00:00],
+      ksef_downloaded_at: DateTime.utc_now()
+    })
   end
 
   defp cleanup_scope(user_id) do

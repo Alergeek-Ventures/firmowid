@@ -152,6 +152,8 @@ defmodule Firmowid.Core.OrganizationExternalCleanup do
            extra: extra
          ) do
       {:ok, _} -> :ok
+      # Sentry's event dedupe or a `before_send` filter dropped it; not a failure.
+      result when result in [:excluded, :ignored] -> :ok
       _ -> warn_capture_failed(organization_id, service, step, identifiers)
     end
   rescue
