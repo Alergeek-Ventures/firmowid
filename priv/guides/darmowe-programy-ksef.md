@@ -79,7 +79,7 @@ Samą [Aplikację Podatnika KSeF](https://ksef.podatki.gov.pl/aplikacja-podatnik
 
 ## Źródła
 
-Strony i cenniki sprawdzone 21–26.10.2026, ponownie 11.11.2026 (poza FakturaXL, której cennik nie był dostępny); limity i ceny planów płatnych ponownie 23.11.2026 (bez FakturaXL i inFaktu, których strony nie dały się odczytać).
+Strony i cenniki sprawdzone 21–26.10.2026, ponownie 11.11.2026 (poza FakturaXL, której cennik nie był dostępny); limity i ceny planów płatnych ponownie 23.11.2026 (bez FakturaXL i inFaktu).
 
 - Firmowid: https://firmowid.pl/cennik ; https://firmowid.pl/funkcje ; dostęp 22.10.2026
 - Aplikacja Podatnika KSeF 2.0: https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/ ; dostęp 24.10.2026
