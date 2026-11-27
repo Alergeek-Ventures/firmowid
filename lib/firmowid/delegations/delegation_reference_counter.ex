@@ -17,6 +17,11 @@ defmodule Firmowid.Delegations.DelegationReferenceCounter do
   postgres do
     table "delegation_reference_counters"
     repo Firmowid.Repo
+
+    # Deleted with its organization.
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   code_interface do

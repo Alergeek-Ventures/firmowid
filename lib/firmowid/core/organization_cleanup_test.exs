@@ -11,7 +11,10 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
   alias Firmowid.Core.OauthConsent
   alias Firmowid.Core.OauthRefreshToken
   alias Firmowid.Core.OrganizationCleanup
+  alias Firmowid.Delegations.DelegationReferenceCounter
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.CounterpartyProposal
+  alias Firmowid.Invoicing.SkippedCounterpartySuggestion
   alias Firmowid.Scope
   alias Firmowid.SystemActor
   alias Phoenix.Socket.Broadcast
@@ -70,6 +73,27 @@ defmodule Firmowid.Core.OrganizationCleanupTest do
     owner = admin_fixture()
     organization_id = owner.member.organization_id
     invoice = seed_ksef_cost_invoice!(organization_id)
+
+    # Records that reference only the organization go with it.
+    Ash.Seed.seed!(CounterpartyProposal, %{
+      group_key: "acme",
+      source_hash: "hash",
+      organization_id: organization_id
+    })
+
+    Ash.Seed.seed!(SkippedCounterpartySuggestion, %{
+      group_key: "acme",
+      skipped_on: ~D[2026-02-01],
+      organization_id: organization_id
+    })
+
+    Ash.Seed.seed!(DelegationReferenceCounter, %{
+      billing_month: ~D[2026-02-01],
+      initials: "JK",
+      last_number: 1,
+      organization_id: organization_id
+    })
+
     scope = %Scope{actor: owner, tenant: organization_id}
     organization = Core.get_organization!(organization_id, scope: scope)
 
