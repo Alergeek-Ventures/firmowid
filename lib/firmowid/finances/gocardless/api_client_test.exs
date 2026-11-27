@@ -139,17 +139,20 @@ defmodule Firmowid.Finances.GoCardless.ApiClientTest do
       assert {:error, :not_found} = ApiClient.get_booked_transactions_for_account("acc-1")
     end
 
-    test "returns {:error, :conflict} on 409" do
-      Req.Test.stub(:bank_data_transactions, fn conn ->
-        conn
-        |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          409,
-          Jason.encode!(%{summary: "Account suspended", status_code: 409})
-        )
-      end)
+    test "tells a suspended account from one still processing on 409" do
+      for {summary, reason} <- [
+            {"Account Suspended", :account_suspended},
+            {"AccountProcessing", :account_processing},
+            {"Account state does not support this operation", :conflict}
+          ] do
+        Req.Test.stub(:bank_data_transactions, fn conn ->
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.send_resp(409, Jason.encode!(%{summary: summary, status_code: 409}))
+        end)
 
-      assert {:error, :conflict} = ApiClient.get_booked_transactions_for_account("acc-1")
+        assert {:error, ^reason} = ApiClient.get_booked_transactions_for_account("acc-1")
+      end
     end
 
     test "returns {:error, :rate_limited} on 429" do

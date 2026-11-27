@@ -287,10 +287,12 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
     {:error, :not_found}
   end
 
-  defp handle_response({:ok, %Req.Response{status: 409}}) do
-    Logger.warning("GoCardless API conflict (account suspended/error state): status=409 error_kind=conflict")
-
-    {:error, :conflict}
+  # A 409 means either a suspended account, which needs a new connection, or one the bank
+  # is still processing, which only needs time. Only the error summary tells them apart.
+  defp handle_response({:ok, %Req.Response{status: 409, body: body}}) do
+    reason = conflict_reason(body)
+    Logger.warning("GoCardless API conflict: status=409 error_kind=#{reason}")
+    {:error, reason}
   end
 
   defp handle_response({:ok, %Req.Response{status: 429}}) do
@@ -321,6 +323,18 @@ defmodule Firmowid.Finances.GoCardless.ApiClient do
   end
 
   # --- Helpers ---
+
+  defp conflict_reason(%{"summary" => summary}) when is_binary(summary) do
+    summary = String.downcase(summary)
+
+    cond do
+      String.contains?(summary, "suspended") -> :account_suspended
+      String.contains?(summary, "processing") -> :account_processing
+      true -> :conflict
+    end
+  end
+
+  defp conflict_reason(_body), do: :conflict
 
   defp mock_data(key), do: Application.get_env(:firmowid, :bank_data_api_client, [])[key] || []
 
