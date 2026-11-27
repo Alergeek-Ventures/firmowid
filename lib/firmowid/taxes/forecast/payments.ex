@@ -58,27 +58,26 @@ defmodule Firmowid.Taxes.Forecast.Payments do
     |> Enum.filter(&(Analysis.public_levy(&1) == levy))
   end
 
+  @doc "Returns the booking date of the earliest transaction, nil without any."
+  @spec history_start(keyword()) :: Date.t() | nil
+  def history_start(opts), do: Ash.min!(Transaction, :booking_date, opts)
+
   @doc """
-  Returns the payments of taxes and ZUS booked from `first` to `last`, each for its kind and
-  period key (`2026-11`, `2026-Q4`, as in `Firmowid.Taxes.Forecast.Period.of_year/2`). VAT and CIT
-  always count; PIT and ZUS only when `owner_pays?`, as with several owners the payments cannot be
-  attributed.
+  Returns every payment of taxes (VAT, CIT, PIT) and ZUS booked from `first` to `last`, each for its
+  kind and period key (`2026-11`, `2026-Q4`, as in `Firmowid.Taxes.Forecast.Period.of_year/2`).
+  Whose payment it is stays unknown: with several owners the PIT and ZUS payments cannot be
+  attributed, which `Firmowid.Taxes.Forecast.PaymentHistory` takes into account.
   """
-  @spec history(Date.t(), Date.t(), boolean(), keyword()) :: [payment()]
-  def history(first, last, owner_pays?, opts) do
+  @spec history(Date.t(), Date.t(), keyword()) :: [payment()]
+  def history(first, last, opts) do
     taxes =
       for transfer <- Enum.flat_map(transfers_to(:taxes, first, last, opts), &parse/1),
-          owner_pays? or transfer.tax in [:vat, :cit],
           do: %{kind: transfer.tax, period: key(transfer), amount: transfer.amount}
 
     zus =
-      if owner_pays? do
-        for transfer <- transfers_to(:payroll, first, last, opts) do
-          payment = zus_payment(transfer)
-          %{kind: :zus, period: previous_month(payment.date), amount: payment.amount}
-        end
-      else
-        []
+      for transfer <- transfers_to(:payroll, first, last, opts) do
+        payment = zus_payment(transfer)
+        %{kind: :zus, period: previous_month(payment.date), amount: payment.amount}
       end
 
     taxes ++ zus

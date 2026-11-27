@@ -148,7 +148,13 @@ defmodule Firmowid.Taxes.TaxYear do
       description "Forecast the tax payments of the year's periods from its settings and the company's invoices: " <>
                     "VAT for a VAT payer with a saved VAT period, and CIT advances for a limited company with a saved " <>
                     "CIT rate and advance form, and for each partner of a sole proprietorship or a civil partnership " <>
-                    "their PIT advances and ZUS contributions (the forecast's member_id is the partner). Saves nothing."
+                    "their PIT advances and ZUS contributions (the forecast's member_id is the partner). A year " <>
+                    "without saved settings uses those of the latest saved year before it, and one without any saved " <>
+                    "year the VAT period that the transfers to the tax micro-account suggest (VAT only; CIT, PIT and " <>
+                    "ZUS need an owner, a rate or ZUS settings). The payments of the last three periods of a kind " <>
+                    "that the bank history covers (a company connected recently has fewer) correct a forecast that " <>
+                    "the documents do not track, up or down (outside 1.5 times the typical payment), and a kind " <>
+                    "without settings is forecast from them alone. Saves nothing."
 
       constraints items: [
                     fields: [
@@ -200,7 +206,7 @@ defmodule Firmowid.Taxes.TaxYear do
 
     bypass {SystemActorRole, roles: [:tax_forecaster]} do
       authorize_if action_type(:read)
-      authorize_if action([:forecast, :save_forecasts])
+      authorize_if action([:forecast, :suggest_settings, :save_forecasts])
     end
 
     # Only the job saves the forecasts (daily, and after a tax year is saved); nobody runs it by hand.

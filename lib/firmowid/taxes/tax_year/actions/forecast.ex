@@ -45,15 +45,29 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   accounting, the previous month's health contribution base in January and
   Mały ZUS Plus need them; every calculation ignores entries outside its dates.
 
-  Only when the documents explained less than half of what was paid for the last three periods of
-  a kind, a forecast that is not past due, starts within the horizon (see below) and whose amount
-  is under half of the typical payment (the median of those three payments, read from the
-  transfers to the tax micro-account and to ZUS) takes that payment instead, and its `details` get
-  `documents_amount` and `typical_payment` (see `Firmowid.Taxes.Forecast.PaymentHistory`). It
-  covers companies that do not issue their invoices in Firmowid. The forecasts of those periods
-  are computed unadjusted, from the year before as well when they fall in it. VAT and CIT payments
-  always count; PIT and ZUS only for a sole proprietorship with one partner, who pays from the
-  company account.
+  A year without saved settings uses those of the latest saved year before it (with its partners),
+  computed for the year itself: its periods, rates and due dates. Without an earlier year either,
+  the settings are what `Firmowid.Taxes.TaxYear.Actions.SuggestSettings` recommends from the
+  transfers to the tax micro-account, as far as they can be used without guessing: the suggested
+  VAT period forecasts a VAT payer's VAT from the documents, while a CIT rate, an owner and ZUS
+  settings are not known from transfers, so CIT, PIT and ZUS come from the payments alone. Nothing
+  is saved.
+
+  The payments of the last three periods of a kind that the bank history covers (the median of them
+  is its typical payment, read from the transfers to the tax micro-account and to ZUS; a period
+  due before the earliest transaction's booking date is not known, so a recent history has fewer
+  periods) correct the forecast in both directions, as
+  `Firmowid.Taxes.Forecast.PaymentHistory` describes: when the documents do not track what was paid
+  (the reference forecasts are not within 1.5 times of the sums paid), a forecast that
+  is not past due and starts within the horizon (see below) takes the typical payment if its amount
+  is not within 1.5 times of it, and its `details` get `documents_amount` and `typical_payment`. It
+  covers companies that do not issue their invoices in Firmowid and settings that do not fit what is
+  paid. The forecasts of the reference periods are computed unadjusted, from the year before as
+  well when they fall in it. VAT and CIT payments always count; the PIT and ZUS of owners only for a
+  sole proprietorship with one partner, who pays from the company account. A kind that the settings
+  give no forecast of (no saved year or suggested VAT period, a limited company's ZUS, simplified CIT advances, an unknown
+  legal form) is forecast from the payments alone, with `details.typical_payment` and without
+  `documents_amount`; the ZUS of a limited company is due on the 15th.
 
   Cost invoices without a VAT amount bring none to VAT and count at their gross
   amount in CIT costs, so each forecast tells how many its period has.
@@ -92,6 +106,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
   alias Firmowid.Taxes.Forecast.Vat
   alias Firmowid.Taxes.Forecast.VatEntries
   alias Firmowid.Taxes.Forecast.Zus
+  alias Firmowid.Taxes.TaxYear
 
   @impl true
   def run(input, _opts, context) do
@@ -99,22 +114,30 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     today = input.arguments.today
     opts = Ash.Context.to_opts(context)
 
-    with {:ok, tax_year} <- get_tax_year(year, opts),
-         {:ok, organization} <- Core.get_organization(context.tenant, opts),
+    with {:ok, organization} <- Core.get_organization(context.tenant, opts),
+         {:ok, tax_year} <- settings(year, opts),
          {:ok, forecasts} <- unadjusted(tax_year, organization, today, context, opts) do
       adjust_to_payments(forecasts, year, organization, tax_year, today, context, opts)
     end
   end
 
-  defp get_tax_year(year, opts) do
-    Taxes.get_tax_year(
-      year,
-      opts |> Keyword.put(:not_found_error?, false) |> Keyword.put(:load, [:partners])
-    )
+  # The settings of the year, or else those of the latest saved year before it, computed for `year`;
+  # without either, the VAT period the transfers suggest on an unsaved year.
+  defp settings(year, opts) do
+    with {:ok, tax_years} <- Taxes.list_tax_years(%{}, Keyword.put(opts, :load, [:partners])) do
+      case Enum.find(tax_years, &(&1.year <= year)) do
+        nil -> suggested(year, opts)
+        tax_year -> {:ok, %{tax_year | year: year}}
+      end
+    end
   end
 
-  # A year without a saved tax year has no forecasts.
-  defp unadjusted(nil, _organization, _today, _context, _opts), do: {:ok, []}
+  defp suggested(year, opts) do
+    with {:ok, suggestions} <- Taxes.suggest_tax_settings(year, opts) do
+      vat_period = Enum.find_value(suggestions, &(&1.setting == :vat_period && &1.value))
+      {:ok, %TaxYear{year: year, vat_period: vat_period, partners: []}}
+    end
+  end
 
   defp unadjusted(tax_year, organization, today, context, opts) do
     documents = Documents.read(tax_year.year, opts)
@@ -126,24 +149,25 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
        owners(tax_year, organization, documents, scope, today)}
   end
 
-  defp adjust_to_payments([], _year, _organization, _tax_year, _today, _context, _opts), do: {:ok, []}
-
   defp adjust_to_payments(forecasts, year, organization, tax_year, today, context, opts) do
     owner_pays? =
       organization.legal_form == :sole_proprietorship and match?([_], tax_year.partners)
 
-    case Payments.history(
-           Date.new!(year - 1, 1, 1),
-           Date.new!(year + 1, 12, 31),
-           owner_pays?,
-           opts
-         ) do
+    # Whatever the forecast's year, the reference periods and the periods not past due were paid
+    # between the start of the year before today's and today.
+    case Payments.history(Date.new!(today.year - 1, 1, 1), today, opts) do
       [] ->
         {:ok, forecasts}
 
       payments ->
         with {:ok, reference} <- reference(forecasts, year, organization, today, context, opts) do
-          {:ok, PaymentHistory.adjust(forecasts, reference, payments, today)}
+          {:ok,
+           PaymentHistory.adjust(forecasts, reference, payments, today,
+             year: year,
+             legal_form: organization.legal_form,
+             owner_pays?: owner_pays?,
+             history_start: Payments.history_start(opts)
+           )}
         end
     end
   end
@@ -153,7 +177,7 @@ defmodule Firmowid.Taxes.TaxYear.Actions.Forecast do
     other_years = PaymentHistory.reference_years(forecasts, today) -- [year]
 
     Enum.reduce_while(other_years, {:ok, forecasts}, fn other_year, {:ok, acc} ->
-      with {:ok, tax_year} <- get_tax_year(other_year, opts),
+      with {:ok, tax_year} <- settings(other_year, opts),
            {:ok, other} <- unadjusted(tax_year, organization, today, context, opts) do
         {:cont, {:ok, acc ++ other}}
       else

@@ -39,6 +39,10 @@ defmodule Firmowid.Taxes.Forecast.Cit do
   @spec due_day() :: 1..28
   def due_day, do: @due_day
 
+  @doc "Returns the description of the CIT advance for `period`."
+  @spec description(Period.t()) :: String.t()
+  def description(period), do: gettext("CIT advance for %{period}", period: Period.name(period))
+
   @doc "Returns one forecast for each period of `year`, from entries of any year."
   @spec forecast([Income.entry()], settings(), integer()) :: [map()]
   def forecast(_entries, %{cit_advances: :simplified}, _year), do: []
@@ -71,7 +75,7 @@ defmodule Firmowid.Taxes.Forecast.Cit do
           period_end: period.last,
           amount: advance,
           due_date: Period.due_date(period, @due_day),
-          description: gettext("CIT advance for %{period}", period: Period.name(period)),
+          description: description(period),
           member_id: nil,
           details: %{
             revenue: Decimal.round(revenue, 2),

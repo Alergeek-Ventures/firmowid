@@ -11,7 +11,9 @@ defmodule Firmowid.Taxes.TaxYear.Actions.SaveForecasts do
   the organization of the tenant, as a system actor bound to that organization, from the daily
   scheduled action and from the job that `Changes.EnqueueForecasts` queues when a tax year is saved.
   When the tax year has more than one partner, an owner's payment names the owner, so the rows
-  can be told apart.
+  can be told apart. Also an organization without any saved tax year gets the expectations that its
+  payment history forecasts (without an owner); once settings forecast the kind, those are removed
+  as the settings' forecasts replace them.
   """
   use Ash.Resource.Actions.Implementation
 
