@@ -1,8 +1,8 @@
 ---
-title: "Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT"
-description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude i ChatGPT przez MCP. Każdą fakturę zatwierdzasz sam."
+title: "Asystent AI w Firmowidzie: w aplikacji, w Claude, w ChatGPT i przez API"
+description: "Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude przez MCP, w ChatGPT jako plugin i w API dla sklepu. Każdą fakturę od AI zatwierdzasz sam."
 published: 2026-11-18
-updated: 2026-11-26
+updated: 2026-11-27
 landing:
   kicker: "Funkcje · AI"
   note: "zmiany zatwierdzasz Ty"
@@ -11,7 +11,7 @@ landing:
     - label: "Asystent AI w aplikacji"
       value: "od planu Przedsiębiorca"
     - label: "Claude i ChatGPT"
-      value: "przez MCP, w każdym planie"
+      value: "w każdym planie, w ChatGPT jako plugin"
     - label: "Faktura do KSeF"
       value: "dopiero po Twoim potwierdzeniu"
 ---
@@ -50,15 +50,23 @@ Rozmowę widzi tylko jej autor. Dostęp mają role, które widzą finanse firmy,
 
 ## Firmowid w Claude i ChatGPT
 
-Firmowid ma serwer MCP pod adresem `https://firmowid.pl/mcp`. Dodajesz go jako konektor, logujesz się kontem Firmowida i na ekranie zgody wybierasz firmę. Działa w ChatGPT, Claude, Cursorze i innych programach obsługujących MCP.
+W ChatGPT Firmowid jest oficjalnym pluginem. Znajdujesz go w katalogu pluginów, klikasz „Install plugin”, logujesz się kontem Firmowida i na ekranie zgody wybierasz firmę.
 
-AI dostaje 42 narzędzia: faktury, kontrahentów, przelewy, czas pracy, urlopy i Analizę. Widzi tyle, na ile pozwala Twoja rola w firmie, więc pracownik zobaczy swój czas, urlopy i projekty, a faktur firmy nie.
+W Claude, Cursorze i innych programach obsługujących MCP dodajesz konektor z adresem serwera `https://firmowid.pl/mcp`. Logowanie i wybór firmy wyglądają tak samo.
+
+AI dostaje 48 narzędzi: faktury, kontrahentów, przelewy, czas pracy, urlopy i Analizę. Widzi tyle, na ile pozwala Twoja rola w firmie, więc pracownik zobaczy swój czas, urlopy i projekty, a faktur firmy nie.
 
 W ChatGPT faktura otwiera się w oknie aplikacji Firmowida wewnątrz czatu. Sprawdzasz ją na podglądzie i dopiero wtedy wysyłasz do KSeF.
 
 ![Okno „Potwierdź fakturę” w ChatGPT z podglądem faktury i przyciskiem „Potwierdź i wyślij do KSeF”](/images/guides/funkcje/mcp-potwierdz-fakture.webp)
 
 Pełna lista narzędzi: [Narzędzia MCP Firmowida](/pomoc/narzedzia-mcp).
+
+## API dla sklepu i własnych programów
+
+Te same narzędzia są w publicznym API, więc z Firmowida skorzysta też program, przy którym nikt nie siedzi. Najczęściej to sklep internetowy, który po opłaceniu zamówienia sam wystawia fakturę i wysyła ją do KSeF. Działa to także dla osoby prywatnej, a ponowione zamówienie nie da drugiej faktury.
+
+Klucz tworzysz w ustawieniach, w zakładce „Klucze API”. Osobisty działa z Twoją rolą w firmie. Firmowy dostaje rolę od admina i działa dalej, gdy jego autor odejdzie z firmy. Opis każdego wywołania jest w [dokumentacji API](/api/v1/docs).
 
 ## Zatwierdzanie zmian
 
@@ -67,16 +75,17 @@ Pełna lista narzędzi: [Narzędzia MCP Firmowida](/pomoc/narzedzia-mcp).
 | Faktura i korekta do KSeF | po Twoim kliknięciu w oknie podglądu |
 | Zmiany proponowane przez asystenta AI w aplikacji | po zatwierdzeniu karty „Proponowane zmiany” |
 | Godziny pracy, notatki i łączenie przelewów przez Claude i ChatGPT | od razu po poleceniu |
+| Faktura wystawiana przez API | od razu, bez okna podglądu |
 
-Faktury przez Claude i ChatGPT wystawisz tylko dla firm. Fakturę dla osoby prywatnej wystawiasz w aplikacji.
+Faktury przez Claude i ChatGPT wystawisz tylko dla firm. Fakturę dla osoby prywatnej wystawiasz w aplikacji albo przez API.
 
 ## Ile to kosztuje
 
-| Plan | Asystent AI w aplikacji | Claude i ChatGPT przez MCP | Cena |
-|---|---|---|---|
-| Darmowy | nie | tak | 0 zł |
-| Przedsiębiorca | tak | tak | 29 zł netto miesięcznie |
-| Firma | tak | tak | 149 zł netto miesięcznie |
+| Plan | Asystent AI w aplikacji | Claude i ChatGPT | API | Cena |
+|---|---|---|---|---|
+| Darmowy | nie | tak | tak | 0 zł |
+| Przedsiębiorca | tak | tak | tak | 29 zł netto miesięcznie |
+| Firma | tak | tak | tak | 149 zł netto miesięcznie |
 
 Pierwsze 60 dni płatnego planu jest bez opłat. Konto w Claude albo ChatGPT opłacasz osobno u ich dostawców.
 
@@ -102,9 +111,11 @@ Stan na 18.11.2026, według stron producentów: [inFakt](https://www.infakt.pl/b
 | Gotowe pytania | faktury po terminie, przelewy bez faktury, koszty stałe, projekty |
 | Rozmowy | widzi tylko autor |
 | Kto ma dostęp do asystenta AI | role od fakturowania wzwyż, pracownik nie |
+| Firmowid w ChatGPT | oficjalny plugin w katalogu ChatGPT |
 | Adres serwera MCP | `https://firmowid.pl/mcp` |
 | Logowanie | konto Firmowida, ekran zgody z wyborem firmy |
-| Narzędzia MCP | 42: faktury, kontrahenci, przelewy, czas pracy, urlopy, Analiza |
+| Narzędzia MCP | 48: faktury, kontrahenci, przelewy, czas pracy, urlopy, Analiza |
+| API | te same narzędzia, klucz osobisty albo firmowy, [dokumentacja](/api/v1/docs) |
 | Uprawnienia przez MCP | jak Twoja rola w firmie |
 | Faktury przez Claude i ChatGPT | tylko dla firm |
 
@@ -116,10 +127,10 @@ Zobacz też: [Analiza: ile zostaje w firmie](/funkcje/analiza) · [cennik](/cenn
 Nie. AI przygotowuje fakturę, a do KSeF wysyłasz ją sam, przyciskiem w oknie podglądu. Co jeszcze wymaga potwierdzenia, pokazuje sekcja [Zatwierdzanie zmian](#zatwierdzanie-zmian).
 
 ### Czym asystent AI w aplikacji różni się od Claude i ChatGPT?
-Asystent AI w aplikacji ma gotowe pytania i nie wymaga niczego poza kontem Firmowida. W Claude i ChatGPT pracujesz na tych samych danych we własnym czacie, po podłączeniu serwera MCP.
+Asystent AI w aplikacji ma gotowe pytania i nie wymaga niczego poza kontem Firmowida. W Claude i ChatGPT pracujesz na tych samych danych we własnym czacie, po zainstalowaniu pluginu albo dodaniu konektora.
 
 ### Ile kosztuje AI w Firmowidzie?
-Asystent AI w aplikacji jest od planu Przedsiębiorca. Połączenie z Claude i ChatGPT działa w każdym planie, także darmowym. Szczegóły są w sekcji [Ile to kosztuje](#ile-to-kosztuje).
+Asystent AI w aplikacji jest od planu Przedsiębiorca. Połączenie z Claude i ChatGPT oraz API działają w każdym planie, także darmowym. Szczegóły są w sekcji [Ile to kosztuje](#ile-to-kosztuje).
 
 ### Czy pracownik zobaczy przez AI faktury firmy?
 Nie. Przez Claude i ChatGPT widzi swój czas, urlopy i projekty, a asystent AI w aplikacji jest tylko dla ról, które widzą finanse.
@@ -137,4 +148,7 @@ Tak. Proponuje połączenie jednego przelewu z kilkoma fakturami.
 Tak, Firmowid. Faktury idą do KSeF, przelewy z banku same łączą się z fakturami, czas pracy liczy się przy projektach, a Claude i ChatGPT pracują na tych samych danych przez MCP.
 
 ### Jak podłączyć Firmowid do Claude albo ChatGPT?
-Dodajesz konektor z adresem serwera MCP i logujesz się kontem Firmowida. Kroki opisuje sekcja [Firmowid w Claude i ChatGPT](#firmowid-w-claude-i-chatgpt).
+W ChatGPT instalujesz plugin Firmowid z katalogu pluginów. W Claude dodajesz konektor z adresem serwera MCP. W obu logujesz się kontem Firmowida. Kroki opisuje sekcja [Firmowid w Claude i ChatGPT](#firmowid-w-claude-i-chatgpt).
+
+### Czy Firmowid ma API?
+Tak. API ma te same narzędzia co Claude i ChatGPT, a do tego wystawianie faktury do zamówienia ze sklepu. Klucz tworzysz w ustawieniach. Opis jest w sekcji [API dla sklepu i własnych programów](#api-dla-sklepu-i-wlasnych-programow).

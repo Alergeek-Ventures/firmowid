@@ -25,7 +25,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Program do ewidencji czasu pracy w projektach](https://firmowid.pl/funkcje/czas-pracy): Czasośledź mierzy czas pracy w projektach. Godziny trafiają do miesięcznej ewidencji, kosztu projektu i raportu wypłat, w tym samym programie co faktury i bank.
 - [Zespół: role, wnioski urlopowe online i dokumenty pracowników](https://firmowid.pl/funkcje/zespol): Firmowid dla małego zespołu: cztery role, wnioski urlopowe z akceptacją w Skrzynce, umowy i dokumenty pracowników. Cena i porównanie z innymi programami.
 - [Rozliczenie delegacji online: polecenie, zaliczka, diety](https://firmowid.pl/funkcje/delegacje): Delegacje w Firmowidzie: wniosek, polecenie wyjazdu, zaliczka, paragony, diety krajowe i zagraniczne, podpis Profilem Zaufanym. Pięć kroków w jednym programie.
-- [Asystent AI w programie do faktur: w aplikacji, w Claude i w ChatGPT](https://firmowid.pl/funkcje/claude-chatgpt-mcp): Asystent AI w Firmowidzie przygotowuje faktury i szuka przelewów do faktur. Te same dane masz w Claude i ChatGPT przez serwer MCP. Każdą fakturę zatwierdzasz sam.
+- [Asystent AI w Firmowidzie: w aplikacji, w Claude, w ChatGPT i przez API](https://firmowid.pl/funkcje/claude-chatgpt-mcp): Asystent AI w Firmowidzie przygotowuje faktury i szuka do nich przelewów. Te same dane masz w Claude przez MCP, w ChatGPT jako plugin i w API dla sklepu. Każdą fakturę od AI zatwierdzasz sam.
 
 ## Pomoc
 
