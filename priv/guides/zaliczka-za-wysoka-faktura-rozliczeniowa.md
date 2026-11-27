@@ -82,4 +82,4 @@ Czego nie ma. Korekty faktury zaliczkowej, czyli KOR_ZAL, Firmowid nie wystawia.
 - [Ministerstwo Finansów: Podręcznik KSeF 2.0, część II, Wystawianie i otrzymywanie faktur w KSeF, rozdziały 2.13.1 i 2.13.5](https://ksef.podatki.gov.pl/media/rronoxyt/podrecznik-ksef-20-cz-ii-wystawianie-i-otrzymywanie-faktur-w-ksef-06082026.pdf), publikacja 6.08.2026, dostęp 24.11.2026.
 - [Ministerstwo Finansów: Faktura ustrukturyzowana i struktura logiczna FA(3)](https://ksef.podatki.gov.pl/informacje-ogolne-ksef-20/faktura-ustrukturyzowana-i-struktura-logiczna-fa/), dostęp 6.11.2026.
 - Ustawa z 11 marca 2004 r. o podatku od towarów i usług, art. 106f i 106j, stan sprawdzony 6.11.2026.
-- Firmowid, fakty produktowe zweryfikowane 22.10.2026 i 24.11.2026.
+- [Firmowid: funkcje](https://firmowid.pl/funkcje), dostęp 24.11.2026.
