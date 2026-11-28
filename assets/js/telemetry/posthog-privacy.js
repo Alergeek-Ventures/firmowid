@@ -9,7 +9,8 @@ const PERSON_PROPERTIES = ["$set", "$set_once"];
 const EMAIL_KEYS = new Set(["email", "email_domain", "$email", "$email_domain"]);
 const REMOVED_KEYS = new Set([
   ...EMAIL_KEYS,
-  "$el_text", "$selected_content", "title", "$search_keyword",
+  "$el_text", "$selected_content", "title", "$search_keyword", "ph_keyword",
+  "$session_entry_ph_keyword",
   "$sdk_debug_error_capturing_properties",
 ]);
 
