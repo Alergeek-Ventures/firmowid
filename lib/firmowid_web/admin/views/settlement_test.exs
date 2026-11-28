@@ -59,4 +59,35 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
     assert Core.get_organization!(owner.member.organization_id, authorize?: false).billing_plan ==
              plan
   end
+
+  test "a superuser demoted while the settlement is open cannot navigate to another organization",
+       %{
+         conn: conn
+       } do
+    owner = admin_fixture()
+    other_owner = admin_fixture()
+
+    Core.update_member_profile!(other_owner.member, %{phone: "+48 600 700 800"},
+      actor: other_owner,
+      tenant: other_owner.member.organization_id
+    )
+
+    superuser = Core.load_member(Ash.Seed.update!(admin_fixture(), %{system_role: :superuser}))
+
+    {:ok, lv, html} =
+      live(
+        log_in_user(conn, superuser),
+        ~p"/admin/rozliczenia/#{owner.member.organization_id}?miesiac=#{Date.to_iso8601(Month.current())}"
+      )
+
+    refute html =~ "+48 600 700 800"
+
+    Ash.Seed.update!(superuser, %{system_role: :user})
+
+    assert {:error, {:redirect, %{to: "/"}}} =
+             render_patch(
+               lv,
+               ~p"/admin/rozliczenia/#{other_owner.member.organization_id}?miesiac=#{Date.to_iso8601(Month.current())}"
+             )
+  end
 end
