@@ -216,8 +216,11 @@ defmodule Firmowid.Blobs do
     {:error, :blob_already_exists}
   end
 
+  # Every error must be the conflict: a duplicate whose S3 cleanup failed carries
+  # the cleanup failure next to the checksum error, and `Enum.any?` would drop it
+  # by treating the whole result as a plain duplicate.
   defp blob_checksum_conflict?(%Invalid{errors: errors}) do
-    Enum.any?(errors, &blob_checksum_conflict_error?/1)
+    errors != [] and Enum.all?(errors, &blob_checksum_conflict_error?/1)
   end
 
   defp blob_checksum_conflict_error?(%InvalidAttribute{field: :blob_checksum}), do: true

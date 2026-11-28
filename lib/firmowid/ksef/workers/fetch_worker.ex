@@ -530,17 +530,21 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     end
   end
 
+  # Every error must be the conflict: a duplicate whose S3 cleanup failed carries
+  # the cleanup failure next to the checksum error, and `Enum.any?` would drop it
+  # by treating the whole result as a plain duplicate.
   defp blob_checksum_conflict?(%Invalid{errors: errors}) when is_list(errors) do
-    Enum.any?(errors, fn
-      %Ash.Error.Changes.InvalidAttribute{
-        field: :blob_checksum,
-        message: "has already been taken"
-      } ->
-        true
+    errors != [] and
+      Enum.all?(errors, fn
+        %Ash.Error.Changes.InvalidAttribute{
+          field: :blob_checksum,
+          message: "has already been taken"
+        } ->
+          true
 
-      _ ->
-        false
-    end)
+        _ ->
+          false
+      end)
   end
 
   defp blob_checksum_conflict?(%Ecto.Changeset{errors: errors}) do
