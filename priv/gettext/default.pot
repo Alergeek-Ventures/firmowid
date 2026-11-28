@@ -7543,6 +7543,11 @@ msgstr ""
 msgid "Issue invoice"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Issue these invoices by hand"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "Issued"
@@ -10179,6 +10184,11 @@ msgstr ""
 
 #: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
+msgid "Payments Stripe charged no VAT on. Set tax rates in Stripe; Checkout taxes shipping only with Stripe Tax."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
 msgid "Payments after this will not get invoices. Issued invoices stay."
 msgstr ""
 
@@ -10821,6 +10831,11 @@ msgstr ""
 #: lib/firmowid_ui/invoicing/components/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Refresh"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Refunds: Firmowid does not issue correction invoices for them yet."
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex

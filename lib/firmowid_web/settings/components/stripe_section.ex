@@ -6,7 +6,8 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
   reads. Every successful Stripe payment after the connection becomes an invoice issued as paid
   and sent to KSeF; one payment gives one invoice, and payments from before the connection get
   none. The company chooses whether buyers without a tax ID get an invoice too; the choice
-  applies to the next payments only. The latest payments are listed with their invoices.
+  applies to the next payments only. The latest payments are listed with their invoices, and the
+  page names the payments whose invoices the company issues by hand.
   """
   use FirmowidWeb, :live_component
 
@@ -194,6 +195,8 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
           {gettext("The change applies to the next payments. Issued invoices stay as they are.")}
         </p>
       </form>
+
+      <.limits />
     </div>
 
     <div class="flex flex-col gap-3 lg:border-l lg:border-grey-200 lg:ps-12">
@@ -432,7 +435,26 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
           <.badge tone="success">{gettext("Accepted by KSeF")}</.badge>
         </.flow_step>
       </ol>
+      <.limits />
     </aside>
+    """
+  end
+
+  # What the integration does not invoice, so the company knows before and after connecting
+  # which invoices stay its own work.
+  defp limits(assigns) do
+    ~H"""
+    <div id="stripe-limits" class="flex flex-col gap-2">
+      <h2 class="text-h5 font-medium text-grey-900">{gettext("Issue these invoices by hand")}</h2>
+      <ul class="flex list-disc flex-col gap-1.5 ps-5 text-sm/snug text-grey-700">
+        <li>{gettext("Refunds: Firmowid does not issue correction invoices for them yet.")}</li>
+        <li>
+          {gettext(
+            "Payments Stripe charged no VAT on. Set tax rates in Stripe; Checkout taxes shipping only with Stripe Tax."
+          )}
+        </li>
+      </ul>
+    </div>
     """
   end
 
