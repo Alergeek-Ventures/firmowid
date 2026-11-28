@@ -19,6 +19,7 @@ defmodule Firmowid.Invoicing.StripeConnection.Changes.VerifyKey do
     {"Charges and Refunds", "/v1/charges"},
     {"Customers", "/v1/customers"},
     {"Invoices", "/v1/invoices"},
+    {"Credit Notes", "/v1/credit_notes"},
     {"Checkout Sessions", "/v1/checkout/sessions"}
   ]
 

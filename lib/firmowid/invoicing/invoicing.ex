@@ -403,6 +403,11 @@ defmodule Firmowid.Invoicing do
       define :list_stripe_payments, action: :list
     end
 
+    resource Firmowid.Invoicing.StripeRefund do
+      define :record_stripe_refund, action: :record
+      define :list_stripe_refunds, action: :list
+    end
+
     resource Firmowid.Invoicing.SkippedCounterpartySuggestion do
       define :list_skipped_counterparty_suggestions, action: :read
       define :skip_counterparty_suggestion, action: :skip, args: [:group_key]

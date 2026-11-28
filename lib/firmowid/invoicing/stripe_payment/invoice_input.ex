@@ -70,7 +70,7 @@ defmodule Firmowid.Invoicing.StripePayment.InvoiceInput do
   end
 
   defp invoice_source(invoice, request) do
-    with {:ok, lines} <- list(request, "/v1/invoices/#{invoice["id"]}/lines") do
+    with {:ok, lines} <- StripeTerms.list(request, "/v1/invoices/#{invoice["id"]}/lines") do
       buyer = %{
         name: invoice["customer_name"],
         email: invoice["customer_email"],
@@ -108,7 +108,8 @@ defmodule Firmowid.Invoicing.StripePayment.InvoiceInput do
   end
 
   defp session_source(session, request) do
-    with {:ok, items} <- list(request, "/v1/checkout/sessions/#{session["id"]}/line_items") do
+    with {:ok, items} <-
+           StripeTerms.list(request, "/v1/checkout/sessions/#{session["id"]}/line_items") do
       details = session["customer_details"] || %{}
 
       buyer = %{
@@ -160,20 +161,6 @@ defmodule Firmowid.Invoicing.StripePayment.InvoiceInput do
   defp payment_buyer(payment) do
     details = payment["latest_charge"]["billing_details"]
     %{name: details["name"], email: details["email"], address: details["address"], tax_ids: []}
-  end
-
-  # Every page of a list of at most a hundred lines a page.
-  defp list(request, path, params \\ %{limit: 100}, acc \\ []) do
-    case request.(path, params) do
-      {:ok, %{"data" => data, "has_more" => true}} ->
-        list(request, path, Map.put(params, :starting_after, List.last(data)["id"]), acc ++ data)
-
-      {:ok, %{"data" => data}} ->
-        {:ok, acc ++ data}
-
-      {:error, error} ->
-        {:error, error}
-    end
   end
 
   defp items(lines) do

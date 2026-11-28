@@ -9,10 +9,12 @@ defmodule Firmowid.Invoicing.StripeConnection do
   live key (`rk_live_`); development and tests also take a test key (`rk_test_`), which then
   works exactly like a live one.
 
-  Every five minutes `:fetch_payments` reads the `payment_intent.succeeded` events since the
-  last check and records each payment as a `Firmowid.Invoicing.StripePayment`, which issues its
-  invoice. Payments from before the connection get no invoice. Disconnecting deletes the key;
-  issued invoices and recorded payments stay.
+  Every five minutes `:fetch_payments` reads the `payment_intent.succeeded` and
+  `charge.refunded` events since the last check. It records each payment as a
+  `Firmowid.Invoicing.StripePayment`, which issues its invoice, and each refund of a recorded
+  payment as a `Firmowid.Invoicing.StripeRefund`, which corrects that invoice. Payments from
+  before the connection get no invoice. Disconnecting deletes the key; issued invoices and
+  recorded payments and refunds stay.
   """
 
   use Ash.Resource,
@@ -110,7 +112,7 @@ defmodule Firmowid.Invoicing.StripeConnection do
     end
 
     update :fetch_payments do
-      description "Record the payments Stripe reported since the last check."
+      description "Record the payments and refunds Stripe reported since the last check."
       require_atomic? false
       change FetchPayments
     end

@@ -33,6 +33,32 @@ defmodule Firmowid.Billing.StripeTerms do
     |> Stripe.Request.make_request()
   end
 
+  @doc """
+  Reads every page of a Stripe list with `request`, a GET of a path with params (such as
+  `&request(:get, &1, &2, api_key: key)`), a hundred objects a page.
+  """
+  @spec list((String.t(), map() -> {:ok, map()} | {:error, term()}), String.t(), map()) ::
+          {:ok, [map()]} | {:error, term()}
+  def list(request, path, params \\ %{}), do: list_pages(request, path, Map.put_new(params, :limit, 100), [])
+
+  defp list_pages(request, path, params, acc) do
+    case request.(path, params) do
+      {:ok, %{"data" => data, "has_more" => true}} ->
+        list_pages(
+          request,
+          path,
+          Map.put(params, :starting_after, List.last(data)["id"]),
+          acc ++ data
+        )
+
+      {:ok, %{"data" => data}} ->
+        {:ok, acc ++ data}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   @doc "Returns the active recurring price of a plan for a billing period."
   @spec price(PlanCatalog.offered_plan(), PlanCatalog.billing_period()) ::
           {:ok, map()} | {:error, term()}
