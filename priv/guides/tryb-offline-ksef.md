@@ -2,7 +2,7 @@
 title: "Tryb offline w KSeF: co zrobić, gdy nie możesz wysłać faktury"
 description: "Tryb offline24, niedostępność KSeF i awaria: kiedy wolno wystawić fakturę poza systemem i do kiedy trzeba ją dosłać. Stan na listopad 2026."
 published: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-23
 category: ksef-w-praktyce
 ---
 
@@ -19,9 +19,44 @@ Inaczej jest wtedy, gdy nie działa sam KSeF, a Ministerstwo Finansów ogłosi n
 ![Cztery sytuacje i terminy dosłania faktury do KSeF. Tryb offline24: następny dzień roboczy po dniu wystawienia. Niedostępność ogłoszona w BIP: następny dzień roboczy po zakończeniu przerwy. Awaria KSeF: 7 dni roboczych od zakończenia. Awaria całkowita: faktur się nie dosyła.](/images/guides/tryb-offline-ksef-terminy-dosylania-faktur.webp)
 *Terminy według Ministerstwa Finansów, stan na listopad 2026.*
 
+## Kiedy faktura w KSeF jest offline?
+
+Wtedy, gdy do systemu trafia później niż w dniu, który wystawca wpisał jako datę wystawienia. Nie trzeba niczego zaznaczać. Ministerstwo opisuje to tak: „Jeżeli zrobisz to dopiero następnego dnia, system potraktuje ją jako fakturę wystawioną w trybie offline24”.
+
+| Data w polu P_1 a dzień wysyłki | Tryb | Data wystawienia |
+|---|---|---|
+| Ten sam dzień | online | dzień wysyłki |
+| Wysyłka później | offline24 | data z pola P_1 |
+| Data z przyszłości | brak | plik odrzucony |
+
+Podręcznik KSeF 2.0 pokazuje to na przykładzie: w polu P_1 jest 2 lutego 2026 r., plik trafia do systemu 3 lutego i tego dnia dostaje numer KSeF. MF rozstrzyga: „Fakturę uznaje się za wystawioną w trybie offline24”, z datą wystawienia 2 lutego.
+
+## Która data jest datą wystawienia faktury offline?
+
+Data z pola P_1. To pytanie wraca na forach biur rachunkowych, na przykład w takiej postaci: „w polu P_1 (wypełnionym przez wystawcę) widnieje data 02.03.2026, a numer KSeF został nadany dopiero 03.03.2026”. Podręcznik odpowiada, że w takim przypadku „datą jej wystawienia będzie data z pola P_1”.
+
+Dla nabywcy liczy się druga data. W odpowiedziach MF czytamy: „Zgodnie z ogólną zasadą fakturę ustrukturyzowaną uznaje się za otrzymaną w dniu przydzielenia numeru KSeF”. Stąd wątpliwość z tego samego forum: „Czy kierując się datą na wizualizacji, nie odliczę za wcześnie VAT, skoro do KSeF wysłano w następnym m-cu?”.
+
+| Data | Skąd | Dla kogo ważna |
+|---|---|---|
+| Wystawienia | pole P_1 | sprzedawca |
+| Otrzymania | dzień nadania numeru KSeF | nabywca |
+
+## Faktura wysłana po terminie
+
+System jej nie odrzuca. Podręcznik stwierdza: „Przesłanką odrzucenia pliku XML przez system nie jest jednak wskazanie w polu P_1 daty wcześniejszej niż data przesłania pliku XML do KSeF”. Na forum ktoś opisał taki przypadek: „Ja już mam fakturę wystawiona 9.02 i przesłana do ksef 27.02”.
+
+Przyjęcie pliku nie znaczy, że termin został dotrzymany. W trybie offline24 jest nim następny dzień roboczy po dniu wystawienia, a sankcje za jego przekroczenie opisuje tekst [kary za KSeF w 2027 r.](/poradnik/kary-ksef-2027)
+
+## Czy faktura offline ma numer KSeF?
+
+Dopiero po przesłaniu do systemu. Do tego czasu faktura wydana nabywcy ma dwa kody QR z napisami „OFFLINE” i „CERTYFIKAT”, a po nadaniu numeru jeden kod z numerem KSeF.
+
 ## W programie do faktur
 
 W praktyce większość programów do faktur, w tym nasz [Firmowid](/ksef), pozwala ponowić wysyłkę faktury, której nie udało się przesłać, więc po powrocie internetu wystarczy to zrobić przed upływem terminu.
+
+Sam Firmowid faktur offline nie wystawia. Bez połączenia z KSeF pokazuje komunikat „Połącz z KSeF przed wystawieniem tej faktury” i pozwala zapisać fakturę jako wersję roboczą.
 
 ## Najczęstsze pytania
 
@@ -46,5 +81,7 @@ Tak, ale korektę wystawia się dopiero po nadaniu fakturze pierwotnej numeru KS
 
 ## Źródła
 
+- [Ministerstwo Finansów, Podręcznik KSeF 2.0, cz. II, rozdziały 1.4 i 1.6](https://ksef.podatki.gov.pl/media/rronoxyt/podrecznik-ksef-20-cz-ii-wystawianie-i-otrzymywanie-faktur-w-ksef-06082026.pdf) (wersja z sierpnia 2026 r.); dostęp 23.11.2026.
+- [Ministerstwo Finansów, Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/); dostęp 23.11.2026.
 - [Ministerstwo Finansów, „Tryb offline24”](https://ksef.podatki.gov.pl/informacje-ogolne-ksef-20/tryb-offline24/); dostęp 4.11.2026.
 - [Ministerstwo Finansów, „Tryb offline – niedostępność KSeF”](https://ksef.podatki.gov.pl/informacje-ogolne-ksef-20/tryb-offline-niedostepnosc-ksef/); dostęp 4.11.2026.
