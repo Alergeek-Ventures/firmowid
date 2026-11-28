@@ -3,8 +3,13 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
   Preprocesses the uploaded file, computes a SHA-256 checksum, uploads to S3,
   and sets `blob_path`, `blob_checksum`, and `original_filename` on the changeset.
 
-  Runs as a `before_action` hook so that S3 upload happens before the DB insert —
-  if the upload fails, no orphaned record is created.
+  The upload runs as a `before_action` hook, so it happens before the DB insert:
+  if the upload fails, no orphaned record is created. The other way around, an
+  `after_transaction` hook deletes the freshly uploaded object when the create
+  then fails — a duplicate checksum hits the unique index only at the insert —
+  so a failed create leaves no orphaned S3 object behind either. If that cleanup
+  itself fails, the returned error carries the create's own error and the
+  cleanup failure together.
 
   Expects the changeset to carry three arguments:
 
@@ -36,7 +41,18 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.before_action(changeset, fn changeset ->
+    # The blob key the compensation must delete exists only after the upload
+    # runs, but a hook registered inside a `before_action` is not called when
+    # the action fails (Ash runs `after_transaction` hooks from the changeset
+    # that entered the action, not the one the hook returned). The hook is
+    # registered here instead, and the key is handed over through the process
+    # dictionary: the action, the upload and its hooks run in one process. The
+    # entry is put only after a successful upload, so it also marks that the
+    # cleanup is needed at all.
+    uploaded_key = {__MODULE__, make_ref()}
+
+    changeset
+    |> Ash.Changeset.before_action(fn changeset ->
       blob_id = Ash.Changeset.get_attribute(changeset, :id)
 
       upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
@@ -49,12 +65,54 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
       blob_path = "#{organization_id}/#{blob_id}.#{served_type |> MIME.extensions() |> hd()}"
 
       S3Client.upload_file!(upload_path, blob_path, content_type: sent_type(served_type))
+      Process.put(uploaded_key, blob_path)
 
       changeset
       |> Ash.Changeset.force_change_attribute(:blob_path, blob_path)
       |> Ash.Changeset.force_change_attribute(:blob_checksum, blob_checksum)
       |> Ash.Changeset.force_change_attribute(:original_filename, original_filename)
     end)
+    |> Ash.Changeset.after_transaction(fn
+      _changeset, {:ok, _} = result ->
+        Process.delete(uploaded_key)
+        result
+
+      _changeset, {:error, error} = result ->
+        case Process.delete(uploaded_key) do
+          nil -> result
+          blob_path -> delete_uploaded_object(blob_path, error)
+        end
+    end)
+  end
+
+  # Only a 2xx response counts as deleted: Req hands S3 error responses (403,
+  # 500) back as `{:ok, %Req.Response{}}` too, while S3 answers a successful
+  # DELETE — also for a key that is already gone — with 204. A failed cleanup
+  # is not swallowed, but must not drop the create's own error either (the
+  # caller may still handle the duplicate checksum), so both end up in the
+  # error class returned to the caller.
+  defp delete_uploaded_object(blob_path, error) do
+    case S3Client.delete_object(blob_path) do
+      {:ok, %Req.Response{status: status}} when status in 200..299 ->
+        {:error, error}
+
+      {:ok, %Req.Response{status: status}} ->
+        failed_cleanup(error, blob_path, {:http_status, status})
+
+      {:error, reason} ->
+        failed_cleanup(error, blob_path, reason)
+    end
+  end
+
+  defp failed_cleanup(error, blob_path, reason) do
+    cleanup_error =
+      Ash.Error.Unknown.UnknownError.exception(
+        error:
+          "Failed to delete the S3 object (#{blob_path}) left behind by a failed blob upload: " <>
+            inspect(reason)
+      )
+
+    {:error, Ash.Error.to_error_class([error, cleanup_error])}
   end
 
   defp served_type(content_type, original_filename) do
