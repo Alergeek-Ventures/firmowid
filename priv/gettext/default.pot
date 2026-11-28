@@ -800,6 +800,11 @@ msgstr ""
 msgid "A plan is ready for your decision."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "A private person gets an invoice without a tax ID, like any other buyer"
+msgstr ""
+
 #: lib/firmowid/timetracker/validations/no_sessions.ex
 #, elixir-autogen, elixir-format
 msgid "A project with recorded time cannot be deleted."
@@ -865,6 +870,11 @@ msgstr ""
 msgid "API documentation"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "API keys in Stripe"
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Above the %{plan} plan"
@@ -906,6 +916,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/change_request.ex
 #, elixir-autogen, elixir-format
 msgid "Accept request"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Accepted by KSeF"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -2391,6 +2406,11 @@ msgstr ""
 msgid "Buyer type"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Buyers without a tax ID"
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "CEIDG showed the business with NIP %{number} as deregistered on %{date}."
@@ -2466,6 +2486,7 @@ msgstr ""
 #: lib/firmowid_web/settings/components/api_keys_section.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #: lib/firmowid_web/support/components/form.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #: lib/firmowid_web/timetracker/views/index.html.heex
@@ -2846,6 +2867,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "NIP status"
 msgid "Checking in registers"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Checking the key…"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/tax_section.ex
@@ -3429,6 +3455,16 @@ msgstr ""
 msgid "Connect KSeF with a trusted profile or certificate."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "Connect Stripe"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Connect Stripe and every successful payment from then on becomes an invoice issued as paid and sent to KSeF. Payments made before the connection get no invoices."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Connect an account"
@@ -3449,7 +3485,13 @@ msgstr ""
 msgid "Connect the company bank account."
 msgstr ""
 
+#: lib/firmowid/invoicing/validations/ksef_connected.ex
+#, elixir-autogen, elixir-format
+msgid "Connect the company to KSeF first."
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Connect to KSeF"
 msgstr ""
@@ -3457,6 +3499,11 @@ msgstr ""
 #: lib/firmowid/invoicing/changes/submit_issued_invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Connect to KSeF before issuing this invoice."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Connect to Stripe"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex
@@ -3478,6 +3525,11 @@ msgstr ""
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Connected to KSeF."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Connected to Stripe"
 msgstr ""
 
 #: lib/firmowid_web/auth/components/mcp_consent.ex
@@ -3961,6 +4013,11 @@ msgstr ""
 msgid "Could not check for conflicts. Try again."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Could not connect Stripe. Try again."
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
@@ -4440,6 +4497,11 @@ msgstr ""
 msgid "Create a free account"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Create a restricted key in Stripe"
+msgstr ""
+
 #: lib/firmowid_web/auth/views/registration.ex
 #, elixir-autogen, elixir-format
 msgid "Create account"
@@ -4814,8 +4876,14 @@ msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Disconnect"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Disconnect Stripe?"
 msgstr ""
 
 #: lib/firmowid_ui/ksef/connection.ex
@@ -4859,6 +4927,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Do not apply"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Do not issue an invoice"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
@@ -5637,6 +5710,11 @@ msgstr ""
 msgid "Every company from your invoices is already in your counterparties"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Every successful payment since the connection becomes an invoice issued as paid and sent to KSeF: paid Stripe invoices, Checkout payments and other payments. One payment gives one invoice."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Everything in one place: invoices, banking, working hours, leave, and business trips."
@@ -6053,6 +6131,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/first_review.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid is still choosing the categories. Once it is done, the counterparties it is least sure of will be here to check."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid issues the invoice"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
@@ -7154,11 +7237,13 @@ msgid "Invite an employee"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
+#: lib/firmowid_web/settings/components/integrations.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice %{number}"
 msgstr ""
@@ -7305,6 +7390,11 @@ msgstr ""
 msgid "Invoice wizard"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Invoiced since"
+msgstr ""
+
 #: lib/firmowid_web/inbox/utilities/navigation.ex
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
@@ -7345,6 +7435,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices linked to %{name}"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Invoices of Stripe payments go to KSeF, so connect the company to KSeF before Stripe."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -7396,6 +7491,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Is my result getting better month by month?"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Issue an invoice"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -7882,6 +7982,11 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Last: %{last} · Last 30 days: %{count}"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Latest payments"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/sidebar_nav.ex
@@ -8997,6 +9102,11 @@ msgstr ""
 msgid "No other tax preferences or copyright costs"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "No payments since the connection yet. Each new one appears here with its invoice."
+msgstr ""
+
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
@@ -9435,6 +9545,11 @@ msgstr ""
 msgid "Only business buyers with a tax ID are supported here. Use the Firmowid web app for invoices to private individuals."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Only buyers who gave a tax ID in Stripe get an invoice"
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Only employer PPK transfers made in the payout month on or before payout can be included. Other transfers require separate tax collection."
@@ -9488,6 +9603,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Open Time tracking"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Open __LINK__ and create a restricted key that can only read:"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -9881,6 +10001,12 @@ msgctxt "invoice amount"
 msgid "Paid"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgctxt "issued invoice"
+msgid "Paid"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Paid features"
@@ -9939,6 +10065,16 @@ msgstr ""
 msgid "Password changed successfully"
 msgstr ""
 
+#: lib/firmowid/invoicing/stripe_connection/changes/verify_key.ex
+#, elixir-autogen, elixir-format
+msgid "Paste a restricted key: it starts with rk_live_."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Paste the key"
+msgstr ""
+
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Paste the token"
@@ -9961,6 +10097,7 @@ msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #: lib/firmowid_web/landing/components/sections.ex
+#: lib/firmowid_web/settings/components/integrations.ex
 #, elixir-autogen, elixir-format
 msgid "Payment"
 msgstr ""
@@ -10038,6 +10175,16 @@ msgstr ""
 #: lib/firmowid_web/management/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Payment schedule"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Payments after this will not get invoices. Issued invoices stay."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/integrations.ex
+#, elixir-autogen, elixir-format
+msgid "Payments in Stripe become invoices on their own and go to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -12074,6 +12221,11 @@ msgstr ""
 msgid "Somewhere else"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Soon you will connect Stripe with one click, without creating a key."
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Sort chronologically"
@@ -12185,6 +12337,7 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr ""
@@ -12242,9 +12395,24 @@ msgstr ""
 msgid "Street, building and/or flat number, postal code, city"
 msgstr ""
 
+#: lib/firmowid/invoicing/stripe_connection/changes/verify_key.ex
+#, elixir-autogen, elixir-format
+msgid "Stripe does not know this key. Copy it again from Stripe."
+msgstr ""
+
 #: lib/firmowid_web/billing/controllers/checkout_return.ex
 #, elixir-autogen, elixir-format
 msgid "Stripe has not confirmed the purchase yet"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Stripe is connected."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Stripe is disconnected."
 msgstr ""
 
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -12796,6 +12964,11 @@ msgid_plural "The change applies to all %{count} sessions of this task in %{mont
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "The change applies to the next payments. Issued invoices stay as they are."
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "The check digit does not match, probably because of a typo. We will check the number in VIES once it is corrected."
@@ -12914,6 +13087,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "The current pricing is available on the Service website. The Service Provider reserves the right to change the pricing with at least 30 days’ notice. A pricing change does not affect subscription periods that have already been paid for."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "The customer pays in Stripe"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -13107,6 +13285,11 @@ msgstr ""
 msgid "The invoice draft was saved."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "The invoice goes to KSeF"
+msgstr ""
+
 #: lib/firmowid/ksef/submission_info.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice has already been sent to KSeF"
@@ -13196,6 +13379,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/api_keys_section.ex
 #, elixir-autogen, elixir-format
 msgid "The key has been revoked."
+msgstr ""
+
+#: lib/firmowid/invoicing/stripe_connection/changes/verify_key.ex
+#, elixir-autogen, elixir-format
+msgid "The key lacks the permission %{permission}: Read. Add it in Stripe and try again."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -15084,6 +15272,11 @@ msgstr ""
 msgid "What happened, or what would make Firmowid more useful for you?"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "What happens to a payment"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/ask_assistant.ex
 #, elixir-autogen, elixir-format
 msgid "What sets it apart?"
@@ -15822,6 +16015,11 @@ msgstr ""
 msgid "a counterparty with this tax ID already exists"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "accepted by KSeF"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "account added manually"
@@ -16274,6 +16472,11 @@ msgctxt "landing compass"
 msgid "issuing and costs"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "issuing the invoice"
+msgstr ""
+
 #: lib/firmowid/time_formatter.ex
 #, elixir-autogen, elixir-format
 msgid "just now"
@@ -16465,6 +16668,16 @@ msgctxt "settlement attachments"
 msgid "no additional documents"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "no invoice: Stripe charged no VAT, set the tax in Stripe and issue it by hand"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "no invoice: the buyer gave no tax ID"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "no plan"
@@ -16585,6 +16798,11 @@ msgctxt "leave request status"
 msgid "rejected"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "rejected by KSeF, fix the invoice"
+msgstr ""
+
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgctxt "presence"
@@ -16614,6 +16832,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/document.ex
 #, elixir-autogen, elixir-format
 msgid "sent %{date}"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "sent to KSeF"
 msgstr ""
 
 #: lib/firmowid_web/development/views/inbox_scenarios.ex
@@ -16707,6 +16930,11 @@ msgstr ""
 #: lib/firmowid/invoicing/changes/link_corrected_ksef_invoice.ex
 #, elixir-autogen, elixir-format
 msgid "the invoice being corrected is not saved in Firmowid"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "the invoice could not be issued, issue it by hand"
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/verify_imported_document.ex
@@ -16830,6 +17058,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "usually %{amount} (%{change})"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "waiting for KSeF"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/first_steps.ex

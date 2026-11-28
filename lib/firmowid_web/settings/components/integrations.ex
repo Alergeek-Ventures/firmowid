@@ -57,6 +57,18 @@ defmodule FirmowidWeb.Settings.Components.Integrations do
   attr :integration, :atom, required: true
 
   # What each integration does, shown with the things it works with rather than described again.
+  defp integration_preview(%{integration: :stripe} = assigns) do
+    ~H"""
+    <span class="mbs-5 flex flex-wrap items-center gap-1.5" aria-hidden="true">
+      <.badge>{gettext("Payment")}</.badge>
+      <Lucideicons.arrow_right class="size-3.5 text-grey-500" />
+      <.badge tone="sales">{gettext("Invoice")}</.badge>
+      <Lucideicons.arrow_right class="size-3.5 text-grey-500" />
+      <.badge tone="success">KSeF</.badge>
+    </span>
+    """
+  end
+
   defp integration_preview(%{integration: :mcp} = assigns) do
     ~H"""
     <span class="mbs-5 flex items-center gap-2 text-xs text-grey-600">
@@ -82,7 +94,8 @@ defmodule FirmowidWeb.Settings.Components.Integrations do
   @spec integration_logo(map()) :: Rendered.t()
   attr :integration, :atom, required: true
 
-  # The MCP mark stands for every AI assistant.
+  # The MCP mark stands for every AI assistant; the Stripe mark comes from Simple Icons (CC0),
+  # like the client logos, and the name stays with its owner.
   def integration_logo(%{integration: :mcp} = assigns) do
     ~H"""
     <.client_logo app={:mcp} class="size-12 rounded-md p-2.5" />
@@ -96,6 +109,19 @@ defmodule FirmowidWeb.Settings.Components.Integrations do
       aria-hidden="true"
     >
       <Lucideicons.code_xml class="size-full" />
+    </span>
+    """
+  end
+
+  def integration_logo(%{integration: :stripe} = assigns) do
+    ~H"""
+    <span
+      class="grid size-12 shrink-0 place-items-center rounded-md bg-[#635bff] p-2.5 text-white"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" class="size-full">
+        <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z" />
+      </svg>
     </span>
     """
   end
@@ -135,6 +161,9 @@ defmodule FirmowidWeb.Settings.Components.Integrations do
 
   def description(:api), do: gettext("Keys your own programs, such as an online store, use to call Firmowid")
 
+  def description(:stripe), do: gettext("Payments in Stripe become invoices on their own and go to KSeF")
+
   defp call_to_action(:mcp), do: gettext("Connect an assistant")
   defp call_to_action(:api), do: gettext("Manage keys")
+  defp call_to_action(:stripe), do: gettext("Connect Stripe")
 end

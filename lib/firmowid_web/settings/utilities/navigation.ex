@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           | :documents
           | :delegations
           | :leaves
-  @type integration :: :mcp | :api
+  @type integration :: :mcp | :api | :stripe
   @type visibility_context :: %{
           required(:current_user) => %{
             required(:id) => term(),
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def page_title(:delegations), do: gettext("Business trips")
   def page_title(:leaves), do: gettext("Absences")
 
-  @integration_slugs %{"asystenci-ai" => :mcp, "api" => :api}
+  @integration_slugs %{"asystenci-ai" => :mcp, "api" => :api, "stripe" => :stripe}
 
   @doc "Resolves the slug of an integration's subpage of the integrations page."
   @spec resolve_integration(String.t()) :: {:ok, integration()} | :error
@@ -99,15 +99,18 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   @spec integration_path(integration()) :: String.t()
   def integration_path(:mcp), do: ~p"/ustawienia/integracje/asystenci-ai"
   def integration_path(:api), do: ~p"/ustawienia/integracje/api"
+  def integration_path(:stripe), do: ~p"/ustawienia/integracje/stripe"
 
   @doc "Returns the title of an integration's subpage."
   @spec integration_title(integration()) :: String.t()
   def integration_title(:mcp), do: gettext("AI assistants (MCP)")
   def integration_title(:api), do: gettext("REST API")
+  def integration_title(:stripe), do: "Stripe"
 
-  @doc "Returns the integrations shown on the integrations page; every member may set them up."
-  @spec integrations() :: [integration()]
-  def integrations, do: [:mcp, :api]
+  @doc "Returns the integrations the member may set up: Stripe, which invoices for the company, only for an admin."
+  @spec integrations(UserRole.t()) :: [integration()]
+  def integrations(:admin), do: [:mcp, :api, :stripe]
+  def integrations(_role), do: [:mcp, :api]
 
   @doc """
   Resolves a settings section slug or legacy alias.

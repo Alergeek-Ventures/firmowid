@@ -53,6 +53,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Settings.Components.ApiKeysSection
   alias FirmowidWeb.Settings.Components.Integrations
+  alias FirmowidWeb.Settings.Components.StripeSection
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -271,22 +272,24 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_params(%{"integration" => slug}, _uri, socket) do
-    case Navigation.resolve_integration(slug) do
-      {:ok, integration} ->
-        # Every member sees the integrations page, so the section always opens here.
-        {:noreply, socket} =
-          handle_resolved_section(
-            :integrations,
-            %{canonical?: true, canonical_path: Navigation.integration_path(integration)},
-            socket
-          )
+    role = socket.assigns.current_user.member.role
 
-        {:noreply,
-         socket
-         |> assign(:integration, integration)
-         |> assign(:page_title, Navigation.integration_title(integration))}
+    with {:ok, integration} <- Navigation.resolve_integration(slug),
+         true <- integration in Navigation.integrations(role) do
+      # Every member sees the integrations page, so the section always opens here.
+      {:noreply, socket} =
+        handle_resolved_section(
+          :integrations,
+          %{canonical?: true, canonical_path: Navigation.integration_path(integration)},
+          socket
+        )
 
-      :error ->
+      {:noreply,
+       socket
+       |> assign(:integration, integration)
+       |> assign(:page_title, Navigation.integration_title(integration))}
+    else
+      _unknown_or_not_allowed ->
         {:noreply, push_patch(socket, to: Navigation.canonical_path(:integrations))}
     end
   end
@@ -1201,7 +1204,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :integrations -> %>
           <.integrations_index
             :if={is_nil(@integration)}
-            integrations={Navigation.integrations()}
+            integrations={Navigation.integrations(@current_user.member.role)}
             api_key_count={@api_key_count}
           />
           <.mcp_integration
@@ -1212,6 +1215,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
             :if={@integration == :api}
             module={ApiKeysSection}
             id="api-keys-section"
+            scope={@ash_scope}
+          />
+          <.live_component
+            :if={@integration == :stripe}
+            module={StripeSection}
+            id="stripe-section"
             scope={@ash_scope}
           />
         <% :account -> %>
