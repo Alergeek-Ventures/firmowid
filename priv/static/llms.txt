@@ -77,6 +77,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Rentowność projektu w małej firmie: koszty, faktury i godziny w jednym miejscu](https://firmowid.pl/poradnik/rentownosc-projektu-firma-uslugowa): Przypisywanie kosztów do projektów przez Claude, ChatGPT albo asystenta, wynagrodzenia i koszty firmy rozkładane według godzin, symulacje i prognozy.
 - [KSeF w banku, aplikacja Ministerstwa Finansów czy program do faktur?](https://firmowid.pl/poradnik/ksef-w-banku-aplikacja-mf-czy-program): Porównanie narzędzi MF, modułów KSeF w Pekao i PKO oraz programu do faktur.
 - [Alternatywa dla Fakturowni za darmo](https://firmowid.pl/poradnik/alternatywa-dla-fakturowni): Plan Micro Fakturowni i 10 darmowych alternatyw z KSeF w tabeli, ceny sprawdzone 11.11.2026.
+- [Alternatywa dla iFirmy: więcej niż 3 faktury za darmo](https://firmowid.pl/poradnik/alternatywa-dla-ifirmy): Cennik iFirmy z 23.11.2026, programy z KSeF bez limitu trzech faktur, plany Firmowida i kiedy zostać przy iFirmie.
 
 ## Asystent AI
 
