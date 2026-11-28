@@ -1,5 +1,5 @@
 import { closeMainWindow, PopToRootType, showToast, Toast } from "@raycast/api";
-import { withAccessToken } from "@raycast/utils";
+import { getAccessToken, withAccessToken } from "@raycast/utils";
 
 import { stopCurrentSession } from "./lib/api";
 import { authorize } from "./lib/auth";
@@ -17,7 +17,7 @@ async function StopSession() {
   });
 
   try {
-    const token = await authorize();
+    const { token } = getAccessToken();
     await stopCurrentSession({ token });
     await refreshMenuBar();
     toast.style = Toast.Style.Success;

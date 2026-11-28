@@ -1,4 +1,5 @@
 import { environment } from "@raycast/api";
+import { getAccessToken } from "@raycast/utils";
 import { mutationOptions } from "@tanstack/react-query";
 import type {
   MutationFunctionContext,
@@ -12,11 +13,7 @@ import {
   startSession,
   stopCurrentSession,
 } from "./api";
-import {
-  accessToken,
-  currentSessionOptions,
-  sessionHistoryOptions,
-} from "./queries";
+import { currentSessionOptions, sessionHistoryOptions } from "./queries";
 import { refreshMenuBar } from "./status";
 
 async function snapshotSessions({ client }: MutationFunctionContext) {
@@ -114,9 +111,9 @@ function sessionMutationOptions<T, TResult>(
 }
 
 export const startSessionMutationOptions = sessionMutationOptions(
-  async ({ session }: { session: Session }) =>
+  ({ session }: { session: Session }) =>
     startSession({
-      token: await accessToken(),
+      token: getAccessToken().token,
       input: {
         title: session.title,
         project_id: session.project.id,
@@ -139,7 +136,7 @@ export const stopSessionMutationOptions = sessionMutationOptions<
   undefined,
   Awaited<ReturnType<typeof stopCurrentSession>>
 >(
-  async () => stopCurrentSession({ token: await accessToken() }),
+  () => stopCurrentSession({ token: getAccessToken().token }),
   (_variables, { current }, client) => {
     client.setQueryData(currentSessionOptions.queryKey, null);
 
@@ -152,8 +149,8 @@ export const stopSessionMutationOptions = sessionMutationOptions<
 );
 
 export const deleteSessionMutationOptions = sessionMutationOptions(
-  async ({ session }: { session: Session }) =>
-    deleteSession({ token: await accessToken(), id: session.id }),
+  ({ session }: { session: Session }) =>
+    deleteSession({ token: getAccessToken().token, id: session.id }),
   ({ session }, _previous, client) => {
     client.setQueryData(currentSessionOptions.queryKey, (current) =>
       current?.id === session.id ? null : current
@@ -173,12 +170,12 @@ export const deleteSessionMutationOptions = sessionMutationOptions(
 );
 
 export const editSessionMutationOptions = sessionMutationOptions(
-  async ({
+  ({
     input,
   }: {
     session: Session;
     input: Parameters<typeof editSession>[0]["input"];
-  }) => editSession({ token: await accessToken(), input }),
+  }) => editSession({ token: getAccessToken().token, input }),
   ({ session }, _previous, client) => {
     client.setQueryData(currentSessionOptions.queryKey, (current) =>
       !session.end_datetime
@@ -200,7 +197,7 @@ export const editSessionGroupMutationOptions = mutationOptions({
     ids: Session["id"][];
     input: Omit<Parameters<typeof editSession>[0]["input"], "id">;
   }) => {
-    const token = await accessToken();
+    const { token } = getAccessToken();
 
     for (const id of ids) {
       // oxlint-disable-next-line eslint/no-await-in-loop -- Stop at the first failure, as the web does.
@@ -215,7 +212,7 @@ export const editSessionGroupMutationOptions = mutationOptions({
 export const deleteSessionGroupMutationOptions = mutationOptions({
   mutationKey: ["sessions"],
   mutationFn: async (ids: Session["id"][]) => {
-    const token = await accessToken();
+    const { token } = getAccessToken();
 
     for (const id of ids) {
       // oxlint-disable-next-line eslint/no-await-in-loop -- Stop at the first failure instead of deleting further sessions.

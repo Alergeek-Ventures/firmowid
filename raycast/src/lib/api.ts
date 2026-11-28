@@ -113,7 +113,7 @@ async function request({
   });
 
   if (response.status === 401) {
-    await invalidateAccessToken({ origin, token });
+    await invalidateAccessToken({ token });
   }
 
   if (response.status === 404 && allowNotFound) {

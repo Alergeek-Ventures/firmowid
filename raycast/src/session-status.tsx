@@ -7,6 +7,7 @@ import {
   LaunchType,
   MenuBarExtra,
 } from "@raycast/api";
+import { withAccessToken } from "@raycast/utils";
 import {
   useIsFetching,
   useIsRestoring,
@@ -16,7 +17,7 @@ import {
 } from "@tanstack/react-query";
 
 import ProjectSubmenu from "./components/project-submenu";
-import { AuthenticationError } from "./lib/auth";
+import { authorize } from "./lib/auth";
 import { stopSessionMutationOptions } from "./lib/mutations";
 import { currentSessionOptions, projectsOptions } from "./lib/queries";
 import { withQueryClient } from "./lib/query-client";
@@ -76,7 +77,6 @@ function SessionStatus() {
 
   if (
     !current ||
-    error instanceof AuthenticationError ||
     (error &&
       !isRestoring &&
       !isFetching &&
@@ -140,4 +140,4 @@ function SessionStatus() {
   );
 }
 
-export default withQueryClient(SessionStatus);
+export default withAccessToken({ authorize })(withQueryClient(SessionStatus));
