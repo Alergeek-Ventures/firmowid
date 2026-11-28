@@ -432,8 +432,10 @@ defmodule Firmowid.Ksef do
   @doc """
   Generates the KSeF verification URL for an invoice (sales or cost).
 
-  For sales invoices, backfills the checksum from KSeF API if missing.
-  Raises on cost invoices without a KSeF number.
+  Sales invoices use the checksum stored when KSeF confirmed the submission, and
+  never fetch it here; a view omits the KSeF link when the invoice has none.
+  Raises on a sales invoice without a stored checksum or a cost invoice without
+  a KSeF number.
   """
   @spec invoice_url!(map()) :: String.t()
   def invoice_url!(invoice), do: invoice_url!(invoice, [])
@@ -456,8 +458,14 @@ defmodule Firmowid.Ksef do
 
   def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice, _opts)
       when not is_nil(ksef_number) do
-    checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
-    invoice_url(seller_nip, issue_date, checksum)
+    case invoice.ksef_invoice_checksum do
+      nil ->
+        raise ArgumentError,
+              "Cannot generate KSeF URL for a sales invoice without a stored KSeF checksum"
+
+      checksum ->
+        invoice_url(seller_nip, issue_date, checksum)
+    end
   end
 
   defp invoice_url(seller_nip, issue_date, checksum) do
@@ -477,29 +485,6 @@ defmodule Firmowid.Ksef do
     |> URI.new!()
     |> URI.append_path(path)
     |> to_string()
-  end
-
-  defp backfill_ksef_checksum!(%{ksef_number: ksef_number, organization_id: organization_id} = invoice) do
-    invoice_xml =
-      case get_invoice_xml_by_ksef_number(ksef_number, organization_id) do
-        {:ok, xml} ->
-          xml
-
-        {:error, reason} ->
-          raise RuntimeError,
-                "Failed to fetch KSeF invoice XML for checksum backfill (ksef_number: #{ksef_number}): #{inspect(reason)}"
-      end
-
-    checksum = compute_fa3_checksum(invoice_xml)
-
-    scope = %Scope{
-      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
-      tenant: organization_id
-    }
-
-    SalesInvoice.record_ksef_submission!(invoice, %{ksef_invoice_checksum: checksum}, scope: scope)
-
-    checksum
   end
 
   @doc "Computes SHA-256 checksum of FA(3) XML content, URL-safe base64 encoded."

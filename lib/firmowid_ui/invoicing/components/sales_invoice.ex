@@ -914,7 +914,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
     assigns = assign(assigns, :qrcode, ksef_qrcode_data_uri(assigns.sales_invoice))
 
     ~H"""
-    <div class="flex w-26 flex-col items-start justify-center">
+    <div :if={@qrcode} class="flex w-26 flex-col items-start justify-center">
       <p class="px-1 text-[8px] font-medium text-grey-600">
         <%= case @sales_invoice.invoice_type do %>
           <% :poland -> %>
@@ -930,6 +930,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
   end
 
   defp ksef_qrcode_data_uri(%{ksef_number: nil}), do: nil
+
+  # A numbered invoice whose submission predates checksum storage has no verifiable URL.
+  defp ksef_qrcode_data_uri(%{ksef_invoice_checksum: nil}), do: nil
 
   defp ksef_qrcode_data_uri(sales_invoice) do
     sales_invoice
