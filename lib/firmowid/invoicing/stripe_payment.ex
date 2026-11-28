@@ -112,7 +112,8 @@ defmodule Firmowid.Invoicing.StripePayment do
       authorize_if always()
     end
 
-    bypass [{SystemActorRole, roles: [:stripe_invoicing]}, action(:record)] do
+    # Recording a refund reads the payments it refunds.
+    bypass [{SystemActorRole, roles: [:stripe_invoicing]}, action([:record, :read])] do
       authorize_if always()
     end
 

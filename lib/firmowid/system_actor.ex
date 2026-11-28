@@ -143,7 +143,8 @@ defmodule Firmowid.SystemActor do
 
   - `:stripe_invoicing` — invoices the payments of `org_id`'s connected Stripe account
     (see `Firmowid.Invoicing.StripeConnection`). Reads that connection with its key and
-    records its payments; the invoices themselves are issued as `:sales_invoice_processor`.
+    records its payments and refunds; the invoices and their corrections themselves are issued
+    as `:sales_invoice_processor`.
   """
 
   @type role ::

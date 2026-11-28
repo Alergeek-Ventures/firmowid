@@ -4,10 +4,10 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
 
   A company connected to KSeF connects its Stripe account with a restricted key that only
   reads. Every successful Stripe payment after the connection becomes an invoice issued as paid
-  and sent to KSeF; one payment gives one invoice, and payments from before the connection get
-  none. The company chooses whether buyers without a tax ID get an invoice too; the choice
-  applies to the next payments only. The latest payments are listed with their invoices, and the
-  page names the payments whose invoices the company issues by hand.
+  and sent to KSeF; one payment gives one invoice, a refund corrects it, and payments from
+  before the connection get none. The company chooses whether buyers without a tax ID get an invoice too; the choice
+  applies to the next payments only. The latest payments and refunds are listed with their
+  invoices and corrections, and the page names what the company still issues by hand.
   """
   use FirmowidWeb, :live_component
 
@@ -22,9 +22,11 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
   alias FirmowidWeb.Settings.Utilities.Navigation
 
   @timezone "Europe/Warsaw"
+  # How many payments and refunds the activity shows at first, and how many more each time.
+  @page 10
 
   @impl true
-  def mount(socket), do: {:ok, assign(socket, key: "", error: nil)}
+  def mount(socket), do: {:ok, assign(socket, key: "", error: nil, limit: @page)}
 
   @impl true
   def update(assigns, socket) do
@@ -56,6 +58,10 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     {:noreply, assign_connection(socket)}
   end
 
+  def handle_event("more", _params, socket) do
+    {:noreply, socket |> assign(limit: socket.assigns.limit + @page) |> assign_connection()}
+  end
+
   def handle_event("disconnect", _params, socket) do
     :ok = Invoicing.disconnect_stripe(socket.assigns.connection, scope: socket.assigns.scope)
     LiveToast.send_toast(:success, gettext("Stripe is disconnected."))
@@ -66,20 +72,40 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     scope = socket.assigns.scope
     connection = Invoicing.get_stripe_connection!(scope: scope)
 
-    payments =
-      if connection,
-        do:
-          Invoicing.list_stripe_payments!(
-            scope: scope,
-            load: [sales_invoice: [:ksef_submission_status]]
-          ).results,
-        else: []
+    {activity, more?} =
+      if connection, do: activity(scope, socket.assigns.limit), else: {[], false}
 
     assign(socket,
       connection: connection,
-      payments: payments,
+      activity: activity,
+      more?: more?,
       ksef_connected?: Ksef.connected?(scope)
     )
+  end
+
+  # The payments and refunds together, newest first: what the integration did with each.
+  defp activity(scope, limit) do
+    payments =
+      Invoicing.list_stripe_payments!(
+        scope: scope,
+        load: [sales_invoice: [:ksef_submission_status]],
+        page: [limit: limit]
+      )
+
+    refunds =
+      Invoicing.list_stripe_refunds!(
+        scope: scope,
+        load: [sales_invoice: [:ksef_submission_status], stripe_payment: [:sales_invoice]],
+        page: [limit: limit]
+      )
+
+    activity =
+      (Enum.map(payments.results, &{:payment, &1, &1.paid_at}) ++
+         Enum.map(refunds.results, &{:refund, &1, &1.refunded_at}))
+      |> Enum.sort_by(&elem(&1, 2), {:desc, DateTime})
+      |> Enum.take(limit)
+
+    {activity, payments.more? or refunds.more? or length(payments.results) + length(refunds.results) > limit}
   end
 
   # The key's own problem (a key that is not restricted, unknown to Stripe or without a
@@ -104,7 +130,7 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     <section id={@id} class="grid items-start gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <%= cond do %>
         <% @connection -> %>
-          <.connected connection={@connection} payments={@payments} myself={@myself} />
+          <.connected connection={@connection} activity={@activity} more?={@more?} myself={@myself} />
         <% @ksef_connected? -> %>
           <.key_flow key={@key} error={@error} permissions={@permissions} myself={@myself} />
           <.payment_flow />
@@ -133,7 +159,8 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
   end
 
   attr :connection, :map, required: true
-  attr :payments, :list, required: true
+  attr :activity, :list, required: true
+  attr :more?, :boolean, required: true
   attr :myself, :any, required: true
 
   defp connected(assigns) do
@@ -164,6 +191,7 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
         {gettext(
           "Every successful payment since the connection becomes an invoice issued as paid and sent to KSeF: paid Stripe invoices, Checkout payments and other payments. One payment gives one invoice."
         )}
+        {gettext("A refund in Stripe becomes a correction of its invoice, sent to KSeF too.")}
       </p>
 
       <form
@@ -200,34 +228,45 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     </div>
 
     <div class="flex flex-col gap-3 lg:border-l lg:border-grey-200 lg:ps-12">
-      <h2 class="text-h5 font-medium text-grey-900">{gettext("Latest payments")}</h2>
-      <p :if={@payments == []} class="text-sm/snug text-grey-600">
+      <h2 class="text-h5 font-medium text-grey-900">{gettext("Payments and refunds")}</h2>
+      <p :if={@activity == []} class="text-sm/snug text-grey-600">
         {gettext("No payments since the connection yet. Each new one appears here with its invoice.")}
       </p>
       <ul
-        :if={@payments != []}
-        id="stripe-payments"
+        :if={@activity != []}
+        id="stripe-activity"
         class="flex flex-col divide-y divide-grey-200 border-y border-grey-200"
       >
-        <li
-          :for={payment <- @payments}
-          id={"stripe-payment-#{payment.id}"}
-          class="flex flex-col gap-1 py-3"
-        >
-          <span class="flex items-baseline justify-between gap-4 text-sm">
-            <span class="min-w-0 truncate text-grey-900">{buyer(payment)}</span>
-            <span class="shrink-0 text-grey-900 tabular-nums">
-              {payment.currency |> Money.new(payment.amount) |> Money.to_string!()}
-            </span>
-          </span>
-          <span class="text-xs text-grey-600">
-            <span class="tabular-nums">
-              {local_time(payment.paid_at, "%d.%m, %H:%M")}
-            </span>
-            · <.payment_outcome payment={payment} />
-          </span>
-        </li>
+        <%= for entry <- @activity do %>
+          <%= case entry do %>
+            <% {:payment, payment, _at} -> %>
+              <.activity_row
+                id={"stripe-payment-#{payment.id}"}
+                buyer={buyer(payment)}
+                amount={payment.currency |> Money.new(payment.amount) |> Money.to_string!()}
+                at={payment.paid_at}
+              >
+                <.payment_outcome payment={payment} />
+              </.activity_row>
+            <% {:refund, refund, _at} -> %>
+              <.activity_row
+                id={"stripe-refund-#{refund.id}"}
+                buyer={buyer(refund.stripe_payment)}
+                amount={
+                  refund.currency |> Money.new(Decimal.negate(refund.amount)) |> Money.to_string!()
+                }
+                at={refund.refunded_at}
+              >
+                {gettext("refund")} · <.refund_outcome refund={refund} />
+              </.activity_row>
+          <% end %>
+        <% end %>
       </ul>
+      <div :if={@more?}>
+        <.button type="button" variant="tertiary" size="small" phx-click="more" phx-target={@myself}>
+          {gettext("Show more")}
+        </.button>
+      </div>
     </div>
 
     <div
@@ -271,6 +310,27 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
 
   defp buyer(%{sales_invoice: %{buyer_display_name: name}}) when is_binary(name), do: name
   defp buyer(payment), do: payment.payment_intent_id
+
+  attr :id, :string, required: true
+  attr :buyer, :string, required: true
+  attr :amount, :string, required: true
+  attr :at, DateTime, required: true
+  slot :inner_block, required: true
+
+  defp activity_row(assigns) do
+    ~H"""
+    <li id={@id} class="flex flex-col gap-1 py-3">
+      <span class="flex items-baseline justify-between gap-4 text-sm">
+        <span class="min-w-0 truncate text-grey-900">{@buyer}</span>
+        <span class="shrink-0 text-grey-900 tabular-nums">{@amount}</span>
+      </span>
+      <span class="text-xs text-grey-600">
+        <span class="tabular-nums">{local_time(@at, "%d.%m, %H:%M")}</span>
+        · {render_slot(@inner_block)}
+      </span>
+    </li>
+    """
+  end
 
   attr :payment, :map, required: true
 
@@ -317,6 +377,58 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     </span>
     """
   end
+
+  attr :refund, :map, required: true
+
+  defp refund_outcome(%{refund: %{status: :corrected}} = assigns) do
+    ~H"""
+    <.link
+      kind="unstyled"
+      navigate={~p"/sprzedazowe/#{@refund.sales_invoice.id}"}
+      class="inline-flex text-grey-900 underline underline-offset-2"
+    >
+      {gettext("Correction %{number}", number: @refund.sales_invoice.invoice_number)}
+    </.link>
+    ·
+    <span class={[@refund.sales_invoice.ksef_submission_status == :failed && "text-brick-700"]}>
+      {ksef_status(@refund.sales_invoice.ksef_submission_status)}
+    </span>
+    """
+  end
+
+  defp refund_outcome(%{refund: %{status: :pending}} = assigns) do
+    ~H"""
+    {gettext("issuing the correction")}
+    """
+  end
+
+  defp refund_outcome(%{refund: %{status: :skipped}} = assigns) do
+    ~H"""
+    {gettext("no correction: the payment has no invoice")}
+    """
+  end
+
+  defp refund_outcome(%{refund: %{status: :manual}} = assigns) do
+    ~H"""
+    <span class="text-brick-700">{manual_reason(@refund.manual_reason)}</span>
+    """
+  end
+
+  defp refund_outcome(%{refund: %{status: :failed}} = assigns) do
+    ~H"""
+    <span class="text-brick-700" title={@refund.error}>
+      {gettext("the correction could not be issued, correct the invoice by hand")}
+    </span>
+    """
+  end
+
+  defp manual_reason(:no_invoice), do: gettext("correct the invoice by hand: Firmowid did not issue it")
+
+  defp manual_reason(:no_credit_note),
+    do: gettext("correct the invoice by hand: Stripe does not say which lines went back without a credit note")
+
+  defp manual_reason(:credit_note_lines),
+    do: gettext("correct the invoice by hand: the credit note has lines the invoice does not have")
 
   defp ksef_status(:not_submitted), do: gettext("waiting for KSeF")
   defp ksef_status(:submitting), do: gettext("sent to KSeF")
@@ -447,7 +559,11 @@ defmodule FirmowidWeb.Settings.Components.StripeSection do
     <div id="stripe-limits" class="flex flex-col gap-2">
       <h2 class="text-h5 font-medium text-grey-900">{gettext("Issue these invoices by hand")}</h2>
       <ul class="flex list-disc flex-col gap-1.5 ps-5 text-sm/snug text-grey-700">
-        <li>{gettext("Refunds: Firmowid does not issue correction invoices for them yet.")}</li>
+        <li>
+          {gettext(
+            "Partial refunds without a credit note: Stripe does not say which lines went back. Refund a Stripe invoice with a credit note."
+          )}
+        </li>
         <li>
           {gettext(
             "Payments Stripe charged no VAT on. Set tax rates in Stripe; Checkout taxes shipping only with Stripe Tax."

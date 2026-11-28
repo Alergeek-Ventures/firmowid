@@ -810,6 +810,11 @@ msgstr ""
 msgid "A project with recorded time cannot be deleted."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "A refund in Stripe becomes a correction of its invoice, sent to KSeF too."
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparties.html.heex
 #, elixir-autogen, elixir-format
 msgid "A restored counterparty returns to the active list with its whole history of invoices and transactions."
@@ -3803,6 +3808,7 @@ msgid "Correction"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Correction %{number}"
 msgstr ""
@@ -7989,11 +7995,6 @@ msgstr ""
 msgid "Last: %{last} · Last 30 days: %{count}"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/stripe_section.ex
-#, elixir-autogen, elixir-format
-msgid "Latest payments"
-msgstr ""
-
 #: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
@@ -10032,6 +10033,11 @@ msgstr ""
 msgid "Paid plans are free for the first 60 days."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Partial refunds without a credit note: Stripe does not say which lines went back. Refund a Stripe invoice with a credit note."
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Partial youth relief combined with PPK or contribution limits requires more detailed income allocation."
@@ -10190,6 +10196,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
 msgid "Payments after this will not get invoices. Issued invoices stay."
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "Payments and refunds"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/integrations.ex
@@ -10831,11 +10842,6 @@ msgstr ""
 #: lib/firmowid_ui/invoicing/components/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Refresh"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/stripe_section.ex
-#, elixir-autogen, elixir-format
-msgid "Refunds: Firmowid does not issue correction invoices for them yet."
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
@@ -11977,6 +11983,7 @@ msgid "Show individuals only"
 msgstr ""
 
 #: lib/firmowid_web/admin/views/organizations.ex
+#: lib/firmowid_web/settings/components/stripe_section.ex
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Show more"
@@ -16218,6 +16225,21 @@ msgctxt "document filter"
 msgid "contract"
 msgstr ""
 
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "correct the invoice by hand: Firmowid did not issue it"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "correct the invoice by hand: Stripe does not say which lines went back without a credit note"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "correct the invoice by hand: the credit note has lines the invoice does not have"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "cost invoices"
@@ -16489,6 +16511,11 @@ msgstr ""
 
 #: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
+msgid "issuing the correction"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
 msgid "issuing the invoice"
 msgstr ""
 
@@ -16685,6 +16712,11 @@ msgstr ""
 
 #: lib/firmowid_web/settings/components/stripe_section.ex
 #, elixir-autogen, elixir-format
+msgid "no correction: the payment has no invoice"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
 msgid "no invoice: Stripe charged no VAT, set the tax in Stripe and issue it by hand"
 msgstr ""
 
@@ -16805,6 +16837,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "record-keeping"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "refund"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/utilities/leave_presentation.ex
@@ -16940,6 +16977,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "the Privacy Policy"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/stripe_section.ex
+#, elixir-autogen, elixir-format
+msgid "the correction could not be issued, correct the invoice by hand"
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/link_corrected_ksef_invoice.ex
