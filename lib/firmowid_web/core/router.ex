@@ -54,6 +54,7 @@ defmodule FirmowidWeb.Core.Router do
 
     plug :sign_in_with_remember_me
     plug :load_from_session
+    plug :validate_impersonated_session
     plug :restore_live_socket_id
     plug :set_actor, :user
     plug FirmowidWeb.Infrastructure.Plugs.Locale

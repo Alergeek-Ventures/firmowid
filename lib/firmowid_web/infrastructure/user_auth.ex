@@ -12,12 +12,14 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Plug.Conn
 
   alias AshAuthentication.Phoenix.Controller, as: AuthController
+  alias AshAuthentication.Plug.Helpers
   alias Firmowid.Core
   alias Firmowid.Core.Member
   alias Firmowid.Core.Organization
   alias Firmowid.Core.User
   alias Firmowid.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
+  alias Phoenix.LiveView.Socket
 
   @doc """
   Session key of the organization the user selected (see `Firmowid.Core.load_member/2`).
@@ -33,26 +35,101 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   organization chosen in `session`, returning the user with it as `member` and
   the organizations of all the user's active members, for the switcher to list
   (those without a billing plan as unavailable).
+
+  Returns `nil` when an impersonated user's superuser no longer has a valid session
+  or the superuser role.
   """
-  @spec load_member(User.t(), map()) :: {User.t(), [Organization.t()]}
+  @spec load_member(User.t(), map()) :: {User.t(), [Organization.t()]} | nil
   def load_member(%User{} = user, session) do
-    members = Core.list_active_members(user)
-    usable = Enum.filter(members, &Core.usable_organization?(user, &1.organization))
     user = put_token_claims(user, session)
 
-    {Core.select_member(user, usable, session[organization_session_key()]), Enum.map(members, & &1.organization)}
+    if impersonation_valid?(user) do
+      members = Core.list_active_members(user)
+      usable = Enum.filter(members, &Core.usable_organization?(user, &1.organization))
+
+      {Core.select_member(user, usable, session[organization_session_key()]), Enum.map(members, & &1.organization)}
+    end
+  end
+
+  @doc """
+  Whether the parked superuser session still authorizes an impersonated user.
+
+  Users who are not impersonated are valid without another database query.
+  """
+  @spec impersonation_valid?(User.t()) :: boolean()
+  def impersonation_valid?(%User{} = user) do
+    case Core.impersonator_id(user) do
+      nil ->
+        true
+
+      impersonator_id ->
+        case Helpers.authenticate_resource_from_session(
+               User,
+               %{"user_token" => user.__metadata__[:impersonator_token]},
+               :firmowid,
+               []
+             ) do
+          {:ok, %User{id: ^impersonator_id, system_role: :superuser}} -> true
+          _ -> false
+        end
+    end
+  end
+
+  @doc "Attaches a LiveView lifecycle hook only for an impersonated session."
+  @spec maybe_attach_impersonation_hook(Socket.t(), atom(), atom(), function()) ::
+          Socket.t()
+  def maybe_attach_impersonation_hook(socket, name, stage, fun) do
+    if Core.impersonator_id(socket.assigns.current_user) do
+      Phoenix.LiveView.attach_hook(socket, name, stage, fun)
+    else
+      socket
+    end
+  end
+
+  @doc """
+  Plug: ends a browser session whose impersonator no longer has authority.
+  """
+  @spec validate_impersonated_session(Plug.Conn.t(), term()) :: Plug.Conn.t()
+  def validate_impersonated_session(conn, _opts) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+
+      user ->
+        user = put_token_claims(user, get_session(conn))
+
+        if impersonation_valid?(user),
+          do: assign(conn, :current_user, user),
+          else: revoke_impersonated_session(conn)
+    end
   end
 
   # A connected LiveView gets the user without the claims of their session token,
   # which the plug adds (`AshAuthentication.Phoenix.LiveSession` only loads the
   # subject), so they are read from the token in the session it has verified. They
-  # tell a superuser's session as the user (see `Core.impersonator_id/1`).
-  defp put_token_claims(user, %{"user_token" => token}) when is_binary(token) do
+  # tell a superuser's session as the user (see `Core.impersonator_id/1`). The
+  # parked token stays in server-side metadata for validation after the mount.
+  defp put_token_claims(user, %{"user_token" => token} = session) when is_binary(token) do
     {:ok, claims} = AshAuthentication.Jwt.peek(token)
-    Ash.Resource.put_metadata(user, :token_claims, claims)
+
+    user
+    |> Ash.Resource.put_metadata(:token_claims, claims)
+    |> put_impersonator_token(session)
   end
 
-  defp put_token_claims(user, _session), do: user
+  defp put_token_claims(user, session), do: put_impersonator_token(user, session)
+
+  defp put_impersonator_token(user, session) do
+    Ash.Resource.put_metadata(user, :impersonator_token, session["impersonator_token"])
+  end
+
+  defp revoke_impersonated_session(conn) do
+    conn
+    |> Helpers.revoke_session_tokens(:firmowid)
+    |> clear_session()
+    |> assign(:current_user, nil)
+    |> Helpers.set_actor(:user)
+  end
 
   @doc """
   Stores the organization of the user's loaded member in the session, so the
@@ -114,7 +191,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
     {user, organizations} =
       case conn.assigns[:current_user] do
         nil -> {nil, []}
-        user -> load_member(user, get_session(conn))
+        user -> load_member(user, get_session(conn)) || {nil, []}
       end
 
     cond do

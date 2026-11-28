@@ -54,7 +54,8 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
          |> assign(:current_org, org)
          |> assign(:organizations, organizations)
          |> assign(:ash_scope, scope)
-         |> attach_access_hook(:ash_scope)}
+         |> attach_access_hook(:ash_scope)
+         |> attach_impersonation_params_hook()}
     end
   end
 
@@ -89,6 +90,19 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
     end)
   end
 
+  # LiveComponents cannot attach `:handle_params` hooks, so this belongs only in
+  # this LiveView `on_mount`, not in the shared event hook above.
+  defp attach_impersonation_params_hook(socket) do
+    UserAuth.maybe_attach_impersonation_hook(
+      socket,
+      :impersonation_access,
+      :handle_params,
+      fn _params, _uri, socket ->
+        ensure_organization_access(socket, Map.fetch!(socket.assigns, :ash_scope))
+      end
+    )
+  end
+
   @doc "Checks organization access before upload progress callbacks, which bypass event hooks."
   @spec guard_upload_progress(function(), atom()) :: function()
   def guard_upload_progress(callback, scope_assign) do
@@ -101,29 +115,33 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   end
 
   defp ensure_organization_access(socket, %{actor: user, tenant: tenant}) do
-    %{id: member_id, role: role, organization: %{billing_plan: plan}} = user.member
+    if UserAuth.impersonation_valid?(user) do
+      %{id: member_id, role: role, organization: %{billing_plan: plan}} = user.member
 
-    case Core.load_member(user, tenant) do
-      %{
-        member: %{
-          id: ^member_id,
-          role: ^role,
-          organization_id: ^tenant,
-          organization: %{billing_plan: ^plan}
-        }
-      } ->
-        {:cont, socket}
+      case Core.load_member(user, tenant) do
+        %{
+          member: %{
+            id: ^member_id,
+            role: ^role,
+            organization_id: ^tenant,
+            organization: %{billing_plan: ^plan}
+          }
+        } ->
+          {:cont, socket}
 
-      # The plan changed under an open page, whose actor still carries the old one:
-      # start again from the inbox with what the plan includes now. The plan limit
-      # page notices the change itself and tells the admin.
-      %{member: %{id: ^member_id, role: ^role, organization_id: ^tenant}} ->
-        if socket.view == PlanLimit,
-          do: {:cont, socket},
-          else: {:halt, redirect(socket, to: ~p"/skrzynka")}
+        # The plan changed under an open page, whose actor still carries the old one:
+        # start again from the inbox with what the plan includes now. The plan limit
+        # page notices the change itself and tells the admin.
+        %{member: %{id: ^member_id, role: ^role, organization_id: ^tenant}} ->
+          if socket.view == PlanLimit,
+            do: {:cont, socket},
+            else: {:halt, redirect(socket, to: ~p"/skrzynka")}
 
-      _ ->
-        {:halt, redirect(socket, to: OrganizationNavigation.onboarding_path())}
+        _ ->
+          {:halt, redirect(socket, to: OrganizationNavigation.onboarding_path())}
+      end
+    else
+      {:halt, redirect(socket, to: ~p"/zaloguj")}
     end
   end
 end
