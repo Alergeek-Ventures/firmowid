@@ -38,6 +38,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Ewidencja godzin w Firmowidzie: jak pobrać PDF, podpisać i wysłać](https://firmowid.pl/pomoc/ewidencja-godzin): Miesięczne zestawienie godzin do umowy zlecenia w czterech krokach, podpis na podpis.gov.pl, blokada miesiąca oraz prośba o korektę.
 - [Analiza: jak czytać Podsumowanie i Trendy](https://firmowid.pl/pomoc/analiza-podsumowanie-i-trendy): Co znaczą liczby w Analizie Firmowida: przychody, koszty, wynik, miesiąc domknięty, pasek 100 zł i nieopłacone faktury poza sumą.
 - [Narzędzia MCP Firmowida: pełna lista](https://firmowid.pl/pomoc/narzedzia-mcp): 42 narzędzia serwera MCP Firmowida: faktury i KSeF, przelewy, wynagrodzenia, czas pracy, urlopy i Analiza. Co czyta, co zapisuje i jaka rola jest potrzebna.
+- [Jak podłączyć Firmowid do Claude i ChatGPT: krok po kroku](https://firmowid.pl/pomoc/podlaczenie-claude-chatgpt): Adres serwera MCP, logowanie kontem Firmowida, ekran zgody z wyborem firmy, pierwsze polecenia i co się dzieje z zapisami.
 
 ## Poradnik
 
