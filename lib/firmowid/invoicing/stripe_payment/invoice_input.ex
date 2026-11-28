@@ -16,7 +16,7 @@ defmodule Firmowid.Invoicing.StripePayment.InvoiceInput do
   Stripe; a company outside VAT invoices every line `zw`. `Changes.IssueInvoice` checks that the
   invoice adds up to what Stripe took.
 
-  A buyer with a tax ID is a company; one without is a private person, invoiced only when the
+  A buyer with a tax ID, Polish or foreign, is a company; one without is a private person, invoiced only when the
   company chose so (`:skip` otherwise). The invoice is issued as paid by card on the day of the
   payment, and KSeF delivers it, so no invoice email is sent.
   """
@@ -225,21 +225,34 @@ defmodule Firmowid.Invoicing.StripePayment.InvoiceInput do
       paid_on: paid_on,
       payment_method: :card,
       buyer_address: address(buyer.address),
-      buyer_country: (buyer.address || %{})["country"] || "PL",
+      buyer_country: country(buyer),
       buyer_email: buyer.email,
       should_send_emails: false,
       sales_invoice_items: items
     }
   end
 
-  defp company(buyer, %{"value" => value}) do
+  defp company(buyer, tax_id) do
     %{
       buyer_type: :company,
-      buyer_id: String.replace_prefix(value, "PL", ""),
+      buyer_id: tax_id_number(tax_id),
       buyer_full_name: buyer.name,
       buyer_display_name: buyer.name
     }
   end
+
+  # Stripe writes an EU VAT number with its country prefix (a Polish NIP too, "EL" for Greece);
+  # the invoice keeps the number and the buyer's country apart. Other tax IDs stay as written.
+  defp tax_id_number(%{"type" => "eu_vat", "value" => value}), do: String.slice(value, 2..-1//1)
+  defp tax_id_number(%{"value" => value}), do: value
+
+  # The buyer's address names the country; without one, the prefix of an EU VAT number does.
+  defp country(%{address: %{"country" => country}}) when is_binary(country), do: country
+  defp country(%{tax_ids: [%{"type" => "eu_vat", "value" => "EL" <> _number} | _rest]}), do: "GR"
+
+  defp country(%{tax_ids: [%{"type" => "eu_vat", "value" => <<prefix::binary-2, _number::binary>>} | _rest]}), do: prefix
+
+  defp country(_buyer), do: "PL"
 
   # Stripe keeps one name; its last word is the surname.
   defp individual(name) do
