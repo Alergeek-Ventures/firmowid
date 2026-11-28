@@ -90,7 +90,7 @@
                 {if @lang == :en, do: "Download PDF", else: "Pobierz PDF"}
               </.link>
               <.link
-                :if={not is_nil(invoice.ksef_number)}
+                :if={invoice.ksef_number && invoice.ksef_invoice_checksum}
                 kind="unstyled"
                 external={Firmowid.Ksef.invoice_url!(invoice)}
                 target="_blank"

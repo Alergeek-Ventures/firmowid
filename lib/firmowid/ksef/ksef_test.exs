@@ -5,7 +5,6 @@ defmodule Firmowid.KsefTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
-  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
@@ -16,10 +15,9 @@ defmodule Firmowid.KsefTest do
     on_exit(fn -> Cachex.clear(:ksef) end)
   end
 
-  test "invoice_url! stores the checksum of an accepted sales invoice that has none" do
+  test "invoice_url! refuses a sales invoice whose KSeF checksum was never stored" do
     admin = admin_fixture()
     scope = %Scope{actor: admin, tenant: admin.member.organization_id}
-    xml = "<Faktura>accepted</Faktura>"
 
     invoice =
       InvoicingFixtures.seed_sales_invoice!(
@@ -53,13 +51,9 @@ defmodule Firmowid.KsefTest do
         scope: scope
       )
 
-    InvoicingFixtures.accept_ksef_submissions!(scope.tenant)
-    Req.Test.stub(:ksef_api, fn conn -> Plug.Conn.send_resp(conn, 200, xml) end)
-
-    checksum = Ksef.compute_fa3_checksum(xml)
-
-    assert Ksef.invoice_url!(invoice) =~ "/6161525811/15-01-2026/#{checksum}"
-    assert SalesInvoice.by_id!(invoice.id, scope: scope).ksef_invoice_checksum == checksum
+    assert_raise ArgumentError, ~r/without a stored KSeF checksum/, fn ->
+      Ksef.invoice_url!(invoice)
+    end
   end
 
   test "invoice_url! links the hash KSeF reported in standard Base64 as Base64URL" do
