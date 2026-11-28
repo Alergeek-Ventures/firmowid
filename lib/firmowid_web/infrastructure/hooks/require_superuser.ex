@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
   @moduledoc """
   LiveView on_mount hook. Requires superuser role, on mount and again before
-  every event, so a role revoked while an admin page is open stops its actions.
+  every event and every navigation, so a role revoked while an admin page is
+  open stops its actions and does not let it load another organization.
 
   Events of a LiveComponent do not pass through the view's hooks: an admin
   component that acts on data needs its own check.
@@ -18,7 +19,10 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
   @doc false
   def on_mount(:default, _params, _session, %{assigns: %{current_user: current_user}} = socket) do
     if UserAuth.superuser?(current_user) do
-      {:cont, attach_hook(socket, :superuser_access, :handle_event, &ensure_superuser/3)}
+      {:cont,
+       socket
+       |> attach_hook(:superuser_access, :handle_event, &ensure_superuser_on_event/3)
+       |> attach_hook(:superuser_access, :handle_params, &ensure_superuser_on_params/3)}
     else
       {:halt, deny(socket)}
     end
@@ -31,7 +35,11 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
      |> redirect(to: ~p"/zaloguj")}
   end
 
-  defp ensure_superuser(_event, _params, socket) do
+  defp ensure_superuser_on_event(_event, _params, socket), do: ensure_superuser(socket)
+
+  defp ensure_superuser_on_params(_params, _uri, socket), do: ensure_superuser(socket)
+
+  defp ensure_superuser(socket) do
     user = socket.assigns.current_user
 
     case Core.get_user(user.id, actor: user) do
