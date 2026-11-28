@@ -39,6 +39,34 @@ Dwie ściągi: co wraca w zwykłym miesiącu i jak to sprawdzić na ostatnim.
 
 ![Pięć kroków testu na ostatnim miesiącu: faktury, wpłaty sprawdzane ręcznie, projekty, księgowość i porównanie programów.](/images/guides/program-do-faktur-jdg-test-ostatniego-miesiaca.webp)
 
+## Porównanie programów do faktur z KSeF dla JDG
+
+| Program | Najtańszy plan z KSeF | Cena netto za miesiąc | Księgowość | Stan na |
+|---|---|---|---|---|
+| Aplikacja Podatnika KSeF (MF) | jedyny | 0 zł | nie | 23.11.2026 |
+| Firmowid | Darmowy, bez limitu faktur | 0 zł | nie | 25.11.2026 |
+| Fakturownia | Micro, 3 faktury | 0 zł | od planu Pro | 25.11.2026 |
+| wFirma | Fakturowanie i CRM | 0 zł | pakiet Księgowość, 60 zł | 23.11.2026 |
+| iFirma | do 3 faktur | 0 zł, potem 12,50 zł | osobny pakiet | 23.11.2026 |
+| inFakt | Mini | 9,90 zł | od planu Standard, 39,90 zł | 3.11.2026 |
+
+Ceny przy płatności rocznej. inFakt w planie Mini wymaga konta firmowego inFakt.
+
+## Czy JDG wystarczy program do faktur, czy potrzebuje księgowości?
+
+Program do faktur wystarcza do wystawiania i odbierania faktur. Ewidencji podatkowych nie zastąpi.
+
+| Obowiązek | Kogo dotyczy | Przepis |
+|---|---|---|
+| Księga przychodów i rozchodów | skala podatkowa i podatek liniowy | art. 24a ustawy o PIT |
+| Ewidencja przychodów | ryczałt | art. 15 ustawy o zryczałtowanym podatku dochodowym |
+| JPK_V7 | czynny podatnik VAT | art. 109 ust. 3b ustawy o VAT |
+
+| Kto prowadzi ewidencje | Czego potrzebujesz |
+|---|---|
+| biuro księgowe | programu do faktur i paczki dokumentów co miesiąc |
+| Ty | programu z KPiR albo ewidencją ryczałtu |
+
 ## Firmowid dla jednoosobowej firmy
 
 [Firmowid](/ksef) jest jedną z takich alternatyw. Jest dopasowany do firm usługowych i projektowych, które w jednym pakiecie chcą mieć tanio kilka funkcji, jak mierzenie czasu i parowanie przelewów. Ten problem Firmowid rozwiązuje szybko i dobrze.
@@ -65,4 +93,6 @@ W cenniku przy tym planie jest dopisek „Bez karty, bez okresu próbnego”. Na
 - Ministerstwo Finansów, [Aplikacja Podatnika KSeF 2.0](https://ksef.podatki.gov.pl/aplikacja-podatnika-ksef-20/), dostęp 5.11.2026; strona zaktualizowana 15.10.2026.
 - [MF: Pytania i odpowiedzi KSeF 2.0](https://ksef.podatki.gov.pl/pytania-i-odpowiedzi-ksef-20/) (wersja z 10.11.2026), dostęp 24.11.2026.
 - [iFirma: cennik](https://www.ifirma.pl/cennik/), dostęp 23.11.2026; Fakturownia: cennik fakturownia.pl, stan 11.11.2026.
-- Firmowid, [cennik](https://firmowid.pl/cennik), dostęp 23.11.2026.
+- Firmowid, [cennik](https://firmowid.pl/cennik), dostęp 25.11.2026.
+- [Fakturownia: cennik](https://fakturownia.pl/cennik), dostęp 25.11.2026; [wFirma: cennik](https://wfirma.pl/cennik), dostęp 23.11.2026; inFakt: cennik infakt.pl, stan 3.11.2026.
+- Ustawa o podatku dochodowym od osób fizycznych, art. 24a; ustawa o zryczałtowanym podatku dochodowym, art. 15; ustawa o VAT, art. 109 ust. 3b.
