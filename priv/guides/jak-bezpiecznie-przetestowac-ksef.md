@@ -62,7 +62,7 @@ Prawdziwymi danymi. Ministerstwo wyjaśnia: „Do środowiska przedprodukcyjnego
 3. Wystaw i wyślij fakturę, sprawdź status, pobierz dokument i UPO (Urzędowe Poświadczenie Odbioru).
 4. W Demo sprawdź osobno logowanie i uprawnienia, nadal bez danych prawdziwego kontrahenta.
 
-Po udanej próbie prawdziwe faktury wyślesz z Aplikacji Podatnika KSeF albo z programu połączonego z systemem, na przykład z naszego [Firmowida](/ksef).
+Po udanej próbie prawdziwe faktury wyślesz z Aplikacji Podatnika KSeF albo z [programu do KSeF](/ksef), na przykład z naszego Firmowida. Gdy się [zarejestrujesz](/zarejestruj), dowolny plan Firmowida działa za darmo przez 60 dni, więc płatne funkcje sprawdzisz, zanim zdecydujesz o abonamencie.
 
 ## Czy testy zmieniają coś w prawdziwym KSeF?
 

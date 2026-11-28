@@ -17,7 +17,7 @@ Według harmonogramu Ministerstwa Finansów wyjątek dla firm, których sprzeda�
 | Numer KSeF w tytule przelewu | między czynnymi podatnikami VAT, a także w MPP |
 | Zwolnienie z VAT do 240 000 zł (w pierwszym roku proporcjonalnie) | nie zwalnia z KSeF |
 
-Pierwszą fakturę dla firmy wystawisz w Aplikacji Podatnika KSeF albo w programie połączonym z systemem, na przykład w naszym [Firmowidzie](/ksef), gdzie plan za 0 zł nie liczy wystawionych faktur.
+Pierwszą fakturę dla firmy wystawisz w Aplikacji Podatnika KSeF albo w [programie do KSeF](/ksef), na przykład w naszym Firmowidzie, gdzie plan za 0 zł nie liczy wystawionych faktur. [Zarejestruj się](/zarejestruj), a przez pierwsze 60 dni wypróbujesz bez opłat także płatne plany z projektami bez limitu i ewidencją czasu.
 
 ## Pierwsze wpłaty
 

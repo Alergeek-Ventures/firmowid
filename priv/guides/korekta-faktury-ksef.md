@@ -15,7 +15,7 @@ Inaczej traktuje się plik XML, który KSeF odrzucił, ponieważ według MF taka
 
 ## Korekta kilku faktur naraz
 
-Faktura korygująca zbiorcza musi wskazywać wszystkie faktury pierwotne, których dotyczy, czyli ich numery nadane przez sprzedawcę, numery KSeF i daty wystawienia. W [Firmowidzie](/ksef), naszym programie do faktur, korekta pojawia się na stronie faktury pierwotnej, ma pole na przyczynę korekty i zestawienie pozycji przed korektą i po niej, a przypadkom, w których błąd powtarza się na kilkuset fakturach, poświęciliśmy osobny tekst o [masowej korekcie](/poradnik/masowa-korekta-faktur-ksef).
+Faktura korygująca zbiorcza musi wskazywać wszystkie faktury pierwotne, których dotyczy, czyli ich numery nadane przez sprzedawcę, numery KSeF i daty wystawienia. W Firmowidzie, naszym [programie do KSeF](/ksef), korekta pojawia się na stronie faktury pierwotnej, ma pole na przyczynę korekty i zestawienie pozycji przed korektą i po niej, a przypadkom, w których błąd powtarza się na kilkuset fakturach, poświęciliśmy osobny tekst o [masowej korekcie](/poradnik/masowa-korekta-faktur-ksef). Jeśli chcesz to sprawdzić na własnych fakturach, [zarejestruj](/zarejestruj) firmę i przez 60 dni korzystaj z wybranego planu za darmo.
 
 ## Czy fakturę wysłaną do KSeF można anulować?
 

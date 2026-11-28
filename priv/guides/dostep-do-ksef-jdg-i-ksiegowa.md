@@ -93,7 +93,7 @@ Elektronicznie zwykle od razu po przetworzeniu. Przy ZAW-FA uprawnienia działaj
 
 ## Uprawnienia w KSeF a role w Firmowidzie
 
-[Firmowid](/ksef), nasz program do faktur, łączy się z KSeF raz, w ustawieniach firmy, i robi to administrator ([jak połączyć Firmowid z KSeF](/pomoc/polaczenie-z-ksef)). Uprawnień w KSeF w Firmowidzie się nie nadaje, do tego służy Aplikacja Podatnika.
+Firmowid, nasz [program do KSeF](/ksef), łączy się z KSeF raz, w ustawieniach firmy, i robi to administrator ([jak połączyć Firmowid z KSeF](/pomoc/polaczenie-z-ksef)). Uprawnień w KSeF w Firmowidzie się nie nadaje, do tego służy Aplikacja Podatnika. Gdy [zarejestrujesz](/zarejestruj) firmę, przez pierwsze 60 dni każdy plan, także ten z kontami dla biura księgowego, działa bez opłat.
 
 Kto co widzi w samym programie, ustawia się osobno, rolami. Biuro księgowe może dostać własne konto z [rolą Księgowość](/funkcje/zespol), której opis w aplikacji brzmi: „Pełny dostęp do fakturowania (przeglądanie, dodawanie i edycja), z wyjątkiem dodawania faktur spoza KSeF”. Rola Fakturowanie daje sam podgląd.
 

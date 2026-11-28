@@ -71,7 +71,7 @@ Kłopot zostaje po stronie sprzedawcy. Jeden z nich napisał na forum swojego pr
 
 ## Faktura dla osoby prywatnej w Firmowidzie
 
-[Firmowid](/ksef), nasz program do faktur, obsługuje faktury zarówno dla firm, jak i dla osób prywatnych.
+Firmowid, nasz [program do KSeF](/ksef), obsługuje faktury zarówno dla firm, jak i dla osób prywatnych. Po tym, jak się [zarejestrujesz](/zarejestruj), masz 60 darmowych dni na dowolny plan.
 
 W kreatorze typ nabywcy to „Firma / Jednoosobowa Działalność Gospodarcza” albo „Osoba prywatna”. Przy osobie prywatnej jest pole „PESEL (opcjonalnie)”. Numer drukuje się na PDF, do KSeF nie jest wysyłany. Po zaznaczeniu „Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF” klient dostaje PDF z kodem QR.
 
