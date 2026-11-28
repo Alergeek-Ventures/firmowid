@@ -140,6 +140,10 @@ defmodule Firmowid.SystemActor do
     `org_id`, it links the organization's Stripe customer and makes its plan
     follow its Stripe subscription. It also records the payments whose invoices
     the seller organization issues.
+
+  - `:stripe_invoicing` — invoices the payments of `org_id`'s connected Stripe account
+    (see `Firmowid.Invoicing.StripeConnection`). Reads that connection with its key and
+    records its payments; the invoices themselves are issued as `:sales_invoice_processor`.
   """
 
   @type role ::
@@ -176,6 +180,7 @@ defmodule Firmowid.SystemActor do
           | :plan_limits
           | :tax_forecaster
           | :billing
+          | :stripe_invoicing
 
   @enforce_keys [:org_id, :role]
   defstruct [:org_id, :role, :blob_id, :user_id]

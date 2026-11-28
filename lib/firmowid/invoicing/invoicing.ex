@@ -387,6 +387,22 @@ defmodule Firmowid.Invoicing do
       define :record_counterparty_proposal, action: :record
     end
 
+    resource Firmowid.Invoicing.StripeConnection do
+      define :get_stripe_connection, action: :current, not_found_error?: false
+      define :connect_stripe, action: :connect, args: [:api_key]
+
+      define :set_stripe_invoice_consumers,
+        action: :set_invoice_consumers,
+        args: [:invoice_consumers]
+
+      define :disconnect_stripe, action: :disconnect
+    end
+
+    resource Firmowid.Invoicing.StripePayment do
+      define :record_stripe_payment, action: :record
+      define :list_stripe_payments, action: :list
+    end
+
     resource Firmowid.Invoicing.SkippedCounterpartySuggestion do
       define :list_skipped_counterparty_suggestions, action: :read
       define :skip_counterparty_suggestion, action: :skip, args: [:group_key]
