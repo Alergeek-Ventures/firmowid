@@ -1,3 +1,4 @@
+import { getAccessToken } from "@raycast/utils";
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -6,29 +7,19 @@ import {
 
 import type { Session } from "./api";
 import { getCurrentSession, listProjects, listSessions } from "./api";
-import { AuthenticationError, getBackgroundAccessToken } from "./auth";
-
-export async function accessToken() {
-  const token = await getBackgroundAccessToken();
-
-  if (!token) {
-    throw new AuthenticationError();
-  }
-
-  return token;
-}
 
 export const currentSessionOptions = queryOptions<Session | null>({
   queryKey: ["sessions", "current"],
   queryFn: async ({ signal }) =>
-    (await getCurrentSession({ token: await accessToken(), signal })) ?? null,
+    (await getCurrentSession({ token: getAccessToken().token, signal })) ??
+    null,
   meta: { errorToastTitle: "Couldn't load Firmowid data" },
 });
 
 export const projectsOptions = queryOptions({
   queryKey: ["projects"],
-  queryFn: async ({ signal }) =>
-    listProjects({ token: await accessToken(), signal }),
+  queryFn: ({ signal }) =>
+    listProjects({ token: getAccessToken().token, signal }),
   meta: { errorToastTitle: "Couldn't load Firmowid data" },
 });
 
@@ -44,7 +35,7 @@ export function sessionNeighborsOptions(session?: Session) {
     queryFn: session
       ? async ({ signal }) => {
           const options = {
-            token: await accessToken(),
+            token: getAccessToken().token,
             signal,
             limit: 1,
           };
@@ -83,7 +74,7 @@ export function sessionNeighborsOptions(session?: Session) {
 
 export const sessionHistoryOptions = infiniteQueryOptions({
   queryKey: ["sessions", "history", "keyset"],
-  queryFn: async ({
+  queryFn: ({
     signal,
     pageParam,
   }: {
@@ -91,7 +82,7 @@ export const sessionHistoryOptions = infiniteQueryOptions({
     pageParam: string | null;
   }) =>
     listSessions({
-      token: await accessToken(),
+      token: getAccessToken().token,
       signal,
       limit: 50,
       after: pageParam ?? undefined,

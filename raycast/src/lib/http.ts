@@ -10,7 +10,7 @@ export async function fetchFirmowid(
   }
 }
 
-/** Adds the same connection context to requests made by OAuthService. */
+/** Adds the server origin and recovery steps to a transport error. */
 export function rethrowConnectionError(cause: unknown, url: string): never {
   if (!(cause instanceof TypeError)) {
     throw cause;

@@ -12,7 +12,10 @@ const SessionSchema = z.object({
   title: z.string(),
   start_datetime: z.iso.datetime(),
   end_datetime: z.iso.datetime().nullish(),
-  is_remote: z.boolean().optional().default(false),
+  is_remote: z
+    .boolean()
+    .nullish()
+    .transform((isRemote) => isRemote ?? false),
   lockdown: z.boolean(),
   project: ProjectSchema,
 });
@@ -113,7 +116,7 @@ async function request({
   });
 
   if (response.status === 401) {
-    await invalidateAccessToken({ origin, token });
+    await invalidateAccessToken({ token });
   }
 
   if (response.status === 404 && allowNotFound) {
