@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     case socket.assigns[:current_user] &&
            UserAuth.load_member(socket.assigns.current_user, session) do
       nil ->
-        socket
+        assign(socket, :current_user, nil)
 
       {%{member: nil} = user, _organizations} ->
         assign(socket, :current_user, user)

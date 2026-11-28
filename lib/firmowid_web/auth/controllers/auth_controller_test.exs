@@ -10,10 +10,13 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   import Phoenix.LiveViewTest
 
   alias AshAuthentication.Jwt
+  alias AshAuthentication.Oauth2Server.PKCE
+  alias AshAuthentication.Oauth2Server.Register
   alias AshAuthentication.Plug.Helpers
   alias AshAuthentication.TokenResource
   alias Firmowid.Core
   alias Firmowid.Core.Token
+  alias Firmowid.Oauth2Server
   alias Phoenix.Socket.Broadcast
 
   test "reset and confirmation URLs never expose bearer credentials in request logs" do
@@ -57,16 +60,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   end
 
   test "logout during impersonation revokes both sessions and prevents returning", %{conn: conn} do
-    superuser = Ash.Seed.update!(admin_fixture(), %{system_role: :superuser})
-    owner = admin_fixture()
-
-    impersonated =
-      conn
-      |> init_test_session(%{})
-      |> Helpers.store_in_session(superuser)
-      |> post("/admin/rozliczenia/#{owner.member.organization_id}/impersonacja")
-
-    assert redirected_to(impersonated) == "/fakturowanie"
+    {impersonated, _superuser} = impersonate_owner(conn)
     superuser_token = get_session(impersonated, "impersonator_token")
     owner_token = get_session(impersonated, :user_token)
 
@@ -76,6 +70,88 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
     assert TokenResource.token_revoked?(Token, owner_token)
     assert TokenResource.token_revoked?(Token, superuser_token)
     assert impersonated |> delete("/admin/impersonacja") |> redirected_to() == "/zaloguj"
+  end
+
+  test "impersonated session ends when the superuser is demoted", %{conn: conn} do
+    {impersonated, superuser} = impersonate_owner(conn)
+    owner_token = get_session(impersonated, :user_token)
+    Ash.Seed.update!(superuser, %{system_role: :user})
+
+    conn = get(impersonated, "/fakturowanie")
+
+    assert redirected_to(conn) == "/zaloguj"
+    assert TokenResource.token_revoked?(Token, owner_token)
+    assert is_nil(get_session(conn, :user_token))
+  end
+
+  test "impersonated session ends when the parked superuser token is revoked", %{conn: conn} do
+    {impersonated, _superuser} = impersonate_owner(conn)
+    superuser_token = get_session(impersonated, "impersonator_token")
+    owner_token = get_session(impersonated, :user_token)
+
+    assert :ok =
+             TokenResource.revoke(Token, superuser_token,
+               authorize?: false,
+               store_all_tokens?: true
+             )
+
+    conn = get(impersonated, "/fakturowanie")
+
+    assert redirected_to(conn) == "/zaloguj"
+    assert TokenResource.token_revoked?(Token, owner_token)
+    assert is_nil(get_session(conn, :user_token))
+  end
+
+  test "an open LiveView ends when the impersonator is demoted", %{conn: conn} do
+    {impersonated, superuser} = impersonate_owner(conn)
+    {:ok, view, _html} = live(impersonated, ~p"/skrzynka")
+    Ash.Seed.update!(superuser, %{system_role: :user})
+
+    assert {:error, {:redirect, %{to: "/zaloguj"}}} =
+             render_hook(view, "search", %{"q" => ""})
+  end
+
+  test "an open organization onboarding LiveView ends when the impersonator is demoted", %{
+    conn: conn
+  } do
+    {impersonated, superuser} = impersonate_owner(conn)
+    {:ok, view, _html} = live(impersonated, ~p"/organizacja?krok=firma")
+    Ash.Seed.update!(superuser, %{system_role: :user})
+
+    assert {:error, {:redirect, %{to: "/zaloguj"}}} =
+             view
+             |> form("#company-form", %{nip: ""})
+             |> render_change()
+  end
+
+  test "OAuth authorization does not use a demoted impersonated session", %{conn: conn} do
+    {impersonated, superuser} = impersonate_owner(conn)
+    redirect_uri = "https://example.com/oauth/callback"
+
+    {:ok, client, _response} =
+      Register.register(Oauth2Server, %{
+        "client_name" => "Demoted impersonator regression",
+        "redirect_uris" => [redirect_uri],
+        "grant_types" => ["authorization_code"],
+        "response_types" => ["code"],
+        "token_endpoint_auth_method" => "none"
+      })
+
+    verifier = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+
+    query = %{
+      "client_id" => client.id,
+      "response_type" => "code",
+      "redirect_uri" => redirect_uri,
+      "code_challenge" => PKCE.challenge(verifier),
+      "code_challenge_method" => "S256",
+      "scope" => "mcp"
+    }
+
+    Ash.Seed.update!(superuser, %{system_role: :user})
+    conn = get(impersonated, "/oauth/authorize?" <> URI.encode_query(query))
+
+    assert redirected_to(conn) =~ ~r"\A/zaloguj\?"
   end
 
   test "independent token revocation broadcasts the token topic" do
@@ -176,6 +252,20 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
                  build_conn() |> put_req_cookie("remember_me", token) |> live(~p"/czasosledz")
       end
     end
+  end
+
+  defp impersonate_owner(conn) do
+    superuser = Ash.Seed.update!(admin_fixture(), %{system_role: :superuser})
+    owner = admin_fixture()
+
+    impersonated =
+      conn
+      |> init_test_session(%{})
+      |> Helpers.store_in_session(superuser)
+      |> post("/admin/rozliczenia/#{owner.member.organization_id}/impersonacja")
+
+    assert redirected_to(impersonated) == "/fakturowanie"
+    {impersonated, superuser}
   end
 
   defp sign_in(conn, user, remember_me) do
